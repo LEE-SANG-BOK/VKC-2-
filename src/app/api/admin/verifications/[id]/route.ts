@@ -105,6 +105,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       if (badgeType) {
         userUpdate.badgeType = badgeType;
       }
+      if (verification.type === 'expert') {
+        userUpdate.isExpert = true;
+      }
 
       await db.update(users).set(userUpdate).where(eq(users.id, verification.userId));
 
