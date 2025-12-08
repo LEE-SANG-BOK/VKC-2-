@@ -311,6 +311,7 @@ export const contentReports = pgTable('content_reports', {
   reporterIdx: index('content_reports_reporter_idx').on(table.reporterId),
   targetIdx: index('content_reports_target_idx').on(table.targetType, table.targetId),
   statusIdx: index('content_reports_status_idx').on(table.status),
+  reporterTargetIdx: uniqueIndex('content_reports_reporter_target_idx').on(table.reporterId, table.targetType, table.targetId),
 }));
 
 // Files Table (파일 업로드)

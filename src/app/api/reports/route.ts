@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { contentReports, posts, answers, comments } from '@/lib/db/schema';
 import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,6 +35,18 @@ export async function POST(request: NextRequest) {
 
     if (!exists) {
       return notFoundResponse('대상을 찾을 수 없습니다.');
+    }
+
+    const dup = await db.query.contentReports.findFirst({
+      where: and(
+        eq(contentReports.reporterId, user.id),
+        eq(contentReports.targetType, targetType),
+        eq(contentReports.targetId, targetId)
+      ),
+    });
+
+    if (dup) {
+      return successResponse(dup, '이미 신고한 항목입니다.');
     }
 
     const [report] = await db
