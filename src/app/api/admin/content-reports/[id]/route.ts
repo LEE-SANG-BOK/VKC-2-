@@ -31,7 +31,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       .set({
         status,
         reviewNote: reviewNote ?? null,
-        handledBy: session.user.id,
+        handledBy: null,
         handledAt: new Date(),
         updatedAt: new Date(),
       })
