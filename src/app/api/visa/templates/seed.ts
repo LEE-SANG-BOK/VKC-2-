@@ -35,12 +35,16 @@ const requirements = [
   { visa_type: 'E7', requirement: '고용계약서(연봉 기준 충족)', weight: 100, locale: 'ko' },
   { visa_type: 'E7', requirement: '고용기업 내국인 5인 이상, 고용요건 충족', weight: 90, locale: 'ko' },
   { visa_type: 'E7', requirement: '전공/경력 일치 증빙(학위, 경력증명)', weight: 80, locale: 'ko' },
+  { visa_type: 'E7', requirement: 'TOPIK 4급 이상 또는 사내 한국어 테스트 통과', weight: 70, locale: 'ko' },
+  { visa_type: 'E7', requirement: '사업자등록증, 4대보험 가입증명 등 기업 서류 준비', weight: 60, locale: 'ko' },
   { visa_type: 'F2', requirement: '소득/점수제 요건 충족', weight: 80, locale: 'ko' },
   { visa_type: 'D10', requirement: 'Completion or expiry of D-2 study', weight: 90, locale: 'en' },
   { visa_type: 'D10', requirement: 'Job search plan/portfolio', weight: 70, locale: 'en' },
   { visa_type: 'E7', requirement: 'Employment contract (salary meets threshold)', weight: 100, locale: 'en' },
   { visa_type: 'E7', requirement: 'Employer meets headcount and hiring requirements', weight: 90, locale: 'en' },
   { visa_type: 'E7', requirement: 'Proof of matching major/experience', weight: 80, locale: 'en' },
+  { visa_type: 'E7', requirement: 'TOPIK 4+ or internal Korean test passed', weight: 70, locale: 'en' },
+  { visa_type: 'E7', requirement: 'Business registration, social insurance docs ready', weight: 60, locale: 'en' },
   { visa_type: 'F2', requirement: 'Income/points requirements met', weight: 80, locale: 'en' },
 ];
 
