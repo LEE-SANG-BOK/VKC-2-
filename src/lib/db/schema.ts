@@ -8,6 +8,7 @@ export const notificationTypeEnum = pgEnum('notification_type', ['answer', 'comm
 export const reportTypeEnum = pgEnum('report_type', ['spam', 'harassment', 'inappropriate', 'misinformation', 'other']);
 export const reportStatusEnum = pgEnum('report_status', ['pending', 'reviewed', 'resolved', 'dismissed']);
 export const fileTypeEnum = pgEnum('file_type', ['image', 'document', 'video']);
+export const contentTargetEnum = pgEnum('content_target', ['post', 'answer', 'comment']);
 
 // Users Table
 export const users = pgTable('users', {
@@ -291,6 +292,25 @@ export const visaRequirements = pgTable('visa_requirements', {
 }, (table) => ({
   visaTypeIdx: index('visa_requirements_visa_type_idx').on(table.visaType),
   localeIdx: index('visa_requirements_locale_idx').on(table.locale),
+}));
+
+export const contentReports = pgTable('content_reports', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  reporterId: uuid('reporter_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  targetType: contentTargetEnum('target_type').notNull(),
+  targetId: uuid('target_id').notNull(),
+  type: reportTypeEnum('type').notNull(),
+  status: reportStatusEnum('status').default('pending').notNull(),
+  reason: text('reason').notNull(),
+  handledBy: uuid('handled_by').references(() => users.id),
+  handledAt: timestamp('handled_at'),
+  reviewNote: text('review_note'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  reporterIdx: index('content_reports_reporter_idx').on(table.reporterId),
+  targetIdx: index('content_reports_target_idx').on(table.targetType, table.targetId),
+  statusIdx: index('content_reports_status_idx').on(table.status),
 }));
 
 // Files Table (파일 업로드)
