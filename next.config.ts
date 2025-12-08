@@ -2,7 +2,9 @@ import path from 'path';
 import type { NextConfig } from 'next';
 import withPWAInit from '@ducanh2912/next-pwa';
 
-const isPwaDisabled = process.env.DISABLE_PWA === 'true';
+const isPwaDisabled =
+  process.env.DISABLE_PWA === 'true' ||
+  (process.env.ENABLE_PWA !== 'true' && process.env.NODE_ENV === 'production');
 
 const withPWA = withPWAInit({
   dest: 'public',
@@ -31,6 +33,7 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
   outputFileTracingRoot: path.join(__dirname),
+  turbopack: {},
 };
 
 export default withPWA(nextConfig);
