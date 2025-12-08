@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { contentReports, posts, answers, comments } from '@/lib/db/schema';
 import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gte, sql } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +22,16 @@ export async function POST(request: NextRequest) {
 
     if (!targetType || !targetId || !type || !reason) {
       return errorResponse('필수 필드가 누락되었습니다.');
+    }
+
+    // 단순 레이트리밋: 최근 1시간 5건 초과시 제한
+    const since = new Date(Date.now() - 60 * 60 * 1000);
+    const [recentCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(contentReports)
+      .where(and(eq(contentReports.reporterId, user.id), gte(contentReports.createdAt, since)));
+    if ((recentCount?.count || 0) >= 5) {
+      return errorResponse('신고 한도를 초과했습니다. 잠시 후 다시 시도하세요.');
     }
 
     let exists = null;
