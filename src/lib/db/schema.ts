@@ -45,6 +45,7 @@ export const users = pgTable('users', {
   trustScore: integer('trust_score').default(0).notNull(),
   helpfulAnswers: integer('helpful_answers').default(0).notNull(),
   adoptionRate: numeric('adoption_rate', { precision: 5, scale: 2 }).default('0').notNull(),
+  isExpert: boolean('is_expert').default(false).notNull(),
   lastLoginAt: timestamp('last_login_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -262,6 +263,34 @@ export const topicSubscriptions = pgTable('topic_subscriptions', {
   uniqUserCategoryIdx: uniqueIndex('topic_subscriptions_user_category_idx').on(table.userId, table.categoryId),
   userIdx: index('topic_subscriptions_user_idx').on(table.userId),
   categoryIdx: index('topic_subscriptions_category_idx').on(table.categoryId),
+}));
+
+export const visaJobs = pgTable('visa_jobs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  code: varchar('code', { length: 50 }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  visaType: varchar('visa_type', { length: 20 }).notNull(),
+  minSalary: integer('min_salary'),
+  locale: varchar('locale', { length: 5 }).default('vi').notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  codeLocaleIdx: uniqueIndex('visa_jobs_code_locale_idx').on(table.code, table.locale),
+  visaTypeIdx: index('visa_jobs_visa_type_idx').on(table.visaType),
+}));
+
+export const visaRequirements = pgTable('visa_requirements', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  visaType: varchar('visa_type', { length: 20 }).notNull(),
+  requirement: text('requirement').notNull(),
+  weight: integer('weight').default(0).notNull(),
+  locale: varchar('locale', { length: 5 }).default('vi').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  visaTypeIdx: index('visa_requirements_visa_type_idx').on(table.visaType),
+  localeIdx: index('visa_requirements_locale_idx').on(table.locale),
 }));
 
 // Files Table (파일 업로드)

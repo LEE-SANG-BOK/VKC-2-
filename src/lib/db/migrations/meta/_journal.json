@@ -148,6 +148,20 @@
       "when": 1765200005000,
       "tag": "0020_topic_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1765200010000,
+      "tag": "0021_users_is_expert",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1765200015000,
+      "tag": "0022_visa_metadata",
+      "breakpoints": true
     }
   ]
 }
