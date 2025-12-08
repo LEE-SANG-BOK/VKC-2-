@@ -1,0 +1,153 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1763321514433,
+      "tag": "0000_volatile_toxin",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1763347747780,
+      "tag": "0001_glorious_whistler",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763353551748,
+      "tag": "0002_brainy_juggernaut",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1763353719734,
+      "tag": "0003_lucky_ma_gnuci",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1763356487222,
+      "tag": "0004_striped_cobalt_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1763357939760,
+      "tag": "0005_unique_spacker_dave",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1763365266291,
+      "tag": "0006_sloppy_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1763876557423,
+      "tag": "0007_cloudy_sunspot",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1763881996160,
+      "tag": "0008_lumpy_scrambler",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1763889007887,
+      "tag": "0009_charming_prima",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1763893851523,
+      "tag": "0010_organic_red_wolf",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1764822738336,
+      "tag": "0011_tan_tomas",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1764831555427,
+      "tag": "0012_talented_jean_grey",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1764969436950,
+      "tag": "0013_big_next_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1765089885554,
+      "tag": "0014_vietnamese_profile_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1765089885554,
+      "tag": "0015_news_language",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1765089885554,
+      "tag": "0016_news_content",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1765100000000,
+      "tag": "0017_child_topics",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1765100005000,
+      "tag": "0018_users_korean_level",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1765200000000,
+      "tag": "0019_badges_and_trust_metrics",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1765200005000,
+      "tag": "0020_topic_subscriptions",
+      "breakpoints": true
+    }
+  ]
+}
