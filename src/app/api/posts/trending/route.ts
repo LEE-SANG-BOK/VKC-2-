@@ -3,6 +3,15 @@ import { db } from '@/lib/db';
 import { posts } from '@/lib/db/schema';
 import { successResponse, serverErrorResponse } from '@/lib/api/response';
 import { desc, sql } from 'drizzle-orm';
+import dayjs from 'dayjs';
+
+const resolveTrust = (author: any, createdAt: Date | string) => {
+  const months = dayjs().diff(createdAt, 'month', true);
+  if (months >= 12) return { badge: 'outdated', weight: 0.5 };
+  if (author?.isExpert || author?.badgeType === 'expert') return { badge: 'expert', weight: 1.3 };
+  if (author?.isVerified || author?.badgeType) return { badge: 'verified', weight: 1 };
+  return { badge: 'community', weight: 0.7 };
+};
 
 /**
  * GET /api/posts/trending
@@ -40,14 +49,23 @@ export async function GET(request: NextRequest) {
     });
 
     const sorted = [...trendingPosts].sort((a, b) => {
-      const trustA = (a.author as any)?.trustScore || 0;
-      const trustB = (b.author as any)?.trustScore || 0;
-      const scoreA = (a.likes || 0) * 2 + (a.views || 0) + trustA * 2;
-      const scoreB = (b.likes || 0) * 2 + (b.views || 0) + trustB * 2;
+      const trustA = resolveTrust(a.author, a.createdAt).weight;
+      const trustB = resolveTrust(b.author, b.createdAt).weight;
+      const scoreA = ((a.likes || 0) * 2 + (a.views || 0)) * trustA;
+      const scoreB = ((b.likes || 0) * 2 + (b.views || 0)) * trustB;
       return scoreB - scoreA;
     });
 
-    return successResponse(sorted);
+    const withTrust = sorted.map((post) => {
+      const trust = resolveTrust(post.author, post.createdAt);
+      return {
+        ...post,
+        trustBadge: trust.badge,
+        trustWeight: trust.weight,
+      };
+    });
+
+    return successResponse(withTrust);
   } catch (error) {
     console.error('GET /api/posts/trending error:', error);
     return serverErrorResponse();

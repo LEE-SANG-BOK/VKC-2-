@@ -81,7 +81,19 @@ export const metadata: Metadata = {
     google: 'verification_token',
     yandex: 'verification_token',
   },
+  icons: {
+    apple: '/icon-192x192.png',
+  },
   manifest: '/manifest.json',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#3b82f6',
 };
 
 export default async function LocaleLayout({
@@ -96,34 +108,26 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html lang={lang} suppressHydrationWarning>
-      <head>
-        {/* canonical is handled by metadataBase */}
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-        <meta name="theme-color" content="#3b82f6" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
-        <StructuredData />
-      </head>
-      <body className="antialiased" suppressHydrationWarning>
-        <NextTopLoader
-          color="#2563eb"
-          initialPosition={0.08}
-          crawlSpeed={200}
-          height={3}
-          crawl={true}
-          showSpinner={false}
-          easing="ease"
-          speed={200}
-          shadow="0 0 10px #2563eb,0 0 5px #2563eb"
-        />
-        <QueryProvider>
-          <SessionProvider basePath="/api/auth">
-            <ProfileChecker locale={lang} />
-            {children}
-            <Toaster position="top-center" richColors />
-          </SessionProvider>
-        </QueryProvider>
-      </body>
-    </html>
+    <>
+      <NextTopLoader
+        color="#2563eb"
+        initialPosition={0.08}
+        crawlSpeed={200}
+        height={3}
+        crawl={true}
+        showSpinner={false}
+        easing="ease"
+        speed={200}
+        shadow="0 0 10px #2563eb,0 0 5px #2563eb"
+      />
+      <QueryProvider>
+        <SessionProvider basePath="/api/auth">
+          <ProfileChecker locale={lang} />
+          <StructuredData />
+          {children}
+          <Toaster position="top-center" richColors />
+        </SessionProvider>
+      </QueryProvider>
+    </>
   );
 }

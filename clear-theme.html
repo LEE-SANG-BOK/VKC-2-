@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Theme Cache</title>
+</head>
+<body>
+    <h1>테마 캐시 초기화</h1>
+    <p id="status">초기화 중...</p>
+    <script>
+        localStorage.removeItem('theme');
+        document.getElementById('status').textContent = '초기화 완료! 이제 앱을 다시 로드하세요.';
+        console.log('Theme cleared from localStorage');
+    </script>
+</body>
+</html>

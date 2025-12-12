@@ -1,0 +1,39 @@
+{
+  "name": "VietKConnect - 베트남 Q&A 커뮤니티",
+  "short_name": "VietKConnect",
+  "description": "베트남에서 일하고 생활하는 한국인을 위한 Q&A 커뮤니티",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#da251d",
+  "orientation": "portrait-primary",
+  "lang": "ko",
+  "categories": ["social", "lifestyle", "community"],
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

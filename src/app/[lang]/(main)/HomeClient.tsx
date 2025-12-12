@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import MainLayout from '@/components/templates/MainLayout';
 import NewsSection from '@/components/organisms/NewsSection';
+import PostList from '@/components/organisms/PostList';
 import { useMyProfile } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
 
@@ -23,6 +24,7 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
 
   const initialCategory = searchParams?.get('c') || 'popular';
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+  const [resolvedCategory, setResolvedCategory] = useState<string>(initialCategory);
 
   useEffect(() => {
     if (isLoggedIn && me && me.onboardingCompleted === false) {
@@ -38,29 +40,35 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
       Array.isArray(me.interests) &&
       me.interests.length > 0
     ) {
-      const subs = mySubs?.map((s) => s.id) || [];
-      const targets = me.interests.filter((id) => subs.includes(id));
-      const prefer = targets[0] || me.interests[0];
-      if (prefer) {
-        setSelectedCategory(prefer);
+      const subsById = new Map((mySubs || []).map((s) => [s.id, s.slug]));
+      const targets = me.interests.filter((id) => subsById.has(id));
+      const preferId = targets[0] || me.interests[0];
+      const preferSlug = preferId ? subsById.get(preferId) : undefined;
+      if (preferSlug) {
+        setSelectedCategory(preferSlug);
+        setResolvedCategory(preferSlug);
       }
+    } else {
+      setResolvedCategory(selectedCategory);
     }
   }, [isLoggedIn, me, mySubs, selectedCategory]);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
+    setResolvedCategory(category);
   };
 
   return (
     <MainLayout
-      selectedCategory={selectedCategory}
+      selectedCategory={resolvedCategory}
       onCategoryChange={handleCategoryChange}
       translations={dict}
     >
-      <div className="flex flex-col gap-3 pt-3 pb-6">
-        <div className="px-4 md:px-6 space-y-3">
+      <div className="flex flex-col gap-1 pt-1 pb-4 px-1 sm:px-0">
+        <div className="space-y-1">
           <NewsSection translations={dict} lang={lang} />
         </div>
+        <PostList selectedCategory={resolvedCategory} translations={dict} />
       </div>
 
     </MainLayout>

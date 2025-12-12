@@ -1,0 +1,343 @@
+'use client';
+
+import { useState } from 'react';
+import { useAdminVerifications } from '@/repo/admin/query';
+import { useUpdateVerificationStatus } from '@/repo/admin/mutation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ChevronLeft, ChevronRight, Eye, FileText } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import dayjs from 'dayjs';
+import { AdminVerification } from '@/repo/admin/types';
+import { useSearchParams } from 'next/navigation';
+
+export default function AdminVerificationsPage() {
+  const [page, setPage] = useState(1);
+  const searchParams = useSearchParams();
+  const defaultStatus = searchParams?.get('status') || 'pending';
+  const [statusFilter, setStatusFilter] = useState<string>(defaultStatus);
+  const [selectedVerification, setSelectedVerification] = useState<AdminVerification | null>(null);
+  const [reason, setReason] = useState('');
+
+  const { data, isLoading } = useAdminVerifications({
+    page,
+    limit: 20,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+  });
+
+  const updateStatusMutation = useUpdateVerificationStatus();
+
+  const handleStatusUpdate = async (status: string) => {
+    if (!selectedVerification) return;
+    try {
+      await updateStatusMutation.mutateAsync({
+        id: selectedVerification.id,
+        data: { status, reason: status === 'rejected' ? reason : undefined },
+      });
+      setSelectedVerification(null);
+      setReason('');
+    } catch (error) {
+      console.error('Failed to update verification:', error);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="default">대기</Badge>;
+      case 'approved':
+        return <Badge className="bg-green-600">승인됨</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">거부됨</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">인증 관리</h1>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>인증 요청</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6">
+            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="상태 필터" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="pending">대기</SelectItem>
+                <SelectItem value="approved">승인됨</SelectItem>
+                <SelectItem value="rejected">거부됨</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+            </div>
+          ) : (
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>유저</TableHead>
+                      <TableHead>유형</TableHead>
+                      <TableHead>문서</TableHead>
+                      <TableHead>상태</TableHead>
+                      <TableHead>제출일</TableHead>
+                      <TableHead className="w-[70px]">액션</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data?.verifications.map((verification) => (
+                      <TableRow key={verification.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={verification.user?.image || undefined} />
+                              <AvatarFallback>
+                                {(verification.user?.displayName || verification.user?.name || 'U')[0].toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">
+                                {verification.user?.displayName || verification.user?.name || 'Unknown'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {verification.user?.email}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{verification.type}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              {verification.documentUrls?.length || 0}개 파일
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(verification.status)}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {dayjs(verification.submittedAt).format('YYYY.MM.DD')}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSelectedVerification(verification)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {data?.verifications.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          인증 요청이 없습니다
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {data?.pagination && data.pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    {data.pagination.page} / {data.pagination.totalPages} 페이지 (총 {data.pagination.total}건)
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      이전
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => p + 1)}
+                      disabled={page >= data.pagination.totalPages}
+                    >
+                      다음
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!selectedVerification} onOpenChange={() => setSelectedVerification(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>인증 요청 검토</DialogTitle>
+            <DialogDescription>
+              제출된 문서를 검토하고 승인 또는 거부하세요
+            </DialogDescription>
+          </DialogHeader>
+          {selectedVerification && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">유저</p>
+                  <p className="font-medium">
+                    {selectedVerification.user?.displayName || selectedVerification.user?.name || 'Unknown'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{selectedVerification.user?.email}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">유형</p>
+                  <p>{selectedVerification.type}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">상태</p>
+                  <p>{selectedVerification.status}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">제출일</p>
+                  <p>{dayjs(selectedVerification.submittedAt).format('YYYY.MM.DD HH:mm')}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">비자 타입</p>
+                  <p>{selectedVerification.visaType || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">추가 정보</p>
+                  <p>{selectedVerification.extraInfo || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">대학 / 이메일</p>
+                  <p>
+                    {selectedVerification.universityName || '-'}
+                    {selectedVerification.universityEmail ? ` (${selectedVerification.universityEmail})` : ''}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">산업 / 회사 / 직무</p>
+                  <p>
+                    {[selectedVerification.industry, selectedVerification.companyName, selectedVerification.jobTitle]
+                      .filter(Boolean)
+                      .join(' / ') || '-'}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-muted-foreground text-sm mb-2">문서</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {selectedVerification.documentUrls?.map((url, index) => (
+                    <a
+                      key={index}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-3 border rounded-md hover:bg-gray-50 dark:hover:bg-gray-900"
+                    >
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">문서 {index + 1}</span>
+                    </a>
+                  )) || (
+                    <p className="text-sm text-muted-foreground col-span-2">업로드된 문서가 없습니다</p>
+                  )}
+                </div>
+              </div>
+
+              {selectedVerification.status === 'pending' && (
+                <div>
+                  <Label htmlFor="reason">거부 사유 (선택)</Label>
+                  <Textarea
+                    id="reason"
+                    placeholder="거부 시 사유를 입력하세요..."
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              )}
+
+              {selectedVerification.reason && (
+                <div>
+                  <p className="text-muted-foreground text-sm mb-1">이전 사유</p>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                    {selectedVerification.reason}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setSelectedVerification(null)}>
+              취소
+            </Button>
+            {selectedVerification?.status === 'pending' && (
+              <>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleStatusUpdate('rejected')}
+                  disabled={updateStatusMutation.isPending}
+                >
+                  거부
+                </Button>
+                <Button
+                  onClick={() => handleStatusUpdate('approved')}
+                  disabled={updateStatusMutation.isPending}
+                >
+                  승인
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

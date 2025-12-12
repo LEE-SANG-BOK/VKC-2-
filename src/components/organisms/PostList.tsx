@@ -1,0 +1,329 @@
+'use client';
+
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useParams } from 'next/navigation';
+import { useRouter } from 'nextjs-toploader/app';
+import dayjs from 'dayjs';
+import PostCard from '../molecules/PostCard';
+import CategorySubscription from './CategorySubscription';
+import { useInfinitePosts } from '@/repo/posts/query';
+import { useRecommendedUsers } from '@/repo/users/query';
+import Avatar from '@/components/atoms/Avatar';
+import FollowButton from '@/components/atoms/FollowButton';
+import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
+import type { PaginatedResponse, Post } from '@/repo/posts/types';
+
+interface PostListProps {
+  selectedCategory?: string;
+  isSearchMode?: boolean;
+  searchQuery?: string;
+  translations: Record<string, unknown>;
+}
+
+export default function PostList({ selectedCategory = 'all', isSearchMode = false, searchQuery = '', translations }: PostListProps) {
+  const t = (translations?.post || {}) as Record<string, string>;
+  const tCommon = (translations?.common || {}) as Record<string, string>;
+  const params = useParams();
+  const router = useRouter();
+  const locale = (params?.lang as string) || 'ko';
+  const { data: recommended } = useRecommendedUsers({ enabled: selectedCategory === 'following' });
+  const [selectedChildCategory, setSelectedChildCategory] = useState('all');
+  const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
+  const observerRef = useRef<HTMLDivElement>(null);
+  const recommendedRef = useRef<HTMLDivElement>(null);
+
+  const parentSlugs = useMemo(() => Object.keys(CATEGORY_GROUPS), []);
+  const childSlugToParent = useMemo(() => {
+    const map = new Map<string, string>();
+    Object.entries(CATEGORY_GROUPS).forEach(([parentSlug, group]) => {
+      group.slugs.forEach((slug) => map.set(slug, parentSlug));
+    });
+    return map;
+  }, []);
+
+  const activeParentSlug = useMemo(() => {
+    if (parentSlugs.includes(selectedCategory)) return selectedCategory;
+    if (childSlugToParent.has(selectedCategory)) return childSlugToParent.get(selectedCategory) || null;
+    return null;
+  }, [childSlugToParent, parentSlugs, selectedCategory]);
+
+  const childCategories = useMemo(() => {
+    if (!activeParentSlug) return [];
+    const group = CATEGORY_GROUPS[activeParentSlug as keyof typeof CATEGORY_GROUPS];
+    if (!group) return [];
+    const slugs = group.slugs as readonly string[];
+    return LEGACY_CATEGORIES.filter((cat) => slugs.includes(cat.slug));
+  }, [activeParentSlug]);
+
+  useEffect(() => {
+    if (activeParentSlug && childSlugToParent.has(selectedCategory)) {
+      setSelectedChildCategory(selectedCategory);
+      return;
+    }
+    setSelectedChildCategory('all');
+  }, [activeParentSlug, childSlugToParent, selectedCategory]);
+
+  const handleChildCategoryChange = useCallback((category: string) => {
+    setSelectedChildCategory(category);
+  }, []);
+
+  const isMenuCategory = ['popular', 'latest', 'following', 'subscribed', 'my-posts'].includes(selectedCategory);
+
+  const parentCategoryForQuery = isMenuCategory
+    ? undefined
+    : selectedChildCategory === 'all' && activeParentSlug
+      ? activeParentSlug
+      : undefined;
+
+  const categoryForQuery = isMenuCategory
+    ? undefined
+    : selectedChildCategory !== 'all'
+      ? selectedChildCategory
+      : !activeParentSlug && selectedCategory !== 'all'
+        ? selectedCategory
+      : undefined;
+
+  const sortForQuery = selectedCategory === 'popular' ? 'popular' : (selectedCategory === 'latest' ? 'latest' : 'latest');
+
+  const getFilterForQuery = () => {
+    if (selectedCategory === 'following') return 'following-users';
+    if (selectedCategory === 'subscribed') return 'following';
+    if (selectedCategory === 'my-posts') return 'my-posts';
+    return undefined;
+  };
+  const filterForQuery = getFilterForQuery();
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfinitePosts({
+    parentCategory: parentCategoryForQuery,
+    category: categoryForQuery,
+    sort: sortForQuery,
+    filter: filterForQuery as 'following-users' | 'following' | 'my-posts' | undefined,
+  }) as ReturnType<typeof useInfinitePosts>;
+
+  // Intersection Observer로 무한 스크롤 구현
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isFetchingNextPage && hasNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // 모든 페이지의 게시글을 평탄화
+  const allPosts =
+    data?.pages.flatMap((page: PaginatedResponse<Post>) => page.data) || [];
+
+  const followerLabel = tCommon.followers || (locale === 'vi' ? 'Người theo dõi' : locale === 'en' ? 'Followers' : '팔로워');
+  const recommendedUsersLabel = t.recommendedUsersTitle || t.recommendedUsers || (locale === 'vi' ? 'Người dùng đề xuất' : locale === 'en' ? 'Recommended users' : '추천 사용자');
+  const recommendedCtaLabel = t.recommendedUsersCta || (locale === 'vi' ? 'Xem người dùng đề xuất' : locale === 'en' ? 'View recommended users' : '추천 사용자 보기');
+  const noFollowingPostsLabel = t.noFollowingPosts || (locale === 'vi' ? 'Chưa có bài từ người bạn theo dõi.' : locale === 'en' ? 'No posts from people you follow yet.' : '팔로우한 사용자의 게시글이 없습니다');
+  const noPostsLabel = t.noPosts || (locale === 'vi' ? 'Chưa có bài viết.' : locale === 'en' ? 'No posts yet.' : '게시글이 없습니다');
+  const loadingLabel = t.loading || (locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...');
+  const allLoadedLabel = t.allPostsLoaded || (locale === 'vi' ? 'Đã tải tất cả bài viết' : locale === 'en' ? 'All posts loaded' : '모든 게시글을 불러왔습니다');
+
+  const scrollToRecommended = () => {
+    if (recommendedRef.current) {
+      recommendedRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  return (
+    <div className="pt-0 pb-4">
+      {/* 구독 메뉴에서 카테고리 구독 UI 표시 */}
+      {selectedCategory === 'subscribed' && (
+        <div className="mb-4">
+          <CategorySubscription translations={translations} />
+        </div>
+      )}
+
+      {/* 2차 카테고리 필터 (1차 카테고리 선택 시만 표시) */}
+      {!isMenuCategory &&
+        selectedCategory !== 'all' &&
+        activeParentSlug &&
+        childCategories.length > 0 && (
+          <div className="mb-4">
+            <select
+              value={selectedChildCategory}
+              onChange={(e) => handleChildCategoryChange(e.target.value)}
+              className="w-auto px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+            >
+              <option value="all">{t.allSubcategories || (locale === 'vi' ? 'Tất cả danh mục con' : locale === 'en' ? 'All subcategories' : '전체 하위 카테고리')}</option>
+              {childCategories.map((child) => (
+                <option key={child.slug} value={child.slug}>
+                  {getCategoryName(child, locale)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+      {/* 로딩 상태 */}
+      {isLoading && (
+            <div className="flex justify-center py-12">
+              <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <div className="h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm">{loadingLabel}</span>
+              </div>
+            </div>
+          )}
+
+      {/* 게시글 목록 */}
+      {!isLoading && (
+        <div className="flex flex-col gap-2">
+          {allPosts.length > 0 ? (
+            allPosts.map((post: Post) => (
+              <div key={post.id} className="flex flex-col">
+                <PostCard
+                  id={post.id}
+                  author={{
+                    id: post.author?.id,
+                    name: post.author?.displayName || post.author?.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음'),
+                    avatar: (post.author as any)?.image || (post.author as any)?.avatar || '/default-avatar.jpg',
+                    followers: (post.author as any)?.followers ?? 0,
+                    isFollowing: (post.author as any)?.isFollowing ?? false,
+                    isVerified: post.author?.isVerified || false,
+                    isExpert: (post.author as any)?.isExpert || false,
+                  }}
+                  title={post.title}
+                  excerpt={post.content.replace(/<img[^>]*>/gi, '').replace(/<[^>]*>/g, '').trim().substring(0, 200)}
+                  tags={post.tags}
+                  stats={{
+                    likes: (post as any).likesCount ?? post.likes ?? 0,
+                    comments: (post as any).commentsCount ?? 0,
+                    shares: 0,
+                  }}
+                  category={(post as any).category}
+                  subcategory={(post as any).subcategory}
+                  thumbnail={(post as any).thumbnail}
+                  thumbnails={(post as any).thumbnails}
+                  publishedAt={dayjs(post.createdAt).format('YYYY.MM.DD HH:mm')}
+                  isQuestion={post.type === 'question'}
+                  isAdopted={post.isResolved}
+                  isLiked={post.isLiked}
+                  isBookmarked={post.isBookmarked}
+                  imageCount={(post as any).imageCount}
+                  trustBadge={(post as any).trustBadge}
+                  trustWeight={(post as any).trustWeight}
+                  translations={translations}
+                />
+              </div>
+            ))
+          ) : (
+            <div className="flex flex-col gap-6 py-10">
+              <div className="text-center text-gray-500 dark:text-gray-400">
+                {isSearchMode && searchQuery
+                  ? (t.noSearchResults || `"${searchQuery}"에 대한 검색 결과가 없습니다`)
+                  : (selectedCategory === 'following'
+                      ? noFollowingPostsLabel
+                      : noPostsLabel)}
+              </div>
+            </div>
+          )}
+
+          {selectedCategory === 'following' && recommended?.data?.length ? (
+            <>
+              <button
+                type="button"
+                onClick={scrollToRecommended}
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm font-semibold text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+              >
+                {recommendedCtaLabel}
+              </button>
+              <div ref={recommendedRef} className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 mt-3">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {recommendedUsersLabel}
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[...recommended.data].sort((a, b) => (b.stats?.followers ?? 0) - (a.stats?.followers ?? 0)).map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3"
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div className="flex flex-col items-center gap-2">
+                          <Avatar
+                            name={user.displayName || user.email || 'U'}
+                            imageUrl={(user as any)?.image}
+                            size="lg"
+                            hoverHighlight
+                          />
+                          <FollowButton
+                            userId={String(user.id)}
+                            isFollowing={followStates[user.id] ?? (user as any)?.isFollowing ?? false}
+                            size="sm"
+                            onToggle={(next) =>
+                              setFollowStates((prev) => ({
+                                ...prev,
+                                [user.id]: next,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/${locale}/profile/${user.id}`)}
+                            className="text-left"
+                          >
+                            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                              {user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음')}
+                            </div>
+                            {user.stats?.followers !== undefined && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {followerLabel} {user.stats.followers}
+                              </div>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
+      )}
+
+      {/* Loading Indicator (다음 페이지 로딩) */}
+      {allPosts.length > 0 && hasNextPage && (
+        <div ref={observerRef} className="py-8 text-center">
+          {isFetchingNextPage && (
+            <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
+              <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm">{loadingLabel}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* End of posts message */}
+      {allPosts.length > 0 && !hasNextPage && (
+        <div className="py-8 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {allLoadedLabel}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,126 @@
+export interface User {
+  id: string;
+  username: string;
+  displayName: string;
+  avatar: string;
+  email: string;
+  phone?: string | null;
+  bio: string;
+  joinedAt: string;
+  isVerified: boolean;
+  gender?: string | null;
+  ageGroup?: string | null;
+  nationality?: string | null;
+  status?: string | null;
+  userType?: string | null;
+  visaType?: string | null;
+  interests?: string[] | null;
+  preferredLanguage?: string | null;
+  koreanLevel?: string | null;
+  onboardingCompleted?: boolean | null;
+  isProfileComplete?: boolean | null;
+  isFollowing?: boolean;
+  stats: {
+    followers: number;
+    following: number;
+    posts: number;
+    accepted: number;
+    comments: number;
+    bookmarks: number;
+  };
+}
+
+export type UserProfile = User;
+
+export interface UpdateProfileRequest {
+  name?: string;
+  displayName?: string;
+  bio?: string;
+  phone?: string;
+  gender?: string;
+  ageGroup?: string;
+  nationality?: string;
+  status?: string;
+  image?: string;
+  notifyAnswers?: boolean;
+  notifyComments?: boolean;
+  notifyReplies?: boolean;
+  notifyAdoptions?: boolean;
+  notifyFollows?: boolean;
+  userType?: string;
+  visaType?: string;
+  interests?: string[];
+  preferredLanguage?: string;
+}
+
+export interface PostCardData {
+  id: string;
+  type: 'question' | 'share' | 'answer' | 'comment';
+  title: string;
+  content: string;
+  excerpt: string;
+  category: string;
+  subcategory?: string;
+  tags: string[];
+  views: number;
+  likes: number;
+  isResolved?: boolean;
+  createdAt: string;
+  publishedAt: string;
+  thumbnail?: string;
+  author: {
+    id: string;
+    name: string;
+    avatar: string;
+    isVerified: boolean;
+    followers: number;
+  };
+  stats: {
+    likes: number;
+    comments: number;
+    shares: number;
+  };
+  isLiked: boolean;
+  isBookmarked: boolean;
+  isQuestion: boolean;
+  isAdopted: boolean;
+  post?: {
+    id: string;
+    title: string;
+  };
+  bookmarkedAt?: string;
+}
+
+export type UserPost = PostCardData;
+export type UserAnswer = PostCardData;
+export type UserComment = PostCardData;
+export type UserBookmark = PostCardData;
+
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+export interface UserFilters {
+  page?: number;
+  limit?: number;
+  type?: string;
+}
+
+export interface AnswerFilters {
+  page?: number;
+  limit?: number;
+  adoptedOnly?: boolean;
+}

@@ -4,7 +4,39 @@ import { posts, categorySubscriptions, categories, follows, topicSubscriptions }
 import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkUserStatus } from '@/lib/user-status';
-import { desc, eq, and, sql, inArray } from 'drizzle-orm';
+import { desc, eq, and, or, sql, inArray, SQL } from 'drizzle-orm';
+import dayjs from 'dayjs';
+import { hasProhibitedContent } from '@/lib/content-filter';
+
+const resolveTrust = (author: any, createdAt: Date | string) => {
+  const months = dayjs().diff(createdAt, 'month', true);
+  if (months >= 12) return { badge: 'outdated', weight: 0.5 };
+  if (author?.isExpert || author?.badgeType === 'expert') return { badge: 'expert', weight: 1.3 };
+  if (author?.isVerified || author?.badgeType) return { badge: 'verified', weight: 1 };
+  return { badge: 'community', weight: 0.7 };
+};
+
+const CATEGORY_GROUP_SLUGS = {
+  visa: ['visa-process', 'status-change', 'visa-checklist'],
+  students: ['scholarship', 'university-ranking', 'korean-language'],
+  career: ['business', 'wage-info', 'legal'],
+  living: ['housing', 'cost-of-living', 'healthcare'],
+} as const;
+
+const GROUP_PARENT_SLUGS = Object.keys(CATEGORY_GROUP_SLUGS);
+const GROUP_CHILD_SLUGS = Object.values(CATEGORY_GROUP_SLUGS).flat();
+const CHILD_TO_PARENT: Record<string, string> = GROUP_CHILD_SLUGS.reduce((acc, slug) => {
+  const parent = GROUP_PARENT_SLUGS.find((p) =>
+    (CATEGORY_GROUP_SLUGS[p as keyof typeof CATEGORY_GROUP_SLUGS] as readonly string[]).includes(slug)
+  );
+  if (parent) acc[slug] = parent;
+  return acc;
+}, {} as Record<string, string>);
+
+const isGroupParentSlug = (slug: string) => GROUP_PARENT_SLUGS.includes(slug);
+const isGroupChildSlug = (slug: string) => (GROUP_CHILD_SLUGS as readonly string[]).includes(slug);
+const getChildrenForParent = (slug: string) =>
+  (CATEGORY_GROUP_SLUGS as Record<string, readonly string[]>)[slug] || [];
 
 /**
  * GET /api/posts
@@ -34,20 +66,44 @@ export async function GET(request: NextRequest) {
 
     const user = await getSession(request);
 
-    const conditions = [];
+    const conditions: SQL[] = [];
 
     if (category && category !== 'all') {
-      conditions.push(eq(posts.category, category));
-    } else if (parentCategory && parentCategory !== 'all') {
-      const allCategories = await db.query.categories.findMany();
-      const childCategoryIds = allCategories
-        .filter(cat => cat.parentId === parentCategory)
-        .map(cat => cat.id);
-      
-      if (childCategoryIds.length > 0) {
-        conditions.push(inArray(posts.category, childCategoryIds));
+      if (isGroupParentSlug(category)) {
+        const children = getChildrenForParent(category);
+        if (children.length > 0) {
+          const allSlugs = [category, ...children];
+          conditions.push(or(inArray(posts.category, allSlugs), inArray(posts.subcategory, children)) as SQL);
+        } else {
+          conditions.push(eq(posts.category, category));
+        }
+      } else if (isGroupChildSlug(category)) {
+        conditions.push(or(eq(posts.subcategory, category), eq(posts.category, category)) as SQL);
       } else {
-        conditions.push(eq(posts.category, parentCategory));
+        conditions.push(eq(posts.category, category));
+      }
+    } else if (parentCategory && parentCategory !== 'all') {
+      if (isGroupChildSlug(parentCategory)) {
+        conditions.push(or(eq(posts.subcategory, parentCategory), eq(posts.category, parentCategory)) as SQL);
+      } else if (isGroupParentSlug(parentCategory)) {
+        const children = getChildrenForParent(parentCategory);
+        if (children.length > 0) {
+          const allSlugs = [parentCategory, ...children];
+          conditions.push(or(inArray(posts.category, allSlugs), inArray(posts.subcategory, children)) as SQL);
+        } else {
+          conditions.push(eq(posts.category, parentCategory));
+        }
+      } else {
+        const allCategories = await db.query.categories.findMany();
+        const childCategoryIds = allCategories
+          .filter(cat => cat.parentId === parentCategory)
+          .map(cat => cat.id);
+        
+        if (childCategoryIds.length > 0) {
+          conditions.push(inArray(posts.category, childCategoryIds));
+        } else {
+          conditions.push(eq(posts.category, parentCategory));
+        }
       }
     }
 
@@ -75,19 +131,36 @@ export async function GET(request: NextRequest) {
         }),
       ]);
       
-      const subscribedParentIds = [...subscriptions, ...topicSubs].map(s => s.categoryId);
+      const subscribedIds = [...subscriptions, ...topicSubs]
+        .map(s => s.categoryId)
+        .filter(Boolean) as string[];
       
-      if (subscribedParentIds.length > 0) {
-        const allCategories = await db.query.categories.findMany();
-        const childCategoryIds = allCategories
-          .filter(cat => cat.parentId && subscribedParentIds.includes(cat.parentId))
-          .map(cat => cat.id);
-        
-        const allCategoryMatches = [...subscribedParentIds, ...childCategoryIds];
-        conditions.push(inArray(posts.category, allCategoryMatches));
-      } else {
+      if (subscribedIds.length === 0) {
         return paginatedResponse([], page, limit, 0);
       }
+
+      const subscribedCats = await db.query.categories.findMany({
+        where: inArray(categories.id, subscribedIds),
+      });
+      const subscribedSlugs = subscribedCats.map((c) => c.slug).filter(Boolean) as string[];
+
+      if (subscribedSlugs.length === 0) {
+        return paginatedResponse([], page, limit, 0);
+      }
+
+      const expanded = new Set<string>();
+      subscribedSlugs.forEach((slug) => {
+        expanded.add(slug);
+        if (isGroupParentSlug(slug)) {
+          getChildrenForParent(slug).forEach((child) => expanded.add(child));
+        } else if (isGroupChildSlug(slug)) {
+          const parent = CHILD_TO_PARENT[slug];
+          if (parent) expanded.add(parent);
+        }
+      });
+
+      const expandedSlugs = Array.from(expanded);
+      conditions.push(or(inArray(posts.category, expandedSlugs), inArray(posts.subcategory, expandedSlugs)) as SQL);
     }
 
     if (filter === 'following-users') {
@@ -137,19 +210,34 @@ export async function GET(request: NextRequest) {
     let sortedList = postList;
     if (sort === 'popular') {
       sortedList = [...postList].sort((a, b) => {
-        const scoreA = (a.likes?.length || 0) + (a.views || 0) + (a.answers?.length || 0) + (a.comments?.length || 0);
-        const scoreB = (b.likes?.length || 0) + (b.views || 0) + (b.answers?.length || 0) + (b.comments?.length || 0);
+        const trustA = resolveTrust(a.author, a.createdAt).weight;
+        const trustB = resolveTrust(b.author, b.createdAt).weight;
+        const scoreA = ((a.likes?.length || 0) * 2 + (a.views || 0) + (a.answers?.length || 0) * 1.5 + (a.comments?.length || 0)) * trustA;
+        const scoreB = ((b.likes?.length || 0) * 2 + (b.views || 0) + (b.answers?.length || 0) * 1.5 + (b.comments?.length || 0)) * trustB;
         return scoreB - scoreA;
       });
     }
 
     const postsWithUserStatus = sortedList.map(post => {
-      const imgMatch = post.content.match(/<img[^>]+src=["']([^"']+)["']/i);
-      const thumbnail = imgMatch ? imgMatch[1] : null;
-      
+      const imageMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi));
+      const thumbnails = imageMatches.slice(0, 4).map((match) => match[1]);
+      const thumbnail = thumbnails[0] ?? null;
+      const imageCount = imageMatches.length;
+      const trust = resolveTrust(post.author, post.createdAt);
+
       return {
         ...post,
+        author: post.author
+          ? {
+              ...post.author,
+              isExpert: post.author.isExpert || false,
+            }
+          : post.author,
+        trustBadge: trust.badge,
+        trustWeight: trust.weight,
         thumbnail,
+        thumbnails,
+        imageCount,
         isLiked: user ? post.likes.some(like => like.userId === user.id) : false,
         isBookmarked: user ? post.bookmarks.some(bookmark => bookmark.userId === user.id) : false,
         likesCount: post.likes.length,
@@ -195,10 +283,22 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { type, title, content, category, subcategory, tags } = body;
+    console.error('CreatePost payload', {
+      type,
+      titleLength: title?.length,
+      contentLength: content?.length,
+      category,
+      subcategory,
+    });
 
     // 필수 필드 검증
     if (!type || !title || !content || !category) {
       return errorResponse('필수 필드가 누락되었습니다.');
+    }
+
+    // 금칙어/스팸 검증
+    if (hasProhibitedContent(`${title} ${content}`)) {
+      return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.');
     }
 
     // 게시글 작성
