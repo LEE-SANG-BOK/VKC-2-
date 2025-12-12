@@ -167,7 +167,7 @@ export default function Tooltip({
   }, [open, computePosition]);
 
   useEffect(() => {
-    if (!open || !touchMode) return;
+    if (!open) return;
 
     const handlePointerDown = (event: PointerEvent) => {
       const target = targetRef.current;
@@ -178,14 +178,24 @@ export default function Tooltip({
       close();
     };
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close();
+    };
+
     document.addEventListener('pointerdown', handlePointerDown, true);
-    window.addEventListener('orientationchange', close);
-    window.addEventListener('scroll', close, true);
+    document.addEventListener('keydown', handleKeyDown);
+    if (touchMode) {
+      window.addEventListener('orientationchange', close);
+      window.addEventListener('scroll', close, true);
+    }
 
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown, true);
-      window.removeEventListener('orientationchange', close);
-      window.removeEventListener('scroll', close, true);
+      document.removeEventListener('keydown', handleKeyDown);
+      if (touchMode) {
+        window.removeEventListener('orientationchange', close);
+        window.removeEventListener('scroll', close, true);
+      }
     };
   }, [open, touchMode, close]);
 

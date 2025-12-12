@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { userMeColumns } from '@/lib/db/columns';
 import { users } from '@/lib/db/schema';
 import { getAdminSession } from '@/lib/admin/auth';
 import { eq } from 'drizzle-orm';
@@ -17,11 +18,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const { id } = await context.params;
 
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, id),
+      columns: userMeColumns,
+    });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -45,11 +45,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const { status, suspendDays } = body;
 
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, id),
+      columns: {
+        id: true,
+      },
+    });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -61,15 +62,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       suspendedUntil.setDate(suspendedUntil.getDate() + suspendDays);
     }
 
-    const [updatedUser] = await db
-      .update(users)
-      .set({ 
-        status, 
-        suspendedUntil,
-        updatedAt: new Date() 
-      })
-      .where(eq(users.id, id))
-      .returning();
+    await db.update(users).set({
+      status,
+      suspendedUntil,
+      updatedAt: new Date(),
+    }).where(eq(users.id, id));
+
+    const updatedUser = await db.query.users.findFirst({
+      where: eq(users.id, id),
+      columns: userMeColumns,
+    });
 
     return NextResponse.json({ user: updatedUser });
   } catch (error) {
@@ -87,11 +89,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     const { id } = await context.params;
 
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, id),
+      columns: {
+        id: true,
+      },
+    });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

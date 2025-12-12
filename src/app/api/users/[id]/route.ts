@@ -14,10 +14,30 @@ export async function GET(
     const { id } = await params;
     const currentUser = await getSession(request);
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, id),
-      columns: userMeColumns,
-    });
+    const userProfileColumns = {
+      ...userMeColumns,
+      verifiedProfileSummary: true,
+      verifiedProfileKeywords: true,
+    } as const;
+
+    let user;
+
+    try {
+      user = await db.query.users.findFirst({
+        where: eq(users.id, id),
+        columns: userProfileColumns,
+      });
+    } catch (error) {
+      const code = (error as { cause?: { code?: string } })?.cause?.code;
+      if (code !== '42703') {
+        throw error;
+      }
+
+      user = await db.query.users.findFirst({
+        where: eq(users.id, id),
+        columns: userMeColumns,
+      });
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -66,8 +86,8 @@ export async function GET(
       joinedAt: user.createdAt?.toISOString() || new Date().toISOString(),
       updatedAt: user.updatedAt?.toISOString() || user.createdAt?.toISOString() || new Date().toISOString(),
       isVerified: user.isVerified || false,
-      verifiedProfileSummary: null,
-      verifiedProfileKeywords: null,
+      verifiedProfileSummary: (user as { verifiedProfileSummary?: string | null }).verifiedProfileSummary ?? null,
+      verifiedProfileKeywords: (user as { verifiedProfileKeywords?: string[] | null }).verifiedProfileKeywords ?? null,
       gender: user.gender || null,
       ageGroup: user.ageGroup || null,
       nationality: user.nationality || null,
