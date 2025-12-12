@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-type TooltipPlacement = 'top' | 'below' | 'right' | 'bottom-right' | 'top-left';
+type TooltipPlacement = 'top' | 'below' | 'right' | 'left' | 'bottom-right' | 'top-left';
 
 interface TooltipProps {
   content: React.ReactNode;
@@ -66,14 +66,16 @@ export default function Tooltip({
 
     const placementsToTry: TooltipPlacement[] =
       position === 'top'
-        ? ['top', 'below', 'right']
+        ? ['top', 'below', 'right', 'left']
         : position === 'below'
-          ? ['below', 'top', 'right']
+          ? ['below', 'top', 'right', 'left']
           : position === 'right'
-            ? ['right', 'top', 'below']
-            : position === 'bottom-right'
-              ? ['bottom-right', 'below', 'top', 'right']
-              : ['top-left', 'top', 'below', 'right'];
+            ? ['right', 'left', 'top', 'below']
+            : position === 'left'
+              ? ['left', 'right', 'top', 'below']
+              : position === 'bottom-right'
+                ? ['bottom-right', 'right', 'left', 'below', 'top']
+                : ['top-left', 'top', 'below', 'right', 'left'];
 
     const computeFor = (placement: TooltipPlacement) => {
       if (placement === 'top') {
@@ -91,6 +93,12 @@ export default function Tooltip({
       if (placement === 'right') {
         return {
           x: targetRect.right + gap,
+          y: targetRect.top + targetRect.height / 2 - tooltipRect.height / 2,
+        };
+      }
+      if (placement === 'left') {
+        return {
+          x: targetRect.left - gap - tooltipRect.width,
           y: targetRect.top + targetRect.height / 2 - tooltipRect.height / 2,
         };
       }
@@ -150,6 +158,15 @@ export default function Tooltip({
   }, [open, computePosition]);
 
   useEffect(() => {
+    if (!open) return;
+    const tooltipEl = tooltipRef.current;
+    if (!tooltipEl || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => computePosition());
+    ro.observe(tooltipEl);
+    return () => ro.disconnect();
+  }, [open, computePosition]);
+
+  useEffect(() => {
     if (!open || !touchMode) return;
 
     const handlePointerDown = (event: PointerEvent) => {
@@ -175,6 +192,15 @@ export default function Tooltip({
       <span
         ref={targetRef}
         className={`vk-tooltip-target inline-flex items-center ${className}`}
+        onPointerEnter={(event) => {
+          if (event.pointerType !== 'mouse') return;
+          if (!touchMode) return;
+          openTooltip();
+        }}
+        onPointerLeave={(event) => {
+          if (event.pointerType !== 'mouse') return;
+          close();
+        }}
         onMouseEnter={() => {
           if (touchMode) return;
           openTooltip();
@@ -191,7 +217,8 @@ export default function Tooltip({
           if (touchMode) return;
           close();
         }}
-        onClick={() => {
+        onClick={(event) => {
+          event.stopPropagation();
           if (!touchMode) return;
           setOpen((prev) => {
             const next = !prev;

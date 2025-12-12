@@ -673,6 +673,14 @@
   border-color: transparent rgba(15, 23, 42, 0.94) transparent transparent;
 }
 
+.vk-tooltip-portal[data-position='left']::after {
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  border-width: 6px 0 6px 6px;
+  border-color: transparent transparent transparent rgba(15, 23, 42, 0.94);
+}
+
 .vk-btn--ghost {
   background: transparent;
   color: var(--vk-text-muted);

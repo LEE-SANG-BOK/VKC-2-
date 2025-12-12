@@ -38,6 +38,7 @@ export default function CategorySidebar({
   const params = useParams();
   const router = useRouter();
   const locale = params.lang as string || 'ko';
+  const actionTooltipPosition = variant === 'mobile' ? 'below' : 'right';
   const { data: session } = useSession();
   const user = session?.user;
   const { data: apiCategories } = useCategories();
@@ -242,7 +243,7 @@ export default function CategorySidebar({
             isActive={false}
             onClick={handleCategoryClick}
             tooltip={t.askQuestionTooltip || '커뮤니티에 질문을 올려보세요'}
-            tooltipPosition="right"
+            tooltipPosition={actionTooltipPosition}
             className="border-l-4 border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
           <CategoryItem
@@ -253,7 +254,7 @@ export default function CategorySidebar({
             isActive={false}
             onClick={handleCategoryClick}
             tooltip={t.sharePostTooltip || '유용한 정보를 공유해주세요'}
-            tooltipPosition="right"
+            tooltipPosition={actionTooltipPosition}
             className="border-l-4 border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
           <CategoryItem
@@ -264,7 +265,7 @@ export default function CategorySidebar({
             isActive={selectedCategory === 'verification-request'}
             onClick={handleCategoryClick}
             tooltip={t.verificationRequestTooltip || '전문가 인증을 신청하세요'}
-            tooltipPosition="right"
+            tooltipPosition={actionTooltipPosition}
             className="border-l-4 border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
         </div>
