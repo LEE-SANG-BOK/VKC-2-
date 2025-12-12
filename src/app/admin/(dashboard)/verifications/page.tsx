@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAdminVerifications } from '@/repo/admin/query';
 import { useUpdateVerificationStatus } from '@/repo/admin/mutation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -37,6 +38,89 @@ import dayjs from 'dayjs';
 import { AdminVerification } from '@/repo/admin/types';
 import { useSearchParams } from 'next/navigation';
 
+function buildSuggestedVerifiedProfile(verification: AdminVerification): {
+  summary: string;
+  keywords: string[];
+} {
+  const type = String(verification.type || '').toLowerCase();
+  const visaType = verification.visaType?.trim();
+  const universityName = verification.universityName?.trim();
+  const companyName = verification.companyName?.trim();
+  const jobTitle = verification.jobTitle?.trim();
+  const industry = verification.industry?.trim();
+
+  const keywords: string[] = [];
+  const summaryParts: string[] = [];
+
+  if (type === 'student') {
+    keywords.push('학생', '유학생');
+    summaryParts.push('학생');
+    if (visaType) summaryParts.push(visaType);
+    if (universityName) summaryParts.push(universityName);
+  } else if (type === 'worker') {
+    keywords.push('직장인');
+    summaryParts.push('직장인');
+    if (companyName) summaryParts.push(companyName);
+    if (jobTitle) summaryParts.push(jobTitle);
+    if (industry) summaryParts.push(industry);
+    if (visaType) summaryParts.push(visaType);
+  } else if (type === 'business') {
+    keywords.push('사업자');
+    summaryParts.push('사업자');
+    if (companyName) summaryParts.push(companyName);
+    if (industry) summaryParts.push(industry);
+    if (visaType) summaryParts.push(visaType);
+  } else if (type === 'expert') {
+    keywords.push('전문가');
+    summaryParts.push('전문가');
+    if (industry) summaryParts.push(industry);
+    if (jobTitle) summaryParts.push(jobTitle);
+    if (visaType) summaryParts.push(visaType);
+  } else {
+    keywords.push('인증');
+    summaryParts.push('인증 사용자');
+    if (visaType) summaryParts.push(visaType);
+  }
+
+  if (visaType) keywords.push(visaType);
+  if (universityName) keywords.push(universityName);
+  if (companyName) keywords.push(companyName);
+  if (jobTitle) keywords.push(jobTitle);
+  if (industry) keywords.push(industry);
+
+  const normalizedKeywords = keywords
+    .map((keyword) => keyword.trim())
+    .filter(Boolean)
+    .map((keyword) => keyword.replace(/^#/, ''));
+
+  const uniqueKeywords = Array.from(new Set(normalizedKeywords)).slice(0, 12);
+
+  return {
+    summary: summaryParts.filter(Boolean).join(' · ').slice(0, 140),
+    keywords: uniqueKeywords,
+  };
+}
+
+function parseVerifiedProfileKeywords(input: string): string[] {
+  const trimmed = input.trim();
+  if (!trimmed) return [];
+
+  const hashtagMatches = Array.from(trimmed.matchAll(/#([^#\s]+)/g)).map((match) => match[1]);
+  const tokens = hashtagMatches.length
+    ? hashtagMatches
+    : trimmed
+        .split(/[\n,]+/)
+        .map((token) => token.trim())
+        .filter(Boolean);
+
+  const normalized = tokens
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .map((token) => token.replace(/^#/, ''));
+
+  return Array.from(new Set(normalized)).slice(0, 12);
+}
+
 export default function AdminVerificationsPage() {
   const [page, setPage] = useState(1);
   const searchParams = useSearchParams();
@@ -44,6 +128,8 @@ export default function AdminVerificationsPage() {
   const [statusFilter, setStatusFilter] = useState<string>(defaultStatus);
   const [selectedVerification, setSelectedVerification] = useState<AdminVerification | null>(null);
   const [reason, setReason] = useState('');
+  const [verifiedProfileSummary, setVerifiedProfileSummary] = useState('');
+  const [verifiedProfileKeywordsInput, setVerifiedProfileKeywordsInput] = useState('');
 
   const { data, isLoading } = useAdminVerifications({
     page,
@@ -53,12 +139,41 @@ export default function AdminVerificationsPage() {
 
   const updateStatusMutation = useUpdateVerificationStatus();
 
+  const applySuggestedProfile = (verification: AdminVerification) => {
+    const suggestion = buildSuggestedVerifiedProfile(verification);
+    setVerifiedProfileSummary(suggestion.summary);
+    setVerifiedProfileKeywordsInput(suggestion.keywords.map((keyword) => `#${keyword}`).join(' '));
+  };
+
+  useEffect(() => {
+    if (!selectedVerification) {
+      setReason('');
+      setVerifiedProfileSummary('');
+      setVerifiedProfileKeywordsInput('');
+      return;
+    }
+
+    setReason('');
+    const suggestion = buildSuggestedVerifiedProfile(selectedVerification);
+    setVerifiedProfileSummary(suggestion.summary);
+    setVerifiedProfileKeywordsInput(suggestion.keywords.map((keyword) => `#${keyword}`).join(' '));
+  }, [selectedVerification?.id]);
+
+  const parsedKeywords = parseVerifiedProfileKeywords(verifiedProfileKeywordsInput);
+
   const handleStatusUpdate = async (status: string) => {
     if (!selectedVerification) return;
     try {
+      const normalizedSummary = verifiedProfileSummary.trim();
+
       await updateStatusMutation.mutateAsync({
         id: selectedVerification.id,
-        data: { status, reason: status === 'rejected' ? reason : undefined },
+        data: {
+          status,
+          reason: status === 'rejected' ? reason : undefined,
+          verifiedProfileSummary: status === 'approved' ? (normalizedSummary ? normalizedSummary : null) : undefined,
+          verifiedProfileKeywords: status === 'approved' ? (parsedKeywords.length ? parsedKeywords : null) : undefined,
+        },
       });
       setSelectedVerification(null);
       setReason('');
@@ -292,15 +407,60 @@ export default function AdminVerificationsPage() {
               </div>
 
               {selectedVerification.status === 'pending' && (
-                <div>
-                  <Label htmlFor="reason">거부 사유 (선택)</Label>
-                  <Textarea
-                    id="reason"
-                    placeholder="거부 시 사유를 입력하세요..."
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    className="mt-1"
-                  />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium">프로필 인증 정보</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applySuggestedProfile(selectedVerification)}
+                    >
+                      자동 제안 적용
+                    </Button>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="verifiedProfileSummary">요약</Label>
+                    <Textarea
+                      id="verifiedProfileSummary"
+                      value={verifiedProfileSummary}
+                      onChange={(e) => setVerifiedProfileSummary(e.target.value)}
+                      className="mt-1"
+                      placeholder="예: D-2 유학생 · 연세대학교 재학"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="verifiedProfileKeywords">키워드</Label>
+                    <Input
+                      id="verifiedProfileKeywords"
+                      value={verifiedProfileKeywordsInput}
+                      onChange={(e) => setVerifiedProfileKeywordsInput(e.target.value)}
+                      className="mt-1"
+                      placeholder="#학생 #D-2 #연세대"
+                    />
+                    {parsedKeywords.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {parsedKeywords.map((keyword) => (
+                          <Badge key={keyword} variant="secondary" className="text-xs">
+                            #{keyword}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="reason">거부 사유 (선택)</Label>
+                    <Textarea
+                      id="reason"
+                      placeholder="거부 시 사유를 입력하세요..."
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
               )}
 

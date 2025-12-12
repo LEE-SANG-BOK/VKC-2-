@@ -45,7 +45,7 @@
     "replyCreateFailed": "대댓글 작성에 실패했습니다.",
     "linkCopied": "링크가 클립보드에 복사되었습니다!",
     "bannedWarning": "금칙어가 포함되어 있습니다. 내용을 순화해주세요.",
-    "spamWarning": "외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.",
+    "spamWarning": "연락처/광고성 문구가 감지되었습니다. 내용을 수정해주세요.",
     "answerCharsLeft": "글자 이상 작성해주세요.",
     "answerReady": "충분한 내용이 입력되었습니다.",
     "helpfulPrompt": "답변이 도움이 되셨다면 추천을 눌러주세요.",
@@ -162,7 +162,7 @@
     "subscribed": "구독",
     "following": "팔로우",
     "subscribe": "구독",
-    "subscribedLabel": "구독중",
+    "subscribedLabel": "구독 중",
     "askQuestion": "질문하기",
     "askQuestionTooltip": "딱 맞는 글이 없나요? 상황을 올리면 경험자·전문가가 답해줘요.",
     "sharePost": "공유하기",
@@ -279,7 +279,8 @@
     "thirties": "30대",
     "forties": "40대",
     "fifties": "50대",
-    "sixtyPlus": "60대 이상"
+    "sixtyPlus": "60대 이상",
+    "verifiedInfoTitle": "인증 정보"
   },
   "notifications": {
     "title": "알림",
@@ -510,7 +511,7 @@
     "contentMinWarning": "본문을 최소 {min}자 이상 작성해주세요.",
     "tags": "태그",
     "tagsMax": "최대 5개",
-    "tagPlaceholder": "태그 입력 후 추가 버튼 클릭",
+    "tagPlaceholder": "태그 입력 후 Enter 또는 추가",
     "add": "추가",
     "submitting": "등록 중...",
     "submitQuestion": "질문 등록",
@@ -526,10 +527,10 @@
     "similarTagsLabel": "추천 태그",
     "rulesTitle": "커뮤니티 가이드",
     "rulesRespect": "예의 준수, 욕설·혐오 표현 금지",
-    "rulesAds": "광고/연락처/외부 링크 포함 글은 제한 또는 승인 필요",
+    "rulesAds": "광고/연락처 포함 글은 제한 또는 승인 필요",
     "rulesDup": "게시 전 유사 질문 검색, 중복 게시 자제",
     "bannedWarning": "금칙어가 포함되어 있습니다. 내용을 순화해주세요.",
-    "spamWarning": "외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다."
+    "spamWarning": "연락처/광고성 문구가 감지되었습니다. 내용을 수정해주세요."
   },
   "onboarding": {
     "badge": "온보딩",

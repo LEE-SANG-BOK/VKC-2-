@@ -68,9 +68,15 @@ export async function uploadFile(options: UploadOptions): Promise<UploadResult> 
 
     if (error) {
       console.error('Storage upload error:', error);
+      const message = typeof (error as any)?.message === 'string' ? String((error as any).message) : '';
+      const statusCode = (error as any)?.statusCode;
+      const isBucketNotFound =
+        statusCode === 404 ||
+        statusCode === '404' ||
+        (/bucket/i.test(message) && /not\s+found/i.test(message));
       return {
         success: false,
-        error: '파일 업로드에 실패했습니다.',
+        error: isBucketNotFound ? '스토리지 버킷을 찾을 수 없습니다.' : '파일 업로드에 실패했습니다.',
       };
     }
 
@@ -228,12 +234,25 @@ export async function deleteFiles(bucket: StorageBucket, paths: string[]): Promi
  * 아바타 업로드 헬퍼
  */
 export async function uploadAvatar(file: File, userId: string): Promise<UploadResult> {
-  return uploadFile({
+  const primary = await uploadFile({
     bucket: 'profile',
     file,
     userId,
     maxSize: MAX_IMAGE_SIZE,
   });
+
+  if (primary.success) return primary;
+
+  if ((primary.error || '').includes('스토리지 버킷을 찾을 수 없습니다.')) {
+    return uploadFile({
+      bucket: 'avatars',
+      file,
+      userId,
+      maxSize: MAX_IMAGE_SIZE,
+    });
+  }
+
+  return primary;
 }
 
 /**
@@ -260,4 +279,3 @@ export async function uploadDocument(file: File, userId: string): Promise<Upload
     maxSize: MAX_DOCUMENT_SIZE,
   });
 }
-

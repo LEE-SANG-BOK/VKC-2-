@@ -227,7 +227,15 @@ export const adminFetch = {
         `${BASE_URL}/verifications/${id}`
       ),
 
-    updateStatus: (id: string, data: { status: string; reason?: string }) =>
+    updateStatus: (
+      id: string,
+      data: {
+        status: string;
+        reason?: string;
+        verifiedProfileSummary?: string | null;
+        verifiedProfileKeywords?: string[] | null;
+      }
+    ) =>
       fetchWithCredentials<{ verification: AdminVerification }>(
         `${BASE_URL}/verifications/${id}`,
         {

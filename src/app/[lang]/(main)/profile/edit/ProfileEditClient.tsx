@@ -12,6 +12,84 @@ import { queryKeys } from '@/repo/keys';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
 
+type AvatarSource = ImageBitmap | HTMLImageElement;
+
+function isHeicImage(file: File) {
+  const type = (file.type || '').toLowerCase();
+  const name = (file.name || '').toLowerCase();
+  return type === 'image/heic' || type === 'image/heif' || name.endsWith('.heic') || name.endsWith('.heif');
+}
+
+async function loadAvatarSource(file: File): Promise<AvatarSource> {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      return await createImageBitmap(file);
+    } catch {
+    }
+  }
+
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = document.createElement('img');
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to decode image'));
+    };
+    img.src = url;
+  });
+}
+
+function getAvatarSourceSize(source: AvatarSource) {
+  if (source instanceof ImageBitmap) {
+    return { width: source.width, height: source.height };
+  }
+  return { width: source.naturalWidth || source.width, height: source.naturalHeight || source.height };
+}
+
+async function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) reject(new Error('Failed to encode image'));
+        else resolve(blob);
+      },
+      type,
+      quality
+    );
+  });
+}
+
+async function normalizeAvatarImage(file: File) {
+  const source = await loadAvatarSource(file);
+  const { width, height } = getAvatarSourceSize(source);
+  const cropSize = Math.max(1, Math.min(width, height));
+  const sx = Math.max(0, (width - cropSize) / 2);
+  const sy = Math.max(0, (height - cropSize) / 2);
+
+  const target = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = target;
+  canvas.height = target;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Failed to create canvas');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(source as any, sx, sy, cropSize, cropSize, 0, 0, target, target);
+
+  if (source instanceof ImageBitmap) {
+    source.close();
+  }
+
+  const blob = await canvasToBlob(canvas, 'image/jpeg', 0.9);
+  const baseName = (file.name || 'avatar').replace(/\.[^/.]+$/, '') || 'avatar';
+  return new File([blob], `${baseName}.jpg`, { type: blob.type });
+}
+
 interface FormData {
   name: string;
   bio: string;
@@ -193,11 +271,23 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
     const onlyImagesLabel =
       lang === 'vi' ? 'Chỉ cho phép tệp ảnh.' : lang === 'en' ? 'Only image files are allowed.' : '이미지 파일만 업로드할 수 있습니다.';
     const tooLargeLabel =
-      lang === 'vi' ? 'Kích thước ảnh phải ≤ 5MB.' : lang === 'en' ? 'Image must be 5MB or less.' : '이미지 크기는 5MB 이하여야 합니다.';
+      lang === 'vi' ? 'Kích thước ảnh phải ≤ 20MB.' : lang === 'en' ? 'Image must be 20MB or less.' : '이미지 크기는 20MB 이하여야 합니다.';
     const uploadFailedLabel =
       lang === 'vi' ? 'Tải ảnh đại diện thất bại.' : lang === 'en' ? 'Failed to upload profile photo.' : '프로필 사진 업로드에 실패했습니다.';
     const uploadSuccessLabel =
       lang === 'vi' ? 'Đã cập nhật ảnh đại diện.' : lang === 'en' ? 'Profile photo updated.' : '프로필 사진이 업데이트되었습니다.';
+    const decodeFailedLabel =
+      lang === 'vi'
+        ? 'Không thể xử lý ảnh. Vui lòng chọn ảnh JPG/PNG.'
+        : lang === 'en'
+          ? 'Failed to process image. Please choose a JPG/PNG.'
+          : '이미지를 처리할 수 없습니다. JPG/PNG 이미지를 선택해주세요.';
+    const heicUnsupportedLabel =
+      lang === 'vi'
+        ? 'Ảnh HEIC/HEIF chưa được hỗ trợ. Vui lòng chọn JPG/PNG.'
+        : lang === 'en'
+          ? 'HEIC/HEIF is not supported. Please choose a JPG/PNG.'
+          : 'HEIC/HEIF 형식은 아직 지원되지 않습니다. JPG/PNG 이미지를 선택해주세요.';
 
     if (!file.type.startsWith('image/')) {
       toast.error(onlyImagesLabel);
@@ -205,7 +295,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       toast.error(tooLargeLabel);
       event.target.value = '';
       return;
@@ -216,14 +306,25 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
       avatarBlobUrlRef.current = null;
     }
 
-    const optimisticUrl = URL.createObjectURL(file);
-    avatarBlobUrlRef.current = optimisticUrl;
-    setAvatarPreviewOverride(optimisticUrl);
     setIsAvatarUploading(true);
 
     try {
+      let normalizedFile: File;
+      try {
+        normalizedFile = await normalizeAvatarImage(file);
+      } catch {
+        toast.error(isHeicImage(file) ? heicUnsupportedLabel : decodeFailedLabel);
+        setIsAvatarUploading(false);
+        event.target.value = '';
+        return;
+      }
+
+      const optimisticUrl = URL.createObjectURL(normalizedFile);
+      avatarBlobUrlRef.current = optimisticUrl;
+      setAvatarPreviewOverride(optimisticUrl);
+
       const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
+      uploadFormData.append('file', normalizedFile);
 
       const res = await fetch('/api/upload/avatar', {
         method: 'POST',
@@ -256,7 +357,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
         avatarBlobUrlRef.current = null;
       }
       setAvatarPreviewOverride(previousAvatar);
-      toast.error(t.avatarUploadFailed || uploadFailedLabel);
+      toast.error((error instanceof Error ? error.message : '') || t.avatarUploadFailed || uploadFailedLabel);
     } finally {
       setIsAvatarUploading(false);
       event.target.value = '';

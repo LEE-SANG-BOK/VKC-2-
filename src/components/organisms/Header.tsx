@@ -113,13 +113,6 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
 
   const unreadCount = unreadCountData?.data?.count ?? 0;
 
-  const isHomeRoute = pathname === `/${locale}`;
-  const currentFeed = searchParams.get('c') || 'popular';
-
-  const popularLabel =
-    tSidebar.popular || (locale === 'vi' ? 'Phổ biến' : locale === 'en' ? 'Popular' : '인기');
-  const latestLabel = tSidebar.latest || (locale === 'vi' ? 'Mới nhất' : locale === 'en' ? 'Latest' : '최신');
-
   // URL 파라미터 변경 시 검색어 동기화 (필요한 경우에만)
   useEffect(() => {
     const urlKeyword = searchParams.get('q') || searchParams.get('s');
@@ -505,38 +498,6 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
         </div>
       </div>
 
-      {isHomeRoute && !showBackButton ? (
-        <div className="container mx-auto px-2 sm:px-3 pb-2 lg:hidden">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push(`/${locale}?c=popular`)}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                currentFeed === 'popular'
-                  ? 'border-amber-400 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100'
-                  : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
-              }`}
-              aria-pressed={currentFeed === 'popular'}
-            >
-              <span aria-hidden="true">🔥</span>
-              <span>{popularLabel}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push(`/${locale}?c=latest`)}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                currentFeed === 'latest'
-                  ? 'border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
-                  : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
-              }`}
-              aria-pressed={currentFeed === 'latest'}
-            >
-              <span aria-hidden="true">✨</span>
-              <span>{latestLabel}</span>
-            </button>
-          </div>
-        </div>
-      ) : null}
     </header>
   );
 }

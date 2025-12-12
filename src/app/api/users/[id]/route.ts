@@ -64,6 +64,8 @@ export async function GET(
       joinedAt: user.createdAt?.toISOString() || new Date().toISOString(),
       updatedAt: user.updatedAt?.toISOString() || user.createdAt?.toISOString() || new Date().toISOString(),
       isVerified: user.isVerified || false,
+      verifiedProfileSummary: user.verifiedProfileSummary || null,
+      verifiedProfileKeywords: user.verifiedProfileKeywords || null,
       gender: user.gender || null,
       ageGroup: user.ageGroup || null,
       nationality: user.nationality || null,

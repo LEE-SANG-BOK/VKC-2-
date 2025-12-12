@@ -99,7 +99,12 @@ export function useUpdateVerificationStatus() {
       data,
     }: {
       id: string;
-      data: { status: string; reason?: string };
+      data: {
+        status: string;
+        reason?: string;
+        verifiedProfileSummary?: string | null;
+        verifiedProfileKeywords?: string[] | null;
+      };
     }) => adminFetch.verifications.updateStatus(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.verifications.all });

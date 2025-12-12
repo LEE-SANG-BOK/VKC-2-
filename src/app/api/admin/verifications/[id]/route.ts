@@ -86,7 +86,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     const { id } = await context.params;
     const body = await request.json();
-    const { status, reason } = body;
+    const { status, reason, verifiedProfileSummary, verifiedProfileKeywords } = body;
 
     const [verification] = await db
       .select()
@@ -128,6 +128,24 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         verifiedRequestId: id,
         updatedAt: new Date(),
       };
+
+      if (Object.prototype.hasOwnProperty.call(body, 'verifiedProfileSummary')) {
+        const normalized = typeof verifiedProfileSummary === 'string' ? verifiedProfileSummary.trim() : '';
+        userUpdate.verifiedProfileSummary = normalized ? normalized : null;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(body, 'verifiedProfileKeywords')) {
+        const normalizedKeywords = Array.isArray(verifiedProfileKeywords)
+          ? verifiedProfileKeywords
+              .filter((keyword: unknown) => typeof keyword === 'string')
+              .map((keyword: string) => keyword.trim())
+              .filter(Boolean)
+              .map((keyword: string) => keyword.replace(/^#/, ''))
+          : [];
+
+        const unique = Array.from(new Set(normalizedKeywords)).slice(0, 20);
+        userUpdate.verifiedProfileKeywords = unique.length ? unique : null;
+      }
       if (badgeType) {
         userUpdate.badgeType = badgeType;
       }

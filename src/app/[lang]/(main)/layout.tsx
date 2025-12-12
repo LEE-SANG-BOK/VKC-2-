@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import type { Locale } from '@/i18n/config';
 import { getDictionary } from '@/i18n/get-dictionary';
 import BottomNavigation from '@/components/organisms/BottomNavigation';
@@ -15,7 +15,9 @@ export default async function MainGroupLayout({ children, params }: LayoutProps)
   return (
     <div className="vk-safe-bottom">
       {children}
-      <BottomNavigation translations={translations} />
+      <Suspense fallback={null}>
+        <BottomNavigation translations={translations} />
+      </Suspense>
     </div>
   );
 }

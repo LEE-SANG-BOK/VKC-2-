@@ -304,13 +304,15 @@ export default function CategorySidebar({
                           {apiChild ? (
                             <button
                               onClick={() => handleSubscribe(apiChild.id)}
-                              className={`text-[11px] min-w-[84px] px-3 py-1.5 rounded-full border transition-colors ${
+                              className={`text-[11px] min-w-[84px] px-3 py-1.5 rounded-full transition-colors ${
                                 subscribed
-                                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20'
-                                  : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-amber-400 dark:hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400'
+                                  ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
+                                  : 'border border-transparent bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-sm hover:from-red-700 hover:to-amber-600'
                               }`}
                             >
-                              {subscribed ? (t.subscribed || '구독중') : `+ ${t.subscribe || '구독'}`}
+                              {subscribed
+                                ? (t.subscribedLabel || t.subscribed || '구독 중')
+                                : (t.subscribe || '구독')}
                             </button>
                           ) : null}
                         </div>
@@ -342,9 +344,9 @@ export default function CategorySidebar({
                   />
                   <button
                     onClick={() => handleSubscribe(cat.id)}
-                    className="text-[11px] min-w-[84px] px-3 py-1.5 rounded-full border border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 transition-colors"
+                    className="text-[11px] min-w-[84px] px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
-                    {t.subscribed || '구독중'}
+                    {t.subscribedLabel || t.subscribed || '구독 중'}
                   </button>
                 </div>
               ))}

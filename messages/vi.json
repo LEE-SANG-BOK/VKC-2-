@@ -45,7 +45,7 @@
     "replyCreateFailed": "Không thể tạo phản hồi.",
     "linkCopied": "Đã sao chép liên kết vào clipboard!",
     "bannedWarning": "Phát hiện từ ngữ cấm. Vui lòng chỉnh sửa nội dung.",
-    "spamWarning": "Phát hiện liên kết hoặc thông tin liên hệ. Chỉ cho phép bài chia sẻ thông tin.",
+    "spamWarning": "Phát hiện thông tin liên hệ hoặc nội dung quảng cáo. Vui lòng chỉnh sửa.",
     "answerCharsLeft": "chữ nữa để gửi.",
     "answerReady": "Nội dung đã đủ để gửi.",
     "helpfulPrompt": "Nếu hữu ích, hãy nhấn nút Hữu ích.",
@@ -279,7 +279,8 @@
     "thirties": "30-39",
     "forties": "40-49",
     "fifties": "50-59",
-    "sixtyPlus": "60+"
+    "sixtyPlus": "60+",
+    "verifiedInfoTitle": "Thông tin xác minh"
   },
   "notifications": {
     "title": "Thông báo",
@@ -510,7 +511,7 @@
     "contentMinWarning": "Vui lòng viết ít nhất {min} ký tự cho nội dung.",
     "tags": "Thẻ",
     "tagsMax": "Tối đa 5",
-    "tagPlaceholder": "Nhập thẻ và nhấn Thêm",
+    "tagPlaceholder": "Nhập thẻ rồi nhấn Enter hoặc Thêm",
     "add": "Thêm",
     "submitting": "Đang gửi...",
     "submitQuestion": "Gửi câu hỏi",
@@ -526,10 +527,10 @@
     "similarTagsLabel": "Thẻ gợi ý",
     "rulesTitle": "Hướng dẫn cộng đồng",
     "rulesRespect": "Tôn trọng lẫn nhau, cấm lăng mạ/hận thù",
-    "rulesAds": "Bài có quảng cáo/liên hệ/liên kết có thể bị hạn chế hoặc cần duyệt",
+    "rulesAds": "Bài có quảng cáo/thông tin liên hệ có thể bị hạn chế hoặc cần duyệt",
     "rulesDup": "Tìm câu hỏi tương tự trước khi đăng để tránh trùng lặp",
     "bannedWarning": "Phát hiện từ ngữ cấm. Vui lòng chỉnh sửa nội dung.",
-    "spamWarning": "Phát hiện liên kết hoặc thông tin liên hệ. Chỉ cho phép bài chia sẻ thông tin."
+    "spamWarning": "Phát hiện thông tin liên hệ hoặc nội dung quảng cáo. Vui lòng chỉnh sửa."
   },
   "onboarding": {
     "badge": "Onboarding",

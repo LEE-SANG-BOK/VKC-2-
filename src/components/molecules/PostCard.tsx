@@ -135,6 +135,18 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             : `인증된 사용자 ${certifiedCount}명의 댓글이 있습니다`
     : defaultAnswerLabel;
 
+  const compactAnswerLabel = isQuestion
+    ? locale === 'vi'
+      ? `${stats.comments} câu trả lời`
+      : locale === 'en'
+        ? `${stats.comments} answers`
+        : `답변 ${stats.comments}`
+    : locale === 'vi'
+      ? `${stats.comments} bình luận`
+      : locale === 'en'
+        ? `${stats.comments} comments`
+        : `댓글 ${stats.comments}`;
+
   const safeName = (raw?: string) => {
     const nm = raw?.trim();
     if (!nm) return tCommon.anonymous || '사용자';
@@ -531,16 +543,19 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           )}
 
           {/* Answer count & Actions */}
-          <div className="flex flex-wrap items-center gap-3 mt-2">
+          <div className="flex items-center justify-between gap-3 mt-2 min-w-0">
             <button
               type="button"
               onClick={handleAnswerCountClick}
-              className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
+              className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0"
             >
               <span aria-hidden="true">💬</span>
-              <span>{answerLabel}</span>
+              <span className="truncate">
+                <span className="hidden sm:inline">{answerLabel}</span>
+                <span className="sm:hidden">{compactAnswerLabel}</span>
+              </span>
             </button>
-	            <div className="question-card-actions-row">
+	            <div className="question-card-actions-row shrink-0">
 	              <Tooltip content={t.like || '좋아요'} position="top">
 	                <button
 	                  type="button"

@@ -28,6 +28,8 @@ export const users = pgTable('users', {
   isVerified: boolean('is_verified').default(false).notNull(),
   verifiedRequestId: uuid('verified_request_id'),
   verifiedAt: timestamp('verified_at'),
+  verifiedProfileSummary: text('verified_profile_summary'),
+  verifiedProfileKeywords: text('verified_profile_keywords').array(),
   isProfileComplete: boolean('is_profile_complete').default(false).notNull(),
   onboardingCompleted: boolean('onboarding_completed').default(false).notNull(),
   koreanLevel: varchar('korean_level', { length: 20 }),

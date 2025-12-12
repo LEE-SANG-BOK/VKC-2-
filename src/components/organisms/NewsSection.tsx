@@ -1,14 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import NewsCard from '../molecules/NewsCard';
 import { useNews } from '@/repo/news/query';
 import { NewsItem } from '@/repo/news/types';
 
 interface TranslationsType {
   news?: { title?: string };
-  tooltips?: { scrollLeft?: string; scrollRight?: string };
 }
 
 interface NewsSectionProps {
@@ -17,22 +16,17 @@ interface NewsSectionProps {
 }
 
 export default function NewsSection({ translations, lang }: NewsSectionProps) {
+  const locale = lang || 'vi';
   const t = translations?.news || {};
-  const tTooltip = translations?.tooltips || {};
+  const title =
+    t.title || (locale === 'vi' ? 'Nội dung nổi bật' : locale === 'en' ? 'Featured content' : '추천 콘텐츠');
+  const closeLabel = locale === 'vi' ? 'Đóng' : locale === 'en' ? 'Close' : '닫기';
+  const openExternalLabel = locale === 'vi' ? 'Mở liên kết' : locale === 'en' ? 'Open link' : '외부 링크 열기';
+
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
   const [selected, setSelected] = useState<NewsItem | null>(null);
 
-  const { data: newsItems, isLoading } = useNews(lang);
-
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
+  const { data: newsItems, isLoading } = useNews(locale);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -66,20 +60,11 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
     return () => clearInterval(interval);
   }, [newsItems]);
 
-  useEffect(() => {
-    const scrollElement = scrollRef.current;
-    if (scrollElement) {
-      scrollElement.addEventListener('scroll', checkScroll);
-      checkScroll();
-      return () => scrollElement.removeEventListener('scroll', checkScroll);
-    }
-  }, []);
-
   if (isLoading) {
     return (
       <div className="w-full bg-transparent border-b border-gray-200/25 dark:border-gray-800/25">
       <div className="px-3 py-2">
-        <span className="sr-only">{t.title || '관리자 게시글'}</span>
+        <span className="sr-only">{title}</span>
         <div className="flex gap-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex-shrink-0 w-[172px] h-[160px] rounded-xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
@@ -98,7 +83,7 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
     <div className="w-full bg-transparent">
       <div className="px-0 py-2">
         <div className="flex items-center justify-end mb-2">
-          <span className="sr-only">{t.title || '관리자 게시글'}</span>
+          <span className="sr-only">{title}</span>
         </div>
 
         <div
@@ -144,7 +129,7 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
                   onClick={() => setSelected(null)}
                   className="px-4 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
-                  닫기
+                  {closeLabel}
                 </button>
                 {selected.linkUrl && (
                   <a
@@ -153,7 +138,7 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
                   >
-                    외부 링크 열기
+                    {openExternalLabel}
                     <ExternalLink className="h-4 w-4" />
                   </a>
                 )}

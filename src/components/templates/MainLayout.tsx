@@ -65,7 +65,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
           </main>
           {rightRail ? (
             <aside className="hidden lg:block w-[320px] shrink-0">
-              <div className="sticky top-20">
+              <div className="sticky top-[57px]">
                 {rightRail}
               </div>
             </aside>

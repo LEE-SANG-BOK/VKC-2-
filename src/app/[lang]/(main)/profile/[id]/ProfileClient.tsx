@@ -26,6 +26,8 @@ export interface ProfileData {
   bio: string;
   joinedAt: string;
   isVerified: boolean;
+  verifiedProfileSummary?: string | null;
+  verifiedProfileKeywords?: string[] | null;
   gender?: string | null;
   ageGroup?: string | null;
   nationality?: string | null;
@@ -362,6 +364,37 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                     )}
                   </div>
                   <p className="text-gray-500 dark:text-gray-400">@{initialProfile.username}</p>
+
+                  {initialProfile.isVerified &&
+                    (Boolean(initialProfile.verifiedProfileSummary) ||
+                      Boolean(initialProfile.verifiedProfileKeywords?.length)) && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                          {t.verifiedInfoTitle || 'Verified info'}
+                        </p>
+                        {Boolean(initialProfile.verifiedProfileKeywords?.length) && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {(initialProfile.verifiedProfileKeywords || [])
+                              .filter(Boolean)
+                              .slice(0, 12)
+                              .map((keyword) => (
+                                <span
+                                  key={keyword}
+                                  className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200 px-2 py-0.5 text-xs font-medium"
+                                >
+                                  #{String(keyword).replace(/^#/, '')}
+                                </span>
+                              ))}
+                          </div>
+                        )}
+
+                        {initialProfile.verifiedProfileSummary && (
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            {initialProfile.verifiedProfileSummary}
+                          </p>
+                        )}
+                      </div>
+                    )}
                 </div>
 
                 {isOwnProfile ? (

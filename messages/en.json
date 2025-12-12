@@ -45,7 +45,7 @@
     "replyCreateFailed": "Failed to create reply.",
     "linkCopied": "Link copied to clipboard!",
     "bannedWarning": "Banned words detected. Please revise your text.",
-    "spamWarning": "Links or contact info detected. Only informational posts are allowed.",
+    "spamWarning": "Contact info or promotional content detected. Please revise your text.",
     "answerCharsLeft": "more characters needed.",
     "answerReady": "Content looks good to submit.",
     "helpfulPrompt": "If this helped, please tap Helpful.",
@@ -279,7 +279,8 @@
     "thirties": "30s",
     "forties": "40s",
     "fifties": "50s",
-    "sixtyPlus": "60+"
+    "sixtyPlus": "60+",
+    "verifiedInfoTitle": "Verified info"
   },
   "notifications": {
     "title": "Notifications",
@@ -510,7 +511,7 @@
     "contentMinWarning": "Please write at least {min} characters in the content.",
     "tags": "Tags",
     "tagsMax": "Max 5",
-    "tagPlaceholder": "Enter tag and click Add",
+    "tagPlaceholder": "Type a tag then press Enter or Add",
     "add": "Add",
     "submitting": "Submitting...",
     "submitQuestion": "Submit Question",
@@ -526,10 +527,10 @@
     "similarTagsLabel": "Suggested tags",
     "rulesTitle": "Community guide",
     "rulesRespect": "Be respectful; no harassment or slurs",
-    "rulesAds": "Posts with ads/contacts/links may be restricted or require approval",
+    "rulesAds": "Posts with ads/contact info may be restricted or require approval",
     "rulesDup": "Search similar questions before posting to avoid duplicates",
     "bannedWarning": "Banned words detected. Please revise your text.",
-    "spamWarning": "Links or contact info detected. Only informational posts are allowed."
+    "spamWarning": "Contact info or promotional content detected. Please revise your text."
   },
   "onboarding": {
     "badge": "Onboarding",

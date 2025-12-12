@@ -56,3 +56,5 @@ client_secret*.json
 /pnpm-lock.yaml
 /yarn.lock
 /.yarnrc.yml
+/.npm-cache/
+/.last-processed-agents
