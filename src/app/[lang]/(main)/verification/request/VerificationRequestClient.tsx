@@ -65,15 +65,15 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
       }
 
       const uploadData = await uploadRes.json();
-      const documentUrl = uploadData.data?.url;
+      const documentPath = uploadData.data?.path;
 
-      if (!documentUrl) {
-        throw new Error(t.urlError || '파일 URL을 받지 못했습니다.');
+      if (!documentPath) {
+        throw new Error(t.urlError || '파일 경로를 받지 못했습니다.');
       }
 
       await createMutation.mutateAsync({
         type: formData.verificationType as VerificationType,
-        documents: [documentUrl],
+        documents: [documentPath],
         description: formData.additionalInfo || undefined,
         visaType: formData.visaType || undefined,
         universityName: formData.universityName || undefined,

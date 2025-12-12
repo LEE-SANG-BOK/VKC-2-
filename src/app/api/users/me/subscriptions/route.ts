@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     const mergedCategories = [...subscriptions, ...topicSubs]
       .map(sub => sub.category)
-      .filter(cat => cat && !cat.parentId);
+      .filter(Boolean);
 
     const unique = new Map<string, typeof mergedCategories[number]>();
     mergedCategories.forEach(cat => {

@@ -155,6 +155,7 @@
   },
   "sidebar": {
     "menu": "메뉴",
+    "menuTooltip": "인기/최신, 팔로우, 구독 피드를 여기서 빠르게 전환할 수 있어요.",
     "categories": "카테고리",
     "popular": "인기",
     "latest": "최신",
@@ -186,7 +187,7 @@
     "subscribeError": "구독 처리 중 오류가 발생했습니다."
   },
   "news": {
-    "title": "주요 뉴스"
+    "title": "추천 콘텐츠"
   },
   "post": {
     "readTime": "{minutes}분",
@@ -637,15 +638,19 @@
     "pageTitle": "프로필 수정",
     "backButton": "뒤로 가기",
     "avatarChange": "프로필 사진 변경",
+    "avatarTooltip": "식별 가능한 이미지를 업로드해 주세요.",
     "nameLabel": "이름",
     "namePlaceholder": "이름을 입력하세요",
+    "nameTooltip": "프로필과 게시글에 공개로 표시되는 이름입니다.",
     "bioLabel": "자기소개",
     "bioPlaceholder": "자기소개를 입력하세요",
+    "bioTooltip": "간단한 소개를 적으면 신뢰도와 소통이 좋아져요.",
     "genderLabel": "성별",
     "genderSelect": "선택",
     "genderMale": "남성",
     "genderFemale": "여성",
     "genderOther": "기타",
+    "genderTooltip": "선택 사항입니다. 맞춤 추천에 활용됩니다.",
     "ageGroupLabel": "연령대",
     "ageGroup10s": "10대",
     "ageGroup20s": "20대",
@@ -653,10 +658,12 @@
     "ageGroup40s": "40대",
     "ageGroup50s": "50대",
     "ageGroup60plus": "60대+",
+    "ageGroupTooltip": "선택 사항입니다. 맞춤 추천에 활용됩니다.",
     "statusLabel": "상태",
     "statusStudent": "학생",
     "statusWorker": "직장인",
     "statusOther": "기타",
+    "statusTooltip": "선택 사항입니다. 현재 상태를 선택해 주세요.",
     "notificationTitle": "알림 설정",
     "notifyAll": "전체 알림",
     "notifyAllDesc": "모든 알림을 한 번에 켜거나 끕니다",

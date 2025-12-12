@@ -3,7 +3,6 @@
 import { useState, ReactNode } from "react";
 import Header from "@/components/organisms/Header";
 import CategorySidebar from "@/components/organisms/CategorySidebar";
-import BottomNavigation from "@/components/organisms/BottomNavigation";
 import AccountStatusBanner from "@/components/molecules/AccountStatusBanner";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
@@ -61,7 +60,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
               </Sheet>
             </>
           )}
-          <main className="flex-1 min-w-0 pb-24 md:pb-0 vk-safe-bottom">
+          <main className="flex-1 min-w-0">
             {children}
           </main>
           {rightRail ? (
@@ -73,7 +72,6 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
           ) : null}
         </div>
       </div>
-      <BottomNavigation translations={translations} />
     </div>
   );
 }

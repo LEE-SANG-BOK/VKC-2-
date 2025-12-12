@@ -74,6 +74,13 @@ export async function uploadFile(options: UploadOptions): Promise<UploadResult> 
       };
     }
 
+    if (bucket === 'documents') {
+      return {
+        success: true,
+        path: data.path,
+      };
+    }
+
     // Public URL 생성
     const { data: publicData } = supabaseAdmin.storage
       .from(bucket)
@@ -89,6 +96,36 @@ export async function uploadFile(options: UploadOptions): Promise<UploadResult> 
     return {
       success: false,
       error: '파일 업로드 중 오류가 발생했습니다.',
+    };
+  }
+}
+
+export async function createSignedUrl(
+  bucket: StorageBucket,
+  path: string,
+  expiresIn: number = 600
+): Promise<UploadResult> {
+  try {
+    const { data, error } = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, expiresIn);
+
+    if (error) {
+      console.error('Storage signed url error:', error);
+      return {
+        success: false,
+        error: 'Signed URL 생성에 실패했습니다.',
+      };
+    }
+
+    return {
+      success: true,
+      url: data.signedUrl,
+      path,
+    };
+  } catch (error) {
+    console.error('Signed URL error:', error);
+    return {
+      success: false,
+      error: 'Signed URL 생성 중 오류가 발생했습니다.',
     };
   }
 }
@@ -223,5 +260,4 @@ export async function uploadDocument(file: File, userId: string): Promise<Upload
     maxSize: MAX_DOCUMENT_SIZE,
   });
 }
-
 

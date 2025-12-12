@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { posts, users } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq, desc, sql, and } from 'drizzle-orm';
+import { eq, desc, sql, and, inArray } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -53,9 +53,49 @@ export async function GET(request: NextRequest, context: RouteContext) {
       offset: (page - 1) * limit,
     });
 
+    const responderIds = new Set<string>();
+    userPosts.forEach((post) => {
+      post.answers?.forEach((answer) => {
+        if (answer.authorId) responderIds.add(answer.authorId);
+      });
+      post.comments?.forEach((comment) => {
+        if (comment.authorId) responderIds.add(comment.authorId);
+      });
+    });
+
+    const responders = responderIds.size
+      ? await db.query.users.findMany({
+          where: inArray(users.id, Array.from(responderIds)),
+          columns: {
+            id: true,
+            isVerified: true,
+            isExpert: true,
+            badgeType: true,
+          },
+        })
+      : [];
+
+    const responderCertMap = new Map<string, boolean>();
+    responders.forEach((responder) => {
+      responderCertMap.set(responder.id, Boolean(responder.isVerified || responder.isExpert || responder.badgeType));
+    });
+
     const formattedPosts = userPosts.map(post => {
       const imgMatch = post.content?.match(/<img[^>]+src=["']([^"']+)["']/i);
       const thumbnail = imgMatch ? imgMatch[1] : null;
+
+      const certifiedResponders = new Set<string>();
+      const otherResponders = new Set<string>();
+      post.answers?.forEach((answer) => {
+        const authorId = answer.authorId;
+        if (!authorId) return;
+        (responderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
+      });
+      post.comments?.forEach((comment) => {
+        const authorId = comment.authorId;
+        if (!authorId) return;
+        (responderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
+      });
       
       return {
         id: post.id,
@@ -84,6 +124,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
           comments: (post.answers?.length || 0) + (post.comments?.length || 0),
           shares: 0,
         },
+        certifiedResponderCount: certifiedResponders.size,
+        otherResponderCount: otherResponders.size,
         isLiked: currentUser ? post.likes?.some(like => like.userId === currentUser.id) : false,
         isBookmarked: currentUser ? post.bookmarks?.some(bookmark => bookmark.userId === currentUser.id) : false,
         isQuestion: post.type === 'question',

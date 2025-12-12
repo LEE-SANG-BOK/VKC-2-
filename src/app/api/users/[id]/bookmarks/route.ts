@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { bookmarks, users } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse, unauthorizedResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, inArray } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -54,9 +54,49 @@ export async function GET(request: NextRequest, context: RouteContext) {
       offset: (page - 1) * limit,
     });
 
+    const responderIds = new Set<string>();
+    userBookmarks.forEach((bookmark) => {
+      bookmark.post?.answers?.forEach((answer) => {
+        if (answer.authorId) responderIds.add(answer.authorId);
+      });
+      bookmark.post?.comments?.forEach((comment) => {
+        if (comment.authorId) responderIds.add(comment.authorId);
+      });
+    });
+
+    const responders = responderIds.size
+      ? await db.query.users.findMany({
+          where: inArray(users.id, Array.from(responderIds)),
+          columns: {
+            id: true,
+            isVerified: true,
+            isExpert: true,
+            badgeType: true,
+          },
+        })
+      : [];
+
+    const responderCertMap = new Map<string, boolean>();
+    responders.forEach((responder) => {
+      responderCertMap.set(responder.id, Boolean(responder.isVerified || responder.isExpert || responder.badgeType));
+    });
+
     const formattedBookmarks = userBookmarks.map(bookmark => {
       const imgMatch = bookmark.post?.content?.match(/<img[^>]+src=["']([^"']+)["']/i);
       const thumbnail = imgMatch ? imgMatch[1] : null;
+
+      const certifiedResponders = new Set<string>();
+      const otherResponders = new Set<string>();
+      bookmark.post?.answers?.forEach((answer) => {
+        const authorId = answer.authorId;
+        if (!authorId) return;
+        (responderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
+      });
+      bookmark.post?.comments?.forEach((comment) => {
+        const authorId = comment.authorId;
+        if (!authorId) return;
+        (responderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
+      });
       
       return {
         id: bookmark.post?.id,
@@ -85,6 +125,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
           comments: (bookmark.post?.answers?.length || 0) + (bookmark.post?.comments?.length || 0),
           shares: 0,
         },
+        certifiedResponderCount: certifiedResponders.size,
+        otherResponderCount: otherResponders.size,
         isLiked: currentUser ? bookmark.post?.likes?.some(like => like.userId === currentUser.id) : false,
         isBookmarked: true,
         isQuestion: bookmark.post?.type === 'question',

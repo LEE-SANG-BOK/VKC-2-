@@ -3,13 +3,14 @@
 import { useMemo } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
-import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Scale, Briefcase, Home, CreditCard } from 'lucide-react';
+import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Scale, Briefcase, Home, CreditCard, Info } from 'lucide-react';
 import { LEGACY_CATEGORIES, getCategoryName, CATEGORY_GROUPS } from '@/lib/constants/categories';
 import CategoryItem from '../molecules/CategoryItem';
 import { useSession } from 'next-auth/react';
 import { useCategories, useMySubscriptions } from '@/repo/categories/query';
 import { useToggleSubscription } from '@/repo/categories/mutation';
 import { toast } from 'sonner';
+import Tooltip from '@/components/atoms/Tooltip';
 
 interface ApiCategory {
   id: string;
@@ -42,6 +43,14 @@ export default function CategorySidebar({
   const { data: apiCategories } = useCategories();
   const { data: mySubs } = useMySubscriptions(!!user);
   const { mutate: toggleSubscription } = useToggleSubscription();
+
+  const menuTooltip =
+    t.menuTooltip ||
+    (locale === 'vi'
+      ? 'Chuyển nhanh giữa Phổ biến/Mới nhất, Theo dõi và Đăng ký.'
+      : locale === 'en'
+        ? 'Quickly switch between Popular/Latest, Following, and Subscribed feeds.'
+        : '인기/최신, 팔로우, 구독 피드를 여기서 빠르게 전환할 수 있어요.');
 
   const menuCategories = [
     { id: 'popular', icon: TrendingUp, count: 0 },
@@ -182,10 +191,31 @@ export default function CategorySidebar({
       `}>
 
         {/* Menu Section */}
-        <div className="py-4 border-b border-gray-200/40 dark:border-gray-700/40">
-          <h3 className="px-4 pb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {t.menu || '메뉴'}
-          </h3>
+        <div
+          className={
+            isMobileVariant
+              ? 'mt-4 mx-3 rounded-xl border border-amber-200/70 dark:border-amber-800/40 bg-amber-50/40 dark:bg-gray-800/30 py-4'
+              : 'py-4 border-b border-gray-200/40 dark:border-gray-700/40'
+          }
+        >
+          <div className={isMobileVariant ? 'flex items-center justify-between px-4 pb-2' : ''}>
+            <h3
+              className={`${isMobileVariant ? '' : 'px-4 pb-2 '}text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider`}
+            >
+              {t.menu || '메뉴'}
+            </h3>
+            {isMobileVariant ? (
+              <Tooltip content={menuTooltip} position="below">
+                <button
+                  type="button"
+                  aria-label={t.menuTooltip || '메뉴 도움말'}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-amber-200/80 dark:border-amber-800/40 bg-white/80 dark:bg-gray-900/40 text-amber-700 dark:text-amber-200"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            ) : null}
+          </div>
           {menuCategories.map((category) => (
             <CategoryItem
               key={category.id}

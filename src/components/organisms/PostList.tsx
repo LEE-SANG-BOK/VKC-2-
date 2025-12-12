@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'nextjs-toploader/app';
+import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
 import PostCard from '../molecules/PostCard';
 import CategorySubscription from './CategorySubscription';
 import { useInfinitePosts } from '@/repo/posts/query';
 import { useRecommendedUsers } from '@/repo/users/query';
+import { useMySubscriptions } from '@/repo/categories/query';
 import Avatar from '@/components/atoms/Avatar';
 import FollowButton from '@/components/atoms/FollowButton';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
@@ -26,8 +28,11 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const params = useParams();
   const router = useRouter();
   const locale = (params?.lang as string) || 'ko';
+  const { data: session } = useSession();
   const { data: recommended } = useRecommendedUsers({ enabled: selectedCategory === 'following' });
+  const { data: mySubs } = useMySubscriptions(selectedCategory === 'subscribed' && !!session?.user);
   const [selectedChildCategory, setSelectedChildCategory] = useState('all');
+  const [selectedSubscribedCategory, setSelectedSubscribedCategory] = useState('all');
   const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
   const observerRef = useRef<HTMLDivElement>(null);
   const recommendedRef = useRef<HTMLDivElement>(null);
@@ -93,6 +98,21 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   };
   const filterForQuery = getFilterForQuery();
 
+  const subscribedParentForQuery =
+    selectedCategory === 'subscribed' && selectedSubscribedCategory !== 'all' && parentSlugs.includes(selectedSubscribedCategory)
+      ? selectedSubscribedCategory
+      : undefined;
+  const subscribedCategoryForQuery =
+    selectedCategory === 'subscribed' && selectedSubscribedCategory !== 'all' && !parentSlugs.includes(selectedSubscribedCategory)
+      ? selectedSubscribedCategory
+      : undefined;
+  const filterForQueryResolved =
+    selectedCategory === 'subscribed'
+      ? selectedSubscribedCategory === 'all'
+        ? 'following'
+        : undefined
+      : filterForQuery;
+
   const {
     data,
     fetchNextPage,
@@ -100,10 +120,10 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     isFetchingNextPage,
     isLoading,
   } = useInfinitePosts({
-    parentCategory: parentCategoryForQuery,
-    category: categoryForQuery,
+    parentCategory: selectedCategory === 'subscribed' ? subscribedParentForQuery : parentCategoryForQuery,
+    category: selectedCategory === 'subscribed' ? subscribedCategoryForQuery : categoryForQuery,
     sort: sortForQuery,
-    filter: filterForQuery as 'following-users' | 'following' | 'my-posts' | undefined,
+    filter: filterForQueryResolved as 'following-users' | 'following' | 'my-posts' | undefined,
   }) as ReturnType<typeof useInfinitePosts>;
 
   // Intersection Observer로 무한 스크롤 구현
@@ -133,10 +153,22 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const followerLabel = tCommon.followers || (locale === 'vi' ? 'Người theo dõi' : locale === 'en' ? 'Followers' : '팔로워');
   const recommendedUsersLabel = t.recommendedUsersTitle || t.recommendedUsers || (locale === 'vi' ? 'Người dùng đề xuất' : locale === 'en' ? 'Recommended users' : '추천 사용자');
   const recommendedCtaLabel = t.recommendedUsersCta || (locale === 'vi' ? 'Xem người dùng đề xuất' : locale === 'en' ? 'View recommended users' : '추천 사용자 보기');
+  const allSubscriptionsLabel = t.allSubscriptions || (locale === 'vi' ? 'Tất cả' : locale === 'en' ? 'All' : '전체');
   const noFollowingPostsLabel = t.noFollowingPosts || (locale === 'vi' ? 'Chưa có bài từ người bạn theo dõi.' : locale === 'en' ? 'No posts from people you follow yet.' : '팔로우한 사용자의 게시글이 없습니다');
   const noPostsLabel = t.noPosts || (locale === 'vi' ? 'Chưa có bài viết.' : locale === 'en' ? 'No posts yet.' : '게시글이 없습니다');
   const loadingLabel = t.loading || (locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...');
   const allLoadedLabel = t.allPostsLoaded || (locale === 'vi' ? 'Đã tải tất cả bài viết' : locale === 'en' ? 'All posts loaded' : '모든 게시글을 불러왔습니다');
+
+  useEffect(() => {
+    if (selectedCategory !== 'subscribed') return;
+    if (!mySubs || mySubs.length === 0) {
+      setSelectedSubscribedCategory('all');
+      return;
+    }
+    if (selectedSubscribedCategory === 'all') return;
+    const stillExists = mySubs.some((cat) => cat.slug === selectedSubscribedCategory);
+    if (!stillExists) setSelectedSubscribedCategory('all');
+  }, [mySubs, selectedCategory, selectedSubscribedCategory]);
 
   const scrollToRecommended = () => {
     if (recommendedRef.current) {
@@ -152,6 +184,41 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
           <CategorySubscription translations={translations} />
         </div>
       )}
+
+      {selectedCategory === 'subscribed' && mySubs && mySubs.length > 0 ? (
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedSubscribedCategory('all')}
+            className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              selectedSubscribedCategory === 'all'
+                ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
+                : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
+            }`}
+          >
+            {allSubscriptionsLabel}
+          </button>
+          {mySubs.map((cat) => {
+            const legacy = LEGACY_CATEGORIES.find((c) => c.slug === cat.slug);
+            const label = legacy ? getCategoryName(legacy, locale) : cat.name;
+            const active = selectedSubscribedCategory === cat.slug;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedSubscribedCategory(cat.slug)}
+                className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  active
+                    ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100'
+                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
       {/* 2차 카테고리 필터 (1차 카테고리 선택 시만 표시) */}
       {!isMenuCategory &&
@@ -173,6 +240,16 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
             </select>
           </div>
         )}
+
+      {selectedCategory === 'following' && recommended?.data?.length ? (
+        <button
+          type="button"
+          onClick={scrollToRecommended}
+          className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm font-semibold text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+        >
+          {recommendedCtaLabel}
+        </button>
+      ) : null}
 
       {/* 로딩 상태 */}
       {isLoading && (
@@ -219,6 +296,8 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                   isLiked={post.isLiked}
                   isBookmarked={post.isBookmarked}
                   imageCount={(post as any).imageCount}
+                  certifiedResponderCount={(post as any).certifiedResponderCount}
+                  otherResponderCount={(post as any).otherResponderCount}
                   trustBadge={(post as any).trustBadge}
                   trustWeight={(post as any).trustWeight}
                   translations={translations}
@@ -238,15 +317,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
           )}
 
           {selectedCategory === 'following' && recommended?.data?.length ? (
-            <>
-              <button
-                type="button"
-                onClick={scrollToRecommended}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm font-semibold text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
-              >
-                {recommendedCtaLabel}
-              </button>
-              <div ref={recommendedRef} className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 mt-3">
+            <div ref={recommendedRef} className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 mt-3">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {recommendedUsersLabel}
@@ -268,6 +339,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                           />
                           <FollowButton
                             userId={String(user.id)}
+                            userName={user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음')}
                             isFollowing={followStates[user.id] ?? (user as any)?.isFollowing ?? false}
                             size="sm"
                             onToggle={(next) =>
@@ -299,7 +371,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                   ))}
                 </div>
               </div>
-            </>
           ) : null}
         </div>
       )}

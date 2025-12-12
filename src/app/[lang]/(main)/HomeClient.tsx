@@ -23,7 +23,9 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
   const { data: me } = useMyProfile({ enabled: isLoggedIn });
   const { data: mySubs } = useMySubscriptions(isLoggedIn);
 
-  const initialCategory = searchParams?.get('c') || 'popular';
+  const categoryParam = searchParams?.get('c') ?? null;
+  const hasCategoryParam = categoryParam !== null;
+  const initialCategory = categoryParam || 'popular';
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [resolvedCategory, setResolvedCategory] = useState<string>(initialCategory);
 
@@ -34,8 +36,14 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
   }, [isLoggedIn, me, router, lang]);
 
   useEffect(() => {
+    setSelectedCategory(initialCategory);
+    setResolvedCategory(initialCategory);
+  }, [initialCategory]);
+
+  useEffect(() => {
     if (
       (selectedCategory === 'popular' || selectedCategory === 'all') &&
+      !hasCategoryParam &&
       isLoggedIn &&
       me &&
       Array.isArray(me.interests) &&
@@ -52,11 +60,12 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
     } else {
       setResolvedCategory(selectedCategory);
     }
-  }, [isLoggedIn, me, mySubs, selectedCategory]);
+  }, [hasCategoryParam, isLoggedIn, me, mySubs, selectedCategory]);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     setResolvedCategory(category);
+    router.push(`/${lang}?c=${encodeURIComponent(category)}`);
   };
 
   return (

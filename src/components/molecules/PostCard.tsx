@@ -66,9 +66,11 @@ interface PostCardProps {
   trustWeight?: number;
   translations: Record<string, unknown>;
   imageCount?: number;
+  certifiedResponderCount?: number;
+  otherResponderCount?: number;
 }
 
-export default function PostCard({ id, author, title, excerpt, tags, stats, category, subcategory, thumbnail, thumbnails, publishedAt, isQuestion, isAdopted, isLiked: initialIsLiked, isBookmarked: initialIsBookmarked, isExpertAnswer = false, isAdminAnswer = false, sourceLabel, trustBadge, translations, imageCount: imageCountProp }: PostCardProps) {
+export default function PostCard({ id, author, title, excerpt, tags, stats, category, subcategory, thumbnail, thumbnails, publishedAt, isQuestion, isAdopted, isLiked: initialIsLiked, isBookmarked: initialIsBookmarked, isExpertAnswer = false, isAdminAnswer = false, sourceLabel, trustBadge, translations, imageCount: imageCountProp, certifiedResponderCount, otherResponderCount }: PostCardProps) {
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
@@ -99,7 +101,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     expert: tTrust.expertTooltip || (locale === 'vi' ? 'Được chuyên gia xem xét' : locale === 'en' ? 'Reviewed by an expert' : '전문가/공식 답변자'),
     outdated: tTrust.outdatedTooltip || (locale === 'vi' ? 'Thông tin hơn 12 tháng trước' : locale === 'en' ? 'More than 12 months old' : '12개월 이상 지난 정보'),
   };
-  const answerLabel = isQuestion
+  const defaultAnswerLabel = isQuestion
     ? locale === 'vi'
       ? `${stats.comments} câu trả lời`
       : locale === 'en'
@@ -110,6 +112,28 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       : locale === 'en'
         ? `${stats.comments} comments`
         : `${stats.comments}개의 댓글이 있습니다`;
+
+  const certifiedCount = certifiedResponderCount ?? 0;
+  const otherCount = otherResponderCount ?? 0;
+  const hasCertified = certifiedCount > 0;
+
+  const answerLabel = hasCertified
+    ? isQuestion
+      ? locale === 'vi'
+        ? `Có câu trả lời từ ${certifiedCount} người dùng đã xác minh${otherCount > 0 ? ` và ${otherCount} người khác` : ''}`
+        : locale === 'en'
+          ? `Answers from ${certifiedCount} certified user${certifiedCount === 1 ? '' : 's'}${otherCount > 0 ? ` + ${otherCount} other${otherCount === 1 ? '' : 's'}` : ''}`
+          : otherCount > 0
+            ? `인증된 사용자 ${certifiedCount}명 외 ${otherCount}명의 답변이 있습니다`
+            : `인증된 사용자 ${certifiedCount}명의 답변이 있습니다`
+      : locale === 'vi'
+        ? `Có bình luận từ ${certifiedCount} người dùng đã xác minh${otherCount > 0 ? ` và ${otherCount} người khác` : ''}`
+        : locale === 'en'
+          ? `Comments from ${certifiedCount} certified user${certifiedCount === 1 ? '' : 's'}${otherCount > 0 ? ` + ${otherCount} other${otherCount === 1 ? '' : 's'}` : ''}`
+          : otherCount > 0
+            ? `인증된 사용자 ${certifiedCount}명 외 ${otherCount}명의 댓글이 있습니다`
+            : `인증된 사용자 ${certifiedCount}명의 댓글이 있습니다`
+    : defaultAnswerLabel;
 
   const safeName = (raw?: string) => {
     const nm = raw?.trim();
@@ -264,6 +288,20 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         return true;
       });
   }, [tags, locale]);
+
+  const tagChips = useMemo(() => {
+    const items = [categoryLabel, subcategoryLabel, ...displayTags].map((v) => v?.trim()).filter(Boolean) as string[];
+    const seen = new Set<string>();
+    return items
+      .filter((v) => {
+        const key = v.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 3);
+  }, [categoryLabel, subcategoryLabel, displayTags]);
+
   const displayImages = useMemo(() => {
     if (thumbnails && thumbnails.length > 0) {
       return thumbnails.filter(Boolean).slice(0, 4);
@@ -418,62 +456,29 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     >
       <div className="question-card-main">
         <div className="question-card-body">
-          {(categoryLabel || subcategoryLabel) && (
-            <div className="flex items-baseline gap-1.5 mb-2">
-              {categoryLabel && (
-                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                  {categoryLabel}
-                </span>
-              )}
-              {subcategoryLabel && (
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                  {subcategoryLabel}
-                </span>
-              )}
-            </div>
-          )}
-
           {/* Author Info & Badges */}
-          <div className="flex items-start justify-between gap-3 mb-3 pr-2">
-            <div className="min-w-0 flex flex-col gap-0.5">
-              <div className="flex items-center gap-2 min-w-0">
-                <button
-                  type="button"
-                  className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 transition-opacity min-w-0"
-                  onClick={handleAuthorClick}
-                >
-                  <UserChip
-                    name={safeName(author.name)}
-                    avatar={author.avatar !== '/default-avatar.jpg' ? author.avatar : undefined}
-                    isVerified={false}
-                    size="md"
-                  />
-                </button>
-                {derivedTrustLevel !== 'community' && (
-                  <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
-                    <span className="inline-flex">
-                      <TrustBadge
-                        level={derivedTrustLevel}
-                        label={trustLabels[derivedTrustLevel]}
-                        showLabel={false}
-                        className="sm:hidden"
-                      />
-                      <TrustBadge
-                        level={derivedTrustLevel}
-                        label={trustLabels[derivedTrustLevel]}
-                        className="hidden sm:inline-flex"
-                      />
-                    </span>
-                  </Tooltip>
-                )}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {formatDateTime(publishedAt)}
-              </div>
-            </div>
+          <div className="flex items-center gap-2 mb-3 min-w-0">
+            <button
+              type="button"
+              className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 transition-opacity min-w-0"
+              onClick={handleAuthorClick}
+            >
+              <UserChip
+                name={safeName(author.name)}
+                avatar={author.avatar !== '/default-avatar.jpg' ? author.avatar : undefined}
+                isVerified={false}
+                size="md"
+              />
+            </button>
+            {derivedTrustLevel !== 'community' && (
+              <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
+                <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
+              </Tooltip>
+            )}
             {!isSelf && author.id ? (
               <FollowButton
                 userId={String(author.id)}
+                userName={safeName(author.name)}
                 isFollowing={author.isFollowing}
                 size="xs"
               />

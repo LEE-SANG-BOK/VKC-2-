@@ -193,6 +193,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
             />
             <FollowButton
               userId={String(userItem.id)}
+              userName={displayName}
               isFollowing={isFollowing}
               size="sm"
               onToggle={(next) =>

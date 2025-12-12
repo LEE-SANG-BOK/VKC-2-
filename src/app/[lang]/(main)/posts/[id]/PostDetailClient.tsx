@@ -1509,6 +1509,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   {!isUserPost && post.author?.id ? (
                     <FollowButton
                       userId={post.author.id}
+                      userName={safeName(post.author)}
                       isFollowing={post.author.isFollowing}
                       size="sm"
                       onToggle={handleFollowChange}

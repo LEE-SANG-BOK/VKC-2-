@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { posts, categorySubscriptions, categories, follows, topicSubscriptions } from '@/lib/db/schema';
+import { posts, categorySubscriptions, categories, follows, topicSubscriptions, users } from '@/lib/db/schema';
 import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkUserStatus } from '@/lib/user-status';
@@ -251,12 +251,55 @@ export async function GET(request: NextRequest) {
         offset: (page - 1) * limit,
       });
 
+      const fallbackResponderIds = new Set<string>();
+      fallbackList.forEach((post) => {
+        post.answers?.forEach((answer) => {
+          if (answer.authorId) fallbackResponderIds.add(answer.authorId);
+        });
+        post.comments?.forEach((comment) => {
+          if (comment.authorId) fallbackResponderIds.add(comment.authorId);
+        });
+      });
+
+      const fallbackResponders = fallbackResponderIds.size
+        ? await db.query.users.findMany({
+            where: inArray(users.id, Array.from(fallbackResponderIds)),
+            columns: {
+              id: true,
+              isVerified: true,
+              isExpert: true,
+              badgeType: true,
+            },
+          })
+        : [];
+
+      const fallbackResponderCertMap = new Map<string, boolean>();
+      fallbackResponders.forEach((responder) => {
+        fallbackResponderCertMap.set(
+          responder.id,
+          Boolean(responder.isVerified || responder.isExpert || responder.badgeType)
+        );
+      });
+
       const postsWithUserStatus = fallbackList.map((post) => {
         const imageMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi));
         const thumbnails = imageMatches.slice(0, 4).map((match) => match[1]);
         const thumbnail = thumbnails[0] ?? null;
         const imageCount = imageMatches.length;
         const trust = resolveTrust(post.author, post.createdAt);
+
+        const certifiedResponders = new Set<string>();
+        const otherResponders = new Set<string>();
+        post.answers?.forEach((answer) => {
+          const authorId = answer.authorId;
+          if (!authorId) return;
+          (fallbackResponderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
+        });
+        post.comments?.forEach((comment) => {
+          const authorId = comment.authorId;
+          if (!authorId) return;
+          (fallbackResponderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
+        });
 
         return {
           ...post,
@@ -275,6 +318,8 @@ export async function GET(request: NextRequest) {
           isBookmarked: user ? post.bookmarks.some((bookmark) => bookmark.userId === user.id) : false,
           likesCount: post.likes.length,
           commentsCount: (post.answers?.length || 0) + (post.comments?.length || 0),
+          certifiedResponderCount: certifiedResponders.size,
+          otherResponderCount: otherResponders.size,
           likes: undefined,
           bookmarks: undefined,
           answers: undefined,
@@ -335,12 +380,52 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const responderIds = new Set<string>();
+    sortedList.forEach((post) => {
+      post.answers?.forEach((answer) => {
+        if (answer.authorId) responderIds.add(answer.authorId);
+      });
+      post.comments?.forEach((comment) => {
+        if (comment.authorId) responderIds.add(comment.authorId);
+      });
+    });
+
+    const responders = responderIds.size
+      ? await db.query.users.findMany({
+          where: inArray(users.id, Array.from(responderIds)),
+          columns: {
+            id: true,
+            isVerified: true,
+            isExpert: true,
+            badgeType: true,
+          },
+        })
+      : [];
+
+    const responderCertMap = new Map<string, boolean>();
+    responders.forEach((responder) => {
+      responderCertMap.set(responder.id, Boolean(responder.isVerified || responder.isExpert || responder.badgeType));
+    });
+
     const postsWithUserStatus = sortedList.map(post => {
       const imageMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi));
       const thumbnails = imageMatches.slice(0, 4).map((match) => match[1]);
       const thumbnail = thumbnails[0] ?? null;
       const imageCount = imageMatches.length;
       const trust = resolveTrust(post.author, post.createdAt);
+
+      const certifiedResponders = new Set<string>();
+      const otherResponders = new Set<string>();
+      post.answers?.forEach((answer) => {
+        const authorId = answer.authorId;
+        if (!authorId) return;
+        (responderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
+      });
+      post.comments?.forEach((comment) => {
+        const authorId = comment.authorId;
+        if (!authorId) return;
+        (responderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
+      });
 
       return {
         ...post,
@@ -359,6 +444,8 @@ export async function GET(request: NextRequest) {
         isBookmarked: user ? post.bookmarks.some(bookmark => bookmark.userId === user.id) : false,
         likesCount: post.likes.length,
         commentsCount: (post.answers?.length || 0) + (post.comments?.length || 0),
+        certifiedResponderCount: certifiedResponders.size,
+        otherResponderCount: otherResponders.size,
         likes: undefined,
         bookmarks: undefined,
         answers: undefined,

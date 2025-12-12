@@ -155,6 +155,7 @@
   },
   "sidebar": {
     "menu": "Menu",
+    "menuTooltip": "Chuyển nhanh giữa Phổ biến/Mới nhất, Theo dõi và Đã đăng ký.",
     "categories": "Danh mục",
     "all": "Tất cả",
     "popular": "Phổ biến",
@@ -186,7 +187,7 @@
     "subscribeError": "Lỗi khi cập nhật theo dõi."
   },
   "news": {
-    "title": "Tin tức hàng đầu"
+    "title": "Nội dung nổi bật"
   },
   "post": {
     "readTime": "{minutes} phút",
@@ -637,15 +638,19 @@
     "pageTitle": "Chỉnh sửa hồ sơ",
     "backButton": "Quay lại",
     "avatarChange": "Thay đổi ảnh đại diện",
+    "avatarTooltip": "Bạn có thể dùng ảnh bất kỳ để dễ nhận diện.",
     "nameLabel": "Tên",
     "namePlaceholder": "Nhập tên của bạn",
+    "nameTooltip": "Tên này sẽ được hiển thị công khai trên hồ sơ và bài viết.",
     "bioLabel": "Giới thiệu",
     "bioPlaceholder": "Nhập giới thiệu về bản thân",
+    "bioTooltip": "Giới thiệu ngắn giúp mọi người hiểu bạn tốt hơn.",
     "genderLabel": "Giới tính",
     "genderSelect": "Chọn",
     "genderMale": "Nam",
     "genderFemale": "Nữ",
     "genderOther": "Khác",
+    "genderTooltip": "Không bắt buộc. Dùng để cá nhân hóa gợi ý.",
     "ageGroupLabel": "Độ tuổi",
     "ageGroup10s": "10-19",
     "ageGroup20s": "20-29",
@@ -653,10 +658,12 @@
     "ageGroup40s": "40-49",
     "ageGroup50s": "50-59",
     "ageGroup60plus": "60+",
+    "ageGroupTooltip": "Không bắt buộc. Dùng để cá nhân hóa gợi ý.",
     "statusLabel": "Trạng thái",
     "statusStudent": "Sinh viên",
     "statusWorker": "Nhân viên",
     "statusOther": "Khác",
+    "statusTooltip": "Không bắt buộc. Chọn trạng thái hiện tại của bạn.",
     "notificationTitle": "Cài đặt thông báo",
     "notifyAll": "Tất cả thông báo",
     "notifyAllDesc": "Bật hoặc tắt tất cả thông báo cùng lúc",

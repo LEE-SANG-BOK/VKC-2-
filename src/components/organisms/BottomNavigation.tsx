@@ -2,9 +2,9 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Home, Search, PenSquare, ShieldCheck, User } from 'lucide-react';
+import { Home, Search, PenSquare, ShieldCheck, User, TrendingUp, Sparkles } from 'lucide-react';
 
 interface BottomNavigationProps {
   translations: Record<string, unknown>;
@@ -13,10 +13,18 @@ interface BottomNavigationProps {
 export default function BottomNavigation({ translations }: BottomNavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const params = useParams();
   const { data: session } = useSession();
   const user = session?.user;
   const lang = (params?.lang as string) || 'ko';
+
+  const isHome = pathname === `/${lang}`;
+  const feedCategory = (searchParams?.get('c') || 'popular') as 'popular' | 'latest' | string;
+
+  const handleFeedNavigate = (category: 'popular' | 'latest') => {
+    router.push(`/${lang}?c=${category}`);
+  };
 
   const navItems = useMemo(() => {
     const labels = (translations?.bottomNav || {}) as Record<string, string>;
@@ -27,11 +35,11 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
     const labelProfile = labels.profile || (lang === 'vi' ? 'Hồ sơ' : lang === 'en' ? 'Profile' : '프로필');
     return [
       {
-        key: 'home',
-        label: labelHome,
-        icon: Home,
-        href: `/${lang}`,
-        requiresAuth: false,
+        key: 'write',
+        label: labelWrite,
+        icon: PenSquare,
+        href: `/${lang}/posts/new`,
+        requiresAuth: true,
       },
       {
         key: 'search',
@@ -41,11 +49,11 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
         requiresAuth: false,
       },
       {
-        key: 'write',
-        label: labelWrite,
-        icon: PenSquare,
-        href: `/${lang}/posts/new`,
-        requiresAuth: true,
+        key: 'home',
+        label: labelHome,
+        icon: Home,
+        href: `/${lang}`,
+        requiresAuth: false,
       },
       {
         key: 'verification',
@@ -82,7 +90,38 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
 
   return (
     <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 dark:border-gray-800/80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg">
-      <div className="grid grid-cols-5 px-2 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]">
+      <div className="relative">
+        {isHome ? (
+          <div className="absolute right-3 bottom-[calc(env(safe-area-inset-bottom,0px)+74px)] overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-700/80 bg-white/95 dark:bg-gray-900/95 shadow-xl backdrop-blur">
+            <button
+              type="button"
+              onClick={() => handleFeedNavigate('popular')}
+              className={`flex flex-col items-center gap-0.5 px-3 py-2 text-[11px] font-semibold transition-colors ${
+                feedCategory === 'popular'
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/70'
+              }`}
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span>{lang === 'vi' ? 'Phổ biến' : lang === 'en' ? 'Popular' : '인기'}</span>
+            </button>
+            <div className="h-px bg-gray-200/70 dark:bg-gray-700/70" />
+            <button
+              type="button"
+              onClick={() => handleFeedNavigate('latest')}
+              className={`flex flex-col items-center gap-0.5 px-3 py-2 text-[11px] font-semibold transition-colors ${
+                feedCategory === 'latest'
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/70'
+              }`}
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>{lang === 'vi' ? 'Mới' : lang === 'en' ? 'Recent' : '최근'}</span>
+            </button>
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-5 px-2 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]">
         {navItems.map((item) => {
           const active = isActive(item.href);
           const Icon = item.icon;
@@ -111,6 +150,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
             </button>
           );
         })}
+        </div>
       </div>
     </nav>
   );

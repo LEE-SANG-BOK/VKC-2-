@@ -155,6 +155,7 @@
   },
   "sidebar": {
     "menu": "Menu",
+    "menuTooltip": "Quickly switch between Popular/Latest, Following, and Subscribed feeds.",
     "categories": "Categories",
     "popular": "Popular",
     "latest": "Latest",
@@ -186,7 +187,7 @@
     "subscribeError": "Failed to update subscription."
   },
   "news": {
-    "title": "Top News"
+    "title": "Featured content"
   },
   "post": {
     "readTime": "{minutes} min",
@@ -637,15 +638,19 @@
     "pageTitle": "Edit Profile",
     "backButton": "Go Back",
     "avatarChange": "Change Profile Picture",
+    "avatarTooltip": "Upload any image that helps others recognize you.",
     "nameLabel": "Name",
     "namePlaceholder": "Enter your name",
+    "nameTooltip": "This name will be shown publicly on your profile and posts.",
     "bioLabel": "Bio",
     "bioPlaceholder": "Enter your bio",
+    "bioTooltip": "A short intro helps others understand you.",
     "genderLabel": "Gender",
     "genderSelect": "Select",
     "genderMale": "Male",
     "genderFemale": "Female",
     "genderOther": "Other",
+    "genderTooltip": "Optional. Used to personalize recommendations.",
     "ageGroupLabel": "Age Group",
     "ageGroup10s": "10s",
     "ageGroup20s": "20s",
@@ -653,10 +658,12 @@
     "ageGroup40s": "40s",
     "ageGroup50s": "50s",
     "ageGroup60plus": "60+",
+    "ageGroupTooltip": "Optional. Used to personalize recommendations.",
     "statusLabel": "Status",
     "statusStudent": "Student",
     "statusWorker": "Worker",
     "statusOther": "Other",
+    "statusTooltip": "Optional. Choose your current status.",
     "notificationTitle": "Notification Settings",
     "notifyAll": "All Notifications",
     "notifyAllDesc": "Turn on or off all notifications at once",

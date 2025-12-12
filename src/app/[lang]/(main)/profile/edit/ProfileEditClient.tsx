@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import Image from 'next/image';
-import { Camera, Save, Bell, ArrowLeft } from 'lucide-react';
+import { Camera, Save, Bell, ArrowLeft, Info } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUpdateMyProfile } from '@/repo/users/mutation';
 import { useUserProfile } from '@/repo/users/query';
 import { queryKeys } from '@/repo/keys';
 import { toast } from 'sonner';
+import Tooltip from '@/components/atoms/Tooltip';
 
 interface FormData {
   name: string;
@@ -313,13 +314,55 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     )}
                   </button>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t.avatarChange || '프로필 사진 변경'}</p>
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <span>{t.avatarChange || '프로필 사진 변경'}</span>
+                  <Tooltip
+                    content={
+                      t.avatarTooltip ||
+                      (lang === 'vi'
+                        ? 'Bạn có thể dùng ảnh bất kỳ để dễ nhận diện.'
+                        : lang === 'en'
+                          ? 'Upload any image that helps others recognize you.'
+                          : '식별 가능한 이미지를 업로드해 주세요.')
+                    }
+                    position="top"
+                  >
+                    <button
+                      type="button"
+                      aria-label={t.avatarTooltip || '프로필 사진 도움말'}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                    >
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                </div>
               </div>
 
               <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  {t.nameLabel || '이름'}
-                </label>
+                <div className="flex items-center gap-2 mb-2">
+                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    {t.nameLabel || '이름'}
+                  </label>
+                  <Tooltip
+                    content={
+                      t.nameTooltip ||
+                      (lang === 'vi'
+                        ? 'Tên này sẽ được hiển thị công khai trên hồ sơ và bài viết.'
+                        : lang === 'en'
+                          ? 'This name will be shown publicly on your profile and posts.'
+                          : '프로필과 게시글에 공개로 표시되는 이름입니다.')
+                    }
+                    position="top"
+                  >
+                    <button
+                      type="button"
+                      aria-label={t.nameTooltip || '이름 도움말'}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                    >
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                </div>
                 <input
                   id="name"
                   type="text"
@@ -331,9 +374,30 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
               </div>
 
               <div>
-                <label htmlFor="bio" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  {t.bioLabel || '자기소개'}
-                </label>
+                <div className="flex items-center gap-2 mb-2">
+                  <label htmlFor="bio" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    {t.bioLabel || '자기소개'}
+                  </label>
+                  <Tooltip
+                    content={
+                      t.bioTooltip ||
+                      (lang === 'vi'
+                        ? 'Giới thiệu ngắn giúp mọi người hiểu bạn tốt hơn.'
+                        : lang === 'en'
+                          ? 'A short intro helps others understand you.'
+                          : '간단한 소개를 적으면 신뢰도와 소통이 좋아져요.')
+                    }
+                    position="top"
+                  >
+                    <button
+                      type="button"
+                      aria-label={t.bioTooltip || '자기소개 도움말'}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                    >
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                </div>
                 <textarea
                   id="bio"
                   value={formData.bio}
@@ -346,9 +410,30 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    {t.genderLabel || '성별'}
-                  </label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {t.genderLabel || '성별'}
+                    </label>
+                    <Tooltip
+                      content={
+                        t.genderTooltip ||
+                        (lang === 'vi'
+                          ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
+                          : lang === 'en'
+                            ? 'Optional. Used to personalize recommendations.'
+                            : '선택 사항입니다. 맞춤 추천에 활용됩니다.')
+                      }
+                      position="top"
+                    >
+                      <button
+                        type="button"
+                        aria-label={t.genderTooltip || '성별 도움말'}
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
+                  </div>
                   <select
                     id="gender"
                     value={formData.gender}
@@ -363,9 +448,30 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                 </div>
 
                 <div>
-                  <label htmlFor="ageGroup" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    {t.ageGroupLabel || '연령대'}
-                  </label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <label htmlFor="ageGroup" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {t.ageGroupLabel || '연령대'}
+                    </label>
+                    <Tooltip
+                      content={
+                        t.ageGroupTooltip ||
+                        (lang === 'vi'
+                          ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
+                          : lang === 'en'
+                            ? 'Optional. Used to personalize recommendations.'
+                            : '선택 사항입니다. 맞춤 추천에 활용됩니다.')
+                      }
+                      position="top"
+                    >
+                      <button
+                        type="button"
+                        aria-label={t.ageGroupTooltip || '연령대 도움말'}
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
+                  </div>
                   <select
                     id="ageGroup"
                     value={formData.ageGroup}
@@ -383,9 +489,30 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                 </div>
 
                 <div>
-                  <label htmlFor="status" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    {t.statusLabel || '상태'}
-                  </label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <label htmlFor="status" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {t.statusLabel || '상태'}
+                    </label>
+                    <Tooltip
+                      content={
+                        t.statusTooltip ||
+                        (lang === 'vi'
+                          ? 'Không bắt buộc. Chọn trạng thái hiện tại của bạn.'
+                          : lang === 'en'
+                            ? 'Optional. Choose your current status.'
+                            : '선택 사항입니다. 현재 상태를 선택해 주세요.')
+                      }
+                      position="top"
+                    >
+                      <button
+                        type="button"
+                        aria-label={t.statusTooltip || '상태 도움말'}
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
+                  </div>
                   <select
                     id="status"
                     value={formData.status}

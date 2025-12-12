@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse, unauthorizedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { uploadDocument } from '@/lib/supabase/storage';
+import { createSignedUrl, uploadDocument } from '@/lib/supabase/storage';
 
 /**
  * POST /api/upload/document
@@ -33,10 +33,12 @@ export async function POST(request: NextRequest) {
       return errorResponse(result.error || '파일 업로드에 실패했습니다.');
     }
 
+    const signed = result.path ? await createSignedUrl('documents', result.path, 600) : null;
+
     return successResponse(
       {
-        url: result.url,
         path: result.path,
+        url: signed?.success ? signed.url : null,
       },
       '인증 서류가 업로드되었습니다.'
     );

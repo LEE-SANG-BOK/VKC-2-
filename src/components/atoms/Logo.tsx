@@ -9,7 +9,7 @@ export default function Logo() {
 
   return (
     <Link
-      href={`/${locale}`}
+      href={`/${locale}?c=popular`}
       className="flex items-center gap-1 group"
       translate="no"
     >

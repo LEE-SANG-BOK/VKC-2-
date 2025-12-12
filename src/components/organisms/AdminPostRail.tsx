@@ -20,7 +20,8 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
   const { data: newsItems, isLoading } = useNews(lang);
   const items = (newsItems || []).slice(0, limit);
 
-  const title = tNews.title || '관리자 게시글';
+  const title =
+    tNews.title || (lang === 'vi' ? 'Nội dung nổi bật' : lang === 'en' ? 'Featured content' : '추천 콘텐츠');
   const moreLabel = lang === 'vi' ? 'Xem tất cả' : lang === 'en' ? 'View all' : '모두 보기';
   const closeLabel = lang === 'vi' ? 'Đóng' : lang === 'en' ? 'Close' : '닫기';
   const openExternalLabel = lang === 'vi' ? 'Mở liên kết' : lang === 'en' ? 'Open link' : '외부 링크 열기';

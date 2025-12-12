@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { verificationRequests, users } from '@/lib/db/schema';
 import { getAdminSession } from '@/lib/admin/auth';
 import { desc, eq, count } from 'drizzle-orm';
+import { createSignedUrl } from '@/lib/supabase/storage';
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,8 +59,28 @@ export async function GET(request: NextRequest) {
 
     const total = countResult[0]?.count || 0;
 
+    const verifications = await Promise.all(
+      verificationsList.map(async (verification) => {
+        const documentPaths = Array.isArray(verification.documentUrls) ? verification.documentUrls : [];
+        if (verification.status !== 'pending' || documentPaths.length === 0) {
+          return { ...verification, documentUrls: [] };
+        }
+
+        const signedUrls = await Promise.all(
+          documentPaths.map(async (path) => {
+            if (!path) return '';
+            if (path.startsWith('http://') || path.startsWith('https://')) return path;
+            const signed = await createSignedUrl('documents', path, 600);
+            return signed.success && signed.url ? signed.url : '';
+          })
+        );
+
+        return { ...verification, documentUrls: signedUrls.filter(Boolean) };
+      })
+    );
+
     return NextResponse.json({
-      verifications: verificationsList,
+      verifications,
       pagination: {
         page,
         limit,

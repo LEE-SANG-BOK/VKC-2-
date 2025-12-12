@@ -45,15 +45,20 @@ interface PostItem {
   id: string;
   author: { id?: string; name: string; avatar: string; followers: number; isVerified?: boolean };
   title: string;
+  content: string;
   excerpt: string;
   tags?: string[];
   stats: { likes: number; comments: number; shares: number };
+  category: string;
+  subcategory?: string;
   thumbnail?: string;
   publishedAt: string;
   isQuestion?: boolean;
   isAdopted?: boolean;
   isLiked?: boolean;
   isBookmarked?: boolean;
+  certifiedResponderCount?: number;
+  otherResponderCount?: number;
 }
 
 interface AnswerItem {
@@ -278,6 +283,37 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
     return date.format('YYYY.MM.DD HH:mm');
   };
 
+  const extractMedia = (html?: string | null) => {
+    const sources: string[] = [];
+    if (html) {
+      const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+      let match: RegExpExecArray | null;
+      while ((match = imgRegex.exec(html)) !== null) {
+        const src = match[1];
+        if (src) sources.push(src);
+      }
+    }
+
+    const unique = Array.from(new Set(sources));
+    const thumbnails = unique.slice(0, 4);
+
+    return {
+      thumbnails: thumbnails.length ? thumbnails : undefined,
+      imageCount: unique.length,
+      thumbnail: thumbnails[0],
+    };
+  };
+
+  const buildExcerpt = (html?: string | null) => {
+    if (!html) return '';
+    return html
+      .replace(/<img[^>]*>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 200);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header
@@ -301,6 +337,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
               {!isOwnProfile && (
                 <FollowButton
                   userId={initialProfile.id}
+                  userName={initialProfile.displayName}
                   isFollowing={isFollowing}
                   size="sm"
                   onToggle={handleFollowChange}
@@ -491,18 +528,27 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                     <p className="text-gray-500 dark:text-gray-400">{t.noPosts || 'No posts yet'}</p>
                   </div>
                 ) : (
-                  userPosts.map((post: PostItem) => (
-                    <PostCard
-                      key={post.id}
-                      id={post.id}
-                      author={post.author}
-                      title={post.title}
-                      excerpt={post.excerpt}
-                      tags={post.tags || []}
-                      stats={post.stats}
-                      thumbnail={post.thumbnail}
-                      publishedAt={formatDate(post.publishedAt)}
-                      isQuestion={post.isQuestion}
+                  userPosts.map((post: PostItem) => {
+                    const media = extractMedia(post.content);
+                    const resolvedThumbnail = post.thumbnail || media.thumbnail;
+                    return (
+                      <PostCard
+                        key={post.id}
+                        id={post.id}
+                        author={post.author}
+                        title={post.title}
+                        excerpt={buildExcerpt(post.content)}
+                        tags={post.tags || []}
+                        stats={post.stats}
+                        category={post.category}
+                        subcategory={post.subcategory}
+                        thumbnail={resolvedThumbnail}
+                        thumbnails={media.thumbnails}
+                        imageCount={media.imageCount}
+                        certifiedResponderCount={post.certifiedResponderCount}
+                        otherResponderCount={post.otherResponderCount}
+                        publishedAt={formatDate(post.publishedAt)}
+                        isQuestion={post.isQuestion}
 	                      isAdopted={post.isAdopted}
 	                      isLiked={post.isLiked}
 	                      isBookmarked={post.isBookmarked}
@@ -510,7 +556,8 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
 	                      trustWeight={(post as any).trustWeight}
 	                      translations={translations || {}}
 	                    />
-                  ))
+                    );
+                  })
                 )}
                 
                 {/* Loading indicator for posts */}
@@ -612,18 +659,27 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                     <p className="text-gray-500 dark:text-gray-400">{t.noBookmarks || 'No bookmarks yet'}</p>
                   </div>
                 ) : (
-                  userBookmarks.map((bookmark: PostItem) => (
-                    <PostCard
-                      key={bookmark.id}
-                      id={bookmark.id}
-                      author={bookmark.author}
-                      title={bookmark.title}
-                      excerpt={bookmark.excerpt}
-                      tags={bookmark.tags || []}
-                      stats={bookmark.stats}
-                      thumbnail={bookmark.thumbnail}
-                      publishedAt={formatDate(bookmark.publishedAt)}
-                      isQuestion={bookmark.isQuestion}
+                  userBookmarks.map((bookmark: PostItem) => {
+                    const media = extractMedia(bookmark.content);
+                    const resolvedThumbnail = bookmark.thumbnail || media.thumbnail;
+                    return (
+                      <PostCard
+                        key={bookmark.id}
+                        id={bookmark.id}
+                        author={bookmark.author}
+                        title={bookmark.title}
+                        excerpt={buildExcerpt(bookmark.content)}
+                        tags={bookmark.tags || []}
+                        stats={bookmark.stats}
+                        category={bookmark.category}
+                        subcategory={bookmark.subcategory}
+                        thumbnail={resolvedThumbnail}
+                        thumbnails={media.thumbnails}
+                        imageCount={media.imageCount}
+                        certifiedResponderCount={bookmark.certifiedResponderCount}
+                        otherResponderCount={bookmark.otherResponderCount}
+                        publishedAt={formatDate(bookmark.publishedAt)}
+                        isQuestion={bookmark.isQuestion}
 	                      isAdopted={bookmark.isAdopted}
 	                      isLiked={bookmark.isLiked}
 	                      isBookmarked={true}
@@ -631,7 +687,8 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
 	                      trustWeight={(bookmark as any).trustWeight}
 	                      translations={translations || {}}
 	                    />
-                  ))
+                    );
+                  })
                 )}
                 
                 {/* Loading indicator for bookmarks */}
