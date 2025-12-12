@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
 
-export default {
+const config = {
   schema: './src/lib/db/schema.ts',
   out: './src/lib/db/migrations',
   dialect: 'postgresql',
@@ -12,3 +12,5 @@ export default {
   verbose: true,
   strict: true,
 };
+
+export default config;
