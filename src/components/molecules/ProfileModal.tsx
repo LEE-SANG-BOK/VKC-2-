@@ -45,7 +45,7 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
     retryDelay: (attempt) => Math.min(2000, 1000 * 2 ** attempt),
   });
 
-  const profile = selfProfile || profileData;
+  const profile = profileData || selfProfile;
 
   const handleEditProfile = () => {
     onClose();
@@ -109,21 +109,26 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
+  const getUserTypeLabel = (value: string) => {
+    switch (value) {
       case 'student':
       case '학생':
         return t.student || '학생';
       case 'worker':
       case '직장인':
-        return t.worker || '직장인';
+      case '근로자':
+        return t.worker || '근로자';
+      case 'resident':
+      case '거주자':
+        return t.resident || (locale === 'vi' ? 'Cư dân' : locale === 'en' ? 'Resident' : '거주자');
       case 'business':
       case '사업자':
         return t.business || '사업자';
       case 'homemaker':
       case '주부':
         return t.homemaker || '주부';
-      default: return status;
+      default:
+        return value;
     }
   };
 
@@ -221,11 +226,18 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
                           #{getAgeGroupLabel(profile.ageGroup)}
                         </span>
                       )}
-                      {profile.status && (
-                        <span className="px-2 py-0.5 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full">
-                          #{getStatusLabel(profile.status)}
-                        </span>
-                      )}
+                      {(() => {
+                        const legacyStatus = profile.status;
+                        const effectiveUserType =
+                          profile.userType ||
+                          (legacyStatus && legacyStatus !== 'banned' && legacyStatus !== 'suspended' ? legacyStatus : null);
+                        if (!effectiveUserType) return null;
+                        return (
+                          <span className="px-2 py-0.5 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full">
+                            #{getUserTypeLabel(effectiveUserType)}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

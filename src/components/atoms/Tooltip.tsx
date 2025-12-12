@@ -171,8 +171,10 @@ export default function Tooltip({
 
     const handlePointerDown = (event: PointerEvent) => {
       const target = targetRef.current;
+      const tooltipEl = tooltipRef.current;
       if (!target) return;
       if (target.contains(event.target as Node)) return;
+      if (tooltipEl?.contains(event.target as Node)) return;
       close();
     };
 
@@ -241,6 +243,7 @@ export default function Tooltip({
               id={tooltipId}
               role="tooltip"
               className={className.includes('vk-tooltip-brand') ? 'vk-tooltip-portal vk-tooltip-portal--brand' : 'vk-tooltip-portal'}
+              data-interactive={touchMode ? 'true' : 'false'}
               data-position={coords.placement}
               style={
                 {

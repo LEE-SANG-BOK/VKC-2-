@@ -33,6 +33,7 @@ interface UserItem {
   isVerified?: boolean;
   isFollowing?: boolean;
   status?: string;
+  userType?: string | null;
   stats?: {
     followers?: number;
     following?: number;
@@ -114,21 +115,26 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
+  const getUserTypeLabel = (value: string) => {
+    switch (value) {
       case 'student':
       case '학생':
         return t.student || '학생';
       case 'worker':
       case '직장인':
-        return t.worker || '직장인';
+      case '근로자':
+        return t.worker || '근로자';
+      case 'resident':
+      case '거주자':
+        return t.resident || (locale === 'vi' ? 'Cư dân' : locale === 'en' ? 'Resident' : '거주자');
       case 'business':
       case '사업자':
         return t.business || '사업자';
       case 'homemaker':
       case '주부':
         return t.homemaker || '주부';
-      default: return status;
+      default:
+        return value;
     }
   };
 
@@ -224,11 +230,18 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                   @{userItem.username}
                 </p>
               )}
-              {userItem.status && (
-                <span className="inline-block px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full mb-2">
-                  #{getStatusLabel(userItem.status)}
-                </span>
-              )}
+              {(() => {
+                const legacyStatus = userItem.status;
+                const effectiveUserType =
+                  userItem.userType ||
+                  (legacyStatus && legacyStatus !== 'banned' && legacyStatus !== 'suspended' ? legacyStatus : null);
+                if (!effectiveUserType) return null;
+                return (
+                  <span className="inline-block px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full mb-2">
+                    #{getUserTypeLabel(effectiveUserType)}
+                  </span>
+                );
+              })()}
               {userItem.bio && (
                 <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-2">
                   {userItem.bio}

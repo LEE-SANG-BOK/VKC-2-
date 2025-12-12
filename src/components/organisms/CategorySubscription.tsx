@@ -33,7 +33,18 @@ export default function CategorySubscription({ translations, onToggle }: Categor
   }, []);
 
   const filteredCategories = useMemo(() => {
-    return (categories || []).filter((cat: any) => allowedSlugs.has(cat.slug));
+    const flattened: any[] = [];
+    (categories || []).forEach((parent: any) => {
+      if (allowedSlugs.has(parent.slug)) {
+        flattened.push(parent);
+      }
+      (parent?.children || []).forEach((child: any) => {
+        if (allowedSlugs.has(child.slug)) {
+          flattened.push(child);
+        }
+      });
+    });
+    return flattened;
   }, [categories, allowedSlugs]);
 
   const handleToggle = (categoryId: string) => {

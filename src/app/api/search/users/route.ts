@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { users } from '@/lib/db/schema';
 import { paginatedResponse, serverErrorResponse } from '@/lib/api/response';
 import { sql, or, ilike, desc } from 'drizzle-orm';
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
           ilike(users.email, `%${query}%`),
           ilike(users.bio, `%${query}%`)
         ),
+      columns: userPublicColumns,
       orderBy: [desc(users.createdAt)],
       limit,
       offset: (page - 1) * limit,

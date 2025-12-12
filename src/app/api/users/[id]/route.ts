@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { userMeColumns } from '@/lib/db/columns';
 import { users, follows, posts, answers, comments, bookmarks } from '@/lib/db/schema';
 import { eq, count, and } from 'drizzle-orm';
 import { getSession } from '@/lib/api/auth';
-import { generateDisplayNameFromEmail, sanitizeDisplayName } from '@/lib/utils/profile';
+import { DISPLAY_NAME_MIN_LENGTH, generateDisplayNameFromEmail, normalizeDisplayName, sanitizeDisplayName } from '@/lib/utils/profile';
 
 export async function GET(
   request: NextRequest,
@@ -15,6 +16,7 @@ export async function GET(
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, id),
+      columns: userMeColumns,
     });
 
     if (!user) {
@@ -64,12 +66,13 @@ export async function GET(
       joinedAt: user.createdAt?.toISOString() || new Date().toISOString(),
       updatedAt: user.updatedAt?.toISOString() || user.createdAt?.toISOString() || new Date().toISOString(),
       isVerified: user.isVerified || false,
-      verifiedProfileSummary: user.verifiedProfileSummary || null,
-      verifiedProfileKeywords: user.verifiedProfileKeywords || null,
+      verifiedProfileSummary: null,
+      verifiedProfileKeywords: null,
       gender: user.gender || null,
       ageGroup: user.ageGroup || null,
       nationality: user.nationality || null,
       status: user.status || null,
+      userType: user.userType || null,
       isFollowing,
       notifyAnswers: user.notifyAnswers,
       notifyComments: user.notifyComments,
@@ -114,26 +117,27 @@ export async function PUT(
       gender,
       ageGroup,
       nationality,
-      status,
       phone,
       bio,
       displayName,
       image,
       name,
       isProfileComplete,
+      userType,
     } = body;
 
-    const normalizedDisplayName = displayName
-      ? sanitizeDisplayName(displayName, generateDisplayNameFromEmail(sessionUser.email))
-      : undefined;
+    const normalizedDisplayName = displayName ? normalizeDisplayName(displayName) : undefined;
+    if (displayName !== undefined && (normalizedDisplayName || '').length < DISPLAY_NAME_MIN_LENGTH) {
+      return NextResponse.json({ error: '닉네임은 2자 이상이어야 합니다.' }, { status: 400 });
+    }
 
     const updatePayload: Record<string, unknown> = {
       gender,
       ageGroup,
       nationality,
-      status,
       phone,
       bio,
+      userType,
       updatedAt: new Date(),
     };
 

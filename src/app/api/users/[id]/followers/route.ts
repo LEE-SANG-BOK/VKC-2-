@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { follows, users } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { eq, desc, sql } from 'drizzle-orm';
@@ -26,6 +27,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // 사용자 존재 여부 확인
     const user = await db.query.users.findFirst({
       where: eq(users.id, id),
+      columns: {
+        id: true,
+      },
     });
 
     if (!user) {
@@ -44,7 +48,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const followersList = await db.query.follows.findMany({
       where: eq(follows.followingId, id),
       with: {
-        follower: true, // 팔로워 정보
+        follower: {
+          columns: userPublicColumns,
+        },
       },
       orderBy: [desc(follows.createdAt)],
       limit,

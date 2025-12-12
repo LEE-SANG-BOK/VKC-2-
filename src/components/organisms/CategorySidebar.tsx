@@ -51,7 +51,28 @@ export default function CategorySidebar({
       ? 'Chuyển nhanh giữa Phổ biến/Mới nhất, Theo dõi và Đăng ký.'
       : locale === 'en'
         ? 'Quickly switch between Popular/Latest, Following, and Subscribed feeds.'
-        : '인기/최신, 팔로우, 구독 피드를 여기서 빠르게 전환할 수 있어요.');
+      : '인기/최신, 팔로우, 구독 피드를 여기서 빠르게 전환할 수 있어요.');
+
+  const tooltipLines = (value?: string) => {
+    const trimmed = value?.trim();
+    if (!trimmed) return undefined;
+    const parts = trimmed.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+    if (parts.length <= 1) return trimmed;
+    return (
+      <div className="space-y-1 text-left">
+        {parts.map((line, idx) => (
+          <div key={`${idx}-${line}`}>{line}</div>
+        ))}
+      </div>
+    );
+  };
+
+  const menuTooltips: Record<string, string | undefined> = {
+    popular: t.popularTooltip,
+    latest: t.latestTooltip,
+    following: t.followingTooltip,
+    subscribed: t.subscribedTooltip,
+  };
 
   const menuCategories = [
     { id: 'popular', icon: TrendingUp, count: 0 },
@@ -63,8 +84,11 @@ export default function CategorySidebar({
 
   const apiBySlug = useMemo(() => {
     const map = new Map<string, ApiCategory>();
-    (apiCategories || []).forEach((cat) => {
+    (apiCategories || []).forEach((cat: any) => {
       if (cat?.slug) map.set(cat.slug, cat);
+      (cat?.children || []).forEach((child: any) => {
+        if (child?.slug) map.set(child.slug, child);
+      });
     });
     return map;
   }, [apiCategories]);
@@ -226,6 +250,8 @@ export default function CategorySidebar({
               count={category.count}
               isActive={selectedCategory === category.id}
               onClick={handleCategoryClick}
+              tooltip={tooltipLines(menuTooltips[category.id])}
+              tooltipPosition={actionTooltipPosition}
             />
           ))}
         </div>
@@ -242,7 +268,7 @@ export default function CategorySidebar({
             count={0}
             isActive={false}
             onClick={handleCategoryClick}
-            tooltip={t.askQuestionTooltip || '커뮤니티에 질문을 올려보세요'}
+            tooltip={tooltipLines(t.askQuestionTooltip || '커뮤니티에 질문을 올려보세요')}
             tooltipPosition={actionTooltipPosition}
             className="border-l-4 border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
@@ -253,7 +279,7 @@ export default function CategorySidebar({
             count={0}
             isActive={false}
             onClick={handleCategoryClick}
-            tooltip={t.sharePostTooltip || '유용한 정보를 공유해주세요'}
+            tooltip={tooltipLines(t.sharePostTooltip || '유용한 정보를 공유해주세요')}
             tooltipPosition={actionTooltipPosition}
             className="border-l-4 border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
@@ -264,7 +290,7 @@ export default function CategorySidebar({
             count={0}
             isActive={selectedCategory === 'verification-request'}
             onClick={handleCategoryClick}
-            tooltip={t.verificationRequestTooltip || '전문가 인증을 신청하세요'}
+            tooltip={tooltipLines(t.verificationRequestTooltip || '전문가 인증을 신청하세요')}
             tooltipPosition={actionTooltipPosition}
             className="border-l-4 border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />

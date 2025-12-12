@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { verificationRequests } from '@/lib/db/schema';
 import { successResponse, unauthorizedResponse, notFoundResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession, isOwner } from '@/lib/api/auth';
@@ -26,8 +27,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const verificationRequest = await db.query.verificationRequests.findFirst({
       where: eq(verificationRequests.id, id),
       with: {
-        user: true, // 요청자 정보
-        reviewer: true, // 검토자 정보
+        user: {
+          columns: userPublicColumns,
+        },
+        reviewer: {
+          columns: userPublicColumns,
+        },
       },
     });
 

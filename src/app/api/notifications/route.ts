@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { notifications } from '@/lib/db/schema';
 import { paginatedResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
@@ -51,8 +52,15 @@ export async function GET(request: NextRequest) {
         return condition;
       },
       with: {
-        sender: true,
-        post: true,
+        sender: {
+          columns: userPublicColumns,
+        },
+        post: {
+          columns: {
+            id: true,
+            title: true,
+          },
+        },
       },
       orderBy: [desc(notifications.createdAt)],
       limit,

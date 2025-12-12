@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ReactNode } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import Header from "@/components/organisms/Header";
 import CategorySidebar from "@/components/organisms/CategorySidebar";
 import AccountStatusBanner from "@/components/molecules/AccountStatusBanner";
@@ -20,19 +20,21 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative transition-colors duration-300">
       {/* Account Status Banner */}
       <AccountStatusBanner />
       
       {/* Background gradient */}
       <div className="fixed top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-blue-500/5 dark:from-blue-500/10 to-transparent pointer-events-none z-0"></div>
 
-      <Header
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        hideSearch={hideSearch}
-        translations={translations}
-      />
+      <Suspense fallback={<div className="h-[56px] w-full" />}>
+        <Header
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          hideSearch={hideSearch}
+          translations={translations}
+        />
+      </Suspense>
 
       <div className="container mx-auto px-2 sm:px-3 lg:px-5 relative z-10">
         <div className="flex gap-4 lg:gap-6">

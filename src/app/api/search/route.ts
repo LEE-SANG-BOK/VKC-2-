@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { posts, users } from '@/lib/db/schema';
 import { successResponse, serverErrorResponse } from '@/lib/api/response';
 import { sql, or, ilike, desc } from 'drizzle-orm';
@@ -29,7 +30,9 @@ export async function GET(request: NextRequest) {
         ilike(posts.content, `%${query}%`)
       ),
       with: {
-        author: true,
+        author: {
+          columns: userPublicColumns,
+        },
       },
       orderBy: [desc(posts.createdAt)],
       limit: Math.min(limit, 10), // 게시글은 최대 10개
@@ -42,6 +45,7 @@ export async function GET(request: NextRequest) {
         ilike(users.email, `%${query}%`),
         ilike(users.bio, `%${query}%`)
       ),
+      columns: userPublicColumns,
       orderBy: [desc(users.createdAt)],
       limit: Math.min(limit, 10), // 사용자는 최대 10개
     });

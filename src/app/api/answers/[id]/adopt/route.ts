@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { answers, posts } from '@/lib/db/schema';
 import { successResponse, errorResponse, notFoundResponse, forbiddenResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession, isOwner } from '@/lib/api/auth';
@@ -83,7 +84,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const answerWithAuthor = await db.query.answers.findFirst({
       where: eq(answers.id, adoptedAnswerData.id),
       with: {
-        author: true,
+        author: {
+          columns: userPublicColumns,
+        },
       },
     });
 

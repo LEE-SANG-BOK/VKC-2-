@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { answers, posts } from '@/lib/db/schema';
 import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
@@ -37,10 +38,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const answerList = await db.query.answers.findMany({
       where: eq(answers.postId, postId),
       with: {
-        author: true,
+        author: {
+          columns: userPublicColumns,
+        },
         comments: {
           with: {
-            author: true,
+            author: {
+              columns: userPublicColumns,
+            },
           },
           orderBy: (comments, { asc }) => [asc(comments.createdAt)],
         },
@@ -123,10 +128,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const answerWithAuthor = await db.query.answers.findFirst({
       where: eq(answers.id, newAnswer.id),
       with: {
-        author: true,
+        author: {
+          columns: userPublicColumns,
+        },
         comments: {
           with: {
-            author: true,
+            author: {
+              columns: userPublicColumns,
+            },
           },
         },
       },

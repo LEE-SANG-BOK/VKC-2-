@@ -31,6 +31,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // 대상 사용자 존재 여부 확인
     const targetUser = await db.query.users.findFirst({
       where: eq(users.id, targetUserId),
+      columns: {
+        id: true,
+      },
     });
 
     if (!targetUser) {

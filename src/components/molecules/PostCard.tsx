@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
@@ -13,6 +13,7 @@ import Tooltip from '../atoms/Tooltip';
 import TrustBadge, { type TrustLevel } from '@/components/atoms/TrustBadge';
 import FollowButton from '@/components/atoms/FollowButton';
 import dayjs from 'dayjs';
+import { useCategories } from '@/repo/categories/query';
 import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 
@@ -59,8 +60,6 @@ interface PostCardProps {
   isAdopted?: boolean;
   isLiked?: boolean;
   isBookmarked?: boolean;
-  isExpertAnswer?: boolean;
-  isAdminAnswer?: boolean;
   sourceLabel?: string;
   trustBadge?: 'verified' | 'community' | 'expert' | 'outdated';
   trustWeight?: number;
@@ -70,7 +69,7 @@ interface PostCardProps {
   otherResponderCount?: number;
 }
 
-export default function PostCard({ id, author, title, excerpt, tags, stats, category, subcategory, thumbnail, thumbnails, publishedAt, isQuestion, isAdopted, isLiked: initialIsLiked, isBookmarked: initialIsBookmarked, isExpertAnswer = false, isAdminAnswer = false, sourceLabel, trustBadge, translations, imageCount: imageCountProp, certifiedResponderCount, otherResponderCount }: PostCardProps) {
+export default function PostCard({ id, author, title, excerpt, tags, stats, category, subcategory, thumbnail, thumbnails, publishedAt, isQuestion, isAdopted, isLiked: initialIsLiked, isBookmarked: initialIsBookmarked, sourceLabel, trustBadge, translations, imageCount: imageCountProp, certifiedResponderCount, otherResponderCount }: PostCardProps) {
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
@@ -171,6 +170,21 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     return val;
   };
 
+  const { data: fetchedCategories } = useCategories();
+  const flatCategories = useMemo(() => {
+    if (!fetchedCategories) return [];
+    const children = fetchedCategories.flatMap((cat) => cat.children || []);
+    return [...fetchedCategories, ...children];
+  }, [fetchedCategories]);
+
+  const resolveCategorySlug = useCallback((value?: string) => {
+    const raw = value?.trim();
+    if (!raw) return '';
+    if (ALLOWED_CATEGORY_SLUGS.has(raw)) return raw;
+    const match = flatCategories.find((cat) => cat.id === raw || cat.slug === raw);
+    return match?.slug || '';
+  }, [flatCategories]);
+
   const mapSlugToLabel = (slug?: string) => {
     if (!slug) return '';
     if (!ALLOWED_CATEGORY_SLUGS.has(slug)) return '';
@@ -181,8 +195,11 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     return safeLabel(slug);
   };
 
-  const categoryLabel = useMemo(() => mapSlugToLabel(category), [category, locale]);
-  const subcategoryLabel = useMemo(() => mapSlugToLabel(subcategory), [subcategory, locale]);
+  const categorySlug = useMemo(() => resolveCategorySlug(category), [category, resolveCategorySlug]);
+  const subcategorySlug = useMemo(() => resolveCategorySlug(subcategory), [subcategory, resolveCategorySlug]);
+
+  const categoryLabel = useMemo(() => mapSlugToLabel(categorySlug), [categorySlug, locale]);
+  const subcategoryLabel = useMemo(() => mapSlugToLabel(subcategorySlug), [subcategorySlug, locale]);
 
   const [localIsLiked, setLocalIsLiked] = useState(initialIsLiked || false);
   const [localIsBookmarked, setLocalIsBookmarked] = useState(initialIsBookmarked || false);
@@ -301,18 +318,40 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       });
   }, [tags, locale]);
 
-  const tagChips = useMemo(() => {
-    const items = [categoryLabel, subcategoryLabel, ...displayTags].map((v) => v?.trim()).filter(Boolean) as string[];
+  const uncategorizedLabel =
+    tPost.uncategorized || (locale === 'vi' ? 'Chưa phân loại' : locale === 'en' ? 'Uncategorized' : '미지정');
+
+  const categoryChips = useMemo(() => {
+    const items = [categoryLabel || uncategorizedLabel, subcategoryLabel].map((v) => v?.trim()).filter(Boolean) as string[];
     const seen = new Set<string>();
-    return items
+    return items.filter((v) => {
+      const key = v.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [categoryLabel, subcategoryLabel, uncategorizedLabel]);
+
+  const tagChips = useMemo(() => {
+    const excluded = new Set(
+      [categoryLabel, subcategoryLabel]
+        .map((v) => v?.trim().toLowerCase())
+        .filter(Boolean) as string[]
+    );
+    const seen = new Set<string>();
+
+    return displayTags
+      .map((v) => v.trim())
       .filter((v) => {
         const key = v.toLowerCase();
+        if (!key) return false;
+        if (excluded.has(key)) return false;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
       .slice(0, 3);
-  }, [categoryLabel, subcategoryLabel, displayTags]);
+  }, [displayTags, categoryLabel, subcategoryLabel]);
 
   const displayImages = useMemo(() => {
     if (thumbnails && thumbnails.length > 0) {
@@ -466,6 +505,19 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       className={`question-card group ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
         }`}
     >
+      {categoryChips.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {categoryChips.map((chip) => (
+            <span
+              key={chip}
+              className="text-xs font-semibold text-gray-600 dark:text-gray-300"
+            >
+              #{chip}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       <div className="question-card-main">
         <div className="question-card-body">
           {/* Author Info & Badges */}
@@ -502,20 +554,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
               {title}
             </h3>
-	            {(isExpertAnswer || isAdminAnswer) && (
-	              <div className="flex items-center gap-1 text-[11px] font-semibold">
-	                {isExpertAnswer && (
-	                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-2 py-0.5 border border-blue-200 dark:border-blue-800">
-	                    전문가
-                  </span>
-                )}
-                {isAdminAnswer && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 border border-amber-200 dark:border-amber-800">
-                    관리자
-                  </span>
-                )}
-              </div>
-            )}
             {sourceLabel && (
               <span className="text-[11px] font-semibold rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
                 출처: {sourceLabel}
@@ -529,136 +567,18 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           </p>
 
           {/* Tags */}
-          {displayTags.length > 0 && (
+          {tagChips.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-3">
-              {displayTags.map((tag, index) => (
+              {tagChips.map((tag) => (
                 <span
-                  key={index}
-                  className="px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover-bg-gray-700 transition-colors"
+                  key={tag}
+                  className="px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 >
                   #{tag}
                 </span>
               ))}
             </div>
           )}
-
-          {/* Answer count & Actions */}
-          <div className="flex items-center justify-between gap-3 mt-2 min-w-0">
-            <button
-              type="button"
-              onClick={handleAnswerCountClick}
-              className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0"
-            >
-              <span aria-hidden="true">💬</span>
-              <span className="truncate">
-                <span className="hidden sm:inline">{answerLabel}</span>
-                <span className="sm:hidden">{compactAnswerLabel}</span>
-              </span>
-            </button>
-	            <div className="question-card-actions-row shrink-0">
-	              <Tooltip content={t.like || '좋아요'} position="top">
-	                <button
-	                  type="button"
-	                  onClick={handleLikeClick}
-	                  className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 min-h-[32px] text-xs font-semibold transition-colors ${localIsLiked ? 'text-blue-600 font-semibold bg-blue-50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-	                >
-	                  <ThumbsUp className={`w-4 h-4 ${localIsLiked ? 'fill-current' : ''}`} />
-	                  <span>{localLikes}</span>
-	                </button>
-	              </Tooltip>
-
-	              <div className="relative">
-	                <Tooltip content={t.share || '공유'} position="top">
-	                  <button
-	                    onClick={handleShareClick}
-	                    className="inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-	                  >
-	                    <Share2 className="w-4 h-4" />
-	                  </button>
-	                </Tooltip>
-                {showShareMenu && typeof document !== 'undefined'
-                  ? createPortal(
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowShareMenu(false)}>
-                      <div
-                        className="w-full max-w-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">{shareLabels.title}</span>
-                          <button
-                            onClick={() => setShowShareMenu(false)}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                            aria-label={t.close || '닫기'}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
-                          <button
-                            onClick={handleShareFacebook}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
-                          >
-                            {shareLabels.facebook}
-                          </button>
-                          <button
-                            onClick={handleShareX}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
-                          >
-                            {shareLabels.x}
-                          </button>
-                          <button
-                            onClick={handleShareTelegram}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
-                          >
-                            {shareLabels.telegram}
-                          </button>
-                          <button
-                            onClick={handleCopyLink}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
-                          >
-                            {shareLabels.copy}
-                          </button>
-                        </div>
-                      </div>
-                    </div>,
-                    document.body
-                  )
-                  : null}
-              </div>
-
-	              <Tooltip content={t.bookmark || '북마크'} position="top">
-	                <button
-	                  type="button"
-	                  onClick={handleBookmarkClick}
-	                  className={`inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-	                >
-	                  <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
-	                </button>
-	              </Tooltip>
-	              {isQuestion && (
-	                <>
-	                  <Tooltip content={tPost.question || '질문'} position="top">
-	                    <span className="inline-flex items-center justify-center rounded-full min-h-[32px] min-w-[32px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-semibold border border-blue-200 dark:border-blue-700">
-	                      ?
-	                    </span>
-	                  </Tooltip>
-	                  {isAdopted ? (
-	                    <Tooltip content={tPost.solved || '해결'} position="top">
-	                      <span className="inline-flex items-center justify-center rounded-full min-h-[32px] min-w-[32px] bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm font-semibold border border-green-200 dark:border-green-700">
-	                        ✓
-	                      </span>
-	                    </Tooltip>
-	                  ) : (
-	                    <Tooltip content={tPost.unsolved || '미해결'} position="top">
-	                      <span className="inline-flex items-center justify-center rounded-full min-h-[32px] min-w-[32px] bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-sm font-semibold border border-amber-200 dark:border-amber-700">
-	                        !
-	                      </span>
-	                    </Tooltip>
-	                  )}
-	                </>
-	              )}
-	            </div>
-	          </div>
         </div>
 
         {hasMedia && (
@@ -696,6 +616,111 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           </div>
         )}
       </div>
-	    </article>
-	  );
-	}
+
+      <div className="question-card-actions">
+        <div className="question-card-footer-fixed">
+          <button
+            type="button"
+            onClick={handleAnswerCountClick}
+            className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0"
+          >
+            <span aria-hidden="true">💬</span>
+            <span className="truncate">
+              <span className="hidden sm:inline">{answerLabel}</span>
+              <span className="sm:hidden">{compactAnswerLabel}</span>
+            </span>
+          </button>
+
+          <div className="question-card-actions-row shrink-0">
+            <Tooltip content={t.like || '좋아요'} position="top">
+              <button
+                type="button"
+                onClick={handleLikeClick}
+                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 min-h-[32px] text-xs font-semibold transition-colors ${localIsLiked ? 'text-blue-600 font-semibold bg-blue-50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              >
+                <ThumbsUp className={`w-4 h-4 ${localIsLiked ? 'fill-current' : ''}`} />
+                <span>{localLikes}</span>
+              </button>
+            </Tooltip>
+
+            <div className="relative">
+              <Tooltip content={t.share || '공유'} position="top">
+                <button
+                  onClick={handleShareClick}
+                  className="inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+              </Tooltip>
+              {showShareMenu && typeof document !== 'undefined'
+                ? createPortal(
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+                    onClick={() => setShowShareMenu(false)}
+                  >
+                    <div
+                      className="w-full max-w-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{shareLabels.title}</span>
+                        <button
+                          onClick={() => setShowShareMenu(false)}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                          aria-label={t.close || '닫기'}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
+                        <button
+                          onClick={handleShareFacebook}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {shareLabels.facebook}
+                        </button>
+                        <button
+                          onClick={handleShareX}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {shareLabels.x}
+                        </button>
+                        <button
+                          onClick={handleShareTelegram}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {shareLabels.telegram}
+                        </button>
+                        <button
+                          onClick={handleCopyLink}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {shareLabels.copy}
+                        </button>
+                      </div>
+                    </div>
+                  </div>,
+                  document.body
+                )
+                : null}
+            </div>
+
+            <Tooltip content={t.bookmark || '북마크'} position="top">
+              <button
+                type="button"
+                onClick={handleBookmarkClick}
+                className={`inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              >
+                <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
+              </button>
+            </Tooltip>
+
+            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              {formatDateTime(publishedAt)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}

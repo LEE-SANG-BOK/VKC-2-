@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { LucideIcon } from 'lucide-react';
 import Tooltip from '../atoms/Tooltip';
 
@@ -9,7 +10,7 @@ interface CategoryItemProps {
   isActive: boolean;
   onClick: (id: string) => void;
   className?: string;
-  tooltip?: string;
+  tooltip?: ReactNode;
   tooltipPosition?: 'top' | 'below' | 'right' | 'bottom-right';
 }
 

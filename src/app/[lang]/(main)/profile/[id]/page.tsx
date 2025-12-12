@@ -127,6 +127,30 @@ export default async function ProfilePage({ params }: PageProps) {
     notFound();
   }
 
+  const legacyStatus = profile.status;
+  const effectiveUserType =
+    profile.userType ||
+    (legacyStatus && legacyStatus !== 'banned' && legacyStatus !== 'suspended' ? legacyStatus : null);
+
+  const userTypeLabel = effectiveUserType
+    ? (() => {
+        const normalized = String(effectiveUserType).toLowerCase();
+        if (normalized === 'student' || effectiveUserType === '학생') {
+          return lang === 'vi' ? 'Sinh viên' : lang === 'en' ? 'Student' : '학생';
+        }
+        if (normalized === 'worker' || effectiveUserType === '직장인' || effectiveUserType === '근로자') {
+          return lang === 'vi' ? 'Người lao động' : lang === 'en' ? 'Worker' : '근로자';
+        }
+        if (normalized === 'resident' || effectiveUserType === '거주자') {
+          return lang === 'vi' ? 'Cư dân' : lang === 'en' ? 'Resident' : '거주자';
+        }
+        if (normalized === 'other' || effectiveUserType === '기타') {
+          return lang === 'vi' ? 'Khác' : lang === 'en' ? 'Other' : '기타';
+        }
+        return String(effectiveUserType);
+      })()
+    : undefined;
+
   const defaultFilters = { page: 1, limit: 20 };
   const answerFilters = { page: 1, limit: 20, adoptedOnly: true };
 
@@ -164,7 +188,7 @@ export default async function ProfilePage({ params }: PageProps) {
       image: profile.avatar,
       description: profile.bio,
       gender: profile.gender === 'male' ? 'Male' : profile.gender === 'female' ? 'Female' : 'Other',
-      jobTitle: profile.status,
+      jobTitle: userTypeLabel,
       url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'}/${lang}/profile/${id}`,
       sameAs: [],
       interactionStatistic: [

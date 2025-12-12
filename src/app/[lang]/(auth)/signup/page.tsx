@@ -5,7 +5,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { generateDisplayNameFromEmail, sanitizeDisplayName } from '@/lib/utils/profile';
+import { DISPLAY_NAME_MAX_LENGTH, DISPLAY_NAME_MIN_LENGTH, generateDisplayNameFromEmail, normalizeDisplayName } from '@/lib/utils/profile';
 
 export default function SignupPage() {
   const params = useParams();
@@ -17,7 +17,7 @@ export default function SignupPage() {
     nationality: '국내',
     gender: '',
     ageGroup: '',
-    status: '',
+    userType: '',
     nickname: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,17 +43,14 @@ export default function SignupPage() {
     e.preventDefault();
 
     // 필수 필드 검증
-    if (!formData.gender || !formData.ageGroup || !formData.status) {
+    if (!formData.gender || !formData.ageGroup || !formData.userType) {
       toast.error('모든 필드를 입력해주세요.');
       return;
     }
 
-    const normalizedNickname = sanitizeDisplayName(formData.nickname, generateDisplayNameFromEmail(email));
-
-    if (!normalizedNickname.trim()) {
-      toast.error('닉네임을 입력해주세요.');
-      return;
-    }
+    const normalizedNickname = normalizeDisplayName(formData.nickname);
+    const nicknameFallback = generateDisplayNameFromEmail(email);
+    const finalNickname = normalizedNickname.length >= DISPLAY_NAME_MIN_LENGTH ? normalizedNickname : nicknameFallback;
 
     if (!session?.user?.id) {
       toast.error('로그인 정보를 찾을 수 없습니다.');
@@ -63,8 +60,11 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
+      const userTypeLabel =
+        formData.userType === 'student' ? '학생' : formData.userType === 'worker' ? '근로자' : '거주자';
+
       // 사용자 정보 업데이트 API 호출
-      const response = await fetch(`/api/users/${session.user.id}`, {
+      const response = await fetch('/api/users/me', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -73,9 +73,9 @@ export default function SignupPage() {
           gender: formData.gender,
           ageGroup: formData.ageGroup,
           nationality: formData.nationality,
-          status: formData.status,
-          bio: `${formData.nationality} / ${formData.status}`,
-          displayName: normalizedNickname,
+          userType: formData.userType,
+          bio: `${formData.nationality} / ${userTypeLabel}`,
+          displayName: finalNickname,
           isProfileComplete: true,
         }),
       });
@@ -120,10 +120,13 @@ export default function SignupPage() {
                 type="text"
                 value={formData.nickname}
                 onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                maxLength={DISPLAY_NAME_MAX_LENGTH}
                 placeholder="닉네임을 입력하세요"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">미입력 시 자동 생성된 닉네임을 사용합니다.</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {DISPLAY_NAME_MIN_LENGTH}~{DISPLAY_NAME_MAX_LENGTH}자 권장 · 미입력 시 자동 생성됩니다.
+              </p>
             </div>
 
             <div>
@@ -196,20 +199,20 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                상태
+              <label htmlFor="userType" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                사용자 유형
               </label>
               <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                id="userType"
+                name="userType"
+                value={formData.userType}
+                onChange={(e) => setFormData({ ...formData, userType: e.target.value })}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               >
                 <option value="">선택하세요</option>
-                <option value="학생">학생</option>
-                <option value="직장인">직장인</option>
-                <option value="기타">기타</option>
+                <option value="student">학생</option>
+                <option value="worker">근로자</option>
+                <option value="resident">거주자</option>
               </select>
             </div>
 

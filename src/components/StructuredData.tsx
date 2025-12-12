@@ -1,28 +1,37 @@
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://viet-kconnect-renew-nextjs.vercel.app';
+import type { Locale } from '@/i18n/config';
 
-export default function StructuredData() {
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+const logoPath = '/brand-logo.png';
+
+type Props = {
+  locale?: Locale;
+};
+
+export default function StructuredData({ locale }: Props) {
+  const localizedSiteUrl = locale ? `${siteUrl}/${locale}` : siteUrl;
+
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'VietKConnect',
-    url: siteUrl,
-    description: '베트남 거주 한인을 위한 Q&A 커뮤니티',
+    url: localizedSiteUrl,
+    description: 'VietKConnect Q&A community',
     potentialAction: {
       '@type': 'SearchAction',
-      target: `${siteUrl}/search?q={search_term_string}`,
+      target: `${localizedSiteUrl}/search?q={search_term_string}`,
       'query-input': 'required name=search_term_string',
     },
-  }
+  };
 
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'VietKConnect',
     url: siteUrl,
-    logo: `${siteUrl}/logo.png`,
-    description: '베트남 거주 한인을 위한 Q&A 커뮤니티',
+    logo: `${siteUrl}${logoPath}`,
+    description: 'VietKConnect Q&A community',
     sameAs: [],
-  }
+  };
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -32,10 +41,10 @@ export default function StructuredData() {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: siteUrl,
+        item: localizedSiteUrl,
       },
     ],
-  }
+  };
 
   return (
     <>
@@ -52,5 +61,5 @@ export default function StructuredData() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
     </>
-  )
+  );
 }

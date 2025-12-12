@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { posts } from '@/lib/db/schema';
 import { paginatedResponse, serverErrorResponse } from '@/lib/api/response';
 import { sql, or, ilike, eq, desc, and } from 'drizzle-orm';
@@ -71,7 +72,9 @@ export async function GET(request: NextRequest) {
         return searchCondition;
       },
       with: {
-        author: true,
+        author: {
+          columns: userPublicColumns,
+        },
       },
       orderBy: [desc(posts.createdAt)],
       limit,

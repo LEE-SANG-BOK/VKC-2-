@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { bookmarks, users } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse, unauthorizedResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
@@ -23,6 +24,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, id),
+      columns: {
+        id: true,
+      },
     });
 
     if (!user) {
@@ -41,7 +45,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
       with: {
         post: {
           with: {
-            author: true,
+            author: {
+              columns: userPublicColumns,
+            },
             likes: true,
             bookmarks: true,
             answers: true,

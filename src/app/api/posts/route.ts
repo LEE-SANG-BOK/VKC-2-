@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { posts, categorySubscriptions, categories, follows, topicSubscriptions, users } from '@/lib/db/schema';
 import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
@@ -240,7 +241,9 @@ export async function GET(request: NextRequest) {
       const fallbackList = await db.query.posts.findMany({
         where: fallbackConditions.length > 0 ? and(...fallbackConditions) : undefined,
         with: {
-          author: true,
+          author: {
+            columns: userPublicColumns,
+          },
           likes: true,
           bookmarks: true,
           answers: true,
@@ -348,7 +351,9 @@ export async function GET(request: NextRequest) {
     const postList = await db.query.posts.findMany({
       where: conditions.length > 0 ? and(...conditions) : undefined,
       with: {
-        author: true,
+        author: {
+          columns: userPublicColumns,
+        },
         likes: true,
         bookmarks: true,
         answers: true,
@@ -520,7 +525,9 @@ export async function POST(request: NextRequest) {
     const postWithAuthor = await db.query.posts.findFirst({
       where: eq(posts.id, newPost.id),
       with: {
-        author: true,
+        author: {
+          columns: userPublicColumns,
+        },
       },
     });
 

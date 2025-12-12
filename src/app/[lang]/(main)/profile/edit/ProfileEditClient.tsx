@@ -11,6 +11,7 @@ import { useUserProfile } from '@/repo/users/query';
 import { queryKeys } from '@/repo/keys';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
+import { DISPLAY_NAME_MAX_LENGTH, DISPLAY_NAME_MIN_LENGTH, normalizeDisplayName } from '@/lib/utils/profile';
 
 type AvatarSource = ImageBitmap | HTMLImageElement;
 
@@ -95,6 +96,7 @@ interface FormData {
   bio: string;
   gender: string;
   ageGroup: string;
+  userType: string;
   status: string;
 }
 
@@ -133,6 +135,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
     bio: '',
     gender: '',
     ageGroup: '',
+    userType: '',
     status: '',
   });
 
@@ -151,12 +154,26 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
 
   useEffect(() => {
     if (profile) {
+      const legacyType = profile.status;
+      const resolvedUserType =
+        profile.userType ||
+        (legacyType && legacyType !== 'banned' && legacyType !== 'suspended'
+          ? legacyType === '학생' || legacyType === 'student'
+            ? 'student'
+            : legacyType === '직장인' || legacyType === 'worker'
+              ? 'worker'
+              : legacyType === '거주자' || legacyType === 'resident'
+                ? 'resident'
+                : ''
+          : '');
+
       setFormData({
         name: profile.displayName || '',
         bio: profile.bio || '',
         gender: profile.gender || '',
         ageGroup: profile.ageGroup || '',
-        status: profile.status || '',
+        userType: resolvedUserType,
+        status: legacyType || '',
       });
       const p = profile as { notifyAnswers?: boolean; notifyComments?: boolean; notifyReplies?: boolean; notifyAdoptions?: boolean; notifyFollows?: boolean };
       const answersVal = p.notifyAnswers ?? true;
@@ -217,13 +234,28 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
     setIsSubmitting(true);
 
     try {
+      const normalizedName = normalizeDisplayName(formData.name);
+      const invalidNameLabel =
+        t.nameValidationError ||
+        (lang === 'vi'
+          ? `Biệt danh phải từ ${DISPLAY_NAME_MIN_LENGTH}–${DISPLAY_NAME_MAX_LENGTH} ký tự.`
+          : lang === 'en'
+            ? `Nickname must be ${DISPLAY_NAME_MIN_LENGTH}–${DISPLAY_NAME_MAX_LENGTH} characters.`
+            : `닉네임은 ${DISPLAY_NAME_MIN_LENGTH}~${DISPLAY_NAME_MAX_LENGTH}자여야 합니다.`);
+
+      if (normalizedName.length < DISPLAY_NAME_MIN_LENGTH) {
+        toast.error(invalidNameLabel);
+        return;
+      }
+
       await updateProfile.mutateAsync({
-        name: formData.name,
-        displayName: formData.name,
+        name: normalizedName,
+        displayName: normalizedName,
         bio: formData.bio,
         gender: formData.gender,
         ageGroup: formData.ageGroup,
-        status: formData.status,
+        userType: formData.userType || undefined,
+        status: formData.status || undefined,
         notifyAnswers: notifications.answers,
         notifyComments: notifications.comments,
         notifyReplies: notifications.replies,
@@ -231,7 +263,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
         notifyFollows: notifications.follows,
       });
 
-      await updateSession({ name: formData.name });
+      await updateSession({ name: normalizedName });
 
       toast.success(t.updateSuccess || '프로필이 업데이트되었습니다.');
       router.push(`/${lang}/profile/${user?.id}`);
@@ -289,7 +321,8 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
           ? 'HEIC/HEIF is not supported. Please choose a JPG/PNG.'
           : 'HEIC/HEIF 형식은 아직 지원되지 않습니다. JPG/PNG 이미지를 선택해주세요.';
 
-    if (!file.type.startsWith('image/')) {
+    const isImageFile = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|heic|heif)$/i.test(file.name || '');
+    if (!isImageFile) {
       toast.error(onlyImagesLabel);
       event.target.value = '';
       return;
@@ -347,8 +380,15 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
 
       setAvatarPreviewOverride(uploadedUrl);
       await updateSession({ image: uploadedUrl });
+
+      queryClient.setQueryData(queryKeys.users.detail(user.id), (prev) => {
+        if (!prev || typeof prev !== 'object') return prev;
+        return { ...(prev as Record<string, unknown>), avatar: uploadedUrl };
+      });
+
       queryClient.invalidateQueries({ queryKey: queryKeys.users.me() });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(user.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       toast.success(t.avatarUploadSuccess || uploadSuccessLabel);
     } catch (error) {
       console.error('Failed to upload avatar:', error);
@@ -399,7 +439,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     type="file"
                     accept="image/*"
                     onChange={handleAvatarChange}
-                    className="hidden"
+                    className="sr-only"
                   />
                   <button
                     type="button"
@@ -469,6 +509,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  maxLength={DISPLAY_NAME_MAX_LENGTH}
                   className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   placeholder={t.namePlaceholder || '이름을 입력하세요'}
                 />
@@ -591,23 +632,24 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
 
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <label htmlFor="status" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {t.statusLabel || '상태'}
+                    <label htmlFor="userType" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {t.userTypeLabel || t.statusLabel || (lang === 'vi' ? 'Loại người dùng' : lang === 'en' ? 'User type' : '사용자 유형')}
                     </label>
                     <Tooltip
                       content={
+                        t.userTypeTooltip ||
                         t.statusTooltip ||
                         (lang === 'vi'
-                          ? 'Không bắt buộc. Chọn trạng thái hiện tại của bạn.'
+                          ? 'Không bắt buộc. Chọn loại người dùng của bạn.'
                           : lang === 'en'
-                            ? 'Optional. Choose your current status.'
-                            : '선택 사항입니다. 현재 상태를 선택해 주세요.')
+                            ? 'Optional. Choose your user type.'
+                            : '선택 사항입니다. 사용자 유형을 선택해 주세요.')
                       }
                       position="top"
                     >
                       <button
                         type="button"
-                        aria-label={t.statusTooltip || '상태 도움말'}
+                        aria-label={t.userTypeTooltip || t.statusTooltip || (lang === 'vi' ? 'Loại người dùng 도움말' : lang === 'en' ? 'User type help' : '사용자 유형 도움말')}
                         className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                       >
                         <Info className="h-4 w-4" />
@@ -615,15 +657,15 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     </Tooltip>
                   </div>
                   <select
-                    id="status"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    id="userType"
+                    value={formData.userType}
+                    onChange={(e) => setFormData({ ...formData, userType: e.target.value })}
                     className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   >
                     <option value="">{t.genderSelect || '선택'}</option>
-                    <option value="학생">{t.statusStudent || '학생'}</option>
-                    <option value="직장인">{t.statusWorker || '직장인'}</option>
-                    <option value="기타">{t.statusOther || '기타'}</option>
+                    <option value="student">{t.userTypeStudent || t.statusStudent || (lang === 'vi' ? 'Sinh viên' : lang === 'en' ? 'Student' : '학생')}</option>
+                    <option value="worker">{t.userTypeWorker || t.statusWorker || (lang === 'vi' ? 'Người lao động' : lang === 'en' ? 'Worker' : '근로자')}</option>
+                    <option value="resident">{t.userTypeResident || (lang === 'vi' ? 'Cư dân' : lang === 'en' ? 'Resident' : '거주자')}</option>
                   </select>
                 </div>
               </div>

@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { users, posts, answers, follows, comments, bookmarks } from '@/lib/db/schema';
-import { successResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
+import { successResponse, unauthorizedResponse, serverErrorResponse, errorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, sql, and } from 'drizzle-orm';
-import { generateDisplayNameFromEmail, sanitizeDisplayName } from '@/lib/utils/profile';
+import { DISPLAY_NAME_MIN_LENGTH, normalizeDisplayName } from '@/lib/utils/profile';
 
 export async function GET(request: NextRequest) {
   try {
@@ -72,7 +72,6 @@ export async function PUT(request: NextRequest) {
       gender,
       ageGroup,
       nationality,
-      status,
       image,
       notifyAnswers,
       notifyComments,
@@ -98,7 +97,6 @@ export async function PUT(request: NextRequest) {
     if (gender !== undefined) updateData.gender = gender;
     if (ageGroup !== undefined) updateData.ageGroup = ageGroup;
     if (nationality !== undefined) updateData.nationality = nationality;
-    if (status !== undefined) updateData.status = status;
     if (image !== undefined) updateData.image = image;
     if (notifyAnswers !== undefined) updateData.notifyAnswers = notifyAnswers;
     if (notifyComments !== undefined) updateData.notifyComments = notifyComments;
@@ -112,7 +110,10 @@ export async function PUT(request: NextRequest) {
     if (onboardingCompleted !== undefined) updateData.onboardingCompleted = onboardingCompleted;
     if (koreanLevel !== undefined) updateData.koreanLevel = koreanLevel;
     if (displayName !== undefined) {
-      const normalized = sanitizeDisplayName(displayName, generateDisplayNameFromEmail(user.email));
+      const normalized = normalizeDisplayName(displayName);
+      if (normalized.length < DISPLAY_NAME_MIN_LENGTH) {
+        return errorResponse('닉네임은 2자 이상이어야 합니다.');
+      }
       updateData.displayName = normalized;
       updateData.name = normalized;
     }

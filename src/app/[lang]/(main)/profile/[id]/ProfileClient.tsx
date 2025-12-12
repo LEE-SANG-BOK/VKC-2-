@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
-import { Calendar, Mail, Phone, Edit, MessageCircle, FileText, CheckCircle, ShieldCheck, User, Briefcase, Bookmark, LogOut } from 'lucide-react';
+import { Calendar, Mail, Phone, Edit, MessageCircle, FileText, CheckCircle, ShieldCheck, User, Briefcase, Bookmark, LogOut, Info } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import dayjs from 'dayjs';
 import Button from '@/components/atoms/Button';
@@ -32,6 +32,7 @@ export interface ProfileData {
   ageGroup?: string | null;
   nationality?: string | null;
   status?: string | null;
+  userType?: string | null;
   isFollowing?: boolean;
   stats: {
     followers: number;
@@ -278,6 +279,23 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
     }
   };
 
+  const getUserTypeLabel = (value: string) => {
+    const normalized = value.toLowerCase();
+    if (normalized === 'student' || value === '학생') {
+      return locale === 'vi' ? 'Sinh viên' : locale === 'en' ? 'Student' : '학생';
+    }
+    if (normalized === 'worker' || value === '직장인' || value === '근로자') {
+      return locale === 'vi' ? 'Người lao động' : locale === 'en' ? 'Worker' : '근로자';
+    }
+    if (normalized === 'resident' || value === '거주자') {
+      return locale === 'vi' ? 'Cư dân' : locale === 'en' ? 'Resident' : '거주자';
+    }
+    if (normalized === 'other' || value === '기타') {
+      return locale === 'vi' ? 'Khác' : locale === 'en' ? 'Other' : '기타';
+    }
+    return value;
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString || dateString === '방금 전') return dateString;
     const date = dayjs(dateString);
@@ -399,15 +417,38 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
 
                 {isOwnProfile ? (
                   <div className="flex gap-2 w-full sm:w-auto">
-                    <Button
-                      variant="secondary"
-                      onClick={handleEditProfile}
-                      className="flex items-center justify-center gap-2 border border-gray-300 flex-1 sm:flex-initial"
-                      size="sm"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span className="hidden sm:inline">{t.editProfile || 'Edit Profile'}</span>
-                    </Button>
+                    <div className="relative flex-1 sm:flex-initial">
+                      <Button
+                        variant="secondary"
+                        onClick={handleEditProfile}
+                        className="flex items-center justify-center gap-2 border border-gray-300 w-full"
+                        size="sm"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span className="hidden sm:inline">{t.editProfile || 'Edit Profile'}</span>
+                      </Button>
+                      <div className="absolute -top-2 -right-2 sm:hidden">
+                        <Tooltip
+                          content={
+                            t.editProfileTooltip ||
+                            (locale === 'vi'
+                              ? 'Chỉnh sửa hồ sơ của bạn.'
+                              : locale === 'en'
+                                ? 'Edit your profile.'
+                                : '프로필을 수정할 수 있어요.')
+                          }
+                          position="top"
+                        >
+                          <button
+                            type="button"
+                            aria-label={t.editProfileTooltip || '프로필 편집 도움말'}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/60 text-gray-600 dark:text-gray-200 shadow-sm"
+                          >
+                            <Info className="h-4 w-4" />
+                          </button>
+                        </Tooltip>
+                      </div>
+                    </div>
                     <Button
                       variant="secondary"
                       onClick={handleLogout}
@@ -442,12 +483,19 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                     <span>{t.ageGroup || 'Age'}: {getAgeGroupLabel(initialProfile.ageGroup)}</span>
                   </div>
                 )}
-                {initialProfile.status && (
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="w-4 h-4" />
-                    <span>{t.status || 'Status'}: {initialProfile.status}</span>
-                  </div>
-                )}
+                {(() => {
+                  const legacyStatus = initialProfile.status;
+                  const effectiveUserType =
+                    initialProfile.userType ||
+                    (legacyStatus && legacyStatus !== 'banned' && legacyStatus !== 'suspended' ? legacyStatus : null);
+                  if (!effectiveUserType) return null;
+                  return (
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="w-4 h-4" />
+                      <span>{t.status || 'Status'}: {getUserTypeLabel(effectiveUserType)}</span>
+                    </div>
+                  );
+                })()}
                 {isOwnProfile && initialProfile.email && (
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4" />

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { posts } from '@/lib/db/schema';
 import { getAdminSession } from '@/lib/admin/auth';
 import { eq } from 'drizzle-orm';
@@ -20,15 +21,21 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const post = await db.query.posts.findFirst({
       where: eq(posts.id, id),
       with: {
-        author: true,
+        author: {
+          columns: userPublicColumns,
+        },
         comments: {
           with: {
-            author: true,
+            author: {
+              columns: userPublicColumns,
+            },
           },
         },
         answers: {
           with: {
-            author: true,
+            author: {
+              columns: userPublicColumns,
+            },
           },
         },
         likes: true,

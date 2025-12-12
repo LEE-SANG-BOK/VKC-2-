@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
         bio: users.bio,
         isVerified: users.isVerified,
         status: users.status,
+        userType: users.userType,
         followersCount: sql<number>`(
           SELECT COUNT(*)::int 
           FROM ${follows} 
@@ -83,6 +84,7 @@ export async function GET(req: NextRequest) {
       bio: user.bio,
       isVerified: user.isVerified,
       status: user.status,
+      userType: user.userType,
       isFollowing: false,
       stats: {
         followers: user.followersCount,

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userPublicColumns } from '@/lib/db/columns';
 import { posts } from '@/lib/db/schema';
 import { successResponse, serverErrorResponse } from '@/lib/api/response';
 import { desc, sql } from 'drizzle-orm';
@@ -39,7 +40,9 @@ export async function GET(request: NextRequest) {
     const trendingPosts = await db.query.posts.findMany({
       where: (posts, { gte }) => gte(posts.createdAt, dateFrom),
       with: {
-        author: true,
+        author: {
+          columns: userPublicColumns,
+        },
       },
       orderBy: [
         // 인기도 점수 = 좋아요 * 2 + 조회수

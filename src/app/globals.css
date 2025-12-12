@@ -622,13 +622,21 @@
   font-weight: 600;
   line-height: 1.32;
   max-width: min(280px, calc(100vw - 16px));
+  max-height: min(240px, calc(100vh - 16px));
   text-align: center;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   pointer-events: none;
   z-index: 9999;
   box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22);
+}
+
+.vk-tooltip-portal[data-interactive='true'] {
+  pointer-events: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .vk-tooltip-portal--brand {
