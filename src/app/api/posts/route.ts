@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { posts, categorySubscriptions, categories, follows, topicSubscriptions } from '@/lib/db/schema';
 import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
@@ -107,14 +107,46 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (type) {
-      conditions.push(eq(posts.type, type));
+    const typeCondition = type ? eq(posts.type, type) : null;
+    if (typeCondition) {
+      conditions.push(typeCondition);
     }
 
-    if (search) {
-      conditions.push(
-        sql`(${posts.title} ILIKE ${`%${search}%`} OR ${posts.content} ILIKE ${`%${search}%`})`
-      );
+    const conditionsBeforeSearch = [...conditions];
+
+    const tokenizeSearch = (input: string) => {
+      const normalized = input
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, ' ')
+        .trim();
+      const tokens = normalized.split(/\s+/).map((t) => t.trim()).filter(Boolean);
+      return Array.from(new Set(tokens)).slice(0, 8);
+    };
+
+    const searchTokens = search ? tokenizeSearch(search) : [];
+    const hasSearch = Boolean(search && search.trim().length > 0);
+
+    const tokenToLike = (token: string) => `%${token}%`;
+
+    const overlapScore = hasSearch && searchTokens.length > 0
+      ? searchTokens.reduce<SQL<number>>((acc, token) => {
+        const hit = sql<number>`CASE WHEN (${posts.title} ILIKE ${tokenToLike(token)} OR ${posts.content} ILIKE ${tokenToLike(token)}) THEN 1 ELSE 0 END`;
+        return sql<number>`${acc} + ${hit}`;
+      }, sql<number>`0`)
+      : null;
+
+    if (hasSearch) {
+      if (searchTokens.length === 0) {
+        conditions.push(
+          sql`(${posts.title} ILIKE ${`%${search}%`} OR ${posts.content} ILIKE ${`%${search}%`})`
+        );
+      } else {
+        const tokenConditions = searchTokens.map(
+          (token) => sql`(${posts.title} ILIKE ${tokenToLike(token)} OR ${posts.content} ILIKE ${tokenToLike(token)})`
+        );
+        const searchCondition = tokenConditions.length === 1 ? tokenConditions[0] : (or(...tokenConditions) as SQL);
+        conditions.push(searchCondition);
+      }
     }
 
     if (filter === 'following') {
@@ -192,6 +224,82 @@ export async function GET(request: NextRequest) {
 
     const total = countResult?.count || 0;
 
+    if (hasSearch && total === 0) {
+      const fallbackConditions = [
+        ...conditionsBeforeSearch.filter((c) => (typeCondition ? c !== typeCondition : true)),
+        eq(posts.type, 'question'),
+      ];
+
+      const [fallbackCountResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(posts)
+        .where(fallbackConditions.length > 0 ? and(...fallbackConditions) : undefined);
+
+      const fallbackTotal = fallbackCountResult?.count || 0;
+
+      const fallbackList = await db.query.posts.findMany({
+        where: fallbackConditions.length > 0 ? and(...fallbackConditions) : undefined,
+        with: {
+          author: true,
+          likes: true,
+          bookmarks: true,
+          answers: true,
+          comments: true,
+        },
+        orderBy: [desc(posts.likes), desc(posts.views), desc(posts.createdAt)],
+        limit,
+        offset: (page - 1) * limit,
+      });
+
+      const postsWithUserStatus = fallbackList.map((post) => {
+        const imageMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi));
+        const thumbnails = imageMatches.slice(0, 4).map((match) => match[1]);
+        const thumbnail = thumbnails[0] ?? null;
+        const imageCount = imageMatches.length;
+        const trust = resolveTrust(post.author, post.createdAt);
+
+        return {
+          ...post,
+          author: post.author
+            ? {
+                ...post.author,
+                isExpert: post.author.isExpert || false,
+              }
+            : post.author,
+          trustBadge: trust.badge,
+          trustWeight: trust.weight,
+          thumbnail,
+          thumbnails,
+          imageCount,
+          isLiked: user ? post.likes.some((like) => like.userId === user.id) : false,
+          isBookmarked: user ? post.bookmarks.some((bookmark) => bookmark.userId === user.id) : false,
+          likesCount: post.likes.length,
+          commentsCount: (post.answers?.length || 0) + (post.comments?.length || 0),
+          likes: undefined,
+          bookmarks: undefined,
+          answers: undefined,
+          comments: undefined,
+        };
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: postsWithUserStatus,
+        pagination: {
+          page,
+          limit,
+          total: fallbackTotal,
+          totalPages: Math.ceil(fallbackTotal / limit),
+        },
+        meta: {
+          isFallback: true,
+          reason: 'no_matches',
+          query: search,
+          tokens: searchTokens,
+        },
+      });
+    }
+
     const postList = await db.query.posts.findMany({
       where: conditions.length > 0 ? and(...conditions) : undefined,
       with: {
@@ -201,14 +309,23 @@ export async function GET(request: NextRequest) {
         answers: true,
         comments: true,
       },
-      orderBy: [desc(posts.createdAt)],
+      orderBy: hasSearch && overlapScore
+        ? [
+            desc(overlapScore),
+            desc(sql<number>`CASE WHEN ${posts.type} = 'question' THEN 1 ELSE 0 END`),
+            desc(posts.isResolved),
+            desc(posts.likes),
+            desc(posts.views),
+            desc(posts.createdAt),
+          ]
+        : [desc(posts.createdAt)],
       limit,
       offset: (page - 1) * limit,
     });
 
     // 인기순일 경우 클라이언트에서 재정렬
     let sortedList = postList;
-    if (sort === 'popular') {
+    if (sort === 'popular' && !hasSearch) {
       sortedList = [...postList].sort((a, b) => {
         const trustA = resolveTrust(a.author, a.createdAt).weight;
         const trustB = resolveTrust(b.author, b.createdAt).weight;

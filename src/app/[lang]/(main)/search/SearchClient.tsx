@@ -178,6 +178,7 @@ export default function SearchClient({
 
   const posts = postsData?.data || [];
   const totalPages = postsData?.pagination?.totalPages || 0;
+  const isFallback = Boolean(postsData?.meta?.isFallback);
 
   const handleParentCategoryChangeWithReset = useCallback((category: string) => {
     setParentCategory(category);
@@ -357,6 +358,11 @@ export default function SearchClient({
               </div>
             ) : posts.length > 0 ? (
               <>
+                {isFallback && (
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+                    {t.fallbackNotice || (lang === 'vi' ? 'Không có kết quả phù hợp — hiển thị câu hỏi phổ biến.' : lang === 'en' ? 'No close matches — showing popular questions instead.' : '정확히 일치하는 결과가 없어 인기 질문을 보여드려요.')}
+                  </div>
+                )}
                 {posts.map((post: SearchPost) => (
                   <PostCard
                     key={post.id}

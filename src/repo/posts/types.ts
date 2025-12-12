@@ -44,6 +44,12 @@ export interface PaginatedResponse<T> {
     total: number;
     totalPages: number;
   };
+  meta?: {
+    isFallback?: boolean;
+    reason?: string;
+    query?: string | null;
+    tokens?: string[];
+  };
 }
 
 export interface ApiResponse<T> {

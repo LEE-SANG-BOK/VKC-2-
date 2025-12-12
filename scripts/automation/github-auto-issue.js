@@ -9,9 +9,15 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { config } from 'dotenv'
+import { fileURLToPath } from 'url'
+
+const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 // .env 파일 로드
-config({ path: '/Users/bk/Desktop/viet-kconnect/.env' })
+;['.env', '.env.local', '.env.production']
+  .map(file => path.join(PROJECT_ROOT, file))
+  .filter(envPath => fs.existsSync(envPath))
+  .forEach(envPath => config({ path: envPath }))
 
 // 환경 변수 확인
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.VITE_GITHUB_TOKEN
@@ -28,13 +34,13 @@ if (!GITHUB_TOKEN) {
  */
 function checkAgentCompletion() {
   const agentFiles = [
-    '/Users/bk/Desktop/viet-kconnect/docs/agents/agent-2-nextjs-structure.md',
-    '/Users/bk/Desktop/viet-kconnect/docs/agents/agent-3-supabase-setup.md',
-    '/Users/bk/Desktop/viet-kconnect/docs/agents/agent-4-database-schema.md',
-    '/Users/bk/Desktop/viet-kconnect/docs/agents/agent-5-auth-system.md',
-    '/Users/bk/Desktop/viet-kconnect/docs/agents/agent-6-social-login.md',
-    '/Users/bk/Desktop/viet-kconnect/docs/agents/agent-7-crud-api.md',
-    '/Users/bk/Desktop/viet-kconnect/docs/agents/agent-8-ui-components.md'
+    path.join(PROJECT_ROOT, 'docs', 'agents', 'agent-2-nextjs-structure.md'),
+    path.join(PROJECT_ROOT, 'docs', 'agents', 'agent-3-supabase-setup.md'),
+    path.join(PROJECT_ROOT, 'docs', 'agents', 'agent-4-database-schema.md'),
+    path.join(PROJECT_ROOT, 'docs', 'agents', 'agent-5-auth-system.md'),
+    path.join(PROJECT_ROOT, 'docs', 'agents', 'agent-6-social-login.md'),
+    path.join(PROJECT_ROOT, 'docs', 'agents', 'agent-7-crud-api.md'),
+    path.join(PROJECT_ROOT, 'docs', 'agents', 'agent-8-ui-components.md')
   ]
 
   const completedAgents = []
@@ -180,7 +186,7 @@ async function processAgentCompletion() {
  * 새로 완료된 Agent 확인
  */
 async function checkForNewCompletions(currentCompleted) {
-  const lastProcessedFile = '/Users/bk/Desktop/viet-kconnect/.last-processed-agents'
+  const lastProcessedFile = path.join(PROJECT_ROOT, '.last-processed-agents')
   let lastProcessed = []
 
   if (fs.existsSync(lastProcessedFile)) {

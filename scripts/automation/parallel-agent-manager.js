@@ -12,6 +12,20 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { createGitHubIssue, commitAndPush } from './github-auto-issue.js'
+import { fileURLToPath } from 'url'
+
+const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
+
+function findAgentDoc(agentId) {
+  const agentsDir = path.join(PROJECT_ROOT, 'docs', 'agents')
+  if (!fs.existsSync(agentsDir)) return null
+
+  const file = fs
+    .readdirSync(agentsDir)
+    .find(name => name.startsWith(`${agentId}-`) && name.endsWith('.md'))
+
+  return file ? path.join(agentsDir, file) : null
+}
 
 // 환경 변수 확인
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.VITE_GITHUB_TOKEN
@@ -189,8 +203,8 @@ function checkCurrentWorkStatus() {
   }
 
   for (const [agentId, task] of Object.entries(AGENT_TASKS)) {
-    const agentFile = `/Users/bk/Desktop/viet-kconnect/docs/agents/${agentId}-*.md`
-    const files = execSync(`ls ${agentFile} 2>/dev/null || echo ""`, { encoding: 'utf8' }).trim().split('\n').filter(f => f)
+    const agentFile = findAgentDoc(agentId)
+    const files = agentFile ? [agentFile] : []
 
     let agentStatus = 'pending'
 
@@ -206,9 +220,9 @@ function checkCurrentWorkStatus() {
       } else if (task.dependencies.length > 0) {
         // 의존성 체크
         const dependenciesReady = task.dependencies.every(depId => {
-          const depFile = execSync(`ls /Users/bk/Desktop/viet-kconnect/docs/agents/${depId}-*.md 2>/dev/null || echo ""`, { encoding: 'utf8' }).trim()
+          const depFile = findAgentDoc(depId)
           if (depFile) {
-            const depContent = fs.readFileSync(depFile.split('\n')[0], 'utf8')
+            const depContent = fs.readFileSync(depFile, 'utf8')
             return depContent.includes('✅ 완료') || depContent.includes('✅ **완료**')
           }
           return false
@@ -418,7 +432,7 @@ ${Object.entries(status.details).map(([id, details]) => `
 **목표**: 2-3주 내 서비스 런칭
 `
 
-  const dashboardPath = '/Users/bk/Desktop/viet-kconnect/docs/AGENT_PROGRESS_DASHBOARD.md'
+  const dashboardPath = path.join(PROJECT_ROOT, 'docs', 'AGENT_PROGRESS_DASHBOARD.md')
   fs.writeFileSync(dashboardPath, dashboard)
 
   console.log(`📊 진행률 대시보드 생성: ${dashboardPath}`)
