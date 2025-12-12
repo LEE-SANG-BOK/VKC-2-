@@ -145,6 +145,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     return safeLabel(slug);
   };
 
+  const categoryLabel = useMemo(() => mapSlugToLabel(category), [category, locale]);
+  const subcategoryLabel = useMemo(() => mapSlugToLabel(subcategory), [subcategory, locale]);
+
   const [localIsLiked, setLocalIsLiked] = useState(initialIsLiked || false);
   const [localIsBookmarked, setLocalIsBookmarked] = useState(initialIsBookmarked || false);
   const [localLikes, setLocalLikes] = useState(stats.likes);
@@ -295,6 +298,11 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     router.push(`/${locale}/posts/${id}`);
   };
 
+  const handleAnswerCountClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/${locale}/posts/${id}#${isQuestion ? 'answers' : 'comments'}`);
+  };
+
   const handleAuthorClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     const authorId = author.id || author.name;
@@ -397,11 +405,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
   const hasMedia = displayImages.length > 0;
   const totalImages = imageCount || displayImages.length;
-  // 모바일은 최대 2장(가로 2열), 웹은 1장만 노출(+배지로 추가 수 표시)
-  const mediaItems = displayImages.slice(0, Math.min(totalImages, 2));
-  const extraMobile = Math.max(totalImages - mediaItems.length, 0);
-  const extraDesktop = Math.max(totalImages - 1, 0);
-  const mediaGridClass = `question-card-media-grid question-card-media-grid--row ${mediaItems.length === 1 ? 'question-card-media-grid--single' : ''}`;
+  const mediaItems = displayImages.slice(0, 1);
+  const extraCount = Math.max(totalImages - 1, 0);
+  const mediaGridClass = `question-card-media-grid question-card-media-grid--row question-card-media-grid--single`;
   const isSelf = author?.id && session?.user?.id ? String(author.id) === String(session.user.id) : false;
 
   return (
@@ -412,47 +418,71 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     >
       <div className="question-card-main">
         <div className="question-card-body">
+          {(categoryLabel || subcategoryLabel) && (
+            <div className="flex items-baseline gap-1.5 mb-2">
+              {categoryLabel && (
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  {categoryLabel}
+                </span>
+              )}
+              {subcategoryLabel && (
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                  {subcategoryLabel}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Author Info & Badges */}
           <div className="flex items-start justify-between gap-3 mb-3 pr-2">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <button
-                type="button"
-                className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={handleAuthorClick}
-              >
-                <UserChip
-                  name={safeName(author.name)}
-                  avatar={author.avatar !== '/default-avatar.jpg' ? author.avatar : undefined}
-                  isVerified={false}
-                  size="md"
-                />
-              </button>
-              <div className="flex flex-col gap-1 min-w-0">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                  <span>{formatDateTime(publishedAt)}</span>
-                  {derivedTrustLevel !== 'community' && (
-                    <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
-                      <span className="inline-flex">
-                        <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
-                      </span>
-                    </Tooltip>
-                  )}
-                  {!isSelf && author.id ? (
-                    <FollowButton
-                      userId={String(author.id)}
-                      isFollowing={author.isFollowing}
-                      size="xs"
-                      className="ml-2"
-                    />
-                  ) : null}
-                </div>
+            <div className="min-w-0 flex flex-col gap-0.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 transition-opacity min-w-0"
+                  onClick={handleAuthorClick}
+                >
+                  <UserChip
+                    name={safeName(author.name)}
+                    avatar={author.avatar !== '/default-avatar.jpg' ? author.avatar : undefined}
+                    isVerified={false}
+                    size="md"
+                  />
+                </button>
+                {derivedTrustLevel !== 'community' && (
+                  <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
+                    <span className="inline-flex">
+                      <TrustBadge
+                        level={derivedTrustLevel}
+                        label={trustLabels[derivedTrustLevel]}
+                        showLabel={false}
+                        className="sm:hidden"
+                      />
+                      <TrustBadge
+                        level={derivedTrustLevel}
+                        label={trustLabels[derivedTrustLevel]}
+                        className="hidden sm:inline-flex"
+                      />
+                    </span>
+                  </Tooltip>
+                )}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {formatDateTime(publishedAt)}
               </div>
             </div>
+            {!isSelf && author.id ? (
+              <FollowButton
+                userId={String(author.id)}
+                isFollowing={author.isFollowing}
+                size="xs"
+              />
+            ) : null}
           </div>
 
           {/* Title + Trust badges */}
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
               {title}
             </h3>
 	            {(isExpertAnswer || isAdminAnswer) && (
@@ -497,33 +527,35 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
           {/* Answer count & Actions */}
           <div className="flex flex-wrap items-center gap-3 mt-2">
-            <div className="flex items-center gap-2">
-              <span role="img" aria-label="answers">💬</span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
-                {answerLabel}
-              </span>
-            </div>
-            <div className="question-card-actions-row">
-              <Tooltip content={t.like || '좋아요'} position="top">
-                <button
-                  type="button"
-                  onClick={handleLikeClick}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-2 min-h-[44px] text-sm font-semibold transition-colors ${localIsLiked ? 'text-blue-600 font-semibold bg-blue-50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-                >
-                  <ThumbsUp className={`w-5 h-5 ${localIsLiked ? 'fill-current' : ''}`} />
-                  <span>{localLikes}</span>
-                </button>
-              </Tooltip>
+            <button
+              type="button"
+              onClick={handleAnswerCountClick}
+              className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
+            >
+              <span aria-hidden="true">💬</span>
+              <span>{answerLabel}</span>
+            </button>
+	            <div className="question-card-actions-row">
+	              <Tooltip content={t.like || '좋아요'} position="top">
+	                <button
+	                  type="button"
+	                  onClick={handleLikeClick}
+	                  className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 min-h-[32px] text-xs font-semibold transition-colors ${localIsLiked ? 'text-blue-600 font-semibold bg-blue-50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+	                >
+	                  <ThumbsUp className={`w-4 h-4 ${localIsLiked ? 'fill-current' : ''}`} />
+	                  <span>{localLikes}</span>
+	                </button>
+	              </Tooltip>
 
-              <div className="relative">
-                <Tooltip content={t.share || '공유'} position="top">
-                  <button
-                    onClick={handleShareClick}
-                    className="rounded-full px-3 py-2 min-h-[44px] text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    <Share2 className="w-5 h-5" />
-                  </button>
-                </Tooltip>
+	              <div className="relative">
+	                <Tooltip content={t.share || '공유'} position="top">
+	                  <button
+	                    onClick={handleShareClick}
+	                    className="inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+	                  >
+	                    <Share2 className="w-4 h-4" />
+	                  </button>
+	                </Tooltip>
                 {showShareMenu && typeof document !== 'undefined'
                   ? createPortal(
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowShareMenu(false)}>
@@ -574,17 +606,39 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   : null}
               </div>
 
-              <Tooltip content={t.bookmark || '북마크'} position="top">
-                <button
-                  type="button"
-                  onClick={handleBookmarkClick}
-                  className={`rounded-full px-3 py-2 min-h-[44px] text-sm font-semibold transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-                >
-                  <Bookmark className={`w-5 h-5 ${localIsBookmarked ? 'fill-current' : ''}`} />
-                </button>
-              </Tooltip>
-            </div>
-          </div>
+	              <Tooltip content={t.bookmark || '북마크'} position="top">
+	                <button
+	                  type="button"
+	                  onClick={handleBookmarkClick}
+	                  className={`inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+	                >
+	                  <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
+	                </button>
+	              </Tooltip>
+	              {isQuestion && (
+	                <>
+	                  <Tooltip content={tPost.question || '질문'} position="top">
+	                    <span className="inline-flex items-center justify-center rounded-full min-h-[32px] min-w-[32px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-semibold border border-blue-200 dark:border-blue-700">
+	                      ?
+	                    </span>
+	                  </Tooltip>
+	                  {isAdopted ? (
+	                    <Tooltip content={tPost.solved || '해결'} position="top">
+	                      <span className="inline-flex items-center justify-center rounded-full min-h-[32px] min-w-[32px] bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm font-semibold border border-green-200 dark:border-green-700">
+	                        ✓
+	                      </span>
+	                    </Tooltip>
+	                  ) : (
+	                    <Tooltip content={tPost.unsolved || '미해결'} position="top">
+	                      <span className="inline-flex items-center justify-center rounded-full min-h-[32px] min-w-[32px] bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-sm font-semibold border border-amber-200 dark:border-amber-700">
+	                        !
+	                      </span>
+	                    </Tooltip>
+	                  )}
+	                </>
+	              )}
+	            </div>
+	          </div>
         </div>
 
         {hasMedia && (
@@ -594,9 +648,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           >
             <div className={mediaGridClass}>
               {mediaItems.map((src, idx) => {
-                const hideOnDesktop = idx > 0 ? 'sm:hidden' : '';
                 return (
-                  <div key={`${src}-${idx}`} className={`question-card-thumb__inner ${hideOnDesktop}`}>
+                  <div key={`${src}-${idx}`} className="question-card-thumb__inner">
                     <Image
                       src={src}
                       alt={title}
@@ -606,14 +659,14 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                       height={120}
                       className="w-full h-full object-cover"
                     />
-                    {idx === 0 && extraDesktop > 0 && (
-                      <span className="question-card-thumb__badge hidden sm:flex">
-                        +{extraDesktop}
+                    {idx === 0 && extraCount > 0 && (
+                      <span className="question-card-thumb__badge sm:hidden">
+                        +{extraCount}
                       </span>
                     )}
-                    {idx === 1 && extraMobile > 0 && (
-                      <span className="question-card-thumb__badge sm:hidden">
-                        +{extraMobile}
+                    {idx === 0 && extraCount > 0 && (
+                      <span className="question-card-thumb__badge hidden sm:flex">
+                        +{extraCount}
                       </span>
                     )}
                   </div>
@@ -623,28 +676,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           </div>
         )}
       </div>
-      {isQuestion && (
-        <div className="question-card-badges">
-          <Tooltip content={tPost.question || '질문'} position="below">
-            <span className="flex items-center justify-center w-6 h-6 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-semibold rounded-full border border-blue-200 dark:border-blue-700">
-              ?
-            </span>
-          </Tooltip>
-          {isAdopted ? (
-            <Tooltip content={tPost.solved || '해결'} position="below">
-              <span className="flex items-center justify-center w-6 h-6 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-semibold rounded-full border border-green-200 dark:border-green-700">
-                ✓
-              </span>
-            </Tooltip>
-          ) : (
-            <Tooltip content={tPost.unsolved || '미해결'} position="below">
-              <span className="flex items-center justify-center w-6 h-6 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-semibold rounded-full border border-amber-200 dark:border-amber-700">
-                !
-              </span>
-            </Tooltip>
-          )}
-        </div>
-      )}
-    </article>
-  );
-}
+	    </article>
+	  );
+	}

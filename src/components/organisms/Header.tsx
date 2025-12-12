@@ -338,7 +338,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
             </button>
           )}
           <div className="scale-90 sm:scale-100 origin-left">
-            <Tooltip content={tTooltip.brandIntro || brandIntroFallback} position="below">
+            <Tooltip content={tTooltip.brandIntro || brandIntroFallback} position="below" className="vk-tooltip-brand">
               <div aria-label={tTooltip.brandIntro || brandIntroFallback}>
                 <Logo />
               </div>

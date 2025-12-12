@@ -25,10 +25,12 @@ import Avatar from '@/components/atoms/Avatar';
 import UserChip from '@/components/molecules/UserChip';
 import Button from '@/components/atoms/Button';
 import Tooltip from '@/components/atoms/Tooltip';
+import Modal from '@/components/atoms/Modal';
 import RichTextEditor from '@/components/molecules/RichTextEditor';
 import Header from '@/components/organisms/Header';
 import TrustBadge, { type TrustLevel } from '@/components/atoms/TrustBadge';
 import FollowButton from '@/components/atoms/FollowButton';
+import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { useSession } from 'next-auth/react';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
 import { useTogglePostLike, useTogglePostBookmark, useDeletePost, useUpdatePost, useIncrementPostView } from '@/repo/posts/mutation';
@@ -197,6 +199,8 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     return val;
   };
   const tRules = (translations?.newPost || {}) as Record<string, string>;
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const openLoginPrompt = () => setIsLoginPromptOpen(true);
 
   const toggleLike = useTogglePostLike();
   const toggleBookmark = useTogglePostBookmark();
@@ -370,7 +374,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const handleLike = async () => {
     if (!user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
     const prevPost = { ...post };
@@ -401,7 +405,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     if (typeof window === 'undefined') return;
     const hash = window.location.hash;
     const section = new URLSearchParams(window.location.search).get('section');
-    if (hash === '#answers' || section === 'answers') {
+    if (hash === '#answers' || hash === '#comments' || section === 'answers' || section === 'comments') {
       answersHashHandledRef.current = true;
       setTimeout(() => scrollToAnswers(), 50);
     }
@@ -409,7 +413,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const handleBookmark = async () => {
     if (!user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
     const prevPost = { ...post };
@@ -497,7 +501,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const handleCommentLike = async (commentId: string) => {
     if (!user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
 
@@ -555,7 +559,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     }
 
     if (!user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
 
@@ -627,7 +631,11 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const handleSubmitAnswer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAnswer.trim() || !post || !user) return;
+    if (!user) {
+      openLoginPrompt();
+      return;
+    }
+    if (!newAnswer.trim() || !post) return;
     if (answerWarnings.banned || answerWarnings.spam) {
       toast.error(answerWarnings.banned ? (tPostDetail.bannedWarning || '금칙어가 포함되어 있습니다. 내용을 순화해주세요.') : (tPostDetail.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.'));
       return;
@@ -835,7 +843,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     }
 
     if (!user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
 
@@ -927,7 +935,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const openReportDialog = (type: 'post' | 'comment' | 'answer', id: string) => {
     if (!user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
     setReportTarget({ type, id });
@@ -1062,7 +1070,11 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const handleSubmitAnswerReply = async (e: React.FormEvent, answerId: string) => {
     e.preventDefault();
-    if (!answerReplyContent.trim() || !post || !post.answers || !user) return;
+    if (!user) {
+      openLoginPrompt();
+      return;
+    }
+    if (!answerReplyContent.trim() || !post || !post.answers) return;
     if (answerReplyWarnings.banned || answerReplyWarnings.spam) {
       toast.error(answerReplyWarnings.banned ? (tPostDetail.bannedWarning || '금칙어가 포함되어 있습니다. 내용을 순화해주세요.') : (tPostDetail.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.'));
       return;
@@ -1153,7 +1165,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const handleAnswerReplyLike = async (answerId: string, replyId: string) => {
     if (!user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
     if (!post || !post.answers) return;
@@ -1272,14 +1284,27 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       : locale === 'en'
         ? `${sortedAnswers.length} answers`
         : `${sortedAnswers.length}개의 답변이 있어요!`);
+  const answerMinHintLabel = locale === 'vi'
+    ? `Vui lòng viết ít nhất ${MIN_ANSWER_LENGTH} ký tự.`
+    : locale === 'en'
+      ? `Please write at least ${MIN_ANSWER_LENGTH} characters.`
+      : `${MIN_ANSWER_LENGTH}자 이상 작성해주세요.`;
   const answerMinCharsLabel = answerRemaining > 0
-    ? (tPostDetail.answerCharsLeft
-      ? tPostDetail.answerCharsLeft.replace('{remaining}', String(answerRemaining)).replace('{min}', String(MIN_ANSWER_LENGTH))
-      : (locale === 'vi'
+    ? (() => {
+      const template = tPostDetail.answerCharsLeft;
+      const hasRemaining = template?.includes('{remaining}');
+      const hasMin = template?.includes('{min}');
+      if (template && (hasRemaining || hasMin)) {
+        return template
+          .replace('{remaining}', String(answerRemaining))
+          .replace('{min}', String(MIN_ANSWER_LENGTH));
+      }
+      return locale === 'vi'
         ? `Cần thêm ${answerRemaining} ký tự (tối thiểu ${MIN_ANSWER_LENGTH})`
         : locale === 'en'
           ? `Need ${answerRemaining} more characters (min ${MIN_ANSWER_LENGTH})`
-          : `${answerRemaining}자 더 입력해주세요 (최소 ${MIN_ANSWER_LENGTH}자)`))
+          : `${answerRemaining}자 더 입력해주세요 (최소 ${MIN_ANSWER_LENGTH}자)`;
+    })()
     : '';
   const answerReadyLabel = tPostDetail.answerReady || (locale === 'vi' ? 'Đủ độ dài' : locale === 'en' ? 'Ready to post' : '충분히 작성됨');
   const answersTitle = post?.isQuestion
@@ -1462,25 +1487,25 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             <div className="mb-4 sm:mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-4 sm:gap-6">
                 <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
-	                  <button
-	                    type="button"
-	                    onClick={() => post.author?.id && router.push(`/${locale}/profile/${post.author.id}`)}
-	                    className="flex flex-col items-start gap-1 text-left"
-	                  >
-	                    <UserChip
-	                      name={safeName(post.author)}
-	                      avatar={post.author?.avatar}
-	                      isVerified={false}
-	                      size="lg"
-	                    />
-	                    {derivedTrustLevel !== 'community' && (
-	                      <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
-	                        <span className="inline-flex">
-	                          <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
-	                        </span>
-	                      </Tooltip>
-	                    )}
-	                  </button>
+		                  <button
+		                    type="button"
+		                    onClick={() => post.author?.id && router.push(`/${locale}/profile/${post.author.id}`)}
+		                    className="flex items-center gap-2 text-left"
+		                  >
+		                    <UserChip
+		                      name={safeName(post.author)}
+		                      avatar={post.author?.avatar}
+		                      isVerified={false}
+		                      size="lg"
+		                    />
+		                    {derivedTrustLevel !== 'community' && (
+		                      <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
+		                        <span className="inline-flex">
+		                          <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
+		                        </span>
+		                      </Tooltip>
+		                    )}
+		                  </button>
                   {!isUserPost && post.author?.id ? (
                     <FollowButton
                       userId={post.author.id}
@@ -1526,14 +1551,14 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               </div>
             ) : null}
 
-            {/* Action Buttons */}
-            {!isEditingPost && (
-          <div className="flex items-center gap-2 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700">
-            <Tooltip content={"좋아요"} position="top">
-              <button
-                onClick={handleLike}
-                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all ${
-                  post.isLiked
+	            {/* Action Buttons */}
+	            {!isEditingPost && (
+	          <div className="flex items-center gap-2 sm:gap-4 pt-4 sm:pt-6">
+	            <Tooltip content={"좋아요"} position="top">
+	              <button
+	                onClick={handleLike}
+	                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all ${
+	                  post.isLiked
                     ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
@@ -1582,7 +1607,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden p-4 sm:p-6 space-y-4 sm:space-y-5"
         >
           <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100" id="answers">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100" id={post.isQuestion ? 'answers' : 'comments'}>
               {answersTitle}
             </h2>
           </div>
@@ -1609,7 +1634,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             </div>
           )}
 
-          {post.isQuestion && user && (
+          {post.isQuestion && (
             <div className="mb-2 sm:mb-3">
               <form onSubmit={handleSubmitAnswer} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 sm:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between">
@@ -1617,15 +1642,25 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     {writeAnswerLabel}
                   </span>
                 </div>
-                <div className="min-h-[180px] sm:min-h-[200px]">
-                  <RichTextEditor
-                    content={newAnswer}
-                    onChange={setNewAnswer}
-                    placeholder={answerPlaceholderLabel}
-                    translations={translations || {}}
-                    variant="basic"
-                    tooltipPosition="below"
-                  />
+                <div className="min-h-[180px] sm:min-h-[200px] relative">
+                  {!user && (
+                    <button
+                      type="button"
+                      onClick={openLoginPrompt}
+                      className="absolute inset-0 z-10 cursor-pointer"
+                      aria-label="login-required"
+                    />
+                  )}
+                  <div className={!user ? 'pointer-events-none opacity-60' : ''}>
+                    <RichTextEditor
+                      content={newAnswer}
+                      onChange={setNewAnswer}
+                      placeholder={answerPlaceholderLabel}
+                      translations={translations || {}}
+                      variant="basic"
+                      tooltipPosition="below"
+                    />
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <Tooltip content={guidelineTooltip} position="right">
@@ -1639,7 +1674,11 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     </Button>
                   </Tooltip>
                   <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 order-2">
-                    {answerRemaining > 0 ? (
+                    {answerTextLength === 0 ? (
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {answerMinHintLabel}
+                      </span>
+                    ) : answerRemaining > 0 ? (
                       <span className="text-red-500">
                         {answerMinCharsLabel}
                       </span>
@@ -2006,7 +2045,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center justify-center py-12 text-gray-500 dark:text-gray-400 text-sm">
+                <div className="flex items-center justify-center py-4 text-gray-500 dark:text-gray-400 text-sm">
                   {tPostDetail.firstAnswer || "첫 답변을 작성해보세요!"}
                 </div>
               )}
@@ -2304,15 +2343,21 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                 </div>
               )}
 
-              {user && (
-                <form onSubmit={handleSubmitComment} className="mt-6">
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder={tPostDetail.commentPlaceholder || "댓글을 작성해주세요..."}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
-                    rows={3}
-                  />
+              <form onSubmit={handleSubmitComment} className="mt-6">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder={tPostDetail.commentPlaceholder || "댓글을 작성해주세요..."}
+                  readOnly={!user}
+                  onFocus={() => {
+                    if (!user) openLoginPrompt();
+                  }}
+                  onClick={() => {
+                    if (!user) openLoginPrompt();
+                  }}
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                  rows={3}
+                />
                   {(commentWarnings.banned || commentWarnings.spam || commentTooShort) && (
                     <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-800 dark:text-red-100">
                       <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -2335,8 +2380,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                       </Button>
                     </Tooltip>
                   </div>
-                </form>
-              )}
+              </form>
             </>
           )}
         </section>
@@ -2473,6 +2517,10 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           </div>
         </div>
       )}
+
+      <Modal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)}>
+        <LoginPrompt onClose={() => setIsLoginPromptOpen(false)} variant="modal" />
+      </Modal>
     </div>
   );
 }

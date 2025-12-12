@@ -7,12 +7,26 @@ export function useTouchTooltip(selector = '.vk-tooltip-target[data-tooltip]') {
         if (!mediaQuery.matches) return
 
         let activeTooltip: HTMLElement | null = null
+        let dismissTimeout: number | null = null
 
         const clearActive = () => {
+            if (dismissTimeout !== null) {
+                window.clearTimeout(dismissTimeout)
+                dismissTimeout = null
+            }
             if (activeTooltip) {
                 activeTooltip.removeAttribute('data-tooltip-visible')
                 activeTooltip = null
             }
+        }
+
+        const scheduleDismiss = () => {
+            if (dismissTimeout !== null) {
+                window.clearTimeout(dismissTimeout)
+            }
+            dismissTimeout = window.setTimeout(() => {
+                clearActive()
+            }, 2200)
         }
 
         const handleTouchEnd = (event: TouchEvent) => {
@@ -30,6 +44,7 @@ export function useTouchTooltip(selector = '.vk-tooltip-target[data-tooltip]') {
             if (shouldShow) {
                 target.setAttribute('data-tooltip-visible', 'true')
                 activeTooltip = target
+                scheduleDismiss()
             } else {
                 target.removeAttribute('data-tooltip-visible')
                 activeTooltip = null

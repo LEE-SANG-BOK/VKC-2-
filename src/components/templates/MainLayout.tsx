@@ -13,10 +13,11 @@ interface MainLayoutProps {
   onCategoryChange?: (category: string) => void;
   hideSidebar?: boolean;
   hideSearch?: boolean;
+  rightRail?: ReactNode;
   translations: Record<string, unknown>;
 }
 
-export default function MainLayout({ children, selectedCategory = 'all', onCategoryChange, hideSidebar = false, hideSearch = false, translations }: MainLayoutProps) {
+export default function MainLayout({ children, selectedCategory = 'all', onCategoryChange, hideSidebar = false, hideSearch = false, rightRail, translations }: MainLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -63,6 +64,13 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
           <main className="flex-1 min-w-0 pb-24 md:pb-0 vk-safe-bottom">
             {children}
           </main>
+          {rightRail ? (
+            <aside className="hidden lg:block w-[320px] shrink-0">
+              <div className="sticky top-20">
+                {rightRail}
+              </div>
+            </aside>
+          ) : null}
         </div>
       </div>
       <BottomNavigation translations={translations} />

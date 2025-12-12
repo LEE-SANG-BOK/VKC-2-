@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import MainLayout from '@/components/templates/MainLayout';
 import NewsSection from '@/components/organisms/NewsSection';
+import AdminPostRail from '@/components/organisms/AdminPostRail';
 import PostList from '@/components/organisms/PostList';
 import { useMyProfile } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
@@ -62,11 +63,14 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
     <MainLayout
       selectedCategory={resolvedCategory}
       onCategoryChange={handleCategoryChange}
+      rightRail={<AdminPostRail translations={dict} lang={lang} />}
       translations={dict}
     >
       <div className="flex flex-col gap-1 pt-1 pb-4 px-1 sm:px-0">
         <div className="space-y-1">
-          <NewsSection translations={dict} lang={lang} />
+          <div className="lg:hidden">
+            <NewsSection translations={dict} lang={lang} />
+          </div>
         </div>
         <PostList selectedCategory={resolvedCategory} translations={dict} />
       </div>

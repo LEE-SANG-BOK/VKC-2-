@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import Image from 'next/image';
 import { Camera, Save, Bell, ArrowLeft } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUpdateMyProfile } from '@/repo/users/mutation';
 import { useUserProfile } from '@/repo/users/query';
+import { queryKeys } from '@/repo/keys';
 import { toast } from 'sonner';
 
 interface FormData {
@@ -35,6 +37,9 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
   const router = useRouter();
   const { data: session, status: authStatus, update: updateSession } = useSession();
   const user = session?.user;
+  const queryClient = useQueryClient();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const avatarBlobUrlRef = useRef<string | null>(null);
 
   const t = (translations?.profileEdit || {}) as Record<string, string>;
 
@@ -62,6 +67,8 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [avatarPreviewOverride, setAvatarPreviewOverride] = useState<string | null>(null);
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -94,6 +101,15 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
       router.push(`/${lang}/login`);
     }
   }, [authStatus, router, lang]);
+
+  useEffect(() => {
+    return () => {
+      if (avatarBlobUrlRef.current) {
+        URL.revokeObjectURL(avatarBlobUrlRef.current);
+        avatarBlobUrlRef.current = null;
+      }
+    };
+  }, []);
 
   const handleNotificationToggle = (key: keyof NotificationSettings) => {
     if (key === 'all') {
@@ -160,7 +176,91 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
     );
   }
 
-  const avatarPreview = profile?.avatar || user?.image || '/avatar-default.jpg';
+  const avatarPreview = avatarPreviewOverride || profile?.avatar || user?.image || '/avatar-default.jpg';
+  const avatarUnoptimized = avatarPreview.startsWith('blob:') || avatarPreview.startsWith('data:');
+
+  const handleAvatarPick = () => {
+    if (!user?.id || isAvatarUploading) return;
+    avatarInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user?.id) return;
+    const previousAvatar = avatarPreviewOverride || profile?.avatar || user?.image || null;
+
+    const onlyImagesLabel =
+      lang === 'vi' ? 'Chỉ cho phép tệp ảnh.' : lang === 'en' ? 'Only image files are allowed.' : '이미지 파일만 업로드할 수 있습니다.';
+    const tooLargeLabel =
+      lang === 'vi' ? 'Kích thước ảnh phải ≤ 5MB.' : lang === 'en' ? 'Image must be 5MB or less.' : '이미지 크기는 5MB 이하여야 합니다.';
+    const uploadFailedLabel =
+      lang === 'vi' ? 'Tải ảnh đại diện thất bại.' : lang === 'en' ? 'Failed to upload profile photo.' : '프로필 사진 업로드에 실패했습니다.';
+    const uploadSuccessLabel =
+      lang === 'vi' ? 'Đã cập nhật ảnh đại diện.' : lang === 'en' ? 'Profile photo updated.' : '프로필 사진이 업데이트되었습니다.';
+
+    if (!file.type.startsWith('image/')) {
+      toast.error(onlyImagesLabel);
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(tooLargeLabel);
+      event.target.value = '';
+      return;
+    }
+
+    if (avatarBlobUrlRef.current) {
+      URL.revokeObjectURL(avatarBlobUrlRef.current);
+      avatarBlobUrlRef.current = null;
+    }
+
+    const optimisticUrl = URL.createObjectURL(file);
+    avatarBlobUrlRef.current = optimisticUrl;
+    setAvatarPreviewOverride(optimisticUrl);
+    setIsAvatarUploading(true);
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+
+      const res = await fetch('/api/upload/avatar', {
+        method: 'POST',
+        body: uploadFormData,
+        credentials: 'include',
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || !result?.success || !result?.data?.url) {
+        throw new Error(result?.error || uploadFailedLabel);
+      }
+
+      const uploadedUrl = String(result.data.url);
+
+      if (avatarBlobUrlRef.current) {
+        URL.revokeObjectURL(avatarBlobUrlRef.current);
+        avatarBlobUrlRef.current = null;
+      }
+
+      setAvatarPreviewOverride(uploadedUrl);
+      await updateSession({ image: uploadedUrl });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.me() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(user.id) });
+      toast.success(t.avatarUploadSuccess || uploadSuccessLabel);
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+      if (avatarBlobUrlRef.current) {
+        URL.revokeObjectURL(avatarBlobUrlRef.current);
+        avatarBlobUrlRef.current = null;
+      }
+      setAvatarPreviewOverride(previousAvatar);
+      toast.error(t.avatarUploadFailed || uploadFailedLabel);
+    } finally {
+      setIsAvatarUploading(false);
+      event.target.value = '';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -189,13 +289,28 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     alt={formData.name || 'Profile'}
                     width={128}
                     height={128}
+                    unoptimized={avatarUnoptimized}
                     className="w-32 h-32 rounded-full border-4 border-gray-100 dark:border-gray-700 object-cover"
+                  />
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
                   />
                   <button
                     type="button"
+                    onClick={handleAvatarPick}
+                    disabled={!user?.id || isAvatarUploading}
+                    aria-label={t.avatarChange || '프로필 사진 변경'}
                     className="absolute bottom-0 right-0 bg-gradient-to-r from-red-600 to-amber-500 text-white rounded-full p-2.5 hover:from-red-700 hover:to-amber-600 transition-all duration-300 shadow-lg"
                   >
-                    <Camera className="w-5 h-5" />
+                    {isAvatarUploading ? (
+                      <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Camera className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t.avatarChange || '프로필 사진 변경'}</p>

@@ -7,21 +7,17 @@ import { useSession } from 'next-auth/react';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { ShieldAlert, AlertTriangle, Link as LinkIcon } from 'lucide-react';
-import { useCategories } from '@/repo/categories/query';
 import { useCreatePost } from '@/repo/posts/mutation';
 import { isAccountRestrictedError } from '@/lib/api/errors';
 import SimilarQuestionPrompt from '@/components/organisms/SimilarQuestionPrompt';
+import Modal from '@/components/atoms/Modal';
+import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 
 const RichTextEditor = dynamic(() => import('@/components/molecules/RichTextEditor'), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse" />,
 });
-const getGroupLabel = (group: (typeof CATEGORY_GROUPS)[keyof typeof CATEGORY_GROUPS], locale: string) => {
-  if (locale === 'vi' && group.label_vi) return group.label_vi;
-  if (locale === 'en' && group.label_en) return group.label_en;
-  return group.label;
-};
 
 interface NewPostClientProps {
   translations: Record<string, unknown>;
@@ -31,7 +27,7 @@ interface NewPostClientProps {
 function NewPostForm({ translations, lang }: NewPostClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const user = session?.user;
   const createPost = useCreatePost();
   const t = (translations?.newPost || {}) as Record<string, string>;
@@ -41,7 +37,6 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const typeParam = searchParams.get('type');
   const initialType = typeParam === 'share' ? 'share' : 'question';
   const [postType, setPostType] = useState<'question' | 'share'>(initialType);
-  const { data: categories, isLoading: categoriesLoading } = useCategories();
   const [parentCategory, setParentCategory] = useState('');
   const [childCategory, setChildCategory] = useState('');
   const [title, setTitle] = useState('');
@@ -54,9 +49,16 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const lastCatKey = 'vk-last-category';
   const lastSubKey = 'vk-last-subcategory';
   const [manualTagEdit, setManualTagEdit] = useState(false);
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const openLoginPrompt = () => setIsLoginPromptOpen(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      openLoginPrompt();
+      return;
+    }
 
     const hasChildren = childCategories.length > 0;
     if (!title.trim() || title.trim().length < MIN_TITLE || !content.trim() || content.trim().length < MIN_CONTENT || !parentCategory || (hasChildren && !childCategory)) {
@@ -429,12 +431,6 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   };
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push(`/${lang}/login`);
-    }
-  }, [status, router, lang]);
-
-  useEffect(() => {
     const bannedPatterns = [
       /씨발/i,
       /시발/i,
@@ -541,9 +537,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                     required
                   >
                     <option value="">{t.selectParentCategory || '대분류 선택'}</option>
-                    {categoriesLoading ? (
-                      <option disabled>{t.loading || '로딩 중...'}</option>
-                    ) : parentOptions.length > 0 ? (
+                    {parentOptions.length > 0 ? (
                       parentOptions.map((opt) => (
                         <option key={opt.slug} value={opt.slug}>
                           {opt.label}
@@ -593,7 +587,14 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  readOnly={!user}
+                  onFocus={() => {
+                    if (!user) openLoginPrompt();
+                  }}
+                  onClick={() => {
+                    if (!user) openLoginPrompt();
+                  }}
+                  className={`w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
                   placeholder={postType === 'question' ? (t.titlePlaceholderQuestion || '질문을 입력하세요') : (t.titlePlaceholderShare || '제목을 입력하세요')}
                   required
                 />
@@ -617,12 +618,24 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   {t.content || '내용'} <span className="text-red-500">*</span>
                 </label>
-                <RichTextEditor
-                  content={content}
-                  onChange={setContent}
-                  placeholder={postType === 'question' ? (t.contentPlaceholderQuestion || '질문 내용을 작성하세요...') : (t.contentPlaceholderShare || '공유할 내용을 작성하세요...')}
-                  translations={translations}
-                />
+                <div className="relative">
+                  {!user && (
+                    <button
+                      type="button"
+                      onClick={openLoginPrompt}
+                      className="absolute inset-0 z-10 cursor-pointer"
+                      aria-label="login-required"
+                    />
+                  )}
+                  <div className={!user ? 'pointer-events-none opacity-60' : ''}>
+                    <RichTextEditor
+                      content={content}
+                      onChange={setContent}
+                      placeholder={postType === 'question' ? (t.contentPlaceholderQuestion || '질문 내용을 작성하세요...') : (t.contentPlaceholderShare || '공유할 내용을 작성하세요...')}
+                      translations={translations}
+                    />
+                  </div>
+                </div>
                 {content.trim().length > 0 && content.trim().length < MIN_CONTENT ? (
                   <p className="mt-1 text-xs text-red-600">
                     {t.contentMinWarning
@@ -712,6 +725,9 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
           </div>
         </div>
       </div>
+      <Modal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)}>
+        <LoginPrompt onClose={() => setIsLoginPromptOpen(false)} variant="modal" />
+      </Modal>
     </div>
   );
 }
