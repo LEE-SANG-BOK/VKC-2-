@@ -9,10 +9,12 @@
 import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
-import { createGitHubIssue, commitAndPush } from './github-auto-issue.js'
+import { createGitHubIssue, commitAndPush } from '../automation/github-auto-issue.js'
+import { fileURLToPath } from 'url'
 
-const PLANS_DIR = '/Users/bk/Desktop/viet-kconnect/plans'
-const CONTEXTS_DIR = '/Users/bk/Desktop/viet-kconnect/contexts'
+const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
+const PLANS_DIR = path.join(PROJECT_ROOT, 'plans')
+const CONTEXTS_DIR = path.join(PROJECT_ROOT, 'contexts')
 
 // 디렉토리 생성
 if (!fs.existsSync(PLANS_DIR)) {

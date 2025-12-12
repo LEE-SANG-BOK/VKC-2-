@@ -50,10 +50,11 @@ export default function CategoryItem({
     </button>
   );
 
-  // Sidebar에서는 툴팁 없이 바로 노출
-  if (tooltip) {
-    return button;
-  }
+  if (!tooltip) return button;
 
-  return button;
+  return (
+    <Tooltip content={tooltip} position={tooltipPosition}>
+      {button}
+    </Tooltip>
+  );
 }

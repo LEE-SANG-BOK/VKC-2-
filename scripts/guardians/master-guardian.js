@@ -8,10 +8,13 @@
  */
 
 import { startDevelopmentGuardian } from './development-guardian.js'
-import { executeCompleteWorkflow } from './workflow-manager.js'
-import { createWorkSnapshot, executeRollback, listSnapshots } from './backup-manager.js'
+import { executeCompleteWorkflow } from '../management/workflow-manager.js'
+import { createWorkSnapshot, executeRollback, listSnapshots } from '../management/backup-manager.js'
 import { runQualityChecks } from './quality-guardian.js'
-import { resumeSession, listSessions } from './context-manager.js'
+import { resumeSession, listSessions } from '../management/context-manager.js'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
 
 /**
  * 마스터 가디언 시작 - 모든 기능 통합

@@ -10,7 +10,6 @@ import { useSession } from 'next-auth/react';
 import { useCategories, useMySubscriptions } from '@/repo/categories/query';
 import { useToggleSubscription } from '@/repo/categories/mutation';
 import { toast } from 'sonner';
-import Tooltip from '@/components/atoms/Tooltip';
 
 interface ApiCategory {
   id: string;

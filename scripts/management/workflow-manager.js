@@ -8,8 +8,8 @@
 
 import { generatePlan, executePlan, requestApproval } from './plan-manager.js'
 import { createContext, updateContext, saveProgress, generateProgressDashboard } from './context-manager.js'
-import { processAgentCompletion, createGitHubIssue } from './github-auto-issue.js'
-import { generateProgressDashboard as generateAgentDashboard } from './parallel-agent-manager.js'
+import { processAgentCompletion, createGitHubIssue } from '../automation/github-auto-issue.js'
+import { generateProgressDashboard as generateAgentDashboard } from '../automation/parallel-agent-manager.js'
 
 /**
  * 완전한 개발 워크플로우 실행
@@ -18,10 +18,13 @@ async function executeCompleteWorkflow(request) {
   console.log('🚀 통합 개발 워크플로우 시작\n')
   console.log(`📝 요청사항: ${request}\n`)
 
+  let sessionId
+
   try {
     // 1단계: 컨텍스트 생성
     console.log('📋 1단계: 컨텍스트 생성 중...')
-    const { sessionId, context } = createContext(request)
+    const contextResult = createContext(request)
+    sessionId = contextResult.sessionId
 
     // 2단계: 플랜 생성
     console.log('🧠 2단계: 플랜 생성 중...')

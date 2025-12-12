@@ -11,16 +11,17 @@
 import { spawn, execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
-import { createWorkSnapshot, executeRollback } from './backup-manager.js'
+import { createWorkSnapshot, executeRollback } from '../management/backup-manager.js'
 import { runQualityChecks, startQualityMonitoring } from './quality-guardian.js'
-import { createContext, updateContext, saveSessionContext } from './context-manager.js'
-import { createGitHubIssue } from './github-auto-issue.js'
+import { createContext, updateContext, saveSessionContext } from '../management/context-manager.js'
+import { createGitHubIssue } from '../automation/github-auto-issue.js'
 import { createRequire } from 'module'
+import { fileURLToPath } from 'url'
 
 const require = createRequire(import.meta.url)
 
 // 설정
-const PROJECT_ROOT = '/Users/bk/Desktop/viet-kconnect'
+const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 const DEV_PORT = 3000
 const GUARDIAN_DIR = path.join(PROJECT_ROOT, '.guardian')
 

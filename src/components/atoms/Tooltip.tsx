@@ -21,7 +21,6 @@ export default function Tooltip({
   const tooltipId = useId();
   const targetRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const lastInputRef = useRef<'keyboard' | 'pointer'>('pointer');
 
   const [mounted, setMounted] = useState(false);
   const [touchMode, setTouchMode] = useState(false);
@@ -186,18 +185,11 @@ export default function Tooltip({
         }}
         onFocus={() => {
           if (touchMode) return;
-          if (lastInputRef.current !== 'keyboard') return;
           openTooltip();
         }}
         onBlur={() => {
           if (touchMode) return;
           close();
-        }}
-        onKeyDownCapture={() => {
-          lastInputRef.current = 'keyboard';
-        }}
-        onPointerDownCapture={() => {
-          lastInputRef.current = 'pointer';
         }}
         onClick={() => {
           if (!touchMode) return;

@@ -12,12 +12,13 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { createRequire } from 'module'
+import { fileURLToPath } from 'url'
 
 const require = createRequire(import.meta.url)
 const crypto = require('crypto')
 
 // 설정
-const PROJECT_ROOT = '/Users/bk/Desktop/viet-kconnect'
+const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 const BACKUPS_DIR = path.join(PROJECT_ROOT, '.backups')
 const SNAPSHOTS_DIR = path.join(BACKUPS_DIR, 'snapshots')
 const ROLLBACK_DIR = path.join(BACKUPS_DIR, 'rollback')

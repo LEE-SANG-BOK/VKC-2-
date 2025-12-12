@@ -12,12 +12,13 @@ import { execSync, spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { createRequire } from 'module'
+import { fileURLToPath } from 'url'
 
 const require = createRequire(import.meta.url)
 const chokidar = require('chokidar')
 
 // 설정
-const PROJECT_ROOT = '/Users/bk/Desktop/viet-kconnect'
+const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 const QUALITY_DIR = path.join(PROJECT_ROOT, '.quality')
 const REPORTS_DIR = path.join(QUALITY_DIR, 'reports')
 

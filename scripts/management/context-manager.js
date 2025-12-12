@@ -10,11 +10,13 @@
 import fs from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
+import { fileURLToPath } from 'url'
 
-const CONTEXTS_DIR = '/Users/bk/Desktop/viet-kconnect/contexts'
+const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
+const CONTEXTS_DIR = path.join(PROJECT_ROOT, 'contexts')
 const SESSIONS_DIR = path.join(CONTEXTS_DIR, 'sessions')
 const PROGRESS_DIR = path.join(CONTEXTS_DIR, 'progress')
-const PLANS_DIR = '/Users/bk/Desktop/viet-kconnect/plans'
+const PLANS_DIR = path.join(PROJECT_ROOT, 'plans')
 
 // 디렉토리 생성
 const dirsToCreate = [CONTEXTS_DIR, SESSIONS_DIR, PROGRESS_DIR]
