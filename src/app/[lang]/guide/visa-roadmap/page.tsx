@@ -37,7 +37,7 @@ export default async function VisaRoadmapPage({ params }: PageProps) {
               <div className="text-xs font-semibold text-blue-600 dark:text-blue-300 mb-2">{step.badge}</div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{step.title}</h3>
               <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">{step.desc}</p>
-              <a href={`${base}/search?query=${encodeURIComponent(step.title)}`} className="inline-flex mt-3 text-sm font-semibold text-blue-600">관련 질문 보기</a>
+              <a href={`${base}/search?q=${encodeURIComponent(step.title)}`} className="inline-flex mt-3 text-sm font-semibold text-blue-600">관련 질문 보기</a>
             </div>
           ))}
         </div>
@@ -46,9 +46,9 @@ export default async function VisaRoadmapPage({ params }: PageProps) {
       <section className="rounded-2xl border border-gray-200 dark:border-gray-700 p-6 space-y-3">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">바로가기</h2>
         <div className="flex flex-wrap gap-3">
-          <a className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold" href={`${base}/posts?category=visa`}>비자 Q&A 보기</a>
+          <a className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold" href={`${base}?c=visa`}>비자 Q&A 보기</a>
           <a className="rounded-lg border border-blue-200 dark:border-blue-700 px-4 py-2 text-sm font-semibold text-blue-700 dark:text-blue-200" href={`${base}/posts/new?type=question`}>질문 등록</a>
-          <a className="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200" href={`${base}/search?query=E-7`}>E-7 검색</a>
+          <a className="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200" href={`${base}/search?q=E-7`}>E-7 검색</a>
         </div>
       </section>
     </div>

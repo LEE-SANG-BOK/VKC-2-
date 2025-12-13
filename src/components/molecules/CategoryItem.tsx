@@ -25,7 +25,7 @@ export default function CategoryItem({
   tooltip,
   tooltipPosition = 'right'
 }: CategoryItemProps) {
-  const hasIcon = typeof Icon === 'function';
+  const hasIcon = Boolean(Icon);
   const baseClasses = `flex items-center ${hasIcon ? 'gap-3' : 'gap-1'} text-sm font-medium transition-all duration-200`;
   const defaultWidth = className.includes('w-') ? '' : 'w-full';
   const defaultPadding = className.includes('px-') || className.includes('!px-') ? '' : 'px-4';
@@ -45,7 +45,7 @@ export default function CategoryItem({
             : ''
         }`}
     >
-      {hasIcon && <Icon className="w-5 h-5 flex-shrink-0" />}
+      {Icon ? <Icon className="w-5 h-5 flex-shrink-0" /> : null}
       <span className="flex-1 text-left">{name}</span>
       {count > 0 && <span className="text-xs text-gray-500 dark:text-gray-400">{count}</span>}
     </button>

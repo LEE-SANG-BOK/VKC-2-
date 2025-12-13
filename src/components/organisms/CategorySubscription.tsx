@@ -24,13 +24,19 @@ export default function CategorySubscription({ translations, onToggle }: Categor
   const toggleSubscription = useToggleSubscription();
 
   const isLoading = categoriesLoading || subscriptionsLoading;
-  const subscribedIds = new Set(subscriptions?.map(s => s.id) || []);
 
   const allowedSlugs = useMemo(() => {
-    const parents = Object.keys(CATEGORY_GROUPS);
     const children = Object.values(CATEGORY_GROUPS).flatMap((g) => g.slugs as readonly string[]);
-    return new Set([...parents, ...children]);
+    return new Set(children);
   }, []);
+
+  const topicSubscriptions = useMemo(() => {
+    return (subscriptions || []).filter((sub) => allowedSlugs.has(sub.slug));
+  }, [allowedSlugs, subscriptions]);
+
+  const subscribedIds = useMemo(() => {
+    return new Set(topicSubscriptions.map((sub) => sub.id));
+  }, [topicSubscriptions]);
 
   const filteredCategories = useMemo(() => {
     const flattened: any[] = [];
@@ -136,11 +142,11 @@ export default function CategorySubscription({ translations, onToggle }: Categor
           </div>
         )}
 
-        {subscriptions && subscriptions.length > 0 && (
+        {topicSubscriptions.length > 0 && (
           <div className="mt-4 pt-4 border-t border-amber-200/50 dark:border-gray-700/50">
             <div className="flex items-center gap-2">
               <div className="flex -space-x-1">
-                {subscriptions.slice(0, 3).map((sub, i) => (
+                {topicSubscriptions.slice(0, 3).map((sub, i) => (
                   <div
                     key={sub.id}
                     className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[10px] font-bold text-white border-2 border-white dark:border-gray-800"
@@ -149,14 +155,14 @@ export default function CategorySubscription({ translations, onToggle }: Categor
                     {sub.name.charAt(0)}
                   </div>
                 ))}
-                {subscriptions.length > 3 && (
+                {topicSubscriptions.length > 3 && (
                   <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-[10px] font-medium text-gray-600 dark:text-gray-300 border-2 border-white dark:border-gray-800">
-                    +{subscriptions.length - 3}
+                    +{topicSubscriptions.length - 3}
                   </div>
                 )}
               </div>
               <p className="text-xs text-gray-600 dark:text-gray-400">
-                {subscribedCountLabel(subscriptions.length)}
+                {subscribedCountLabel(topicSubscriptions.length)}
               </p>
             </div>
           </div>

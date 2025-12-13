@@ -8,6 +8,7 @@ import { checkUserStatus } from '@/lib/user-status';
 import { eq, desc } from 'drizzle-orm';
 import { createAnswerNotification } from '@/lib/notifications/create';
 import { hasProhibitedContent } from '@/lib/content-filter';
+import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -110,18 +111,31 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const { content } = body;
 
-    if (!content || !content.trim()) {
-      return errorResponse('답변 내용을 입력해주세요.');
+    if (!content || typeof content !== 'string') {
+      return errorResponse('답변 내용을 입력해주세요.', 'ANSWER_REQUIRED');
     }
-    if (hasProhibitedContent(content)) {
-      return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.');
+
+    const normalizedContent = content.trim();
+    const validation = validateUgcText(normalizedContent, UGC_LIMITS.answerContent.min, UGC_LIMITS.answerContent.max);
+    if (!validation.ok) {
+      if (validation.code === 'UGC_TOO_SHORT') {
+        return errorResponse('답변이 너무 짧습니다.', 'ANSWER_TOO_SHORT');
+      }
+      if (validation.code === 'UGC_TOO_LONG') {
+        return errorResponse('답변이 너무 깁니다.', 'ANSWER_TOO_LONG');
+      }
+      return errorResponse('답변 내용이 올바르지 않습니다.', 'ANSWER_LOW_QUALITY');
+    }
+
+    if (hasProhibitedContent(normalizedContent)) {
+      return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
     }
 
     // 답변 작성
     const [newAnswer] = await db.insert(answers).values({
       postId,
       authorId: user.id,
-      content: content.trim(),
+      content: normalizedContent,
     }).returning();
 
     // 작성자 정보 포함하여 반환

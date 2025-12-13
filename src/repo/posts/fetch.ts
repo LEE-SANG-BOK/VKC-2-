@@ -11,7 +11,7 @@ import type {
   UpdatePostRequest,
   PostFilters,
 } from './types';
-import { AccountRestrictedError } from '@/lib/api/errors';
+import { ApiError, AccountRestrictedError } from '@/lib/api/errors';
 
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -130,12 +130,10 @@ export async function createPost(data: CreatePostRequest): Promise<ApiResponse<P
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    // Debug: log server error details for troubleshooting
-    console.error('POST /api/posts failed', res.status, error);
     if (res.status === 403) {
       throw new AccountRestrictedError(error.error || 'Account restricted');
     }
-    throw new Error(error.error || error.message || 'Failed to create post');
+    throw new ApiError(error.error || error.message || 'Failed to create post', res.status, error.code);
   }
 
   return res.json();

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from 'next/navigation';
 import { i18n } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
+import { getDictionary } from '@/i18n/get-dictionary';
 import StructuredData from "@/components/StructuredData";
 import QueryProvider from "@/providers/QueryProvider";
 import NextTopLoader from 'nextjs-toploader';
@@ -20,72 +21,94 @@ export async function generateStaticParams() {
 }
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://viet-kconnect-renew-nextjs.vercel.app';
+const ogLocaleMap: Record<Locale, string> = {
+  ko: 'ko_KR',
+  en: 'en_US',
+  vi: 'vi_VN',
+};
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: 'viet kconnect - 베트남 한인 커뮤니티',
-    template: '%s | viet kconnect',
-  },
-  description: '베트남 거주 한인을 위한 Q&A 커뮤니티. 기술, 비즈니스, 라이프스타일, 교육 등 다양한 주제의 질문과 답변을 공유하세요.',
-  keywords: ['베트남', '한인', '커뮤니티', 'Q&A', '질문', '답변'],
-  authors: [{ name: 'viet kconnect Team' }],
-  creator: 'viet kconnect',
-  publisher: 'viet kconnect',
-  applicationName: 'viet kconnect',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'viet kconnect',
-  },
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  openGraph: {
-    type: 'website',
-    locale: 'ko_KR',
-    url: siteUrl,
-    title: 'viet kconnect - 베트남 한인 커뮤니티',
-    description: '베트남 거주 한인을 위한 Q&A 커뮤니티',
-    siteName: 'viet kconnect',
-    images: [
-      {
-        url: '/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'viet kconnect 커뮤니티',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'viet kconnect - 베트남 한인 커뮤니티',
-    description: '베트남 거주 한인을 위한 Q&A 커뮤니티',
-    images: ['/og-image.jpg'],
-    creator: '@vietkconnect',
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang } = await params;
+
+  if (!i18n.locales.includes(lang as Locale)) {
+    notFound();
+  }
+
+  const locale = lang as Locale;
+  const dict = await getDictionary(locale);
+  const meta = (dict?.metadata?.home || {}) as Record<string, string>;
+  const title = meta.title || 'viet kconnect - 베트남 한인 커뮤니티';
+  const description =
+    meta.description ||
+    '베트남 거주 한인을 위한 Q&A 커뮤니티. 기술, 비즈니스, 라이프스타일, 교육 등 다양한 주제의 질문과 답변을 공유하세요.';
+  const siteName = meta.siteName || 'viet kconnect';
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title,
+    description,
+    alternates: {
+      languages: Object.fromEntries(i18n.locales.map((l) => [l, `${siteUrl}/${l}`])),
+    },
+    keywords: ['베트남', '한인', '커뮤니티', 'Q&A', '질문', '답변'],
+    authors: [{ name: 'viet kconnect Team' }],
+    creator: 'viet kconnect',
+    publisher: 'viet kconnect',
+    applicationName: 'viet kconnect',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: siteName,
+    },
+    formatDetection: {
+      email: false,
+      address: false,
+      telephone: false,
+    },
+    openGraph: {
+      type: 'website',
+      locale: ogLocaleMap[locale] || 'vi_VN',
+      url: `${siteUrl}/${locale}`,
+      title,
+      description,
+      siteName,
+      images: [
+        {
+          url: '/brand-logo.png',
+          width: 208,
+          height: 98,
+          alt: siteName,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/brand-logo.png'],
+      creator: '@vietkconnect',
+    },
+    robots: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
-  },
-  verification: {
-    google: 'verification_token',
-    yandex: 'verification_token',
-  },
-  icons: {
-    apple: '/icon-192x192.png',
-  },
-  manifest: '/manifest.json',
-};
+    verification: {
+      google: 'verification_token',
+      yandex: 'verification_token',
+    },
+    icons: {
+      apple: '/icon-192x192.png',
+    },
+    manifest: '/manifest.json',
+  };
+}
 
 export const viewport = {
   width: 'device-width',
@@ -123,7 +146,7 @@ export default async function LocaleLayout({
       <QueryProvider>
         <SessionProvider basePath="/api/auth">
           <ProfileChecker locale={lang} />
-          <StructuredData />
+          <StructuredData locale={lang as Locale} />
           {children}
           <Toaster position="top-center" richColors />
         </SessionProvider>

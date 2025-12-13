@@ -25,7 +25,7 @@ export function hasProhibitedContent(text: string | undefined | null): boolean {
   if (!text) return false;
   // 허용할 내부/자체 호스트 URL (이미지 업로드 등)
   const allowedUrlPatterns = [
-    /https?:\/\/[^"'\s]*supabase\.co\/storage\/v1\/object\/public\//i,
+    /https?:\/\/[^"'\s]*supabase\.co\/storage\/v1\/object\//i,
     /https?:\/\/[^"'\s]*viet[-]?kconnect/i,
   ];
 

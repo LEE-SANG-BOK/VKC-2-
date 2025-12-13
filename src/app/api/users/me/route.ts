@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { userMeColumns } from '@/lib/db/columns';
 import { users, posts, answers, follows, comments, bookmarks } from '@/lib/db/schema';
 import { successResponse, unauthorizedResponse, serverErrorResponse, errorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
 
     const currentUser = await db.query.users.findFirst({
       where: eq(users.id, user.id),
+      columns: userMeColumns,
     });
 
     if (!currentUser) {
@@ -123,11 +125,16 @@ export async function PUT(request: NextRequest) {
       updateData.isProfileComplete = true;
     }
 
-    const [updatedUser] = await db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, user.id))
-      .returning();
+    await db.update(users).set(updateData).where(eq(users.id, user.id));
+
+    const updatedUser = await db.query.users.findFirst({
+      where: eq(users.id, user.id),
+      columns: userMeColumns,
+    });
+
+    if (!updatedUser) {
+      return unauthorizedResponse('사용자 정보를 찾을 수 없습니다.');
+    }
 
     return successResponse(updatedUser, '프로필이 업데이트되었습니다.');
   } catch (error) {

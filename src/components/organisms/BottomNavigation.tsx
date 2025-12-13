@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
-import { useParams, usePathname, useSearchParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Home, Search, PenSquare, ShieldCheck, User } from 'lucide-react';
 
@@ -13,16 +13,10 @@ interface BottomNavigationProps {
 export default function BottomNavigation({ translations }: BottomNavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const params = useParams();
   const { data: session } = useSession();
   const user = session?.user;
   const lang = (params?.lang as string) || 'ko';
-
-  const sidebarTranslations = (translations?.sidebar || {}) as Record<string, string>;
-  const isHomeRoute = pathname === `/${lang}`;
-  const currentFeed = (searchParams?.get('c') || 'popular').toLowerCase();
-  const showFeedToggle = isHomeRoute && (currentFeed === 'popular' || currentFeed === 'latest');
 
   const navItems = useMemo(() => {
     const labels = (translations?.bottomNav || {}) as Record<string, string>;
@@ -89,38 +83,6 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
   return (
     <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 dark:border-gray-800/80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg">
       <div className="relative">
-        {showFeedToggle ? (
-          <div className="absolute -top-11 left-1/2 -translate-x-1/2 z-10">
-            <div className="flex items-center gap-1 rounded-full border border-gray-200/80 dark:border-gray-700/80 bg-white/95 dark:bg-gray-900/95 backdrop-blur px-1 py-1 shadow-md">
-              <button
-                type="button"
-                onClick={() => router.push(`/${lang}?c=popular`)}
-                aria-pressed={currentFeed === 'popular'}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                  currentFeed === 'popular'
-                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
-                    : 'text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800'
-                }`}
-              >
-                <span aria-hidden>🔥</span>
-                <span>{sidebarTranslations.popular || (lang === 'vi' ? 'Phổ biến' : lang === 'en' ? 'Popular' : '인기')}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push(`/${lang}?c=latest`)}
-                aria-pressed={currentFeed === 'latest'}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                  currentFeed === 'latest'
-                    ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-100'
-                    : 'text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800'
-                }`}
-              >
-                <span aria-hidden>✨</span>
-                <span>{sidebarTranslations.latest || (lang === 'vi' ? 'Mới nhất' : lang === 'en' ? 'Latest' : '최신')}</span>
-              </button>
-            </div>
-          </div>
-        ) : null}
         <div className="grid grid-cols-5 px-2 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]">
           {navItems.map((item) => {
             const active = isActive(item.href);

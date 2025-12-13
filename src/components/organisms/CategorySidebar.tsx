@@ -93,7 +93,14 @@ export default function CategorySidebar({
     return map;
   }, [apiCategories]);
 
+  const topicSlugs = useMemo(() => {
+    return new Set(Object.values(CATEGORY_GROUPS).flatMap((group) => group.slugs as readonly string[]));
+  }, []);
+
   const subscribedIds = useMemo(() => new Set((mySubs || []).map((s) => s.id)), [mySubs]);
+  const topicSubscriptions = useMemo(() => {
+    return (mySubs || []).filter((cat) => topicSlugs.has(cat.slug));
+  }, [mySubs, topicSlugs]);
 
   const groupOptions = useMemo(() => {
     return Object.entries(CATEGORY_GROUPS).map(([slug, group]) => {
@@ -303,15 +310,36 @@ export default function CategorySidebar({
           <div className="space-y-1">
             {groupOptions.map((group) => (
               <div key={group.slug} className="space-y-1">
-                <CategoryItem
-                  id={group.slug}
-                  name={group.label}
-                  icon={undefined}
-                  count={0}
-                  isActive={selectedCategory === group.slug}
-                  onClick={handleCategoryClick}
-                  className="!py-2 font-semibold"
-                />
+                <div className="flex items-center justify-between pr-2 py-1 gap-2">
+                  <CategoryItem
+                    id={group.slug}
+                    name={group.label}
+                    icon={undefined}
+                    count={0}
+                    isActive={selectedCategory === group.slug}
+                    onClick={handleCategoryClick}
+                    className="!py-2 font-semibold flex-1"
+                  />
+                  {(() => {
+                    const apiParent = apiBySlug.get(group.slug);
+                    if (!apiParent) return null;
+                    const subscribed = subscribedIds.has(apiParent.id);
+                    return (
+                      <button
+                        onClick={() => handleSubscribe(apiParent.id)}
+                        className={`text-[11px] min-w-[84px] px-3 py-1.5 rounded-full transition-colors ${
+                          subscribed
+                            ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
+                            : 'border border-transparent bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-sm hover:from-red-700 hover:to-amber-600'
+                        }`}
+                      >
+                        {subscribed
+                          ? (t.subscribedLabel || t.subscribed || '구독 중')
+                          : (t.subscribe || '구독')}
+                      </button>
+                    );
+                  })()}
+                </div>
                 {group.children.length > 0 && (
                   <div className="space-y-1 pl-4">
                     {group.children.map((child) => {
@@ -356,9 +384,9 @@ export default function CategorySidebar({
           <h3 className="px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             {t.mySubscriptions || '내 구독'}
           </h3>
-          {mySubs && mySubs.length > 0 ? (
+          {topicSubscriptions.length > 0 ? (
             <div className="space-y-1">
-              {mySubs.map((cat) => (
+              {topicSubscriptions.map((cat) => (
                 <div key={cat.id} className="flex items-center justify-between pr-2 pl-0 py-1.5 gap-2">
                   <CategoryItem
                     id={cat.slug}

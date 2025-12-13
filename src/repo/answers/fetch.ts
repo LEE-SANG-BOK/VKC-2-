@@ -1,5 +1,5 @@
 import type { Answer, ApiResponse, CreateAnswerRequest, UpdateAnswerRequest, CreateCommentRequest, Comment } from './types';
-import { AccountRestrictedError } from '@/lib/api/errors';
+import { ApiError, AccountRestrictedError } from '@/lib/api/errors';
 
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -23,11 +23,11 @@ export async function createAnswer(postId: string, data: CreateAnswerRequest): P
   });
 
   if (!res.ok) {
-    const error = await res.json();
+    const error = await res.json().catch(() => ({}));
     if (res.status === 403) {
       throw new AccountRestrictedError(error.error || 'Account restricted');
     }
-    throw new Error(error.error || 'Failed to create answer');
+    throw new ApiError(error.error || 'Failed to create answer', res.status, error.code);
   }
 
   return res.json();
@@ -120,11 +120,11 @@ export async function createAnswerComment(answerId: string, data: CreateCommentR
   });
 
   if (!res.ok) {
-    const error = await res.json();
+    const error = await res.json().catch(() => ({}));
     if (res.status === 403) {
       throw new AccountRestrictedError(error.error || 'Account restricted');
     }
-    throw new Error(error.error || 'Failed to create comment');
+    throw new ApiError(error.error || 'Failed to create comment', res.status, error.code);
   }
 
   return res.json();

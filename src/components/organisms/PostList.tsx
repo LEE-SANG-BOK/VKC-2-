@@ -31,6 +31,12 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const { data: session } = useSession();
   const { data: recommended } = useRecommendedUsers({ enabled: selectedCategory === 'following' });
   const { data: mySubs } = useMySubscriptions(selectedCategory === 'subscribed' && !!session?.user);
+  const topicSlugs = useMemo(() => {
+    return new Set(Object.values(CATEGORY_GROUPS).flatMap((group) => group.slugs as readonly string[]));
+  }, []);
+  const topicSubscriptions = useMemo(() => {
+    return (mySubs || []).filter((cat) => topicSlugs.has(cat.slug));
+  }, [mySubs, topicSlugs]);
   const [selectedChildCategory, setSelectedChildCategory] = useState('all');
   const [selectedSubscribedCategory, setSelectedSubscribedCategory] = useState('all');
   const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
@@ -161,14 +167,14 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
 
   useEffect(() => {
     if (selectedCategory !== 'subscribed') return;
-    if (!mySubs || mySubs.length === 0) {
+    if (topicSubscriptions.length === 0) {
       setSelectedSubscribedCategory('all');
       return;
     }
     if (selectedSubscribedCategory === 'all') return;
-    const stillExists = mySubs.some((cat) => cat.slug === selectedSubscribedCategory);
+    const stillExists = topicSubscriptions.some((cat) => cat.slug === selectedSubscribedCategory);
     if (!stillExists) setSelectedSubscribedCategory('all');
-  }, [mySubs, selectedCategory, selectedSubscribedCategory]);
+  }, [selectedCategory, selectedSubscribedCategory, topicSubscriptions]);
 
   const scrollToRecommended = () => {
     if (recommendedRef.current) {
@@ -185,7 +191,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
         </div>
       )}
 
-      {selectedCategory === 'subscribed' && mySubs && mySubs.length > 0 ? (
+      {selectedCategory === 'subscribed' && topicSubscriptions.length > 0 ? (
         <div className="mb-4 flex flex-wrap gap-2">
           <button
             type="button"
@@ -198,7 +204,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
           >
             {allSubscriptionsLabel}
           </button>
-          {mySubs.map((cat) => {
+          {topicSubscriptions.map((cat) => {
             const legacy = LEGACY_CATEGORIES.find((c) => c.slug === cat.slug);
             const label = legacy ? getCategoryName(legacy, locale) : cat.name;
             const active = selectedSubscribedCategory === cat.slug;

@@ -42,6 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const description = stripHtml(post.content || '').substring(0, 160);
   const title = `${post.title} | viet kconnect`;
+  const ogImage = post.thumbnail || post.thumbnails?.[0] || '/brand-logo.png';
 
   return {
     title,
@@ -64,7 +65,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       url: currentUrl,
       siteName: 'viet kconnect',
-      images: [],
+      images: ogImage ? [ogImage] : [],
       publishedTime: post.createdAt,
       authors: [post.author?.displayName || post.author?.email || ''],
       tags: post.tags,
@@ -76,7 +77,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: 'summary_large_image',
       title,
       description,
-      images: [],
+      images: ogImage ? [ogImage] : [],
       creator: post.author?.displayName ? `@${post.author.displayName}` : undefined,
     },
 
@@ -150,7 +151,7 @@ export default async function PostDetailPage({ params }: PageProps) {
     content: post.content,
     tags: post.tags || [],
     stats: { likes: post.likes ?? 0, comments: 0, shares: 0 },
-    thumbnail: undefined,
+    thumbnail: post.thumbnail || post.thumbnails?.[0] || undefined,
     publishedAt: post.createdAt || post.updatedAt,
     isLiked: post.isLiked ?? false,
     isBookmarked: post.isBookmarked ?? false,
@@ -183,7 +184,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       name: 'K-Connect Q&A Community',
       logo: {
         '@type': 'ImageObject',
-        url: `${baseUrl}/logo.png`,
+        url: `${baseUrl}/brand-logo.png`,
       },
     },
     mainEntity: mappedPost.isQuestion ? {

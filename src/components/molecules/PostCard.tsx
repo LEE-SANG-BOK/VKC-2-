@@ -6,12 +6,12 @@ import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { ThumbsUp, Share2, Bookmark } from 'lucide-react';
+import { AlertCircle, Bookmark, CheckCircle, HelpCircle, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
-import UserChip from './UserChip';
 import Tooltip from '../atoms/Tooltip';
 import TrustBadge, { type TrustLevel } from '@/components/atoms/TrustBadge';
 import FollowButton from '@/components/atoms/FollowButton';
+import Avatar from '@/components/atoms/Avatar';
 import dayjs from 'dayjs';
 import { useCategories } from '@/repo/categories/query';
 import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
@@ -21,6 +21,26 @@ const ALLOWED_CATEGORY_SLUGS = new Set<string>([
   ...Object.keys(CATEGORY_GROUPS),
   ...Object.values(CATEGORY_GROUPS).flatMap((group) => group.slugs),
 ]);
+
+function normalizePostImageSrc(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const lowered = trimmed.toLowerCase();
+  if (lowered === 'undefined' || lowered === 'null') return null;
+  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) return null;
+  if (trimmed.startsWith('//')) return `https:${trimmed}`;
+  if (trimmed.startsWith('/') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(\/|\?|#)/i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  if (/^[^\s]+\.[a-z0-9]{2,}(\/|\?|#)?$/i.test(trimmed)) {
+    return `/${trimmed}`;
+  }
+  return null;
+}
 
 function formatDateTime(dateString: string): string {
   if (!dateString) return '';
@@ -75,7 +95,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const { data: session } = useSession();
   const locale = (params?.lang as string) || 'ko';
   const t = (translations?.tooltips || {}) as Record<string, string>;
-  const tPost = (translations?.post || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
 
@@ -318,49 +337,32 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       });
   }, [tags, locale]);
 
-  const uncategorizedLabel =
-    tPost.uncategorized || (locale === 'vi' ? 'Chưa phân loại' : locale === 'en' ? 'Uncategorized' : '미지정');
-
-  const categoryChips = useMemo(() => {
-    const items = [categoryLabel || uncategorizedLabel, subcategoryLabel].map((v) => v?.trim()).filter(Boolean) as string[];
-    const seen = new Set<string>();
-    return items.filter((v) => {
-      const key = v.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [categoryLabel, subcategoryLabel, uncategorizedLabel]);
-
   const tagChips = useMemo(() => {
-    const excluded = new Set(
-      [categoryLabel, subcategoryLabel]
-        .map((v) => v?.trim().toLowerCase())
-        .filter(Boolean) as string[]
-    );
     const seen = new Set<string>();
 
-    return displayTags
-      .map((v) => v.trim())
+    return [categoryLabel, subcategoryLabel, ...displayTags]
+      .map((v) => v?.trim())
       .filter((v) => {
+        if (!v) return false;
         const key = v.toLowerCase();
-        if (!key) return false;
-        if (excluded.has(key)) return false;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
-      .slice(0, 3);
+      .slice(0, 4);
   }, [displayTags, categoryLabel, subcategoryLabel]);
 
   const displayImages = useMemo(() => {
-    if (thumbnails && thumbnails.length > 0) {
-      return thumbnails.filter(Boolean).slice(0, 4);
-    }
-    if (thumbnail) {
-      return [thumbnail];
-    }
-    return [];
+    const candidates: unknown[] = Array.isArray(thumbnails) && thumbnails.length > 0 ? thumbnails : thumbnail ? [thumbnail] : [];
+    const normalized = candidates
+      .map((src) => normalizePostImageSrc(src))
+      .filter((src): src is string => Boolean(src));
+    const seen = new Set<string>();
+    return normalized.filter((src) => {
+      if (seen.has(src)) return false;
+      seen.add(src);
+      return true;
+    }).slice(0, 4);
   }, [thumbnails, thumbnail]);
 
   const imageCount = useMemo(() => {
@@ -494,7 +496,12 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
   const hasMedia = displayImages.length > 0;
   const totalImages = imageCount || displayImages.length;
-  const mediaItems = displayImages.slice(0, 1);
+  const primaryImage = displayImages[0] || '';
+  const [renderImageSrc, setRenderImageSrc] = useState(primaryImage);
+  useEffect(() => {
+    setRenderImageSrc(primaryImage);
+  }, [primaryImage]);
+
   const extraCount = Math.max(totalImages - 1, 0);
   const mediaGridClass = `question-card-media-grid question-card-media-grid--row question-card-media-grid--single`;
   const isSelf = author?.id && session?.user?.id ? String(author.id) === String(session.user.id) : false;
@@ -505,48 +512,54 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       className={`question-card group ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
         }`}
     >
-      {categoryChips.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {categoryChips.map((chip) => (
-            <span
-              key={chip}
-              className="text-xs font-semibold text-gray-600 dark:text-gray-300"
-            >
-              #{chip}
-            </span>
-          ))}
-        </div>
-      ) : null}
-
       <div className="question-card-main">
         <div className="question-card-body">
           {/* Author Info & Badges */}
-          <div className="flex items-center gap-2 mb-3 min-w-0">
+          <div className="flex items-start gap-2 mb-3 min-w-0">
             <button
               type="button"
-              className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 transition-opacity min-w-0"
+              className="shrink-0"
               onClick={handleAuthorClick}
+              aria-label={safeName(author.name)}
             >
-              <UserChip
+              <Avatar
                 name={safeName(author.name)}
-                avatar={author.avatar !== '/default-avatar.jpg' ? author.avatar : undefined}
-                isVerified={false}
+                imageUrl={author.avatar !== '/default-avatar.jpg' ? author.avatar : undefined}
                 size="md"
+                hoverHighlight
               />
             </button>
-            {derivedTrustLevel !== 'community' && (
-              <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
-                <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
-              </Tooltip>
-            )}
-            {!isSelf && author.id ? (
-              <FollowButton
-                userId={String(author.id)}
-                userName={safeName(author.name)}
-                isFollowing={author.isFollowing}
-                size="xs"
-              />
-            ) : null}
+
+            <div className="flex min-w-0 flex-col">
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  className="min-w-0 text-left"
+                  onClick={handleAuthorClick}
+                >
+                  <span className="block truncate text-base font-semibold text-gray-900 dark:text-gray-100">
+                    {safeName(author.name)}
+                  </span>
+                </button>
+                {derivedTrustLevel !== 'community' && (
+                  <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
+                    <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
+                  </Tooltip>
+                )}
+              </div>
+
+              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <span className="whitespace-nowrap">{formatDateTime(publishedAt)}</span>
+                {!isSelf && author.id ? (
+                  <FollowButton
+                    userId={String(author.id)}
+                    userName={safeName(author.name)}
+                    isFollowing={author.isFollowing}
+                    size="xs"
+                  />
+                ) : null}
+              </div>
+            </div>
           </div>
 
           {/* Title + Trust badges */}
@@ -581,40 +594,37 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           )}
         </div>
 
-        {hasMedia && (
+        {hasMedia && renderImageSrc ? (
           <div
             className="question-card-media question-card-media-grid--row"
             onClick={(e) => e.stopPropagation()}
           >
             <div className={mediaGridClass}>
-              {mediaItems.map((src, idx) => {
-                return (
-                  <div key={`${src}-${idx}`} className="question-card-thumb__inner">
-                    <Image
-                      src={src}
-                      alt={title}
-                      loading="lazy"
-                      decoding="async"
-                      width={180}
-                      height={120}
-                      className="w-full h-full object-cover"
-                    />
-                    {idx === 0 && extraCount > 0 && (
-                      <span className="question-card-thumb__badge sm:hidden">
-                        +{extraCount}
-                      </span>
-                    )}
-                    {idx === 0 && extraCount > 0 && (
-                      <span className="question-card-thumb__badge hidden sm:flex">
-                        +{extraCount}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
+              <div className="question-card-thumb__inner">
+                <Image
+                  src={renderImageSrc}
+                  alt={title}
+                  loading="lazy"
+                  decoding="async"
+                  width={180}
+                  height={120}
+                  className="w-full h-full object-cover"
+                  onError={() => {
+                    if (renderImageSrc !== '/brand-logo.png') {
+                      setRenderImageSrc('/brand-logo.png');
+                    }
+                  }}
+                />
+                {extraCount > 0 ? (
+                  <span className="question-card-thumb__badge sm:hidden">+{extraCount}</span>
+                ) : null}
+                {extraCount > 0 ? (
+                  <span className="question-card-thumb__badge hidden sm:flex">+{extraCount}</span>
+                ) : null}
+              </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="question-card-actions">
@@ -624,7 +634,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             onClick={handleAnswerCountClick}
             className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0"
           >
-            <span aria-hidden="true">💬</span>
+            <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="truncate">
               <span className="hidden sm:inline">{answerLabel}</span>
               <span className="sm:hidden">{compactAnswerLabel}</span>
@@ -715,9 +725,45 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               </button>
             </Tooltip>
 
-            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-              {formatDateTime(publishedAt)}
-            </span>
+            {isQuestion ? (
+              <Tooltip content={tCommon.question || (locale === 'vi' ? 'Câu hỏi' : locale === 'en' ? 'Question' : '질문')} position="top">
+                <button
+                  type="button"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] text-blue-600 dark:text-blue-300 bg-blue-50/60 dark:bg-blue-900/20 border border-blue-200/80 dark:border-blue-800/50"
+                  aria-label={tCommon.question || '질문'}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            ) : null}
+
+            {isQuestion ? (
+              isAdopted ? (
+                <Tooltip content={tCommon.solved || (locale === 'vi' ? 'Đã giải quyết' : locale === 'en' ? 'Solved' : '해결')} position="top">
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] text-emerald-600 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-900/20 border border-emerald-200/80 dark:border-emerald-800/50"
+                    aria-label={tCommon.solved || '해결'}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                  </button>
+                </Tooltip>
+              ) : (
+                <Tooltip content={tCommon.unsolved || (locale === 'vi' ? 'Chưa giải quyết' : locale === 'en' ? 'Unsolved' : '미해결')} position="top">
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] text-amber-700 dark:text-amber-200 bg-amber-50/60 dark:bg-amber-900/20 border border-amber-200/80 dark:border-amber-800/50"
+                    aria-label={tCommon.unsolved || '미해결'}
+                  >
+                    <AlertCircle className="h-4 w-4" />
+                  </button>
+                </Tooltip>
+              )
+            ) : null}
+
           </div>
         </div>
       </div>

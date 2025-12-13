@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import { db } from './db';
+import { userAuthColumns } from './db/columns';
 import { users } from './db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -35,6 +36,7 @@ export const authConfig = {
         if (userId) {
           const dbUser = await db.query.users.findFirst({
             where: eq(users.id, userId),
+            columns: userAuthColumns,
           });
 
           if (dbUser) {

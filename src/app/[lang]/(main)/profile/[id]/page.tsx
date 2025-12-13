@@ -184,7 +184,6 @@ export default async function ProfilePage({ params }: PageProps) {
       '@type': 'Person',
       '@id': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'}/${lang}/profile/${id}#person`,
       name: profile.displayName,
-      email: profile.email,
       image: profile.avatar,
       description: profile.bio,
       gender: profile.gender === 'male' ? 'Male' : profile.gender === 'female' ? 'Female' : 'Other',
@@ -218,7 +217,7 @@ export default async function ProfilePage({ params }: PageProps) {
       name: 'K-Connect Q&A Community',
       logo: {
         '@type': 'ImageObject',
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'}/logo.png`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'}/brand-logo.png`,
       },
     },
   };

@@ -8,6 +8,7 @@ import { checkUserStatus } from '@/lib/user-status';
 import { eq, asc } from 'drizzle-orm';
 import { createCommentNotification, createReplyNotification } from '@/lib/notifications/create';
 import { hasProhibitedContent } from '@/lib/content-filter';
+import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -78,12 +79,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const { content, parentId } = body;
 
-    if (!content || !content.trim()) {
-      return errorResponse('댓글 내용을 입력해주세요.');
+    if (!content || typeof content !== 'string') {
+      return errorResponse('댓글 내용을 입력해주세요.', 'COMMENT_REQUIRED');
     }
 
-    if (hasProhibitedContent(content)) {
-      return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.');
+    const normalizedContent = content.trim();
+    const validation = validateUgcText(normalizedContent, UGC_LIMITS.commentContent.min, UGC_LIMITS.commentContent.max);
+    if (!validation.ok) {
+      if (validation.code === 'UGC_TOO_SHORT') {
+        return errorResponse('댓글이 너무 짧습니다.', 'COMMENT_TOO_SHORT');
+      }
+      if (validation.code === 'UGC_TOO_LONG') {
+        return errorResponse('댓글이 너무 깁니다.', 'COMMENT_TOO_LONG');
+      }
+      return errorResponse('댓글 내용이 올바르지 않습니다.', 'COMMENT_LOW_QUALITY');
+    }
+
+    if (hasProhibitedContent(normalizedContent)) {
+      return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
     }
 
     if (parentId) {
@@ -92,11 +105,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
       });
 
       if (!parentComment) {
-        return errorResponse('부모 댓글을 찾을 수 없습니다.');
+        return errorResponse('부모 댓글을 찾을 수 없습니다.', 'COMMENT_PARENT_NOT_FOUND');
       }
 
       if (parentComment.postId !== postId) {
-        return errorResponse('잘못된 요청입니다.');
+        return errorResponse('잘못된 요청입니다.', 'COMMENT_PARENT_MISMATCH');
       }
     }
 
@@ -104,7 +117,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       postId,
       parentId: parentId || null,
       authorId: user.id,
-      content: content.trim(),
+      content: normalizedContent,
     }).returning();
 
     const commentWithAuthor = await db.query.comments.findFirst({

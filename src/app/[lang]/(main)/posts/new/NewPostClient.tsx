@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { ShieldAlert, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import { useCreatePost } from '@/repo/posts/mutation';
-import { isAccountRestrictedError } from '@/lib/api/errors';
+import { ApiError, isAccountRestrictedError } from '@/lib/api/errors';
 import SimilarQuestionPrompt from '@/components/organisms/SimilarQuestionPrompt';
 import Modal from '@/components/atoms/Modal';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
@@ -31,6 +31,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const user = session?.user;
   const createPost = useCreatePost();
   const t = (translations?.newPost || {}) as Record<string, string>;
+  const tErrors = (translations?.errors || {}) as Record<string, string>;
   const MIN_TITLE = 10;
   const MIN_CONTENT = 10;
 
@@ -112,6 +113,8 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
       console.error('Failed to create post:', error);
       if (isAccountRestrictedError(error)) {
         toast.error(error.message);
+      } else if (error instanceof ApiError && error.code && tErrors[error.code]) {
+        toast.error(tErrors[error.code]);
       } else {
         toast.error(error instanceof Error ? error.message : (t.submitError || '게시글 작성에 실패했습니다.'));
       }

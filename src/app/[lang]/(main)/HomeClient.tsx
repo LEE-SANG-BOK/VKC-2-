@@ -75,7 +75,7 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
       rightRail={<AdminPostRail translations={dict} lang={lang} />}
       translations={dict}
     >
-      <div className="flex flex-col gap-1 pt-1 pb-4 px-1 sm:px-0">
+      <div className="flex flex-col gap-1 pb-4">
         <div className="space-y-1">
           <div className="lg:hidden">
             <NewsSection translations={dict} lang={lang} />

@@ -24,7 +24,7 @@ async function fetchPostsForSitemap() {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
 
-  const staticPages = ['', '/about', '/terms', '/privacy'];
+  const staticPages = ['', '/about', '/terms', '/privacy', '/guide/visa-roadmap'];
   const localizedStaticPages = locales.flatMap((locale) =>
     staticPages.map((route) => ({
       url: `${baseUrl}/${locale}${route}`,

@@ -8,6 +8,7 @@ import { checkUserStatus } from '@/lib/user-status';
 import { desc, eq, and, or, sql, inArray, SQL } from 'drizzle-orm';
 import dayjs from 'dayjs';
 import { hasProhibitedContent } from '@/lib/content-filter';
+import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 
 const resolveTrust = (author: any, createdAt: Date | string) => {
   const months = dayjs().diff(createdAt, 'month', true);
@@ -181,19 +182,36 @@ export async function GET(request: NextRequest) {
         return paginatedResponse([], page, limit, 0);
       }
 
-      const expanded = new Set<string>();
+      const subscribedParentSlugs = new Set<string>();
+      const subscribedTopicSlugs = new Set<string>();
+
       subscribedSlugs.forEach((slug) => {
-        expanded.add(slug);
         if (isGroupParentSlug(slug)) {
-          getChildrenForParent(slug).forEach((child) => expanded.add(child));
-        } else if (isGroupChildSlug(slug)) {
-          const parent = CHILD_TO_PARENT[slug];
-          if (parent) expanded.add(parent);
+          subscribedParentSlugs.add(slug);
+          getChildrenForParent(slug).forEach((child) => subscribedTopicSlugs.add(child));
+          return;
         }
+        subscribedTopicSlugs.add(slug);
       });
 
-      const expandedSlugs = Array.from(expanded);
-      conditions.push(or(inArray(posts.category, expandedSlugs), inArray(posts.subcategory, expandedSlugs)) as SQL);
+      const parentSlugs = Array.from(subscribedParentSlugs);
+      const topicSlugs = Array.from(subscribedTopicSlugs);
+
+      const followingConditions: SQL[] = [];
+
+      if (parentSlugs.length > 0) {
+        followingConditions.push(inArray(posts.category, parentSlugs) as SQL);
+      }
+
+      if (topicSlugs.length > 0) {
+        followingConditions.push(or(inArray(posts.subcategory, topicSlugs), inArray(posts.category, topicSlugs)) as SQL);
+      }
+
+      if (followingConditions.length === 0) {
+        return paginatedResponse([], page, limit, 0);
+      }
+
+      conditions.push(followingConditions.length === 1 ? followingConditions[0] : (or(...followingConditions) as SQL));
     }
 
     if (filter === 'following-users') {
@@ -492,32 +510,82 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { type, title, content, category, subcategory, tags } = body;
-    console.error('CreatePost payload', {
-      type,
-      titleLength: title?.length,
-      contentLength: content?.length,
-      category,
-      subcategory,
-    });
 
-    // 필수 필드 검증
-    if (!type || !title || !content || !category) {
-      return errorResponse('필수 필드가 누락되었습니다.');
+    if (!type || typeof type !== 'string') {
+      return errorResponse('필수 필드가 누락되었습니다.', 'POST_REQUIRED_FIELDS');
     }
 
-    // 금칙어/스팸 검증
-    if (hasProhibitedContent(`${title} ${content}`)) {
-      return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.');
+    if (type !== 'question' && type !== 'share') {
+      return errorResponse('게시글 타입이 올바르지 않습니다.', 'POST_INVALID_TYPE');
+    }
+
+    const postType: 'question' | 'share' = type;
+
+    if (!title || typeof title !== 'string') {
+      return errorResponse('필수 필드가 누락되었습니다.', 'POST_REQUIRED_FIELDS');
+    }
+
+    if (!content || typeof content !== 'string') {
+      return errorResponse('필수 필드가 누락되었습니다.', 'POST_REQUIRED_FIELDS');
+    }
+
+    if (!category || typeof category !== 'string') {
+      return errorResponse('필수 필드가 누락되었습니다.', 'POST_REQUIRED_FIELDS');
+    }
+
+    const normalizedTitle = title.trim();
+    const normalizedContent = content.trim();
+    const normalizedCategory = category.trim();
+    const normalizedSubcategory = typeof subcategory === 'string' ? subcategory.trim() : '';
+
+    if (!isGroupParentSlug(normalizedCategory)) {
+      return errorResponse('카테고리를 다시 선택해주세요.', 'POST_INVALID_CATEGORY');
+    }
+
+    const childrenForCategory = getChildrenForParent(normalizedCategory);
+    if (childrenForCategory.length > 0) {
+      if (!normalizedSubcategory) {
+        return errorResponse('세부분류를 선택해주세요.', 'POST_SUBCATEGORY_REQUIRED');
+      }
+      if (!childrenForCategory.includes(normalizedSubcategory)) {
+        return errorResponse('세부분류를 다시 선택해주세요.', 'POST_INVALID_SUBCATEGORY');
+      }
+    }
+
+    const titleValidation = validateUgcText(normalizedTitle, UGC_LIMITS.postTitle.min, UGC_LIMITS.postTitle.max);
+    if (!titleValidation.ok) {
+      if (titleValidation.code === 'UGC_TOO_SHORT') {
+        return errorResponse('제목이 너무 짧습니다.', 'POST_TITLE_TOO_SHORT');
+      }
+      if (titleValidation.code === 'UGC_TOO_LONG') {
+        return errorResponse('제목이 너무 깁니다.', 'POST_TITLE_TOO_LONG');
+      }
+      return errorResponse('제목이 올바르지 않습니다.', 'POST_TITLE_LOW_QUALITY');
+    }
+
+    const contentValidation = validateUgcText(normalizedContent, UGC_LIMITS.postContent.min, UGC_LIMITS.postContent.max);
+    if (!contentValidation.ok) {
+      if (contentValidation.code === 'UGC_TOO_SHORT') {
+        return errorResponse('내용이 너무 짧습니다.', 'POST_CONTENT_TOO_SHORT');
+      }
+      if (contentValidation.code === 'UGC_TOO_LONG') {
+        return errorResponse('내용이 너무 깁니다.', 'POST_CONTENT_TOO_LONG');
+      }
+      return errorResponse('내용이 올바르지 않습니다.', 'POST_CONTENT_LOW_QUALITY');
+    }
+
+    if (hasProhibitedContent(`${normalizedTitle} ${normalizedContent}`)) {
+      return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
     }
 
     // 게시글 작성
     const [newPost] = await db.insert(posts).values({
       authorId: user.id,
-      type,
-      title,
-      content,
-      category,
-      subcategory: subcategory || null,
+      type: postType,
+      title: normalizedTitle,
+      content: normalizedContent,
+      category: normalizedCategory,
+      subcategory: childrenForCategory.length > 0 ? normalizedSubcategory : null,
       tags: tags || [],
     }).returning();
 

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { categories, categorySubscriptions } from '@/lib/db/schema';
+import { categories, categorySubscriptions, topicSubscriptions } from '@/lib/db/schema';
 import { successResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, and } from 'drizzle-orm';
@@ -32,7 +32,20 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     if (category.parentId) {
-      return serverErrorResponse('1차 카테고리만 구독할 수 있습니다.');
+      const existingSubscription = await db.query.topicSubscriptions.findFirst({
+        where: and(eq(topicSubscriptions.userId, user.id), eq(topicSubscriptions.categoryId, categoryId)),
+      });
+
+      if (existingSubscription) {
+        await db.delete(topicSubscriptions).where(eq(topicSubscriptions.id, existingSubscription.id));
+        return successResponse({ isSubscribed: false }, '구독을 취소했습니다.');
+      }
+
+      await db.insert(topicSubscriptions).values({
+        userId: user.id,
+        categoryId,
+      });
+      return successResponse({ isSubscribed: true }, '구독했습니다.');
     }
 
     const existingSubscription = await db.query.categorySubscriptions.findFirst({
@@ -72,12 +85,21 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const { id: categoryId } = await context.params;
 
-    const existingSubscription = await db.query.categorySubscriptions.findFirst({
-      where: and(
-        eq(categorySubscriptions.userId, user.id),
-        eq(categorySubscriptions.categoryId, categoryId)
-      ),
+    const category = await db.query.categories.findFirst({
+      where: eq(categories.id, categoryId),
     });
+
+    if (!category) {
+      return notFoundResponse('카테고리를 찾을 수 없습니다.');
+    }
+
+    const existingSubscription = category.parentId
+      ? await db.query.topicSubscriptions.findFirst({
+          where: and(eq(topicSubscriptions.userId, user.id), eq(topicSubscriptions.categoryId, categoryId)),
+        })
+      : await db.query.categorySubscriptions.findFirst({
+          where: and(eq(categorySubscriptions.userId, user.id), eq(categorySubscriptions.categoryId, categoryId)),
+        });
 
     return successResponse({ isSubscribed: !!existingSubscription });
   } catch (error) {

@@ -696,5 +696,28 @@
     "expertTooltip": "전문가/공식 답변자",
     "outdatedLabel": "오래된 정보",
     "outdatedTooltip": "12개월 이상 지난 정보"
+  },
+  "errors": {
+    "POST_REQUIRED_FIELDS": "제목, 카테고리(대분류/세부분류), 내용을 모두 입력해주세요.",
+    "POST_INVALID_CATEGORY": "대분류를 다시 선택해주세요.",
+    "POST_SUBCATEGORY_REQUIRED": "세부분류를 선택해주세요.",
+    "POST_INVALID_SUBCATEGORY": "세부분류를 다시 선택해주세요.",
+    "POST_TITLE_TOO_SHORT": "제목은 최소 10자 이상 입력해주세요.",
+    "POST_TITLE_TOO_LONG": "제목은 120자 이하로 작성해주세요.",
+    "POST_TITLE_LOW_QUALITY": "제목이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.",
+    "POST_CONTENT_TOO_SHORT": "내용은 최소 10자 이상 작성해주세요.",
+    "POST_CONTENT_TOO_LONG": "내용이 너무 깁니다. 8000자 이하로 줄여주세요.",
+    "POST_CONTENT_LOW_QUALITY": "내용이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.",
+    "ANSWER_REQUIRED": "답변 내용을 입력해주세요.",
+    "ANSWER_TOO_SHORT": "답변은 최소 10자 이상 작성해주세요.",
+    "ANSWER_TOO_LONG": "답변은 5000자 이하로 작성해주세요.",
+    "ANSWER_LOW_QUALITY": "답변이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.",
+    "COMMENT_REQUIRED": "댓글 내용을 입력해주세요.",
+    "COMMENT_TOO_SHORT": "댓글은 최소 2자 이상 작성해주세요.",
+    "COMMENT_TOO_LONG": "댓글은 800자 이하로 작성해주세요.",
+    "COMMENT_LOW_QUALITY": "댓글이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.",
+    "COMMENT_PARENT_NOT_FOUND": "부모 댓글을 찾을 수 없습니다.",
+    "COMMENT_PARENT_MISMATCH": "잘못된 요청입니다.",
+    "CONTENT_PROHIBITED": "금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요."
   }
 }
