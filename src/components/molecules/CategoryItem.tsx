@@ -54,7 +54,7 @@ export default function CategoryItem({
   if (!tooltip) return button;
 
   return (
-    <Tooltip content={tooltip} position={tooltipPosition}>
+    <Tooltip content={tooltip} position={tooltipPosition} className="w-full">
       {button}
     </Tooltip>
   );
