@@ -330,7 +330,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
         text-gray-900 dark:text-white`}
     >
       {/* Top Row: Logo and Actions */}
-      <div className="container mx-auto flex items-center justify-between px-2 sm:px-3 py-2.5">
+      <div className="container mx-auto flex h-[var(--vk-header-height)] items-center justify-between px-2 sm:px-3 lg:px-5">
         {/* Logo / Back Button */}
         <div className="flex items-center space-x-1.5 sm:space-x-3">
           {showBackButton && (
