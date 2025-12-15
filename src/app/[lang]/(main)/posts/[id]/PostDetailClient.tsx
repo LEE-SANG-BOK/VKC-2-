@@ -535,12 +535,15 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     },
   };
 
-  const getUgcErrorMessage = (result: UgcValidationResult, field: 'answerContent' | 'commentContent') => {
+  function getUgcErrorMessage(
+    result: UgcValidationResult,
+    field: 'answerContent' | 'commentContent'
+  ) {
     if (result.ok) return '';
     const key = getUgcErrorKeyMap[field][result.code];
     if (key && tErrors[key]) return tErrors[key];
     return tErrors.CONTENT_PROHIBITED || '금칙어/저품질 콘텐츠로 작성할 수 없습니다.';
-  };
+  }
 
   const uniqueTags = useMemo(() => {
     if (!post?.tags) return [];
@@ -1942,11 +1945,11 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                 <div className="flex flex-wrap items-center gap-3">
                   <Tooltip content={guidelineTooltip} position="right">
                     <Button
-                    type="submit"
-                    disabled={!newAnswer.trim() || answerWarnings.banned || answerWarnings.spam || answerRemaining > 0}
-                    size="sm"
-                    className="order-1"
-                  >
+                      type="submit"
+                      disabled={!newAnswer.trim() || showAnswerValidationError || answerRemaining > 0}
+                      size="sm"
+                      className="order-1"
+                    >
                       {writeAnswerLabel}
                     </Button>
                   </Tooltip>
@@ -1964,7 +1967,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     )}
                   </span>
                 </div>
-                {(answerWarnings.banned || answerWarnings.spam) && (
+                {showAnswerValidationError && (
                   <div className="flex items-start gap-2 rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-800 dark:text-red-100">
                     <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <div className="space-y-1">
@@ -1974,6 +1977,9 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                           <LinkIcon className="h-4 w-4" />
                           <span>{tPostDetail.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.'}</span>
                         </p>
+                      ) : null}
+                      {answerValidationMessage ? (
+                        <p className="text-red-600 dark:text-red-300">{answerValidationMessage}</p>
                       ) : null}
                     </div>
                   </div>
@@ -2166,7 +2172,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                 rows={2}
                                 autoFocus
                               />
-                              {(answerReplyWarnings.banned || answerReplyWarnings.spam) && (
+                              {showAnswerReplyValidationError && (
                                 <div className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 p-3 text-xs sm:text-sm text-red-800 dark:text-red-100">
                                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                   <div className="space-y-1">
@@ -2177,6 +2183,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                         <span>{tPostDetail.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.'}</span>
                                       </p>
                                     ) : null}
+                                    {answerReplyValidationMessage ? <p className="text-red-600 dark:text-red-300">{answerReplyValidationMessage}</p> : null}
                                   </div>
                                 </div>
                               )}
@@ -2193,7 +2200,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                   취소
                                 </Button>
                                 <Tooltip content={guidelineTooltip} position="below">
-                                  <Button type="submit" size="sm" disabled={!answerReplyContent.trim() || answerReplyWarnings.banned || answerReplyWarnings.spam}>
+                                  <Button type="submit" size="sm" disabled={!answerReplyContent.trim() || showAnswerReplyValidationError}>
                                     {tCommon.writeReply || "답글 작성"}
                                   </Button>
                                 </Tooltip>
@@ -2484,34 +2491,41 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                           )}
 
                           {replyTo === comment.id && (
-                            <form onSubmit={(e) => handleSubmitReply(e, comment.id)} className="mt-4">
-                              <textarea
-                                value={replyContent}
-                                onChange={(e) => setReplyContent(e.target.value)}
-                                placeholder={tPostDetail.replyPlaceholder || "답글을 작성해주세요..."}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
-                                rows={2}
-                                autoFocus
-                              />
-                              <div className="flex justify-end gap-2 mt-2">
-                                <Button
-                                  type="button"
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => {
-                                    setReplyTo(null);
-                                    setReplyContent('');
-                                  }}
-                                >
-                                  취소
-                                </Button>
-                                <Tooltip content={guidelineTooltip} position="below">
-                                  <Button type="submit" size="sm" disabled={!replyContent.trim()}>
-                                    {tCommon.writeReply || "답글 작성"}
+                            <>
+                              <form onSubmit={(e) => handleSubmitReply(e, comment.id)} className="mt-4">
+                                <textarea
+                                  value={replyContent}
+                                  onChange={(e) => setReplyContent(e.target.value)}
+                                  placeholder={tPostDetail.replyPlaceholder || "답글을 작성해주세요..."}
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                  rows={2}
+                                  autoFocus
+                                />
+                                <div className="flex justify-end gap-2 mt-2">
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => {
+                                      setReplyTo(null);
+                                      setReplyContent('');
+                                    }}
+                                  >
+                                    취소
                                   </Button>
-                                </Tooltip>
-                              </div>
-                            </form>
+                                  <Tooltip content={guidelineTooltip} position="below">
+                                    <Button type="submit" size="sm" disabled={!replyContent.trim()}>
+                                      {tCommon.writeReply || "답글 작성"}
+                                    </Button>
+                                  </Tooltip>
+                                </div>
+                              </form>
+                              {showReplyValidationError && replyValidationMessage ? (
+                                <p className="text-sm text-red-600 dark:text-red-300 mt-2">
+                                  {replyValidationMessage}
+                                </p>
+                              ) : null}
+                            </>
                           )}
 
                           {comment.replies && comment.replies.length > 0 && (
