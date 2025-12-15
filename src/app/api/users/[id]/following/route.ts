@@ -1,9 +1,8 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { userPublicColumns } from '@/lib/db/columns';
 import { follows, users } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, and, or, lt, type SQL } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -21,8 +20,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
+    const cursorParam = searchParams.get('cursor');
 
     // 사용자 존재 여부 확인
     const user = await db.query.users.findFirst({
@@ -36,34 +36,95 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return notFoundResponse('사용자를 찾을 수 없습니다.');
     }
 
-    // 전체 팔로잉 수 조회
-    const [countResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(follows)
-      .where(eq(follows.followerId, id));
+    type CursorPayload = { createdAt: string; id: string };
+    const encodeCursor = (payload: CursorPayload) =>
+      Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+    const decodeCursor = (raw: string): CursorPayload | null => {
+      if (!raw) return null;
+      try {
+        const json = Buffer.from(raw, 'base64url').toString('utf8');
+        const parsed = JSON.parse(json) as Partial<CursorPayload>;
+        if (typeof parsed?.createdAt !== 'string' || typeof parsed?.id !== 'string') return null;
+        return { createdAt: parsed.createdAt, id: parsed.id };
+      } catch {
+        return null;
+      }
+    };
 
-    const total = countResult?.count || 0;
+    const decodedCursor = cursorParam ? decodeCursor(cursorParam) : null;
+    const cursorCreatedAt = decodedCursor ? new Date(decodedCursor.createdAt) : null;
+    const hasValidCursor = Boolean(decodedCursor && cursorCreatedAt && !Number.isNaN(cursorCreatedAt.getTime()));
+    const useCursorPagination = Boolean(cursorParam && hasValidCursor);
 
-    // 팔로잉 목록 조회 (내가 팔로우하는 사람들)
-    const followingList = await db.query.follows.findMany({
-      where: eq(follows.followerId, id),
-      with: {
+    const conditions = [eq(follows.followerId, id)];
+    if (useCursorPagination) {
+      conditions.push(
+        or(
+          lt(follows.createdAt, cursorCreatedAt as Date),
+          and(eq(follows.createdAt, cursorCreatedAt as Date), lt(follows.id, decodedCursor?.id || ''))
+        ) as SQL
+      );
+    }
+
+    const total = useCursorPagination
+      ? 0
+      : (
+          (
+            await db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(follows)
+              .where(eq(follows.followerId, id))
+          )[0]?.count || 0
+        );
+
+    const totalPages = Math.ceil(total / limit);
+    const queryLimit = useCursorPagination ? limit + 1 : limit;
+
+    const rows = await db
+      .select({
+        followId: follows.id,
+        followedAt: follows.createdAt,
         following: {
-          columns: userPublicColumns,
+          id: users.id,
+          name: users.name,
+          displayName: users.displayName,
+          image: users.image,
+          isVerified: users.isVerified,
+          isExpert: users.isExpert,
+          badgeType: users.badgeType,
         },
-      },
-      orderBy: [desc(follows.createdAt)],
-      limit,
-      offset: (page - 1) * limit,
-    });
+      })
+      .from(follows)
+      .innerJoin(users, eq(follows.followingId, users.id))
+      .where(and(...conditions))
+      .orderBy(desc(follows.createdAt), desc(follows.id))
+      .offset(useCursorPagination ? 0 : (page - 1) * limit)
+      .limit(queryLimit);
 
-    // following 정보만 추출
-    const following = followingList.map((f) => ({
-      ...f.following,
-      followedAt: f.createdAt,
+    const rawHasMore = useCursorPagination ? rows.length > limit : page < totalPages;
+    const pageList = useCursorPagination && rows.length > limit ? rows.slice(0, limit) : rows;
+    const lastRow = pageList[pageList.length - 1];
+    const nextCursor =
+      rawHasMore && lastRow
+        ? encodeCursor({
+            createdAt:
+              lastRow.followedAt instanceof Date
+                ? lastRow.followedAt.toISOString()
+                : String(lastRow.followedAt),
+            id: String(lastRow.followId),
+          })
+        : null;
+
+    const following = pageList.map((row) => ({
+      ...row.following,
+      followedAt: row.followedAt,
     }));
 
-    return paginatedResponse(following, page, limit, total);
+    return paginatedResponse(following, page, limit, total, {
+      nextCursor,
+      hasMore: rawHasMore,
+      paginationMode: useCursorPagination ? 'cursor' : 'offset',
+    });
   } catch (error) {
     console.error('GET /api/users/[id]/following error:', error);
     return serverErrorResponse();

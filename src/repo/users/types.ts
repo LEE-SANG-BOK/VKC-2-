@@ -111,6 +111,11 @@ export interface PaginatedResponse<T> {
     total: number;
     totalPages: number;
   };
+  meta?: {
+    nextCursor?: string | null;
+    hasMore?: boolean;
+    paginationMode?: 'offset' | 'cursor';
+  };
 }
 
 export interface ApiResponse<T> {
@@ -123,10 +128,12 @@ export interface UserFilters {
   page?: number;
   limit?: number;
   type?: string;
+  cursor?: string;
 }
 
 export interface AnswerFilters {
   page?: number;
   limit?: number;
   adoptedOnly?: boolean;
+  cursor?: string;
 }

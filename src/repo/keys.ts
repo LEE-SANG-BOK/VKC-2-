@@ -60,17 +60,17 @@ export const queryKeys = {
     details: () => [...queryKeys.users.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.users.details(), id] as const,
     me: () => [...queryKeys.users.all, 'me'] as const,
-    posts: (userId: string, filters?: { page?: number; limit?: number; type?: string }) =>
+    posts: (userId: string, filters?: { page?: number; limit?: number; type?: string; cursor?: string }) =>
       [...queryKeys.users.detail(userId), 'posts', filters] as const,
-    answers: (userId: string, filters?: { page?: number; limit?: number; adoptedOnly?: boolean }) =>
+    answers: (userId: string, filters?: { page?: number; limit?: number; adoptedOnly?: boolean; cursor?: string }) =>
       [...queryKeys.users.detail(userId), 'answers', filters] as const,
-    comments: (userId: string, filters?: { page?: number; limit?: number }) =>
+    comments: (userId: string, filters?: { page?: number; limit?: number; cursor?: string }) =>
       [...queryKeys.users.detail(userId), 'comments', filters] as const,
-    bookmarks: (userId: string, filters?: { page?: number; limit?: number }) =>
+    bookmarks: (userId: string, filters?: { page?: number; limit?: number; cursor?: string }) =>
       [...queryKeys.users.detail(userId), 'bookmarks', filters] as const,
-    followers: (userId: string, filters?: { page?: number; limit?: number }) =>
+    followers: (userId: string, filters?: { page?: number; limit?: number; cursor?: string }) =>
       [...queryKeys.users.detail(userId), 'followers', filters] as const,
-    following: (userId: string, filters?: { page?: number; limit?: number }) =>
+    following: (userId: string, filters?: { page?: number; limit?: number; cursor?: string }) =>
       [...queryKeys.users.detail(userId), 'following', filters] as const,
     recommended: () => [...queryKeys.users.all, 'recommended'] as const,
   },

@@ -165,18 +165,25 @@ export function useInfiniteUserPosts(
   userId: string,
   options?: Record<string, unknown>
 ) {
+  type PageParam = { page: number; cursor?: string | null };
+
   return useInfiniteQuery({
     queryKey: queryKeys.users.posts(userId, {}),
-    queryFn: ({ pageParam = 1 }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
       fetchUserPosts(userId, {
-        page: pageParam as number,
+        page: pageParam.page,
+        cursor: pageParam.cursor || undefined,
         limit: 20,
       }),
     getNextPageParam: (lastPage: PaginatedResponse<UserPost>) => {
+      const nextCursor = lastPage.meta?.nextCursor;
+      if (nextCursor) {
+        return { page: lastPage.pagination.page + 1, cursor: nextCursor } satisfies PageParam;
+      }
       const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
+      return page < totalPages ? ({ page: page + 1 } satisfies PageParam) : undefined;
     },
-    initialPageParam: 1,
+    initialPageParam: { page: 1 } satisfies PageParam,
     enabled: !!userId,
     ...options,
   });
@@ -186,18 +193,25 @@ export function useInfiniteUserBookmarks(
   userId: string,
   options?: Record<string, unknown>
 ) {
+  type PageParam = { page: number; cursor?: string | null };
+
   return useInfiniteQuery({
     queryKey: queryKeys.users.bookmarks(userId, {}),
-    queryFn: ({ pageParam = 1 }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
       fetchUserBookmarks(userId, {
-        page: pageParam as number,
+        page: pageParam.page,
+        cursor: pageParam.cursor || undefined,
         limit: 20,
       }),
     getNextPageParam: (lastPage: PaginatedResponse<UserBookmark>) => {
+      const nextCursor = lastPage.meta?.nextCursor;
+      if (nextCursor) {
+        return { page: lastPage.pagination.page + 1, cursor: nextCursor } satisfies PageParam;
+      }
       const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
+      return page < totalPages ? ({ page: page + 1 } satisfies PageParam) : undefined;
     },
-    initialPageParam: 1,
+    initialPageParam: { page: 1 } satisfies PageParam,
     enabled: !!userId,
     ...options,
   });
@@ -219,19 +233,26 @@ export function useInfiniteUserAnswers(
   filters: Omit<AnswerFilters, 'page' | 'limit'> = {},
   options?: Record<string, unknown>
 ) {
+  type PageParam = { page: number; cursor?: string | null };
+
   return useInfiniteQuery({
     queryKey: queryKeys.users.answers(userId, filters),
-    queryFn: ({ pageParam = 1 }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
       fetchUserAnswers(userId, {
         ...filters,
-        page: pageParam as number,
+        page: pageParam.page,
+        cursor: pageParam.cursor || undefined,
         limit: 20,
       }),
     getNextPageParam: (lastPage: PaginatedResponse<UserAnswer>) => {
+      const nextCursor = lastPage.meta?.nextCursor;
+      if (nextCursor) {
+        return { page: lastPage.pagination.page + 1, cursor: nextCursor } satisfies PageParam;
+      }
       const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
+      return page < totalPages ? ({ page: page + 1 } satisfies PageParam) : undefined;
     },
-    initialPageParam: 1,
+    initialPageParam: { page: 1 } satisfies PageParam,
     enabled: !!userId,
     ...options,
   });
@@ -241,18 +262,25 @@ export function useInfiniteUserComments(
   userId: string,
   options?: Record<string, unknown>
 ) {
+  type PageParam = { page: number; cursor?: string | null };
+
   return useInfiniteQuery({
     queryKey: queryKeys.users.comments(userId, {}),
-    queryFn: ({ pageParam = 1 }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
       fetchUserComments(userId, {
-        page: pageParam as number,
+        page: pageParam.page,
+        cursor: pageParam.cursor || undefined,
         limit: 20,
       }),
     getNextPageParam: (lastPage: PaginatedResponse<UserComment>) => {
+      const nextCursor = lastPage.meta?.nextCursor;
+      if (nextCursor) {
+        return { page: lastPage.pagination.page + 1, cursor: nextCursor } satisfies PageParam;
+      }
       const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
+      return page < totalPages ? ({ page: page + 1 } satisfies PageParam) : undefined;
     },
-    initialPageParam: 1,
+    initialPageParam: { page: 1 } satisfies PageParam,
     enabled: !!userId,
     ...options,
   });

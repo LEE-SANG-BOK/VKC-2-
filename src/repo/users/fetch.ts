@@ -48,6 +48,7 @@ export async function fetchUserPosts(
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
   if (filters.type) params.append('type', filters.type);
+  if (filters.cursor) params.append('cursor', filters.cursor);
 
   const fetchOptions: RequestInit = {
     cache: 'no-store',
@@ -82,6 +83,7 @@ export async function fetchUserAnswers(
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
   if (filters.adoptedOnly) params.append('adoptedOnly', 'true');
+  if (filters.cursor) params.append('cursor', filters.cursor);
 
   const fetchOptions: RequestInit = {
     cache: 'no-store',
@@ -115,6 +117,7 @@ export async function fetchUserComments(
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
+  if (filters.cursor) params.append('cursor', filters.cursor);
 
   const fetchOptions: RequestInit = {
     cache: 'no-store',
@@ -148,6 +151,7 @@ export async function fetchUserBookmarks(
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
+  if (filters.cursor) params.append('cursor', filters.cursor);
 
   const fetchOptions: RequestInit = {
     cache: 'no-store',
@@ -181,6 +185,7 @@ export async function fetchFollowers(
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
+  if (filters.cursor) params.append('cursor', filters.cursor);
 
   const res = await fetch(`${API_BASE}/api/users/${userId}/followers?${params.toString()}`, {
     cache: 'no-store',
@@ -200,6 +205,7 @@ export async function fetchFollowing(
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
+  if (filters.cursor) params.append('cursor', filters.cursor);
 
   const res = await fetch(`${API_BASE}/api/users/${userId}/following?${params.toString()}`, {
     cache: 'no-store',

@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { posts, users, answers, comments, likes, bookmarks } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq, desc, sql, and, inArray, isNotNull, isNull } from 'drizzle-orm';
+import { eq, desc, sql, and, inArray, isNotNull, isNull, or, lt, type SQL } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -16,6 +16,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
     const type = searchParams.get('type') as 'question' | 'share' | null;
+    const cursorParam = searchParams.get('cursor');
     const include = (searchParams.get('include') || '')
       .split(',')
       .map((value) => value.trim())
@@ -40,12 +41,48 @@ export async function GET(request: NextRequest, context: RouteContext) {
       conditions.push(eq(posts.type, type));
     }
 
-    const [countResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(posts)
-      .where(and(...conditions));
+    type CursorPayload = { createdAt: string; id: string };
+    const encodeCursor = (payload: CursorPayload) =>
+      Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+    const decodeCursor = (raw: string): CursorPayload | null => {
+      if (!raw) return null;
+      try {
+        const json = Buffer.from(raw, 'base64url').toString('utf8');
+        const parsed = JSON.parse(json) as Partial<CursorPayload>;
+        if (typeof parsed?.createdAt !== 'string' || typeof parsed?.id !== 'string') return null;
+        return { createdAt: parsed.createdAt, id: parsed.id };
+      } catch {
+        return null;
+      }
+    };
 
-    const total = countResult?.count || 0;
+    const decodedCursor = cursorParam ? decodeCursor(cursorParam) : null;
+    const cursorCreatedAt = decodedCursor ? new Date(decodedCursor.createdAt) : null;
+    const hasValidCursor = Boolean(decodedCursor && cursorCreatedAt && !Number.isNaN(cursorCreatedAt.getTime()));
+    const useCursorPagination = Boolean(cursorParam && hasValidCursor);
+
+    if (useCursorPagination) {
+      conditions.push(
+        or(
+          lt(posts.createdAt, cursorCreatedAt as Date),
+          and(eq(posts.createdAt, cursorCreatedAt as Date), lt(posts.id, decodedCursor?.id || ''))
+        ) as SQL
+      );
+    }
+
+    const total = useCursorPagination
+      ? 0
+      : (
+          (
+            await db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(posts)
+              .where(and(...conditions))
+          )[0]?.count || 0
+        );
+
+    const totalPages = Math.ceil(total / limit);
+    const queryLimit = useCursorPagination ? limit + 1 : limit;
 
     const contentPreviewLimit = 8000;
     const userPosts = await db
@@ -80,10 +117,27 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .leftJoin(users, eq(posts.authorId, users.id))
       .where(and(...conditions))
       .orderBy(desc(posts.createdAt), desc(posts.id))
-      .offset((page - 1) * limit)
-      .limit(limit);
+      .offset(useCursorPagination ? 0 : (page - 1) * limit)
+      .limit(queryLimit);
 
-    const postIds = userPosts.map((post) => post.id).filter(Boolean) as string[];
+    const rawHasMore = useCursorPagination ? userPosts.length > limit : page < totalPages;
+    const pageList = useCursorPagination && userPosts.length > limit ? userPosts.slice(0, limit) : userPosts;
+    const lastPost = pageList[pageList.length - 1];
+    const nextCursor =
+      rawHasMore && lastPost
+        ? encodeCursor({
+            createdAt:
+              lastPost.createdAt instanceof Date
+                ? lastPost.createdAt.toISOString()
+                : String(lastPost.createdAt),
+            id: String(lastPost.id),
+          })
+        : null;
+
+    const postIds = pageList.map((post) => post.id).filter(Boolean) as string[];
+
+    const shouldComputeResponderCounts = !useCursorPagination;
+    const emptyResponderRows: Array<{ postId: string | null; authorId: string | null }> = [];
 
     const [answerCounts, commentCounts, likedRows, bookmarkedRows, answerResponders, commentResponders] =
       postIds.length > 0
@@ -110,14 +164,20 @@ export async function GET(request: NextRequest, context: RouteContext) {
                   .from(bookmarks)
                   .where(and(eq(bookmarks.userId, currentUser.id), inArray(bookmarks.postId, postIds)))
               : Promise.resolve([]),
-            db
-              .select({ postId: answers.postId, authorId: answers.authorId })
-              .from(answers)
-              .where(and(inArray(answers.postId, postIds), isNotNull(answers.authorId))),
-            db
-              .select({ postId: comments.postId, authorId: comments.authorId })
-              .from(comments)
-              .where(and(inArray(comments.postId, postIds), isNotNull(comments.authorId))),
+            shouldComputeResponderCounts
+              ? db
+                  .select({ postId: answers.postId, authorId: answers.authorId })
+                  .from(answers)
+                  .where(and(inArray(answers.postId, postIds), isNotNull(answers.authorId)))
+                  .groupBy(answers.postId, answers.authorId)
+              : Promise.resolve(emptyResponderRows),
+            shouldComputeResponderCounts
+              ? db
+                  .select({ postId: comments.postId, authorId: comments.authorId })
+                  .from(comments)
+                  .where(and(inArray(comments.postId, postIds), isNotNull(comments.authorId)))
+                  .groupBy(comments.postId, comments.authorId)
+              : Promise.resolve(emptyResponderRows),
           ])
         : [[], [], [], [], [], []];
 
@@ -189,7 +249,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       addResponder(row.postId, row.authorId);
     });
 
-    const formattedPosts = userPosts.map(post => {
+    const formattedPosts = pageList.map(post => {
       const imgMatch = post.content?.match(/<img[^>]+src=["']([^"']+)["']/i);
       const thumbnail = imgMatch ? imgMatch[1] : null;
 
@@ -235,7 +295,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
       };
     });
 
-    return paginatedResponse(formattedPosts, page, limit, total);
+    return paginatedResponse(formattedPosts, page, limit, total, {
+      nextCursor,
+      hasMore: rawHasMore,
+      paginationMode: useCursorPagination ? 'cursor' : 'offset',
+    });
   } catch (error) {
     console.error('GET /api/users/[id]/posts error:', error);
     return serverErrorResponse();

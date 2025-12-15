@@ -4,7 +4,7 @@ import { userPublicColumns } from '@/lib/db/columns';
 import { comments, users, likes } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq, desc, sql, and, isNotNull, inArray } from 'drizzle-orm';
+import { eq, desc, sql, and, isNotNull, inArray, or, lt, type SQL } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -14,8 +14,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
+    const cursorParam = searchParams.get('cursor');
 
     const currentUser = await getSession(request);
 
@@ -32,15 +33,49 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const whereCondition = and(eq(comments.authorId, id), isNotNull(comments.postId));
 
-    const [countResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(comments)
-      .where(whereCondition);
+    type CursorPayload = { createdAt: string; id: string };
+    const encodeCursor = (payload: CursorPayload) =>
+      Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+    const decodeCursor = (raw: string): CursorPayload | null => {
+      if (!raw) return null;
+      try {
+        const json = Buffer.from(raw, 'base64url').toString('utf8');
+        const parsed = JSON.parse(json) as Partial<CursorPayload>;
+        if (typeof parsed?.createdAt !== 'string' || typeof parsed?.id !== 'string') return null;
+        return { createdAt: parsed.createdAt, id: parsed.id };
+      } catch {
+        return null;
+      }
+    };
 
-    const total = countResult?.count || 0;
+    const decodedCursor = cursorParam ? decodeCursor(cursorParam) : null;
+    const cursorCreatedAt = decodedCursor ? new Date(decodedCursor.createdAt) : null;
+    const hasValidCursor = Boolean(decodedCursor && cursorCreatedAt && !Number.isNaN(cursorCreatedAt.getTime()));
+    const useCursorPagination = Boolean(cursorParam && hasValidCursor);
+
+    const cursorPredicate = useCursorPagination
+      ? (or(
+          lt(comments.createdAt, cursorCreatedAt as Date),
+          and(eq(comments.createdAt, cursorCreatedAt as Date), lt(comments.id, decodedCursor?.id || ''))
+        ) as SQL)
+      : null;
+
+    const total = useCursorPagination
+      ? 0
+      : (
+          (
+            await db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(comments)
+              .where(whereCondition)
+          )[0]?.count || 0
+        );
+
+    const totalPages = Math.ceil(total / limit);
+    const queryLimit = limit + 1;
 
     const userComments = await db.query.comments.findMany({
-      where: whereCondition,
+      where: cursorPredicate ? and(whereCondition, cursorPredicate) : whereCondition,
       columns: {
         id: true,
         authorId: true,
@@ -62,12 +97,26 @@ export async function GET(request: NextRequest, context: RouteContext) {
           },
         },
       },
-      orderBy: [desc(comments.createdAt)],
-      limit,
-      offset: (page - 1) * limit,
+      orderBy: [desc(comments.createdAt), desc(comments.id)],
+      limit: queryLimit,
+      offset: useCursorPagination ? 0 : (page - 1) * limit,
     });
 
-    const commentIds = userComments.map((comment) => comment.id).filter(Boolean) as string[];
+    const rawHasMore = useCursorPagination ? userComments.length > limit : page < totalPages;
+    const pageList = userComments.length > limit ? userComments.slice(0, limit) : userComments;
+    const lastComment = pageList[pageList.length - 1];
+    const nextCursor =
+      rawHasMore && lastComment
+        ? encodeCursor({
+            createdAt:
+              lastComment.createdAt instanceof Date
+                ? lastComment.createdAt.toISOString()
+                : String(lastComment.createdAt),
+            id: String(lastComment.id),
+          })
+        : null;
+
+    const commentIds = pageList.map((comment) => comment.id).filter(Boolean) as string[];
     const likedCommentIds = new Set<string>();
     if (currentUser && commentIds.length > 0) {
       const likedRows = await db
@@ -79,7 +128,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       });
     }
 
-    const formattedComments = userComments.map(comment => ({
+    const formattedComments = pageList.map(comment => ({
       id: comment.id,
       type: 'comment' as const,
       title: comment.post?.title || '삭제된 게시글',
@@ -115,7 +164,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     }));
 
-    return paginatedResponse(formattedComments, page, limit, total);
+    return paginatedResponse(formattedComments, page, limit, total, {
+      nextCursor,
+      hasMore: rawHasMore,
+      paginationMode: useCursorPagination ? 'cursor' : 'offset',
+    });
   } catch (error) {
     console.error('GET /api/users/[id]/comments error:', error);
     return serverErrorResponse();

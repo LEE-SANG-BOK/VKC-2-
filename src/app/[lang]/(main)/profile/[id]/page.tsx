@@ -170,24 +170,39 @@ export default async function ProfilePage({ params }: PageProps) {
       })()
     : undefined;
 
-  const defaultFilters = { page: 1, limit: 20 };
-  const answerFilters = { page: 1, limit: 20, adoptedOnly: true };
+  type PageParam = { page: number; cursor?: string | null };
 
   await Promise.all([
     queryClient.prefetchInfiniteQuery({
       queryKey: queryKeys.users.posts(id, {}),
-      queryFn: () => fetchUserPosts(id, defaultFilters),
-      initialPageParam: 1,
+      queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
+        fetchUserPosts(id, {
+          page: pageParam.page,
+          cursor: pageParam.cursor || undefined,
+          limit: 20,
+        }),
+      initialPageParam: { page: 1 } satisfies PageParam,
     }),
     queryClient.prefetchInfiniteQuery({
-      queryKey: queryKeys.users.answers(id, answerFilters),
-      queryFn: () => fetchUserAnswers(id, answerFilters),
-      initialPageParam: 1,
+      queryKey: queryKeys.users.answers(id, { adoptedOnly: true }),
+      queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
+        fetchUserAnswers(id, {
+          adoptedOnly: true,
+          page: pageParam.page,
+          cursor: pageParam.cursor || undefined,
+          limit: 20,
+        }),
+      initialPageParam: { page: 1 } satisfies PageParam,
     }),
     queryClient.prefetchInfiniteQuery({
       queryKey: queryKeys.users.comments(id, {}),
-      queryFn: () => fetchUserComments(id, defaultFilters),
-      initialPageParam: 1,
+      queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
+        fetchUserComments(id, {
+          page: pageParam.page,
+          cursor: pageParam.cursor || undefined,
+          limit: 20,
+        }),
+      initialPageParam: { page: 1 } satisfies PageParam,
     }),
   ]);
 
