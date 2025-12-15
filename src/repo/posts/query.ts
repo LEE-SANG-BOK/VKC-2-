@@ -21,9 +21,18 @@ export function useInfinitePosts(
   filters: Omit<PostFilters, 'page' | 'limit'> = {},
   options?: any
 ) {
+  const resolvedInitialPage = Math.max(
+    1,
+    Math.floor(Number(options?.initialPage ?? 1) || 1)
+  );
+  const resolvedOptions = options ? { ...options } : {};
+  if (resolvedOptions.initialPage !== undefined) {
+    delete resolvedOptions.initialPage;
+  }
+
   return useInfiniteQuery({
-    queryKey: queryKeys.posts.infinite(filters),
-    queryFn: ({ pageParam = 1 }) =>
+    queryKey: queryKeys.posts.infinite(filters, resolvedInitialPage),
+    queryFn: ({ pageParam = resolvedInitialPage }) =>
       fetchPosts({
         ...filters,
         page: pageParam as number,
@@ -33,8 +42,8 @@ export function useInfinitePosts(
       const { page, totalPages } = lastPage.pagination;
       return page < totalPages ? page + 1 : undefined;
     },
-    initialPageParam: 1,
-    ...options,
+    initialPageParam: resolvedInitialPage,
+    ...resolvedOptions,
   });
 }
 

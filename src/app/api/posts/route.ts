@@ -10,11 +10,12 @@ import dayjs from 'dayjs';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { getChildrenForParent, isGroupChildSlug, isGroupParentSlug } from '@/lib/constants/category-groups';
+import { isExpertBadgeType } from '@/lib/constants/badges';
 
 const resolveTrust = (author: any, createdAt: Date | string) => {
   const months = dayjs().diff(createdAt, 'month', true);
   if (months >= 12) return { badge: 'outdated', weight: 0.5 };
-  if (author?.isExpert || author?.badgeType === 'expert') return { badge: 'expert', weight: 1.3 };
+  if (author?.isExpert || isExpertBadgeType(author?.badgeType)) return { badge: 'expert', weight: 1.3 };
   if (author?.isVerified || author?.badgeType) return { badge: 'verified', weight: 1 };
   return { badge: 'community', weight: 0.7 };
 };

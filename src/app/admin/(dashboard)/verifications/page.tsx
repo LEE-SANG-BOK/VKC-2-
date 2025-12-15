@@ -37,6 +37,7 @@ import { Label } from '@/components/ui/label';
 import dayjs from 'dayjs';
 import { AdminVerification } from '@/repo/admin/types';
 import { useSearchParams } from 'next/navigation';
+import { type BadgeType, suggestBadgeType } from '@/lib/constants/badges';
 
 function buildSuggestedVerifiedProfile(verification: AdminVerification): {
   summary: string;
@@ -130,6 +131,7 @@ export default function AdminVerificationsPage() {
   const [reason, setReason] = useState('');
   const [verifiedProfileSummary, setVerifiedProfileSummary] = useState('');
   const [verifiedProfileKeywordsInput, setVerifiedProfileKeywordsInput] = useState('');
+  const [badgeType, setBadgeType] = useState<BadgeType>('verified_user');
 
   const { data, isLoading } = useAdminVerifications({
     page,
@@ -141,8 +143,16 @@ export default function AdminVerificationsPage() {
 
   const applySuggestedProfile = (verification: AdminVerification) => {
     const suggestion = buildSuggestedVerifiedProfile(verification);
+    const suggestedBadgeType = suggestBadgeType({
+      verificationType: verification.type,
+      visaType: verification.visaType,
+      industry: verification.industry,
+      jobTitle: verification.jobTitle,
+      extraInfo: verification.extraInfo,
+    });
     setVerifiedProfileSummary(suggestion.summary);
     setVerifiedProfileKeywordsInput(suggestion.keywords.map((keyword) => `#${keyword}`).join(' '));
+    setBadgeType(suggestedBadgeType);
   };
 
   useEffect(() => {
@@ -150,13 +160,22 @@ export default function AdminVerificationsPage() {
       setReason('');
       setVerifiedProfileSummary('');
       setVerifiedProfileKeywordsInput('');
+      setBadgeType('verified_user');
       return;
     }
 
     setReason('');
     const suggestion = buildSuggestedVerifiedProfile(selectedVerification);
+    const suggestedBadgeType = suggestBadgeType({
+      verificationType: selectedVerification.type,
+      visaType: selectedVerification.visaType,
+      industry: selectedVerification.industry,
+      jobTitle: selectedVerification.jobTitle,
+      extraInfo: selectedVerification.extraInfo,
+    });
     setVerifiedProfileSummary(suggestion.summary);
     setVerifiedProfileKeywordsInput(suggestion.keywords.map((keyword) => `#${keyword}`).join(' '));
+    setBadgeType(suggestedBadgeType);
   }, [selectedVerification?.id]);
 
   const parsedKeywords = parseVerifiedProfileKeywords(verifiedProfileKeywordsInput);
@@ -171,6 +190,7 @@ export default function AdminVerificationsPage() {
         data: {
           status,
           reason: status === 'rejected' ? reason : undefined,
+          badgeType: status === 'approved' ? badgeType : undefined,
           verifiedProfileSummary: status === 'approved' ? (normalizedSummary ? normalizedSummary : null) : undefined,
           verifiedProfileKeywords: status === 'approved' ? (parsedKeywords.length ? parsedKeywords : null) : undefined,
         },
@@ -180,6 +200,24 @@ export default function AdminVerificationsPage() {
     } catch (error) {
       console.error('Failed to update verification:', error);
     }
+  };
+
+  const badgeTypeLabels: Record<BadgeType, string> = {
+    verified_student: '학생 인증',
+    verified_worker: '직장/재직 인증',
+    verified_user: '인증 사용자',
+    expert: '전문가',
+    expert_visa: '비자 전문가',
+    expert_employment: '취업 전문가',
+    trusted_answerer: '신뢰 답변자',
+  };
+
+  const badgeOptionsFor = (verificationType: string): BadgeType[] => {
+    const normalized = verificationType.toLowerCase();
+    if (normalized === 'student') return ['verified_student'];
+    if (normalized === 'worker' || normalized === 'business') return ['verified_worker'];
+    if (normalized === 'expert') return ['expert_visa', 'expert_employment', 'expert'];
+    return ['verified_user', 'trusted_answerer'];
   };
 
   const getStatusBadge = (status: string) => {
@@ -418,6 +456,25 @@ export default function AdminVerificationsPage() {
                     >
                       자동 제안 적용
                     </Button>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="badgeType">배지 타입</Label>
+                    <Select
+                      value={badgeType}
+                      onValueChange={(value) => setBadgeType(value as BadgeType)}
+                    >
+                      <SelectTrigger id="badgeType" className="mt-1">
+                        <SelectValue placeholder="배지 타입 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {badgeOptionsFor(selectedVerification.type).map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {badgeTypeLabels[option]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>

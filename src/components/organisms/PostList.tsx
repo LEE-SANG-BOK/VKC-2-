@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useRouter } from 'nextjs-toploader/app';
 import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
@@ -26,6 +27,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const t = (translations?.post || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const locale = (params?.lang as string) || 'ko';
   const { data: session } = useSession();
@@ -94,7 +96,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
         ? selectedCategory
       : undefined;
 
-  const sortForQuery = selectedCategory === 'popular' ? 'popular' : (selectedCategory === 'latest' ? 'latest' : 'latest');
+  const sortForQuery: 'popular' | 'latest' = selectedCategory === 'popular' ? 'popular' : 'latest';
 
   const getFilterForQuery = () => {
     if (selectedCategory === 'following') return 'following-users';
@@ -119,17 +121,23 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
         : undefined
       : filterForQuery;
 
+  const initialPage = Math.max(1, parseInt(searchParams?.get('page') || '1') || 1);
+
+  const postListFilters = {
+    parentCategory: selectedCategory === 'subscribed' ? subscribedParentForQuery : parentCategoryForQuery,
+    category: selectedCategory === 'subscribed' ? subscribedCategoryForQuery : categoryForQuery,
+    sort: sortForQuery,
+    filter: filterForQueryResolved as 'following-users' | 'following' | 'my-posts' | undefined,
+  };
+
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-  } = useInfinitePosts({
-    parentCategory: selectedCategory === 'subscribed' ? subscribedParentForQuery : parentCategoryForQuery,
-    category: selectedCategory === 'subscribed' ? subscribedCategoryForQuery : categoryForQuery,
-    sort: sortForQuery,
-    filter: filterForQueryResolved as 'following-users' | 'following' | 'my-posts' | undefined,
+  } = useInfinitePosts(postListFilters, {
+    initialPage,
   }) as ReturnType<typeof useInfinitePosts>;
 
   // Intersection Observer로 무한 스크롤 구현
@@ -155,6 +163,26 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   // 모든 페이지의 게시글을 평탄화
   const allPosts =
     data?.pages.flatMap((page: PaginatedResponse<Post>) => page.data) || [];
+
+  const pagination = (data?.pages?.[0] as PaginatedResponse<Post> | undefined)?.pagination;
+  const currentPage = pagination?.page ?? 1;
+  const totalPages = pagination?.totalPages ?? 1;
+
+  const previousLabel = t.previous || (locale === 'vi' ? 'Trước' : locale === 'en' ? 'Previous' : '이전');
+  const nextLabel = t.next || (locale === 'vi' ? 'Tiếp' : locale === 'en' ? 'Next' : '다음');
+  const pageInfoLabel = t.pageInfo || (locale === 'vi' ? '{current} / {total} trang' : locale === 'en' ? 'Page {current} / {total}' : '{current} / {total} 페이지');
+  const paginationAriaLabel = t.paginationAriaLabel || (locale === 'vi' ? 'Phân trang' : locale === 'en' ? 'Pagination' : '페이지네이션');
+
+  const buildPageUrl = (page: number) => {
+    const nextParams = new URLSearchParams(searchParams?.toString());
+    if (page > 1) {
+      nextParams.set('page', String(page));
+    } else {
+      nextParams.delete('page');
+    }
+    const qs = nextParams.toString();
+    return qs ? `/${locale}?${qs}` : `/${locale}`;
+  };
 
   const followerLabel = tCommon.followers || (locale === 'vi' ? 'Người theo dõi' : locale === 'en' ? 'Followers' : '팔로워');
   const recommendedUsersLabel = t.recommendedUsersTitle || t.recommendedUsers || (locale === 'vi' ? 'Người dùng đề xuất' : locale === 'en' ? 'Recommended users' : '추천 사용자');
@@ -382,6 +410,44 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
       )}
 
       {/* Loading Indicator (다음 페이지 로딩) */}
+      {allPosts.length > 0 && totalPages > 1 && (
+        <nav className="py-4" aria-label={paginationAriaLabel}>
+          <div className="flex items-center justify-center gap-3">
+            {currentPage > 1 ? (
+              <Link
+                href={buildPageUrl(currentPage - 1)}
+                className="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                {previousLabel}
+              </Link>
+            ) : (
+              <span className="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-3 py-2 text-sm font-semibold text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                {previousLabel}
+              </span>
+            )}
+
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {pageInfoLabel
+                .replace('{current}', String(currentPage))
+                .replace('{total}', String(totalPages))}
+            </span>
+
+            {currentPage < totalPages ? (
+              <Link
+                href={buildPageUrl(currentPage + 1)}
+                className="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                {nextLabel}
+              </Link>
+            ) : (
+              <span className="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-3 py-2 text-sm font-semibold text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                {nextLabel}
+              </span>
+            )}
+          </div>
+        </nav>
+      )}
+
       {allPosts.length > 0 && hasNextPage && (
         <div ref={observerRef} className="py-8 text-center">
           {isFetchingNextPage && (

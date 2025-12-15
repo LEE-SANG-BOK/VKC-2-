@@ -234,7 +234,11 @@
     "solved": "Đã giải quyết",
     "unsolved": "Chưa giải quyết",
     "certifiedResponderSummary": "Có {noun} từ {certified} người dùng đã xác minh và {others} người khác",
-    "certifiedResponderSummaryOnly": "Có {noun} từ {certified} người dùng đã xác minh"
+    "certifiedResponderSummaryOnly": "Có {noun} từ {certified} người dùng đã xác minh",
+    "previous": "Trước",
+    "next": "Tiếp",
+    "pageInfo": "{current} / {total} trang",
+    "paginationAriaLabel": "Phân trang"
   },
   "banner": {
     "badge": "Cộng đồng Người Hàn tại Việt Nam",
@@ -647,7 +651,12 @@
     "cancelConfirm": "Bạn có nội dung chưa lưu. Bạn có chắc muốn hủy không?",
     "validationError": "Vui lòng chọn loại xác minh và tải lên tài liệu hỗ trợ.",
     "uploadError": "Không thể tải tệp lên.",
-    "urlError": "Không nhận được URL tệp.",
+    "urlError": "Không nhận được đường dẫn tệp.",
+    "studentRequiredError": "Xác minh sinh viên cần tên trường hoặc email trường.",
+    "workerRequiredError": "Xác minh người đi làm cần ngành nghề hoặc tên công ty.",
+    "documentRequiredError": "Vui lòng đính kèm lại tài liệu xác minh.",
+    "documentLimitError": "Bạn có thể đính kèm tối đa 5 tài liệu.",
+    "documentNotOwnedError": "Bạn chỉ có thể đính kèm tài liệu do bạn tải lên.",
     "submitSuccess": "Yêu cầu xác minh đã được gửi!\nChúng tôi sẽ thông báo sau khi quản trị viên xem xét.",
     "submitError": "Đã xảy ra lỗi khi gửi yêu cầu xác minh.",
     "historyPageTitle": "Lịch sử xác minh",

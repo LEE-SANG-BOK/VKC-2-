@@ -103,6 +103,7 @@ export function useUpdateVerificationStatus() {
       data: {
         status: string;
         reason?: string;
+        badgeType?: string;
         verifiedProfileSummary?: string | null;
         verifiedProfileKeywords?: string[] | null;
       };

@@ -10,6 +10,7 @@ import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { getChildrenForParent, isGroupParentSlug } from '@/lib/constants/category-groups';
 import dayjs from 'dayjs';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
+import { isExpertBadgeType } from '@/lib/constants/badges';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -18,7 +19,7 @@ interface RouteContext {
 const resolveTrust = (author: any, createdAt: Date | string) => {
   const months = dayjs().diff(createdAt, 'month', true);
   if (months >= 12) return { badge: 'outdated', weight: 0.5 };
-  if (author?.isExpert || author?.badgeType === 'expert') return { badge: 'expert', weight: 1.3 };
+  if (author?.isExpert || isExpertBadgeType(author?.badgeType)) return { badge: 'expert', weight: 1.3 };
   if (author?.isVerified || author?.badgeType) return { badge: 'verified', weight: 1 };
   return { badge: 'community', weight: 0.7 };
 };
@@ -86,7 +87,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .where(and(eq(comments.postId, post.id), isNull(comments.parentId)));
 
     const answersCount = answersCountResult?.count || 0;
-    const commentsCount = topLevelCommentsCountResult?.count || 0;
+    const postCommentsCount = topLevelCommentsCountResult?.count || 0;
+    const commentsCount = answersCount + postCommentsCount;
 
     const [likeRecord, bookmarkRecord] = user
       ? await Promise.all([
@@ -121,10 +123,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
       imageCount: imageMatches.length,
       stats: {
         likes: post.likes || 0,
-        comments: answersCount + commentsCount,
+        comments: commentsCount,
         shares: 0,
       },
       answersCount,
+      postCommentsCount,
       commentsCount,
       publishedAt: formatDate(post.createdAt),
       isLiked: Boolean(likeRecord),

@@ -18,20 +18,34 @@ interface PageProps {
   }>;
   searchParams: Promise<{
     c?: string;
+    page?: string;
   }>;
 }
 
 // 메타데이터 생성
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { lang } = await params;
-  const { c: category } = await searchParams;
+  const { c: category, page } = await searchParams;
 
   const dict = await getDictionary(lang);
   const metadata = dict.metadata;
   const sidebar = dict.sidebar;
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
-  const currentUrl = `${baseUrl}/${lang}`;
+  const currentPage = Math.max(1, parseInt(page || '1') || 1);
+
+  const buildUrl = (locale: string) => {
+    const url = new URL(`${baseUrl}/${locale}`);
+    if (category && category !== 'all') {
+      url.searchParams.set('c', category);
+    }
+    if (currentPage > 1) {
+      url.searchParams.set('page', String(currentPage));
+    }
+    return url.toString();
+  };
+
+  const currentUrl = buildUrl(lang);
 
   let title = metadata.home.title;
   let description = metadata.home.description;
@@ -39,8 +53,9 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   // 카테고리별 메타데이터
   if (category && category !== 'all') {
     const categoryName = sidebar[category as keyof typeof sidebar] || category;
-    title = `${categoryName} - ${metadata.home.siteName}`;
-    description = `${categoryName} 카테고리의 질문과 답변`;
+    title = (metadata.category?.title || '{category} - viet kconnect').replace('{category}', categoryName);
+    description = (metadata.category?.description || '{category} 카테고리의 질문과 답변을 확인하세요.')
+      .replace('{category}', categoryName);
   }
 
   return {
@@ -51,9 +66,9 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
     alternates: {
       canonical: currentUrl,
       languages: {
-        ko: `${baseUrl}/ko`,
-        en: `${baseUrl}/en`,
-        vi: `${baseUrl}/vi`,
+        ko: buildUrl('ko'),
+        en: buildUrl('en'),
+        vi: buildUrl('vi'),
       },
     },
 
@@ -102,7 +117,8 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
 // 홈 페이지 서버 컴포넌트 - SSR with Hydration
 export default async function Home({ params, searchParams }: PageProps) {
   const { lang } = await params;
-  const { c: category } = await searchParams;
+  const { c: category, page } = await searchParams;
+  const currentPage = Math.max(1, parseInt(page || '1') || 1);
 
   // 번역 로드
   const dict = await getDictionary(lang);
@@ -131,9 +147,9 @@ export default async function Home({ params, searchParams }: PageProps) {
   try {
     // 게시글 목록 prefetch (무한스크롤용)
     await queryClient.prefetchInfiniteQuery({
-      queryKey: queryKeys.posts.infinite(filters),
-      queryFn: () => fetchPosts({ ...filters, page: 1, limit: 20 }),
-      initialPageParam: 1,
+      queryKey: queryKeys.posts.infinite(filters, currentPage),
+      queryFn: ({ pageParam = currentPage }) => fetchPosts({ ...filters, page: pageParam as number, limit: 20 }),
+      initialPageParam: currentPage,
     });
 
     // 인기 게시글 prefetch

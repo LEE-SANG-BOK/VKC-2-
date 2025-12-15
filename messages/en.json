@@ -234,7 +234,11 @@
     "solved": "Solved",
     "unsolved": "Unsolved",
     "certifiedResponderSummary": "{noun} from {certified} certified users + {others} others",
-    "certifiedResponderSummaryOnly": "{noun} from {certified} certified users"
+    "certifiedResponderSummaryOnly": "{noun} from {certified} certified users",
+    "previous": "Previous",
+    "next": "Next",
+    "pageInfo": "Page {current} / {total}",
+    "paginationAriaLabel": "Pagination"
   },
   "banner": {
     "badge": "Vietnamese Korean Community",
@@ -647,7 +651,12 @@
     "cancelConfirm": "You have unsaved content. Are you sure you want to cancel?",
     "validationError": "Please select verification type and upload supporting document.",
     "uploadError": "Failed to upload file.",
-    "urlError": "Failed to receive file URL.",
+    "urlError": "Failed to receive file path.",
+    "studentRequiredError": "Student verification requires a university name or university email.",
+    "workerRequiredError": "Worker verification requires an industry or company name.",
+    "documentRequiredError": "Please attach your verification document again.",
+    "documentLimitError": "You can attach up to 5 documents.",
+    "documentNotOwnedError": "You can only attach documents you uploaded.",
     "submitSuccess": "Verification request submitted!\nWe will notify you after admin review.",
     "submitError": "An error occurred while submitting verification request.",
     "historyPageTitle": "Verification History",

@@ -4,6 +4,7 @@ import { verificationRequests, users } from '@/lib/db/schema';
 import { getAdminSession } from '@/lib/admin/auth';
 import { eq } from 'drizzle-orm';
 import { createSignedUrl, deleteFiles } from '@/lib/supabase/storage';
+import { isExpertBadgeType, normalizeBadgeType, suggestBadgeType } from '@/lib/constants/badges';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -104,12 +105,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
 
     if (status === 'approved') {
-      const badgeType = (() => {
-        if (verification.type === 'student') return 'verified_student';
-        if (verification.type === 'worker' || verification.type === 'business') return 'verified_worker';
-        if (verification.type === 'expert') return 'expert';
-        return null;
-      })();
+      const resolvedBadgeType =
+        normalizeBadgeType(body?.badgeType) ||
+        suggestBadgeType({
+          verificationType: verification.type,
+          visaType: verification.visaType,
+          industry: verification.industry,
+          jobTitle: verification.jobTitle,
+          extraInfo: verification.extraInfo,
+        });
 
       const [updatedVerification] = await db
         .update(verificationRequests)
@@ -146,12 +150,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         const unique = Array.from(new Set(normalizedKeywords)).slice(0, 20);
         userUpdate.verifiedProfileKeywords = unique.length ? unique : null;
       }
-      if (badgeType) {
-        userUpdate.badgeType = badgeType;
-      }
-      if (verification.type === 'expert') {
-        userUpdate.isExpert = true;
-      }
+      userUpdate.badgeType = resolvedBadgeType;
+      userUpdate.isExpert = isExpertBadgeType(resolvedBadgeType);
 
       await db.update(users).set(userUpdate).where(eq(users.id, verification.userId));
 

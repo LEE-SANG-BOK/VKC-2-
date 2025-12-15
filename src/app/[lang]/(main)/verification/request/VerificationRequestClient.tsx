@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import { useVerificationHistory } from '@/repo/verification/query';
 import { useCreateVerificationRequest } from '@/repo/verification/mutation';
 import type { VerificationType, VerificationRequest } from '@/repo/verification/types';
+import { ApiError } from '@/lib/api/errors';
 import { toast } from 'sonner';
 
 interface VerificationRequestClientProps {
@@ -98,7 +99,21 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
       });
     } catch (error) {
       console.error('Verification request error:', error);
-      toast.error(error instanceof Error ? error.message : (t.submitError || '인증 신청 중 오류가 발생했습니다.'));
+      const translated =
+        error instanceof ApiError && error.code
+          ? {
+              VERIFICATION_REQUIRED_FIELDS: t.validationError || '인증 유형과 증빙 서류를 선택해주세요.',
+              VERIFICATION_ALREADY_APPROVED: t.alreadyVerifiedMessage || '이미 인증이 완료되었습니다.',
+              VERIFICATION_ALREADY_PENDING: t.pendingRequestMessage || '이미 검토 중인 인증 요청이 있습니다.',
+              VERIFICATION_STUDENT_REQUIRED: t.studentRequiredError || '학생 인증은 대학명 또는 학교 이메일이 필요합니다.',
+              VERIFICATION_WORKER_REQUIRED: t.workerRequiredError || '직장인 인증은 산업 분야 또는 회사명이 필요합니다.',
+              VERIFICATION_DOCUMENT_REQUIRED: t.documentRequiredError || '인증 서류를 다시 첨부해주세요.',
+              VERIFICATION_DOCUMENT_LIMIT: t.documentLimitError || '서류는 최대 5개까지 첨부할 수 있습니다.',
+              VERIFICATION_DOCUMENT_NOT_OWNED: t.documentNotOwnedError || '본인이 업로드한 서류만 첨부할 수 있습니다.',
+            }[error.code]
+          : null;
+
+      toast.error(translated || (error instanceof Error ? error.message : (t.submitError || '인증 신청 중 오류가 발생했습니다.')));
     } finally {
       setUploading(false);
     }

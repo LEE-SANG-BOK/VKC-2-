@@ -31,7 +31,7 @@ export const queryKeys = {
       search?: string;
       sort?: 'popular' | 'latest';
       filter?: 'following' | 'following-users' | 'my-posts';
-    }) => [...queryKeys.posts.lists(), 'infinite', filters] as const,
+    }, page: number = 1) => [...queryKeys.posts.lists(), 'infinite', filters, page] as const,
     details: () => [...queryKeys.posts.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.posts.details(), id] as const,
     trending: (period: 'day' | 'week' | 'month' = 'week') =>

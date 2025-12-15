@@ -225,7 +225,7 @@ export default function CategorySidebar({
         scrollbar-track-transparent hover:scrollbar-thumb-gray-400
         transition-transform duration-300 z-40
         lg:translate-x-0
-        top-[57px] h-[calc(100vh-57px)]
+        top-[var(--vk-header-height)] h-[calc(100vh-var(--vk-header-height))]
         pt-0
       `;
 
@@ -239,7 +239,7 @@ export default function CategorySidebar({
         ${isMobileVariant ? '' : 'hidden lg:flex'}
         ${isMobileVariant ? '' : 'sticky'}
         ${isMobileVariant ? '' : 'left-0'}
-        ${isMobileVariant ? '' : 'lg:top-[57px]'}
+        ${isMobileVariant ? '' : 'lg:top-[var(--vk-header-height)]'}
         ${isMobileVariant ? 'flex' : ''}
         ${isMobileVariant ? '' : 'translate-x-0'}
         ${containerClass}
