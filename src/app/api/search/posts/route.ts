@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { posts } from '@/lib/db/schema';
-import { paginatedResponse, serverErrorResponse } from '@/lib/api/response';
-import { sql, or, ilike, eq, desc, and, SQL } from 'drizzle-orm';
+import { paginatedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { sql, eq, desc, and, SQL } from 'drizzle-orm';
 
 /**
  * GET /api/search/posts
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
 
     if (!query) {
-      return serverErrorResponse('검색어를 입력해주세요.');
+      return errorResponse('검색어를 입력해주세요.', 'SEARCH_QUERY_REQUIRED');
     }
 
     const tokenizeSearch = (input: string) => {
@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
 
     const tokenConditions = hasSearchTokens
       ? searchTokens.map((token) =>
-        sql`(${posts.title} ILIKE ${tokenToLike(token)} OR ${posts.content} ILIKE ${tokenToLike(token)})` as SQL<boolean>
-      )
+          sql`(${posts.title} ILIKE ${tokenToLike(token)} OR ${posts.content} ILIKE ${tokenToLike(token)})`
+        )
       : [];
 
     const overlapScore = hasSearchTokens
@@ -56,11 +56,15 @@ export async function GET(request: NextRequest) {
       }, sql<number>`0`)
       : sql<number>`0`;
 
-    const searchClause: SQL<boolean> = hasSearchTokens
-      ? or(...tokenConditions)
-      : sql`(${posts.title} ILIKE ${tokenToLike(query)} OR ${posts.content} ILIKE ${tokenToLike(query)})`;
+    const fallbackSearchClause = sql`(${posts.title} ILIKE ${tokenToLike(query)} OR ${posts.content} ILIKE ${tokenToLike(query)})`;
+    const searchClause =
+      tokenConditions.length > 0
+        ? tokenConditions
+            .slice(1)
+            .reduce((acc, condition) => sql`(${acc} OR ${condition})`, tokenConditions[0])
+        : fallbackSearchClause;
 
-    const conditions: SQL<boolean>[] = [searchClause];
+    const conditions: SQL[] = [searchClause];
 
     if (type) {
       conditions.push(eq(posts.type, type));
@@ -70,15 +74,12 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(posts.category, category));
     }
 
-    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+    const whereClause = conditions.length > 1 ? (and(...conditions) as SQL) : conditions[0];
 
-    let countQuery = db
+    const [countResult] = await db
       .select({ count: sql<number>`count(*)::int` })
-      .from(posts);
-    if (whereClause) {
-      countQuery = countQuery.where(whereClause);
-    }
-    const [countResult] = await countQuery;
+      .from(posts)
+      .where(whereClause);
     const totalMatches = countResult?.count || 0;
 
     let postsResult = await db.query.posts.findMany({
@@ -105,21 +106,21 @@ export async function GET(request: NextRequest) {
     };
 
     if (totalMatches === 0 && hasSearchTokens) {
-      const fallbackFilters: SQL<boolean>[] = [];
-      if (type) fallbackFilters.push(eq(posts.type, type));
-      if (category && category !== 'all') fallbackFilters.push(eq(posts.category, category));
+      const fallbackFilters: SQL[] = [];
+      if (type) fallbackFilters.push(eq(posts.type, type) as SQL);
+      if (category && category !== 'all') fallbackFilters.push(eq(posts.category, category) as SQL);
 
       const fallbackWhereClause =
         fallbackFilters.length > 1
-          ? and(...fallbackFilters)
+          ? (and(...fallbackFilters) as SQL)
           : fallbackFilters[0];
 
-      let fallbackCountQuery = db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(posts);
-      if (fallbackWhereClause) {
-        fallbackCountQuery = fallbackCountQuery.where(fallbackWhereClause);
-      }
+      const fallbackCountQuery = fallbackWhereClause
+        ? db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(posts)
+            .where(fallbackWhereClause)
+        : db.select({ count: sql<number>`count(*)::int` }).from(posts);
       const [fallbackCountResult] = await fallbackCountQuery;
       const fallbackTotalCount = fallbackCountResult?.count || 0;
 
