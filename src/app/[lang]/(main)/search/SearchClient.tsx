@@ -31,6 +31,8 @@ export default function SearchClient({
 }: SearchClientProps) {
   const router = useRouter();
   const t = (translations?.search || {}) as Record<string, string>;
+  const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tTooltips = (translations?.tooltips || {}) as Record<string, string>;
 
   const getGroupLabel = useCallback((group: (typeof CATEGORY_GROUPS)[keyof typeof CATEGORY_GROUPS]) => {
     if (lang === 'vi' && group.label_vi) return group.label_vi;
@@ -152,7 +154,51 @@ export default function SearchClient({
 
   const posts = postsData?.data || [];
   const totalPages = postsData?.pagination?.totalPages || 0;
-  const isFallback = Boolean(postsData?.meta?.isFallback);
+  const fallbackMeta = postsData?.meta as
+    | {
+        isFallback?: boolean;
+        reason?: string;
+        tokens?: string[];
+        query?: string | null;
+        fallbackFilters?: { type?: string | null; category?: string | null };
+      }
+    | undefined;
+  const isFallback = Boolean(fallbackMeta?.isFallback);
+  const fallbackTokens = useMemo(() => {
+    if (!fallbackMeta?.tokens || !Array.isArray(fallbackMeta.tokens)) return [];
+    return (fallbackMeta.tokens as string[])
+      .map((token) => token?.trim())
+      .filter((token): token is string => Boolean(token))
+      .slice(0, 6);
+  }, [fallbackMeta?.tokens]);
+  const filterLabels = useMemo(() => {
+    const filters = fallbackMeta?.fallbackFilters;
+    if (!filters) return [];
+    const labels: string[] = [];
+    if (filters.type) {
+      const typeMap: Record<string, string> = {
+        question: tCommon.question || '질문',
+        share: tTooltips.share || '공유',
+      };
+      labels.push(typeMap[filters.type] || filters.type);
+    }
+    if (filters.category) {
+      const child = LEGACY_CATEGORIES.find((cat) => cat.slug === filters.category);
+      if (child) {
+        labels.push(getCategoryName(child, lang));
+      } else {
+        labels.push(filters.category);
+      }
+    }
+    return labels;
+  }, [fallbackMeta?.fallbackFilters, lang, tCommon.question, tTooltips.share]);
+  const fallbackReasonText = fallbackMeta?.reason === 'popular'
+    ? t.fallbackReasonPopular || (lang === 'vi'
+      ? 'Không có kết quả tương đồng nên đang hiển thị câu hỏi phổ biến.'
+      : lang === 'en'
+        ? 'No close matches — showing popular questions instead.'
+        : '정확히 일치하는 결과가 없어 인기 질문을 보여드려요.')
+    : t.fallbackNotice || (lang === 'vi' ? 'Không có kết quả phù hợp — hiển thị câu hỏi phổ biến.' : lang === 'en' ? 'No close matches — showing popular questions instead.' : '정확히 일치하는 결과가 없어 인기 질문을 보여드려요.');
 
   const handleParentCategoryChangeWithReset = useCallback((category: string) => {
     setParentCategory(category);
@@ -333,8 +379,32 @@ export default function SearchClient({
             ) : posts.length > 0 ? (
               <>
                 {isFallback && (
-                  <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
-                    {t.fallbackNotice || (lang === 'vi' ? 'Không có kết quả phù hợp — hiển thị câu hỏi phổ biến.' : lang === 'en' ? 'No close matches — showing popular questions instead.' : '정확히 일치하는 결과가 없어 인기 질문을 보여드려요.')}
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/20 px-4 py-3 space-y-2 text-sm text-amber-900 dark:text-amber-100">
+                    <p className="font-semibold">
+                      {fallbackReasonText}
+                    </p>
+                    {filterLabels.length > 0 && (
+                      <p className="text-xs text-gray-800 dark:text-gray-200">
+                        {(t.fallbackFiltersLabel || '적용된 필터') + ': ' + filterLabels.join(', ')}
+                      </p>
+                    )}
+                    {fallbackTokens.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-800 dark:text-gray-200">
+                        <span className="font-semibold text-amber-900 dark:text-amber-100">
+                          {t.fallbackTokensLabel || '검색 키워드'}:
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {fallbackTokens.map((token) => (
+                            <span
+                              key={token}
+                              className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white dark:bg-gray-800 px-2 py-0.5 text-[11px] text-gray-600 dark:text-gray-300"
+                            >
+                              #{token}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 {posts.map((post: PostListItem) => (

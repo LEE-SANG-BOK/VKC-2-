@@ -1009,6 +1009,6 @@
 
 @media (max-width: 1024px) {
   .vk-safe-bottom {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--vk-bottom-safe-offset, 72px) + env(safe-area-inset-bottom, 0px));
   }
 }

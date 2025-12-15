@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { i18n } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { getDictionary } from '@/i18n/get-dictionary';
 import StructuredData from "@/components/StructuredData";
+import BottomNavigation from '@/components/organisms/BottomNavigation';
 import QueryProvider from "@/providers/QueryProvider";
 import NextTopLoader from 'nextjs-toploader';
 import { SessionProvider } from 'next-auth/react';
@@ -130,6 +132,8 @@ export default async function LocaleLayout({
     notFound();
   }
 
+  const translations = await getDictionary(lang as Locale);
+
   return (
     <>
       <NextTopLoader
@@ -147,7 +151,12 @@ export default async function LocaleLayout({
         <SessionProvider basePath="/api/auth">
           <ProfileChecker locale={lang} />
           <StructuredData locale={lang as Locale} />
-          {children}
+          <div className="vk-safe-bottom">
+            {children}
+            <Suspense fallback={null}>
+              <BottomNavigation translations={translations} />
+            </Suspense>
+          </div>
           <Toaster position="top-center" richColors />
         </SessionProvider>
       </QueryProvider>

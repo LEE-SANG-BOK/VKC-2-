@@ -1,10 +1,9 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { userPublicColumns } from '@/lib/db/columns';
 import { posts, users, answers, comments, likes, bookmarks } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq, desc, sql, and, inArray, isNotNull } from 'drizzle-orm';
+import { eq, desc, sql, and, inArray, isNotNull, isNull } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -14,9 +13,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
     const type = searchParams.get('type') as 'question' | 'share' | null;
+    const include = (searchParams.get('include') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const includeContent = include.includes('content');
 
     const currentUser = await getSession(request);
 
@@ -43,17 +47,41 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const total = countResult?.count || 0;
 
-    const userPosts = await db.query.posts.findMany({
-      where: and(...conditions),
-      with: {
+    const contentPreviewLimit = 8000;
+    const userPosts = await db
+      .select({
+        id: posts.id,
+        authorId: posts.authorId,
+        type: posts.type,
+        title: posts.title,
+        content: includeContent
+          ? posts.content
+          : sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
+        category: posts.category,
+        subcategory: posts.subcategory,
+        tags: posts.tags,
+        views: posts.views,
+        likes: posts.likes,
+        isResolved: posts.isResolved,
+        adoptedAnswerId: posts.adoptedAnswerId,
+        createdAt: posts.createdAt,
+        updatedAt: posts.updatedAt,
         author: {
-          columns: userPublicColumns,
+          id: users.id,
+          name: users.name,
+          displayName: users.displayName,
+          image: users.image,
+          isVerified: users.isVerified,
+          isExpert: users.isExpert,
+          badgeType: users.badgeType,
         },
-      },
-      orderBy: [desc(posts.createdAt)],
-      limit,
-      offset: (page - 1) * limit,
-    });
+      })
+      .from(posts)
+      .leftJoin(users, eq(posts.authorId, users.id))
+      .where(and(...conditions))
+      .orderBy(desc(posts.createdAt), desc(posts.id))
+      .offset((page - 1) * limit)
+      .limit(limit);
 
     const postIds = userPosts.map((post) => post.id).filter(Boolean) as string[];
 
@@ -68,7 +96,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
             db
               .select({ postId: comments.postId, count: sql<number>`count(*)::int` })
               .from(comments)
-              .where(inArray(comments.postId, postIds))
+              .where(and(inArray(comments.postId, postIds), isNull(comments.parentId)))
               .groupBy(comments.postId),
             currentUser
               ? db

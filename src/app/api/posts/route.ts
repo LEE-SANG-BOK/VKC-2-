@@ -5,7 +5,7 @@ import { posts, users, categorySubscriptions, categories, follows, topicSubscrip
 import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkUserStatus } from '@/lib/user-status';
-import { desc, eq, and, or, sql, inArray, SQL, lt } from 'drizzle-orm';
+import { desc, eq, and, or, sql, inArray, SQL, lt, isNull } from 'drizzle-orm';
 import dayjs from 'dayjs';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
     const parentCategory = searchParams.get('parentCategory');
     const category = searchParams.get('category');
     const search = searchParams.get('search');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
     const type = searchParams.get('type') as 'question' | 'share' | null;
     const sort = searchParams.get('sort') || 'latest';
     const filter = searchParams.get('filter');
@@ -221,13 +221,6 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(posts.authorId, user.id));
     }
 
-    const [countResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(posts)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
-
-    const total = countResult?.count || 0;
-
     type CursorPayload = { createdAt: string; id: string };
     const encodeCursor = (payload: CursorPayload) =>
       Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
@@ -243,6 +236,23 @@ export async function GET(request: NextRequest) {
       }
     };
 
+    const cursorParam = searchParams.get('cursor');
+    const decodedCursor = cursorParam ? decodeCursor(cursorParam) : null;
+    const cursorCreatedAt = decodedCursor ? new Date(decodedCursor.createdAt) : null;
+    const hasValidCursor = Boolean(decodedCursor && cursorCreatedAt && !Number.isNaN(cursorCreatedAt.getTime()));
+    const useCursorPagination = Boolean(cursorParam && hasValidCursor && !hasSearch);
+
+    const total = useCursorPagination
+      ? 0
+      : (
+          (
+            await db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(posts)
+              .where(conditions.length > 0 ? and(...conditions) : undefined)
+          )[0]?.count || 0
+        );
+
     const stripHtmlToText = (html: string) =>
       html
         .replace(/<img[^>]*>/gi, '')
@@ -251,12 +261,6 @@ export async function GET(request: NextRequest) {
         .trim();
 
     const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
-
-    const cursorParam = searchParams.get('cursor');
-    const decodedCursor = cursorParam ? decodeCursor(cursorParam) : null;
-    const cursorCreatedAt = decodedCursor ? new Date(decodedCursor.createdAt) : null;
-    const hasValidCursor = Boolean(decodedCursor && cursorCreatedAt && !Number.isNaN(cursorCreatedAt.getTime()));
-    const useCursorPagination = Boolean(cursorParam && hasValidCursor && !hasSearch);
 
     if (useCursorPagination) {
       conditions.push(
@@ -271,6 +275,9 @@ export async function GET(request: NextRequest) {
       const postIds = list.map((post) => post.id).filter(Boolean) as string[];
       if (postIds.length === 0) return [];
 
+      const shouldComputeResponderCounts = !useCursorPagination;
+      const emptyResponderRows: Array<{ postId: string | null; authorId: string | null }> = [];
+
       const [answerCounts, commentCounts, answerResponders, commentResponders, likedRows, bookmarkedRows] = await Promise.all([
         db
           .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
@@ -280,18 +287,22 @@ export async function GET(request: NextRequest) {
         db
           .select({ postId: comments.postId, count: sql<number>`count(*)::int` })
           .from(comments)
-          .where(inArray(comments.postId, postIds))
+          .where(and(inArray(comments.postId, postIds), isNull(comments.parentId)))
           .groupBy(comments.postId),
-        db
-          .select({ postId: answers.postId, authorId: answers.authorId })
-          .from(answers)
-          .where(inArray(answers.postId, postIds))
-          .groupBy(answers.postId, answers.authorId),
-        db
-          .select({ postId: comments.postId, authorId: comments.authorId })
-          .from(comments)
-          .where(inArray(comments.postId, postIds))
-          .groupBy(comments.postId, comments.authorId),
+        shouldComputeResponderCounts
+          ? db
+              .select({ postId: answers.postId, authorId: answers.authorId })
+              .from(answers)
+              .where(inArray(answers.postId, postIds))
+              .groupBy(answers.postId, answers.authorId)
+          : Promise.resolve(emptyResponderRows),
+        shouldComputeResponderCounts
+          ? db
+              .select({ postId: comments.postId, authorId: comments.authorId })
+              .from(comments)
+              .where(inArray(comments.postId, postIds))
+              .groupBy(comments.postId, comments.authorId)
+          : Promise.resolve(emptyResponderRows),
         user
           ? db
               .select({ postId: likes.postId })
@@ -489,27 +500,57 @@ export async function GET(request: NextRequest) {
 
     const queryLimit = useCursorPagination ? limit + 1 : limit;
 
-    const rawList = await db.query.posts.findMany({
-      where: conditions.length > 0 ? and(...conditions) : undefined,
-      with: {
-        author: {
-          columns: userPublicColumns,
-        },
+    const contentPreviewLimit = 8000;
+    const orderByClauses = hasSearch && overlapScore
+      ? [
+          desc(overlapScore),
+          desc(sql<number>`CASE WHEN ${posts.type} = 'question' THEN 1 ELSE 0 END`),
+          desc(posts.isResolved),
+          desc(posts.likes),
+          desc(posts.views),
+          desc(posts.createdAt),
+          desc(posts.id),
+        ]
+      : [desc(posts.createdAt), desc(posts.id)];
+
+    const postSelect = {
+      id: posts.id,
+      authorId: posts.authorId,
+      type: posts.type,
+      title: posts.title,
+      content: includeContent
+        ? posts.content
+        : sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
+      category: posts.category,
+      subcategory: posts.subcategory,
+      tags: posts.tags,
+      views: posts.views,
+      likes: posts.likes,
+      isResolved: posts.isResolved,
+      adoptedAnswerId: posts.adoptedAnswerId,
+      createdAt: posts.createdAt,
+      updatedAt: posts.updatedAt,
+      author: {
+        id: users.id,
+        name: users.name,
+        displayName: users.displayName,
+        image: users.image,
+        isVerified: users.isVerified,
+        isExpert: users.isExpert,
+        badgeType: users.badgeType,
       },
-      orderBy: hasSearch && overlapScore
-        ? [
-            desc(overlapScore),
-            desc(sql<number>`CASE WHEN ${posts.type} = 'question' THEN 1 ELSE 0 END`),
-            desc(posts.isResolved),
-            desc(posts.likes),
-            desc(posts.views),
-            desc(posts.createdAt),
-            desc(posts.id),
-          ]
-        : [desc(posts.createdAt), desc(posts.id)],
-      limit: queryLimit,
-      offset: useCursorPagination ? undefined : (page - 1) * limit,
-    });
+    };
+
+    const baseQuery = db
+      .select(postSelect)
+      .from(posts)
+      .leftJoin(users, eq(posts.authorId, users.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(...orderByClauses);
+
+    const rawList = await (useCursorPagination
+      ? baseQuery.limit(queryLimit)
+      : baseQuery.offset((page - 1) * limit).limit(queryLimit));
 
     const totalPages = Math.ceil(total / limit);
     const rawHasMore = useCursorPagination ? rawList.length > limit : page < totalPages;

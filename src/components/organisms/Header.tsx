@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
-import { useParams, usePathname, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Bell, Menu, X } from 'lucide-react';
 import { debounce } from 'lodash';
 import Logo from '../atoms/Logo';
@@ -30,10 +30,8 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
   const t = translations?.header || {};
   const tTooltip = translations?.tooltips || {};
   const tSearch = translations?.search || {};
-  const tSidebar = translations?.sidebar || {};
   const params = useParams();
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const locale = params.lang as string || 'ko';
   const { data: session, status } = useSession();
@@ -83,23 +81,13 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
     if (locale === 'vi') return 'Cộng đồng hỏi đáp về visa, việc làm và cuộc sống tại Hàn Quốc';
     return '한국 비자·취업·생활 Q&A 커뮤니티';
   }, [locale]);
-
-  const homeFeed = useMemo(() => {
-    const c = searchParams?.get('c');
-    if (!c) return 'popular';
-    if (c === 'popular' || c === 'latest') return c;
-    return null;
-  }, [searchParams]);
-
-  const isHomePath = pathname === `/${locale}`;
-  const popularLabel =
-    tSidebar.popular || (locale === 'vi' ? 'Phổ biến' : locale === 'en' ? 'Popular' : '인기');
-  const latestLabel =
-    tSidebar.latest || (locale === 'vi' ? 'Mới nhất' : locale === 'en' ? 'Latest' : '최신');
-
-  const handleHomeFeedToggle = (next: 'popular' | 'latest') => {
-    router.push(`/${locale}?c=${encodeURIComponent(next)}`);
-  };
+  const sidebarToggleTooltip =
+    tTooltip.sidebarToggleHint ||
+    (locale === 'vi'
+      ? 'Mở sidebar: danh mục, đăng ký, theo dõi'
+      : locale === 'en'
+        ? 'Open sidebar: categories, subscriptions, following'
+        : '사이드바: 카테고리·구독·팔로우 기능');
 
   const examplePool = useMemo(() => {
     const pool = [
@@ -344,10 +332,10 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
           )}
           {/* Mobile Menu Button */}
           {!showBackButton && (
-            <Tooltip content={tTooltip.sidebarToggle || '사이드바 열기'} position="below">
+            <Tooltip content={sidebarToggleTooltip} position="below">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-1.5 sm:p-1.5 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-xl transition-all duration-300 group"
+                className="lg:hidden p-1.5 sm:p-1.5 rounded-xl border border-blue-200/80 dark:border-blue-900/40 bg-white/70 dark:bg-gray-900/40 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 group"
                 aria-label={tTooltip.sidebarToggle || 'Toggle sidebar'}
               >
                 {isMobileMenuOpen ? (
@@ -517,38 +505,6 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
         </div>
       </div>
 
-      {isHomePath ? (
-        <div className="container mx-auto px-2 sm:px-3 pb-2 lg:hidden">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleHomeFeedToggle('popular')}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                homeFeed === 'popular'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-              }`}
-              aria-label={popularLabel}
-            >
-              <span aria-hidden>🔥</span>
-              <span>{popularLabel}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleHomeFeedToggle('latest')}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                homeFeed === 'latest'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-              }`}
-              aria-label={latestLabel}
-            >
-              <span aria-hidden>🕒</span>
-              <span>{latestLabel}</span>
-            </button>
-          </div>
-        </div>
-      ) : null}
     </header>
   );
 }

@@ -507,7 +507,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     >
       <div className="question-card-main">
         <div className="question-card-body">
-          {/* Author Info & Badges */
+          {/* Author Info & Badges */}
           <div className="flex items-start justify-between gap-2 mb-3 min-w-0">
             <div className="flex items-start gap-2 min-w-0">
               <button
@@ -576,7 +576,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             ) : null}
           </div>
 
-          /* Title + Trust badges */}
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
               {title}

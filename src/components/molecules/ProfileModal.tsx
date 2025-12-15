@@ -3,7 +3,7 @@
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { X, ShieldCheck, Edit } from 'lucide-react';
+import { X, ShieldCheck, Edit, Info } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -11,6 +11,7 @@ import 'dayjs/locale/ko';
 import 'dayjs/locale/en';
 import 'dayjs/locale/vi';
 import Modal from '../atoms/Modal';
+import Tooltip from '@/components/atoms/Tooltip';
 import { useUserProfile, useMyProfile } from '@/repo/users/query';
 
 dayjs.extend(relativeTime);
@@ -148,12 +149,35 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {t.myProfile || '내 프로필'}
           </h2>
-          <button
-            onClick={handleEditProfile}
-            className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors mr-8"
-          >
-            {t.editProfile || '프로필 편집하기'}
-          </button>
+          <div className="relative mr-8">
+            <button
+              onClick={handleEditProfile}
+              className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              {t.editProfile || '프로필 편집하기'}
+            </button>
+            <div className="absolute -top-2 -right-2 sm:hidden">
+              <Tooltip
+                content={
+                  t.editProfileTooltip ||
+                  (locale === 'vi'
+                    ? 'Chỉnh sửa hồ sơ của bạn.'
+                    : locale === 'en'
+                      ? 'Edit your profile.'
+                      : '프로필을 수정할 수 있어요.')
+                }
+                position="top"
+              >
+                <button
+                  type="button"
+                  aria-label={t.editProfileTooltip || '프로필 편집 도움말'}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/60 text-gray-600 dark:text-gray-200 shadow-sm"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
