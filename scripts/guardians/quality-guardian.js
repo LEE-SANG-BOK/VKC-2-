@@ -176,7 +176,10 @@ async function runLintCheck(changedFiles) {
 
     // 변경된 파일이 있으면 해당 파일만, 없으면 전체 검사
     const filesToCheck = changedFiles.length > 0
-      ? changedFiles.filter(f => f.match(/\.(js|jsx|ts|tsx)$/))
+      ? changedFiles
+          .filter(f => f.match(/\.(js|jsx|ts|tsx)$/))
+          .map((file) => path.relative(PROJECT_ROOT, file))
+          .filter((file) => file && !file.startsWith('..'))
       : ['.']
 
     if (filesToCheck.length === 0) {
@@ -184,7 +187,9 @@ async function runLintCheck(changedFiles) {
       return result
     }
 
-    const lintCommand = `npm run lint ${filesToCheck.join(' ')}`
+    const lintCommand = filesToCheck.length > 0 && filesToCheck[0] !== '.'
+      ? `npm run lint -- ${filesToCheck.map((file) => JSON.stringify(file)).join(' ')}`
+      : 'npm run lint'
     const output = execSync(lintCommand, {
       encoding: 'utf8',
       cwd: PROJECT_ROOT
@@ -252,6 +257,19 @@ async function runRelatedTests(changedFiles) {
   try {
     const result = { status: 'running', passed: 0, failed: 0, coverage: null }
 
+    try {
+      const pkg = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'package.json'), 'utf8'))
+      if (!pkg?.scripts?.test) {
+        result.status = 'skipped'
+        result.reason = 'test script not configured'
+        return result
+      }
+    } catch {
+      result.status = 'skipped'
+      result.reason = 'package.json read failed'
+      return result
+    }
+
     // 변경된 파일과 관련된 테스트 파일 찾기
     const testFiles = findRelatedTestFiles(changedFiles)
 
@@ -263,7 +281,7 @@ async function runRelatedTests(changedFiles) {
 
     // 테스트 실행
     const testCommand = testFiles.length > 0
-      ? `npm test ${testFiles.join(' ')}`
+      ? `npm test -- ${testFiles.map((file) => JSON.stringify(file)).join(' ')}`
       : 'npm test'
 
     const output = execSync(testCommand, {

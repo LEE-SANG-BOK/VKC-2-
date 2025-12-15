@@ -1,7 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
-import { useRouter } from 'nextjs-toploader/app';
+import { useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { X, FileText } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -9,7 +8,6 @@ import dayjs from 'dayjs';
 import Modal from '../atoms/Modal';
 import PostCard from './PostCard';
 import { useInfiniteUserPosts } from '@/repo/users/query';
-import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
 
 interface MyPostsModalProps {
   isOpen: boolean;
@@ -18,7 +16,6 @@ interface MyPostsModalProps {
 }
 
 export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyPostsModalProps) {
-  const router = useRouter();
   const params = useParams();
   const locale = params.lang as string || 'ko';
   const { data: session } = useSession();
@@ -65,6 +62,37 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
     return dayjs(dateString).format('YYYY.MM.DD HH:mm');
   };
 
+  const extractMedia = (html?: string | null) => {
+    const sources: string[] = [];
+    if (html) {
+      const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+      let match: RegExpExecArray | null;
+      while ((match = imgRegex.exec(html)) !== null) {
+        const src = match[1];
+        if (src) sources.push(src);
+      }
+    }
+
+    const unique = Array.from(new Set(sources));
+    const thumbnails = unique.slice(0, 4);
+
+    return {
+      thumbnails: thumbnails.length ? thumbnails : undefined,
+      imageCount: unique.length,
+      thumbnail: thumbnails[0],
+    };
+  };
+
+  const buildExcerpt = (html?: string | null) => {
+    if (!html) return '';
+    return html
+      .replace(/<img[^>]*>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 200);
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-2xl">
       <div className="relative max-h-[80vh] flex flex-col">
@@ -94,36 +122,52 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
             </div>
           ) : (
             <div className="space-y-4">
-              {posts.map((post: any) => (
-                <PostCard
-                  key={post.id}
-                  id={post.id}
-                  author={{
-                    id: post.author?.id,
-                    name: post.author?.displayName || post.author?.name || '알 수 없음',
-                    avatar: post.author?.image || post.author?.avatar || '/default-avatar.jpg',
-                    followers: 0,
-                    isVerified: post.author?.isVerified || false,
-                  }}
-                  title={post.title}
-                  excerpt={post.content?.replace(/<img[^>]*>/gi, '').replace(/<[^>]*>/g, '').trim().substring(0, 200) || post.excerpt || ''}
-                  tags={post.tags || []}
-                  stats={{
-                    likes: post.likesCount ?? post.likes ?? 0,
-                    comments: post.commentsCount ?? 0,
-                    shares: 0,
-                  }}
-                  thumbnail={post.thumbnail}
-                  publishedAt={formatDate(post.publishedAt || post.createdAt)}
-                  isQuestion={post.type === 'question' || post.isQuestion}
-                  isAdopted={post.isResolved || post.isAdopted}
-                  isLiked={post.isLiked}
-                  isBookmarked={post.isBookmarked}
-                  trustBadge={(post as any).trustBadge}
-                  trustWeight={(post as any).trustWeight}
-                  translations={translations}
-                />
-              ))}
+              {posts.map((post: any) => {
+                const media = extractMedia(post.content);
+                const resolvedThumbnail = post.thumbnail || media.thumbnail;
+                return (
+                  <PostCard
+                    key={post.id}
+                    id={post.id}
+                    author={{
+                      id: post.author?.id,
+                      name:
+                        post.author?.displayName ||
+                        post.author?.name ||
+                        post.author?.email ||
+                        (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음'),
+                      avatar: post.author?.avatar || post.author?.image || '/default-avatar.jpg',
+                      followers: post.author?.followers ?? 0,
+                      isFollowing: post.author?.isFollowing ?? false,
+                      isVerified: post.author?.isVerified || false,
+                      isExpert: post.author?.isExpert || false,
+                    }}
+                    title={post.title}
+                    excerpt={buildExcerpt(post.content) || post.excerpt || ''}
+                    tags={post.tags || []}
+                    stats={{
+                      likes: post.likesCount ?? post.likes ?? 0,
+                      comments: post.commentsCount ?? 0,
+                      shares: 0,
+                    }}
+                    category={post.category}
+                    subcategory={post.subcategory}
+                    thumbnail={resolvedThumbnail}
+                    thumbnails={media.thumbnails}
+                    imageCount={media.imageCount}
+                    certifiedResponderCount={(post as any).certifiedResponderCount}
+                    otherResponderCount={(post as any).otherResponderCount}
+                    publishedAt={formatDate(post.publishedAt || post.createdAt)}
+                    isQuestion={post.type === 'question' || post.isQuestion}
+                    isAdopted={post.isResolved || post.isAdopted}
+                    isLiked={post.isLiked}
+                    isBookmarked={post.isBookmarked}
+                    trustBadge={(post as any).trustBadge}
+                    trustWeight={(post as any).trustWeight}
+                    translations={translations}
+                  />
+                );
+              })}
 
               {/* Loading indicator */}
               {hasNextPage && (

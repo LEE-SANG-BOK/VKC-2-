@@ -325,17 +325,19 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
           )}
           {/* Mobile Menu Button */}
           {!showBackButton && (
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-1.5 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-300"
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-5 w-5 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
-              ) : (
-                <Menu className="h-5 w-5 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
-              )}
-            </button>
+            <Tooltip content={tTooltip.sidebarToggle || '사이드바 열기'} position="below">
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden p-1.5 sm:p-1.5 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-xl transition-all duration-300 group"
+                aria-label={tTooltip.sidebarToggle || 'Toggle sidebar'}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-5 w-5 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <Menu className="h-5 w-5 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
+                )}
+              </button>
+            </Tooltip>
           )}
           <div className="scale-90 sm:scale-100 origin-left">
             <Tooltip content={tTooltip.brandIntro || brandIntroFallback} position="below" className="vk-tooltip-brand">

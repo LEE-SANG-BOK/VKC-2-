@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminFetch } from './fetch';
 import { adminQueryKeys } from './query';
+import { queryKeys } from '../keys';
 
 export function useAdminLogin() {
   const queryClient = useQueryClient();
@@ -187,6 +188,7 @@ export function useCreateNews() {
     mutationFn: adminFetch.news.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.news.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.news.all });
     },
   });
 }
@@ -213,6 +215,7 @@ export function useUpdateNews() {
     }) => adminFetch.news.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.news.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.news.all });
     },
   });
 }
@@ -224,6 +227,7 @@ export function useDeleteNews() {
     mutationFn: adminFetch.news.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.news.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.news.all });
     },
   });
 }

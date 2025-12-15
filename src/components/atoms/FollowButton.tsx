@@ -52,7 +52,15 @@ export default function FollowButton({
   if (isSelf) return null;
 
   const followLabel = lang === 'vi' ? 'Theo dõi' : lang === 'en' ? 'Follow' : '팔로우';
-  const followingLabel = lang === 'vi' ? 'Đang theo dõi' : lang === 'en' ? 'Following' : '팔로잉 중';
+  const followingLabel = lang === 'vi' ? 'Đang theo dõi' : lang === 'en' ? 'Following' : '팔로잉';
+  const processingLabel =
+    lang === 'vi'
+      ? 'Đang xử lý'
+      : lang === 'en'
+        ? 'Processing'
+        : following
+          ? '해제 중'
+          : '팔로우 중';
 
   const targetName = userName || (lang === 'vi' ? 'người dùng này' : lang === 'en' ? 'this user' : '해당 사용자');
   const confirmTitle = lang === 'vi' ? 'Xác nhận' : lang === 'en' ? 'Confirm' : '확인';
@@ -125,7 +133,7 @@ export default function FollowButton({
         aria-pressed={following}
         className={`inline-flex items-center justify-center rounded-full border font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${sizeClasses} ${activeClasses} ${loading ? 'opacity-70 cursor-not-allowed' : ''} ${className}`}
       >
-        {following ? followingLabel : followLabel}
+        {loading ? processingLabel : following ? followingLabel : followLabel}
       </button>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

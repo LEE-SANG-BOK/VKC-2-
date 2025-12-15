@@ -43,6 +43,7 @@ export const queryKeys = {
     all: ['comments'] as const,
     lists: () => [...queryKeys.comments.all, 'list'] as const,
     list: (postId: string) => [...queryKeys.comments.lists(), postId] as const,
+    infinite: (postId: string) => [...queryKeys.comments.lists(), 'infinite', postId] as const,
   },
 
   // Answers
@@ -50,6 +51,7 @@ export const queryKeys = {
     all: ['answers'] as const,
     lists: () => [...queryKeys.answers.all, 'list'] as const,
     list: (postId: string) => [...queryKeys.answers.lists(), postId] as const,
+    infinite: (postId: string) => [...queryKeys.answers.lists(), 'infinite', postId] as const,
   },
 
   // Users

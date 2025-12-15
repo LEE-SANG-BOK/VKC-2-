@@ -31,9 +31,9 @@ interface SearchPost {
   commentsCount?: number;
   author?: {
     id?: string;
-    displayName?: string;
-    name?: string;
-    image?: string;
+    displayName?: string | null;
+    name?: string | null;
+    image?: string | null;
     isVerified?: boolean;
   };
 }

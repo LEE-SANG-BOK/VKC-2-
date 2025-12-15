@@ -215,7 +215,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                 onClick={() => setSelectedSubscribedCategory(cat.slug)}
                 className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                   active
-                    ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100'
+                    ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
                     : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
                 }`}
               >
@@ -251,7 +251,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
         <button
           type="button"
           onClick={scrollToRecommended}
-          className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm font-semibold text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+          className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm font-semibold text-blue-800 dark:text-blue-100 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
         >
           {recommendedCtaLabel}
         </button>
@@ -277,7 +277,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                   id={post.id}
                   author={{
                     id: post.author?.id,
-                    name: post.author?.displayName || post.author?.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음'),
+                    name: post.author?.displayName || post.author?.name || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음'),
                     avatar: (post.author as any)?.image || (post.author as any)?.avatar || '/default-avatar.jpg',
                     followers: (post.author as any)?.followers ?? 0,
                     isFollowing: (post.author as any)?.isFollowing ?? false,

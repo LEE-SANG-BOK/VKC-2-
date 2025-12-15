@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
-import { posts, categorySubscriptions, categories, follows, topicSubscriptions, users } from '@/lib/db/schema';
+import { posts, categorySubscriptions, categories, follows, topicSubscriptions, answers, comments, likes, bookmarks } from '@/lib/db/schema';
 import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkUserStatus } from '@/lib/user-status';
@@ -9,6 +9,7 @@ import { desc, eq, and, or, sql, inArray, SQL } from 'drizzle-orm';
 import dayjs from 'dayjs';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
+import { getChildrenForParent, isGroupChildSlug, isGroupParentSlug } from '@/lib/constants/category-groups';
 
 const resolveTrust = (author: any, createdAt: Date | string) => {
   const months = dayjs().diff(createdAt, 'month', true);
@@ -17,28 +18,6 @@ const resolveTrust = (author: any, createdAt: Date | string) => {
   if (author?.isVerified || author?.badgeType) return { badge: 'verified', weight: 1 };
   return { badge: 'community', weight: 0.7 };
 };
-
-const CATEGORY_GROUP_SLUGS = {
-  visa: ['visa-process', 'status-change', 'visa-checklist'],
-  students: ['scholarship', 'university-ranking', 'korean-language'],
-  career: ['business', 'wage-info', 'legal'],
-  living: ['housing', 'cost-of-living', 'healthcare'],
-} as const;
-
-const GROUP_PARENT_SLUGS = Object.keys(CATEGORY_GROUP_SLUGS);
-const GROUP_CHILD_SLUGS = Object.values(CATEGORY_GROUP_SLUGS).flat();
-const CHILD_TO_PARENT: Record<string, string> = GROUP_CHILD_SLUGS.reduce((acc, slug) => {
-  const parent = GROUP_PARENT_SLUGS.find((p) =>
-    (CATEGORY_GROUP_SLUGS[p as keyof typeof CATEGORY_GROUP_SLUGS] as readonly string[]).includes(slug)
-  );
-  if (parent) acc[slug] = parent;
-  return acc;
-}, {} as Record<string, string>);
-
-const isGroupParentSlug = (slug: string) => GROUP_PARENT_SLUGS.includes(slug);
-const isGroupChildSlug = (slug: string) => (GROUP_CHILD_SLUGS as readonly string[]).includes(slug);
-const getChildrenForParent = (slug: string) =>
-  (CATEGORY_GROUP_SLUGS as Record<string, readonly string[]>)[slug] || [];
 
 /**
  * GET /api/posts
@@ -243,6 +222,88 @@ export async function GET(request: NextRequest) {
 
     const total = countResult?.count || 0;
 
+    const decoratePosts = async (list: any[]) => {
+      const postIds = list.map((post) => post.id).filter(Boolean) as string[];
+      if (postIds.length === 0) return [];
+
+      const [answerCounts, commentCounts, likedRows, bookmarkedRows] = await Promise.all([
+        db
+          .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
+          .from(answers)
+          .where(inArray(answers.postId, postIds))
+          .groupBy(answers.postId),
+        db
+          .select({ postId: comments.postId, count: sql<number>`count(*)::int` })
+          .from(comments)
+          .where(inArray(comments.postId, postIds))
+          .groupBy(comments.postId),
+        user
+          ? db
+              .select({ postId: likes.postId })
+              .from(likes)
+              .where(and(eq(likes.userId, user.id), inArray(likes.postId, postIds)))
+          : Promise.resolve([]),
+        user
+          ? db
+              .select({ postId: bookmarks.postId })
+              .from(bookmarks)
+              .where(and(eq(bookmarks.userId, user.id), inArray(bookmarks.postId, postIds)))
+          : Promise.resolve([]),
+      ]);
+
+      const answerCountMap = new Map<string, number>();
+      answerCounts.forEach((row) => {
+        if (row.postId) answerCountMap.set(row.postId, row.count);
+      });
+
+      const commentCountMap = new Map<string, number>();
+      commentCounts.forEach((row) => {
+        if (row.postId) commentCountMap.set(row.postId, row.count);
+      });
+
+      const likedPostIds = new Set<string>();
+      likedRows.forEach((row) => {
+        if (row.postId) likedPostIds.add(row.postId);
+      });
+
+      const bookmarkedPostIds = new Set<string>();
+      bookmarkedRows.forEach((row) => {
+        if (row.postId) bookmarkedPostIds.add(row.postId);
+      });
+
+      return list.map((post) => {
+        const imageMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)) as RegExpMatchArray[];
+        const thumbnails = imageMatches.slice(0, 4).map((match) => match[1]);
+        const thumbnail = thumbnails[0] ?? null;
+        const imageCount = imageMatches.length;
+        const trust = resolveTrust(post.author, post.createdAt);
+
+        const answersCount = answerCountMap.get(post.id) ?? 0;
+        const postCommentsCount = commentCountMap.get(post.id) ?? 0;
+
+        return {
+          ...post,
+          author: post.author
+            ? {
+                ...post.author,
+                isExpert: post.author.isExpert || false,
+              }
+            : post.author,
+          trustBadge: trust.badge,
+          trustWeight: trust.weight,
+          thumbnail,
+          thumbnails,
+          imageCount,
+          isLiked: user ? likedPostIds.has(post.id) : false,
+          isBookmarked: user ? bookmarkedPostIds.has(post.id) : false,
+          likesCount: post.likes ?? 0,
+          answersCount,
+          postCommentsCount,
+          commentsCount: answersCount + postCommentsCount,
+        };
+      });
+    };
+
     if (hasSearch && total === 0) {
       const fallbackConditions = [
         ...conditionsBeforeSearch.filter((c) => (typeCondition ? c !== typeCondition : true)),
@@ -262,95 +323,17 @@ export async function GET(request: NextRequest) {
           author: {
             columns: userPublicColumns,
           },
-          likes: true,
-          bookmarks: true,
-          answers: true,
-          comments: true,
         },
         orderBy: [desc(posts.likes), desc(posts.views), desc(posts.createdAt)],
         limit,
         offset: (page - 1) * limit,
       });
 
-      const fallbackResponderIds = new Set<string>();
-      fallbackList.forEach((post) => {
-        post.answers?.forEach((answer) => {
-          if (answer.authorId) fallbackResponderIds.add(answer.authorId);
-        });
-        post.comments?.forEach((comment) => {
-          if (comment.authorId) fallbackResponderIds.add(comment.authorId);
-        });
-      });
-
-      const fallbackResponders = fallbackResponderIds.size
-        ? await db.query.users.findMany({
-            where: inArray(users.id, Array.from(fallbackResponderIds)),
-            columns: {
-              id: true,
-              isVerified: true,
-              isExpert: true,
-              badgeType: true,
-            },
-          })
-        : [];
-
-      const fallbackResponderCertMap = new Map<string, boolean>();
-      fallbackResponders.forEach((responder) => {
-        fallbackResponderCertMap.set(
-          responder.id,
-          Boolean(responder.isVerified || responder.isExpert || responder.badgeType)
-        );
-      });
-
-      const postsWithUserStatus = fallbackList.map((post) => {
-        const imageMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi));
-        const thumbnails = imageMatches.slice(0, 4).map((match) => match[1]);
-        const thumbnail = thumbnails[0] ?? null;
-        const imageCount = imageMatches.length;
-        const trust = resolveTrust(post.author, post.createdAt);
-
-        const certifiedResponders = new Set<string>();
-        const otherResponders = new Set<string>();
-        post.answers?.forEach((answer) => {
-          const authorId = answer.authorId;
-          if (!authorId) return;
-          (fallbackResponderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
-        });
-        post.comments?.forEach((comment) => {
-          const authorId = comment.authorId;
-          if (!authorId) return;
-          (fallbackResponderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
-        });
-
-        return {
-          ...post,
-          author: post.author
-            ? {
-                ...post.author,
-                isExpert: post.author.isExpert || false,
-              }
-            : post.author,
-          trustBadge: trust.badge,
-          trustWeight: trust.weight,
-          thumbnail,
-          thumbnails,
-          imageCount,
-          isLiked: user ? post.likes.some((like) => like.userId === user.id) : false,
-          isBookmarked: user ? post.bookmarks.some((bookmark) => bookmark.userId === user.id) : false,
-          likesCount: post.likes.length,
-          commentsCount: (post.answers?.length || 0) + (post.comments?.length || 0),
-          certifiedResponderCount: certifiedResponders.size,
-          otherResponderCount: otherResponders.size,
-          likes: undefined,
-          bookmarks: undefined,
-          answers: undefined,
-          comments: undefined,
-        };
-      });
+      const decoratedFallback = await decoratePosts(fallbackList);
 
       return NextResponse.json({
         success: true,
-        data: postsWithUserStatus,
+        data: decoratedFallback,
         pagination: {
           page,
           limit,
@@ -372,10 +355,6 @@ export async function GET(request: NextRequest) {
         author: {
           columns: userPublicColumns,
         },
-        likes: true,
-        bookmarks: true,
-        answers: true,
-        comments: true,
       },
       orderBy: hasSearch && overlapScore
         ? [
@@ -391,92 +370,21 @@ export async function GET(request: NextRequest) {
       offset: (page - 1) * limit,
     });
 
+    const decoratedPosts = await decoratePosts(postList);
+
     // 인기순일 경우 클라이언트에서 재정렬
-    let sortedList = postList;
+    let sortedList = decoratedPosts;
     if (sort === 'popular' && !hasSearch) {
-      sortedList = [...postList].sort((a, b) => {
-        const trustA = resolveTrust(a.author, a.createdAt).weight;
-        const trustB = resolveTrust(b.author, b.createdAt).weight;
-        const scoreA = ((a.likes?.length || 0) * 2 + (a.views || 0) + (a.answers?.length || 0) * 1.5 + (a.comments?.length || 0)) * trustA;
-        const scoreB = ((b.likes?.length || 0) * 2 + (b.views || 0) + (b.answers?.length || 0) * 1.5 + (b.comments?.length || 0)) * trustB;
+      sortedList = [...decoratedPosts].sort((a, b) => {
+        const trustA = a.trustWeight || 1;
+        const trustB = b.trustWeight || 1;
+        const scoreA = ((a.likesCount ?? a.likes ?? 0) * 2 + (a.views || 0) + ((a as any).answersCount || 0) * 1.5 + ((a as any).postCommentsCount || 0)) * trustA;
+        const scoreB = ((b.likesCount ?? b.likes ?? 0) * 2 + (b.views || 0) + ((b as any).answersCount || 0) * 1.5 + ((b as any).postCommentsCount || 0)) * trustB;
         return scoreB - scoreA;
       });
     }
 
-    const responderIds = new Set<string>();
-    sortedList.forEach((post) => {
-      post.answers?.forEach((answer) => {
-        if (answer.authorId) responderIds.add(answer.authorId);
-      });
-      post.comments?.forEach((comment) => {
-        if (comment.authorId) responderIds.add(comment.authorId);
-      });
-    });
-
-    const responders = responderIds.size
-      ? await db.query.users.findMany({
-          where: inArray(users.id, Array.from(responderIds)),
-          columns: {
-            id: true,
-            isVerified: true,
-            isExpert: true,
-            badgeType: true,
-          },
-        })
-      : [];
-
-    const responderCertMap = new Map<string, boolean>();
-    responders.forEach((responder) => {
-      responderCertMap.set(responder.id, Boolean(responder.isVerified || responder.isExpert || responder.badgeType));
-    });
-
-    const postsWithUserStatus = sortedList.map(post => {
-      const imageMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi));
-      const thumbnails = imageMatches.slice(0, 4).map((match) => match[1]);
-      const thumbnail = thumbnails[0] ?? null;
-      const imageCount = imageMatches.length;
-      const trust = resolveTrust(post.author, post.createdAt);
-
-      const certifiedResponders = new Set<string>();
-      const otherResponders = new Set<string>();
-      post.answers?.forEach((answer) => {
-        const authorId = answer.authorId;
-        if (!authorId) return;
-        (responderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
-      });
-      post.comments?.forEach((comment) => {
-        const authorId = comment.authorId;
-        if (!authorId) return;
-        (responderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
-      });
-
-      return {
-        ...post,
-        author: post.author
-          ? {
-              ...post.author,
-              isExpert: post.author.isExpert || false,
-            }
-          : post.author,
-        trustBadge: trust.badge,
-        trustWeight: trust.weight,
-        thumbnail,
-        thumbnails,
-        imageCount,
-        isLiked: user ? post.likes.some(like => like.userId === user.id) : false,
-        isBookmarked: user ? post.bookmarks.some(bookmark => bookmark.userId === user.id) : false,
-        likesCount: post.likes.length,
-        commentsCount: (post.answers?.length || 0) + (post.comments?.length || 0),
-        certifiedResponderCount: certifiedResponders.size,
-        otherResponderCount: otherResponders.size,
-        likes: undefined,
-        bookmarks: undefined,
-        answers: undefined,
-        comments: undefined,
-      };
-    });
-
-    return paginatedResponse(postsWithUserStatus, page, limit, total);
+    return paginatedResponse(sortedList, page, limit, total);
   } catch (error) {
     console.error('GET /api/posts error:', error);
     return serverErrorResponse();

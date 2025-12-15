@@ -33,6 +33,8 @@ import FollowButton from '@/components/atoms/FollowButton';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { useSession } from 'next-auth/react';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
+import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
+import { UGC_LIMITS, getPlainTextLength, validateUgcText, UgcValidationErrorCode, UgcValidationResult } from '@/lib/validation/ugc';
 import { useTogglePostLike, useTogglePostBookmark, useDeletePost, useUpdatePost, useIncrementPostView } from '@/repo/posts/mutation';
 import { useCreateAnswer, useUpdateAnswer, useDeleteAnswer, useToggleAnswerLike, useAdoptAnswer, useCreateAnswerComment } from '@/repo/answers/mutation';
 import { useCreatePostComment, useUpdateComment, useDeleteComment, useToggleCommentLike } from '@/repo/comments/mutation';
@@ -40,11 +42,41 @@ import { useReportPost, useReportComment, useReportAnswer } from '@/repo/reports
 import { useFollowStatus } from '@/repo/users/query';
 import { useCategories } from '@/repo/categories/query';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/repo/keys';
 import type { ReportType } from '@/repo/reports/types';
 import { ApiError, isAccountRestrictedError } from '@/lib/api/errors';
 import { toast } from 'sonner';
+
+interface PaginatedListResponse<T> {
+  success: boolean;
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+function mergeById<T extends { id: string }>(current: T[] | undefined, incoming: T[]): T[] {
+  const existing = current ?? [];
+  if (incoming.length === 0) return existing;
+  const existingMap = new Map(existing.map((item) => [item.id, item] as const));
+  const seen = new Set<string>();
+  const merged = incoming.map((item) => {
+    seen.add(item.id);
+    return existingMap.get(item.id) ?? item;
+  });
+
+  const extras = existing.filter((item) => !seen.has(item.id));
+  if (extras.length === 0 && merged.length === existing.length) {
+    const unchanged = merged.every((item, index) => item === existing[index]);
+    if (unchanged) return existing;
+  }
+
+  return [...merged, ...extras];
+}
 
 interface Comment {
   id: string;
@@ -134,8 +166,6 @@ interface PostDetailClientProps {
   translations?: Record<string, unknown>;
 }
 
-const MIN_ANSWER_LENGTH = 10;
-
 const bannedPatterns = [
   /씨발/i,
   /시발/i,
@@ -170,6 +200,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const { data: session } = useSession();
   const user = session?.user;
   const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tPost = (translations?.post || {}) as Record<string, string>;
   const tPostDetail = (translations?.postDetail || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
   const tErrors = (translations?.errors || {}) as Record<string, string>;
@@ -236,6 +267,60 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   });
 
   const [post, setPost] = useState<PostDetail>(initialPost);
+  const contentThumbnail = useMemo(() => {
+    const matches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)) as RegExpMatchArray[];
+    for (const match of matches) {
+      const normalized = normalizePostImageSrc(match[1]);
+      if (normalized) return normalized;
+    }
+    return null;
+  }, [post.content]);
+  const normalizedThumbnail = useMemo(
+    () => normalizePostImageSrc(post.thumbnail) || contentThumbnail,
+    [contentThumbnail, post.thumbnail]
+  );
+  const [renderThumbnailSrc, setRenderThumbnailSrc] = useState<string | null>(normalizedThumbnail);
+
+  useEffect(() => {
+    setRenderThumbnailSrc(normalizedThumbnail);
+  }, [normalizedThumbnail]);
+
+  const answersInfiniteQuery = useInfiniteQuery<PaginatedListResponse<Answer>>({
+    queryKey: queryKeys.answers.infinite(initialPost.id),
+    queryFn: ({ pageParam }) =>
+      fetch(`/api/posts/${initialPost.id}/answers?page=${pageParam}&limit=10`, { credentials: 'include' }).then((r) =>
+        r.json()
+      ),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
+    },
+    enabled: Boolean(initialPost.id && post.isQuestion),
+  });
+
+  const commentsInfiniteQuery = useInfiniteQuery<PaginatedListResponse<Comment>>({
+    queryKey: queryKeys.comments.infinite(initialPost.id),
+    queryFn: ({ pageParam }) =>
+      fetch(`/api/posts/${initialPost.id}/comments?page=${pageParam}&limit=20`, { credentials: 'include' }).then((r) =>
+        r.json()
+      ),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
+    },
+    enabled: Boolean(initialPost.id && !post.isQuestion),
+  });
+
+  const pagedAnswers = useMemo(
+    () => answersInfiniteQuery.data?.pages.flatMap((page) => page.data) || [],
+    [answersInfiniteQuery.data]
+  );
+  const pagedComments = useMemo(
+    () => commentsInfiniteQuery.data?.pages.flatMap((page) => page.data) || [],
+    [commentsInfiniteQuery.data]
+  );
 
   const derivedTrustLevel: TrustLevel = post.trustBadge
     ? (post.trustBadge as TrustLevel)
@@ -263,9 +348,74 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   useEffect(() => {
     if (postQuery?.data) {
-      setPost(postQuery.data);
+      setPost((prev) => ({
+        ...prev,
+        ...postQuery.data,
+        answers: prev.answers,
+        comments: prev.comments,
+      }));
     }
   }, [postQuery]);
+
+  useEffect(() => {
+    if (!post.isQuestion) return;
+    if (!pagedAnswers.length) return;
+    setPost((prev) => {
+      const merged = mergeById(prev.answers || [], pagedAnswers);
+      if (merged === prev.answers) return prev;
+      return {
+        ...prev,
+        answers: merged,
+      };
+    });
+  }, [pagedAnswers, post.isQuestion]);
+
+  useEffect(() => {
+    if (post.isQuestion) return;
+    if (!pagedComments.length) return;
+    setPost((prev) => {
+      const merged = mergeById(prev.comments || [], pagedComments);
+      if (merged === prev.comments) return prev;
+      return {
+        ...prev,
+        comments: merged,
+      };
+    });
+  }, [pagedComments, post.isQuestion]);
+
+  useEffect(() => {
+    if (!post.isQuestion) return;
+    if (!answersInfiniteQuery.hasNextPage) return;
+    const target = answersLoadMoreRef.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        if (answersInfiniteQuery.isFetchingNextPage) return;
+        answersInfiniteQuery.fetchNextPage();
+      },
+      { rootMargin: '240px' }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [answersInfiniteQuery.fetchNextPage, answersInfiniteQuery.hasNextPage, answersInfiniteQuery.isFetchingNextPage, post.isQuestion]);
+
+  useEffect(() => {
+    if (post.isQuestion) return;
+    if (!commentsInfiniteQuery.hasNextPage) return;
+    const target = commentsLoadMoreRef.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        if (commentsInfiniteQuery.isFetchingNextPage) return;
+        commentsInfiniteQuery.fetchNextPage();
+      },
+      { rootMargin: '240px' }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [commentsInfiniteQuery.fetchNextPage, commentsInfiniteQuery.hasNextPage, commentsInfiniteQuery.isFetchingNextPage, post.isQuestion]);
 
   const viewIncrementedRef = useRef(false);
   useEffect(() => {
@@ -287,9 +437,35 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const [replyWarnings, setReplyWarnings] = useState({ banned: false, spam: false });
   const [answerWarnings, setAnswerWarnings] = useState({ banned: false, spam: false });
   const [answerReplyWarnings, setAnswerReplyWarnings] = useState({ banned: false, spam: false });
-  const commentTooShort = newComment.trim().length > 0 && newComment.trim().length < 10;
-  const replyTooShort = replyContent.trim().length > 0 && replyContent.trim().length < 10;
-  const answerReplyTooShort = answerReplyContent.trim().length > 0 && answerReplyContent.trim().length < 10;
+  const commentValidation = useMemo(
+    () => validateUgcText(newComment, UGC_LIMITS.commentContent.min, UGC_LIMITS.commentContent.max),
+    [newComment]
+  );
+  const commentTooShort = commentValidation.ok === false && commentValidation.code === 'UGC_TOO_SHORT';
+  const replyValidation = useMemo(
+    () => validateUgcText(replyContent, UGC_LIMITS.commentContent.min, UGC_LIMITS.commentContent.max),
+    [replyContent]
+  );
+  const answerValidation = useMemo(
+    () => validateUgcText(newAnswer, UGC_LIMITS.answerContent.min, UGC_LIMITS.answerContent.max),
+    [newAnswer]
+  );
+  const answerReplyValidation = useMemo(
+    () => validateUgcText(answerReplyContent, UGC_LIMITS.commentContent.min, UGC_LIMITS.commentContent.max),
+    [answerReplyContent]
+  );
+  const commentValidationMessage = commentValidation.ok ? '' : getUgcErrorMessage(commentValidation, 'commentContent');
+  const replyValidationMessage = replyValidation.ok ? '' : getUgcErrorMessage(replyValidation, 'commentContent');
+  const answerValidationMessage = answerValidation.ok ? '' : getUgcErrorMessage(answerValidation, 'answerContent');
+  const answerReplyValidationMessage = answerReplyValidation.ok ? '' : getUgcErrorMessage(answerReplyValidation, 'commentContent');
+  const commentHasValidationError = !commentValidation.ok;
+  const replyHasValidationError = !replyValidation.ok;
+  const answerHasValidationError = !answerValidation.ok;
+  const answerReplyHasValidationError = !answerReplyValidation.ok;
+  const showCommentValidationError = commentWarnings.banned || commentWarnings.spam || commentHasValidationError;
+  const showReplyValidationError = replyWarnings.banned || replyWarnings.spam || replyHasValidationError;
+  const showAnswerValidationError = answerWarnings.banned || answerWarnings.spam || answerHasValidationError;
+  const showAnswerReplyValidationError = answerReplyWarnings.banned || answerReplyWarnings.spam || answerReplyHasValidationError;
 
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment' | 'answer'; id: string } | null>(null);
@@ -298,6 +474,8 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const answersRef = useRef<HTMLDivElement | null>(null);
+  const answersLoadMoreRef = useRef<HTMLDivElement | null>(null);
+  const commentsLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const answersHashHandledRef = useRef(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isEditingPost, setIsEditingPost] = useState(false);
@@ -341,6 +519,28 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const categoryLabel = useMemo(() => mapSlugToLabel(categorySlug), [categorySlug, locale]);
   const subcategoryLabel = useMemo(() => mapSlugToLabel(subcategorySlug), [subcategorySlug, locale]);
+
+  const getUgcErrorKeyMap: Record<'answerContent' | 'commentContent', Record<UgcValidationErrorCode, string>> = {
+    answerContent: {
+      UGC_REQUIRED: 'ANSWER_REQUIRED',
+      UGC_TOO_SHORT: 'ANSWER_TOO_SHORT',
+      UGC_TOO_LONG: 'ANSWER_TOO_LONG',
+      UGC_LOW_QUALITY: 'ANSWER_LOW_QUALITY',
+    },
+    commentContent: {
+      UGC_REQUIRED: 'COMMENT_REQUIRED',
+      UGC_TOO_SHORT: 'COMMENT_TOO_SHORT',
+      UGC_TOO_LONG: 'COMMENT_TOO_LONG',
+      UGC_LOW_QUALITY: 'COMMENT_LOW_QUALITY',
+    },
+  };
+
+  const getUgcErrorMessage = (result: UgcValidationResult, field: 'answerContent' | 'commentContent') => {
+    if (result.ok) return '';
+    const key = getUgcErrorKeyMap[field][result.code];
+    if (key && tErrors[key]) return tErrors[key];
+    return tErrors.CONTENT_PROHIBITED || '금칙어/저품질 콘텐츠로 작성할 수 없습니다.';
+  };
 
   const uniqueTags = useMemo(() => {
     if (!post?.tags) return [];
@@ -627,6 +827,10 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       toast.error(commentWarnings.banned ? (tPostDetail.bannedWarning || '금칙어가 포함되어 있습니다. 내용을 순화해주세요.') : (tPostDetail.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.'));
       return;
     }
+    if (!commentValidation.ok) {
+      toast.error(getUgcErrorMessage(commentValidation, 'commentContent'));
+      return;
+    }
 
     if (!user) {
       openLoginPrompt();
@@ -704,6 +908,10 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     if (!newAnswer.trim() || !post) return;
     if (answerWarnings.banned || answerWarnings.spam) {
       toast.error(answerWarnings.banned ? (tPostDetail.bannedWarning || '금칙어가 포함되어 있습니다. 내용을 순화해주세요.') : (tPostDetail.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.'));
+      return;
+    }
+    if (!answerValidation.ok) {
+      toast.error(getUgcErrorMessage(answerValidation, 'answerContent'));
       return;
     }
 
@@ -901,6 +1109,10 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     if (!replyContent.trim()) return;
     if (replyWarnings.banned || replyWarnings.spam) {
       toast.error(replyWarnings.banned ? (tPostDetail.bannedWarning || '금칙어가 포함되어 있습니다. 내용을 순화해주세요.') : (tPostDetail.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.'));
+      return;
+    }
+    if (!replyValidation.ok) {
+      toast.error(getUgcErrorMessage(replyValidation, 'commentContent'));
       return;
     }
 
@@ -1137,6 +1349,10 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       toast.error(answerReplyWarnings.banned ? (tPostDetail.bannedWarning || '금칙어가 포함되어 있습니다. 내용을 순화해주세요.') : (tPostDetail.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.'));
       return;
     }
+    if (!answerReplyValidation.ok) {
+      toast.error(getUgcErrorMessage(answerReplyValidation, 'commentContent'));
+      return;
+    }
 
     const tempId = `temp-${Date.now()}`;
     const optimisticReply: AnswerReply = {
@@ -1325,24 +1541,28 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
-  const getTextLength = (value: string) => value.replace(/<[^>]+>/g, '').trim().length;
-  const answerTextLength = getTextLength(newAnswer);
-  const answerRemaining = Math.max(0, MIN_ANSWER_LENGTH - answerTextLength);
+  const answerLimits = UGC_LIMITS.answerContent;
+  const answerTextLength = getPlainTextLength(newAnswer || '');
+  const answerRemaining = Math.max(0, answerLimits.min - answerTextLength);
+  const answerTotalCount = Math.max(
+    sortedAnswers.length,
+    answersInfiniteQuery.data?.pages?.[0]?.pagination?.total || 0
+  );
   const answerEmptyLabel = tPostDetail.answerEmpty || (locale === 'vi' ? 'Chưa có câu trả lời.' : locale === 'en' ? 'No answers yet.' : '아직 답변이 없습니다.');
   const answerCountLabel = tPostDetail.answerCountLabel
     ? (tPostDetail.answerCountLabel.includes('{count}')
-      ? tPostDetail.answerCountLabel.replace('{count}', String(sortedAnswers.length))
-      : `${sortedAnswers.length}${tPostDetail.answerCountLabel}`)
+      ? tPostDetail.answerCountLabel.replace('{count}', String(answerTotalCount))
+      : `${answerTotalCount}${tPostDetail.answerCountLabel}`)
     : (locale === 'vi'
-      ? `${sortedAnswers.length} câu trả lời`
+      ? `${answerTotalCount} câu trả lời`
       : locale === 'en'
-        ? `${sortedAnswers.length} answers`
-        : `${sortedAnswers.length}개의 답변이 있어요!`);
+        ? `${answerTotalCount} answers`
+        : `${answerTotalCount}개의 답변이 있어요!`);
   const answerMinHintLabel = locale === 'vi'
-    ? `Vui lòng viết ít nhất ${MIN_ANSWER_LENGTH} ký tự.`
+    ? `Vui lòng viết ít nhất ${answerLimits.min} ký tự.`
     : locale === 'en'
-      ? `Please write at least ${MIN_ANSWER_LENGTH} characters.`
-      : `${MIN_ANSWER_LENGTH}자 이상 작성해주세요.`;
+      ? `Please write at least ${answerLimits.min} characters.`
+      : `${answerLimits.min}자 이상 작성해주세요.`;
   const answerMinCharsLabel = answerRemaining > 0
     ? (() => {
       const template = tPostDetail.answerCharsLeft;
@@ -1351,13 +1571,13 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       if (template && (hasRemaining || hasMin)) {
         return template
           .replace('{remaining}', String(answerRemaining))
-          .replace('{min}', String(MIN_ANSWER_LENGTH));
+          .replace('{min}', String(answerLimits.min));
       }
       return locale === 'vi'
-        ? `Cần thêm ${answerRemaining} ký tự (tối thiểu ${MIN_ANSWER_LENGTH})`
+        ? `Cần thêm ${answerRemaining} ký tự (tối thiểu ${answerLimits.min})`
         : locale === 'en'
-          ? `Need ${answerRemaining} more characters (min ${MIN_ANSWER_LENGTH})`
-          : `${answerRemaining}자 더 입력해주세요 (최소 ${MIN_ANSWER_LENGTH}자)`;
+          ? `Need ${answerRemaining} more characters (min ${answerLimits.min})`
+          : `${answerRemaining}자 더 입력해주세요 (최소 ${answerLimits.min}자)`;
     })()
     : '';
   const answerReadyLabel = tPostDetail.answerReady || (locale === 'vi' ? 'Đủ độ dài' : locale === 'en' ? 'Ready to post' : '충분히 작성됨');
@@ -1446,18 +1666,19 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       />
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+          <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Article */}
         <article className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-4 sm:mb-6">
           {/* Thumbnail */}
-          {post.thumbnail && (
+          {renderThumbnailSrc && (
             <div className="relative w-full h-[200px] sm:h-[300px] md:h-[400px]">
               <Image
-                src={post.thumbnail}
+                src={renderThumbnailSrc}
                 alt={post.title}
                 fill
                 className="object-cover"
                 priority
+                onError={() => setRenderThumbnailSrc('/brand-logo.png')}
               />
             </div>
           )}
@@ -1681,9 +1902,11 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             >
               <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-300" />
               <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">
-                {sortedAnswers.length > 0
-                  ? answerCountLabel
-                  : answerEmptyLabel}
+                {answersInfiniteQuery.isLoading
+                  ? (tPost.loading || '로딩 중...')
+                  : sortedAnswers.length > 0
+                    ? answerCountLabel
+                    : answerEmptyLabel}
               </span>
             </div>
           )}
@@ -1761,7 +1984,11 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
           {post.isQuestion ? (
             <>
-              {sortedAnswers.length > 0 ? (
+              {answersInfiniteQuery.isLoading ? (
+                <div className="flex justify-center py-12 text-gray-500 dark:text-gray-400 text-sm">
+                  {tPost.loading || '로딩 중...'}
+                </div>
+              ) : sortedAnswers.length > 0 ? (
                 <div className="space-y-6">
                   {sortedAnswers.map((answer, index) => (
                     <div
@@ -2107,10 +2334,25 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   {tPostDetail.firstAnswer || "첫 답변을 작성해보세요!"}
                 </div>
               )}
+
+              {answersInfiniteQuery.hasNextPage ? (
+                <div ref={answersLoadMoreRef} className="flex justify-center py-4">
+                  {answersInfiniteQuery.isFetchingNextPage ? (
+                    <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                      <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm">{tPost.loading || '로딩 중...'}</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </>
           ) : (
             <>
-              {post.comments && post.comments.length > 0 ? (
+              {commentsInfiniteQuery.isLoading ? (
+                <div className="flex items-center justify-center py-12 text-gray-500 dark:text-gray-400 text-sm">
+                  {tPost.loading || '로딩 중...'}
+                </div>
+              ) : post.comments && post.comments.length > 0 ? (
                 <div className="space-y-4 sm:space-y-6">
                   {post.comments.map((comment) => (
                     <div key={comment.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4 space-y-4">
@@ -2405,6 +2647,17 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                 </div>
               )}
 
+              {commentsInfiniteQuery.hasNextPage ? (
+                <div ref={commentsLoadMoreRef} className="flex justify-center py-4">
+                  {commentsInfiniteQuery.isFetchingNextPage ? (
+                    <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                      <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm">{tPost.loading || '로딩 중...'}</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               <form onSubmit={handleSubmitComment} className="mt-6">
                 <textarea
                   value={newComment}
@@ -2420,7 +2673,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none ${!user ? 'opacity-70 cursor-pointer' : ''}`}
                   rows={3}
                 />
-                  {(commentWarnings.banned || commentWarnings.spam || commentTooShort) && (
+                  {showCommentValidationError && (
                     <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-800 dark:text-red-100">
                       <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                       <div className="space-y-1">
@@ -2431,13 +2684,13 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                             <span>{tPostDetail.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.'}</span>
                           </p>
                         ) : null}
-                        {commentTooShort ? <p className="text-red-600 dark:text-red-300">10글자 이상 작성해주세요.</p> : null}
+                        {commentValidationMessage ? <p className="text-red-600 dark:text-red-300">{commentValidationMessage}</p> : null}
                       </div>
                     </div>
                   )}
                   <div className="flex justify-end mt-3">
                     <Tooltip content={guidelineTooltip} position="top-left">
-                      <Button type="submit" disabled={!newComment.trim() || commentWarnings.banned || commentWarnings.spam || commentTooShort} size="sm">
+                    <Button type="submit" disabled={!newComment.trim() || showCommentValidationError} size="sm">
                         {tPostDetail.writeComment || "댓글 작성"}
                       </Button>
                     </Tooltip>

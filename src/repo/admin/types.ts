@@ -300,6 +300,7 @@ export interface AdminNews {
   id: string;
   title: string;
   category: string;
+  type: 'post' | 'cardnews' | 'shorts';
   content: string;
   language?: string;
   imageUrl: string | null;

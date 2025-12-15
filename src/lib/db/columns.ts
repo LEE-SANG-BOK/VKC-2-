@@ -1,7 +1,6 @@
 export const userPublicColumns = {
   id: true,
   name: true,
-  email: true,
   displayName: true,
   image: true,
   isVerified: true,

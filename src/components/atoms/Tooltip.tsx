@@ -182,7 +182,18 @@ export default function Tooltip({
       if (event.key === 'Escape') close();
     };
 
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!touchMode) return;
+      if (event.pointerType !== 'mouse') return;
+      const target = targetRef.current;
+      const tooltipEl = tooltipRef.current;
+      if (target?.contains(event.target as Node)) return;
+      if (tooltipEl?.contains(event.target as Node)) return;
+      close();
+    };
+
     document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('pointermove', handlePointerMove, true);
     document.addEventListener('keydown', handleKeyDown);
     if (touchMode) {
       window.addEventListener('orientationchange', close);
@@ -191,6 +202,7 @@ export default function Tooltip({
 
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('pointermove', handlePointerMove, true);
       document.removeEventListener('keydown', handleKeyDown);
       if (touchMode) {
         window.removeEventListener('orientationchange', close);

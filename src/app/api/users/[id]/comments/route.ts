@@ -74,7 +74,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       publishedAt: comment.createdAt?.toISOString(),
       author: {
         id: comment.author?.id,
-        name: comment.author?.name || comment.author?.email?.split('@')[0] || 'User',
+        name: comment.author?.name || 'User',
         avatar: comment.author?.image || '/avatar-default.jpg',
         isVerified: comment.author?.isVerified || false,
         followers: 0,

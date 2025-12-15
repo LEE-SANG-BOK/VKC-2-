@@ -49,15 +49,7 @@ export default function OnboardingClient({ lang, translations }: OnboardingClien
 
   const interestOptions = useMemo(() => {
     const opts: { id: string; name: string }[] = [];
-    Object.entries(CATEGORY_GROUPS).forEach(([parentSlug, group]) => {
-      const parentLegacy = LEGACY_CATEGORIES.find((c) => c.slug === parentSlug);
-      const parentId = slugToId.get(parentSlug);
-      if (parentId) {
-        opts.push({
-          id: parentId,
-          name: parentLegacy ? getCategoryName(parentLegacy, lang) : parentSlug,
-        });
-      }
+    Object.entries(CATEGORY_GROUPS).forEach(([, group]) => {
       (group.slugs as readonly string[]).forEach((childSlug) => {
         const childId = slugToId.get(childSlug);
         if (!childId) return;

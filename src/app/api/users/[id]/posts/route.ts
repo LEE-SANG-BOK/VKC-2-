@@ -120,7 +120,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         thumbnail,
         author: {
           id: post.author?.id,
-          name: post.author?.displayName || post.author?.name || post.author?.email?.split('@')[0] || 'User',
+          name: post.author?.displayName || post.author?.name || 'User',
           avatar: post.author?.image || '/avatar-default.jpg',
           isVerified: post.author?.isVerified || false,
           followers: 0,

@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       siteName: 'viet kconnect',
       images: ogImage ? [ogImage] : [],
       publishedTime: post.createdAt,
-      authors: [post.author?.displayName || post.author?.email || ''],
+      authors: [post.author?.displayName || post.author?.name || ''],
       tags: post.tags,
       locale: lang,
     },
@@ -94,7 +94,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
 
     // Additional metadata
-    authors: [{ name: post.author?.displayName || post.author?.email || '' }],
+    authors: [{ name: post.author?.displayName || post.author?.name || '' }],
     keywords: post.tags,
     category: post.category,
   };
@@ -139,8 +139,8 @@ export default async function PostDetailPage({ params }: PageProps) {
     trustWeight: (post as any).trustWeight,
     author: {
       id: post.author?.id,
-      name: post.author?.displayName || post.author?.email || '알 수 없음',
-      avatar: post.author?.avatar || '/default-avatar.jpg',
+      name: post.author?.displayName || post.author?.name || '알 수 없음',
+      avatar: post.author?.image || post.author?.avatar || '/default-avatar.jpg',
       followers: 0,
       isFollowing: false,
       isVerified: post.author?.isVerified,

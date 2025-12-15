@@ -3,6 +3,7 @@ export interface NewsItem {
   title: string;
   category: string;
   language: string;
+  type: 'post' | 'cardnews' | 'shorts';
   content: string;
   imageUrl: string | null;
   linkUrl: string | null;

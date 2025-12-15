@@ -13,6 +13,7 @@ export async function GET(
   try {
     const { id } = await params;
     const currentUser = await getSession(request);
+    const isOwnProfile = currentUser?.id === id;
 
     const userProfileColumns = {
       ...userMeColumns,
@@ -75,13 +76,16 @@ export async function GET(
     
     const isFollowing = currentUser ? !!results[6] : false;
 
+    const username = sanitizeDisplayName(user.displayName || user.name, `user-${user.id.slice(0, 8)}`);
+    const displayName = user.displayName || user.name || username || 'User';
+
     return NextResponse.json({
       id: user.id,
-      username: user.email?.split('@')[0] || user.id,
-      displayName: user.displayName || user.name || user.email?.split('@')[0] || 'User',
+      username,
+      displayName,
       avatar: user.image || null,
-      email: user.email || '',
-      phone: user.phone || null,
+      email: isOwnProfile ? user.email || '' : '',
+      phone: isOwnProfile ? user.phone || null : null,
       bio: user.bio || '',
       joinedAt: user.createdAt?.toISOString() || new Date().toISOString(),
       updatedAt: user.updatedAt?.toISOString() || user.createdAt?.toISOString() || new Date().toISOString(),
@@ -94,11 +98,15 @@ export async function GET(
       status: user.status || null,
       userType: user.userType || null,
       isFollowing,
-      notifyAnswers: user.notifyAnswers,
-      notifyComments: user.notifyComments,
-      notifyReplies: user.notifyReplies,
-      notifyAdoptions: user.notifyAdoptions,
-      notifyFollows: user.notifyFollows,
+      ...(isOwnProfile
+        ? {
+            notifyAnswers: user.notifyAnswers,
+            notifyComments: user.notifyComments,
+            notifyReplies: user.notifyReplies,
+            notifyAdoptions: user.notifyAdoptions,
+            notifyFollows: user.notifyFollows,
+          }
+        : {}),
       stats: {
         followers: followersResult[0]?.count || 0,
         following: followingResult[0]?.count || 0,

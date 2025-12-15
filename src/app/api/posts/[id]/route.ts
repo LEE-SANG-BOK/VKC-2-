@@ -1,13 +1,15 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
-import { posts, follows } from '@/lib/db/schema';
+import { posts, follows, answers, comments, likes, bookmarks } from '@/lib/db/schema';
 import { successResponse, errorResponse, notFoundResponse, forbiddenResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession, isOwner } from '@/lib/api/auth';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql, isNull } from 'drizzle-orm';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
+import { getChildrenForParent, isGroupParentSlug } from '@/lib/constants/category-groups';
 import dayjs from 'dayjs';
+import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -20,20 +22,6 @@ const resolveTrust = (author: any, createdAt: Date | string) => {
   if (author?.isVerified || author?.badgeType) return { badge: 'verified', weight: 1 };
   return { badge: 'community', weight: 0.7 };
 };
-
-const CATEGORY_GROUP_SLUGS = {
-  visa: ['visa-process', 'status-change', 'visa-checklist'],
-  students: ['scholarship', 'university-ranking', 'korean-language'],
-  career: ['business', 'wage-info', 'legal'],
-  living: ['housing', 'cost-of-living', 'healthcare'],
-} as const;
-
-const GROUP_PARENT_SLUGS = Object.keys(CATEGORY_GROUP_SLUGS);
-
-const isGroupParentSlug = (slug: string) => GROUP_PARENT_SLUGS.includes(slug);
-
-const getChildrenForParent = (slug: string) =>
-  (CATEGORY_GROUP_SLUGS as Record<string, readonly string[]>)[slug] || [];
 
 /**
  * GET /api/posts/[id]
@@ -50,50 +38,19 @@ export async function GET(request: NextRequest, context: RouteContext) {
         author: {
           columns: userPublicColumns,
         },
-        answers: {
-          with: {
-            author: {
-              columns: userPublicColumns,
-            },
-            likes: true,
-            comments: {
-              with: {
-                author: {
-                  columns: userPublicColumns,
-                },
-                likes: true,
-              },
-              orderBy: (comments, { asc }) => [asc(comments.createdAt)],
-            },
-          },
-          orderBy: (answers, { desc }) => [desc(answers.createdAt)],
-        },
-        comments: {
-          with: {
-            author: {
-              columns: userPublicColumns,
-            },
-            likes: true,
-            replies: {
-              with: {
-                author: {
-                  columns: userPublicColumns,
-                },
-                likes: true,
-              },
-              orderBy: (replies, { asc }) => [asc(replies.createdAt)],
-            },
-          },
-          orderBy: (comments, { asc }) => [asc(comments.createdAt)],
-        },
-        likes: true,
-        bookmarks: true,
       },
     });
 
     if (!post) {
       return notFoundResponse('게시글을 찾을 수 없습니다.');
     }
+
+    const imageMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)) as RegExpMatchArray[];
+    const thumbnails = imageMatches
+      .map((match) => normalizePostImageSrc(match[1]))
+      .filter((src): src is string => Boolean(src))
+      .slice(0, 4);
+    const thumbnail = thumbnails[0] ?? null;
 
     let isFollowing = false;
     if (user && post.authorId !== user.id) {
@@ -118,8 +75,31 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const trust = resolveTrust(post.author, post.createdAt);
 
+    const [answersCountResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(answers)
+      .where(eq(answers.postId, post.id));
+
+    const [topLevelCommentsCountResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(comments)
+      .where(and(eq(comments.postId, post.id), isNull(comments.parentId)));
+
+    const [likeRecord, bookmarkRecord] = user
+      ? await Promise.all([
+          db.query.likes.findFirst({
+            where: and(eq(likes.userId, user.id), eq(likes.postId, post.id)),
+            columns: { id: true },
+          }),
+          db.query.bookmarks.findFirst({
+            where: and(eq(bookmarks.userId, user.id), eq(bookmarks.postId, post.id)),
+            columns: { id: true },
+          }),
+        ])
+      : [null, null];
+
     const postDetail = {
-      id: post.id,
+      ...post,
       author: {
         id: post.author?.id,
         name: post.author?.displayName || post.author?.name || '알 수 없음',
@@ -131,89 +111,21 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
       trustBadge: trust.badge,
       trustWeight: trust.weight,
-      title: post.title,
-      content: post.content,
       tags: post.tags || [],
-      category: post.category,
+      subcategory: post.subcategory || undefined,
+      thumbnail,
+      thumbnails,
+      imageCount: imageMatches.length,
       stats: {
-        likes: post.likes.length,
-        comments: (post.answers?.length || 0) + (post.comments?.filter(c => !c.parentId).length || 0),
+        likes: post.likes || 0,
+        comments: (answersCountResult?.count || 0) + (topLevelCommentsCountResult?.count || 0),
         shares: 0,
       },
       publishedAt: formatDate(post.createdAt),
-      isLiked: user ? post.likes.some(l => l.userId === user.id) : false,
-      isBookmarked: user ? post.bookmarks.some(b => b.userId === user.id) : false,
-      comments: post.comments
-        .filter(c => !c.parentId)
-        .map(comment => ({
-          id: comment.id,
-          author: {
-            id: comment.author?.id,
-            name: comment.author?.displayName || comment.author?.name || '알 수 없음',
-            avatar: comment.author?.image || '/avatar-default.jpg',
-            isVerified: comment.author?.isVerified || false,
-            isExpert: comment.author?.isExpert || false,
-          },
-          content: comment.content,
-          publishedAt: formatDate(comment.createdAt),
-          likes: comment.likes?.length || 0,
-          isLiked: user ? comment.likes?.some(l => l.userId === user.id) : false,
-          replies:
-            comment.replies?.map(reply => ({
-              id: reply.id,
-              author: {
-                id: reply.author?.id,
-                name: reply.author?.displayName || reply.author?.name || '알 수 없음',
-                avatar: reply.author?.image || '/avatar-default.jpg',
-                isVerified: reply.author?.isVerified || false,
-                isExpert: reply.author?.isExpert || false,
-              },
-              content: reply.content,
-              publishedAt: formatDate(reply.createdAt),
-              likes: reply.likes?.length || 0,
-              isLiked: user ? reply.likes?.some(l => l.userId === user.id) : false,
-            })) || [],
-        })),
-      answers: [...post.answers]
-        .map(answer => ({
-          id: answer.id,
-          author: {
-            id: answer.author?.id,
-            name: answer.author?.displayName || answer.author?.name || '알 수 없음',
-            avatar: answer.author?.image || '/avatar-default.jpg',
-            isVerified: answer.author?.isVerified || false,
-            isExpert: answer.author?.isExpert || false,
-          },
-          content: answer.content,
-          publishedAt: formatDate(answer.createdAt),
-          helpful: answer.likes?.length || 0,
-          isHelpful: user ? answer.likes?.some(l => l.userId === user.id) : false,
-          isAdopted: answer.isAdopted || false,
-          replies:
-            answer.comments?.map(c => ({
-              id: c.id,
-              author: {
-                id: c.author?.id,
-                name: c.author?.displayName || c.author?.name || '알 수 없음',
-                avatar: c.author?.image || '/avatar-default.jpg',
-                isVerified: c.author?.isVerified || false,
-                isExpert: c.author?.isExpert || false,
-              },
-              content: c.content,
-              publishedAt: formatDate(c.createdAt),
-              likes: c.likes?.length || 0,
-              isLiked: user ? c.likes?.some(l => l.userId === user.id) : false,
-            })) || [],
-        }))
-        .sort((a, b) => {
-          if (a.isAdopted && !b.isAdopted) return -1;
-          if (!a.isAdopted && b.isAdopted) return 1;
-          const expertA = !!a.author?.isExpert;
-          const expertB = !!b.author?.isExpert;
-          if (expertA !== expertB) return expertB ? 1 : -1;
-          if (b.helpful !== a.helpful) return b.helpful - a.helpful;
-          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
-        }),
+      isLiked: Boolean(likeRecord),
+      isBookmarked: Boolean(bookmarkRecord),
+      comments: [],
+      answers: [],
       isQuestion: post.type === 'question',
       isAdopted: post.isResolved || false,
     };

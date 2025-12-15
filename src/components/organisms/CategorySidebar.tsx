@@ -68,10 +68,34 @@ export default function CategorySidebar({
   };
 
   const menuTooltips: Record<string, string | undefined> = {
-    popular: t.popularTooltip,
-    latest: t.latestTooltip,
-    following: t.followingTooltip,
-    subscribed: t.subscribedTooltip,
+    popular:
+      t.popularTooltip ||
+      (locale === 'vi'
+        ? 'Xem bài viết đang được quan tâm nhất.'
+        : locale === 'en'
+          ? 'See the most popular posts right now.'
+          : '지금 가장 많이 보는 글을 모아서 보여줘요.'),
+    latest:
+      t.latestTooltip ||
+      (locale === 'vi'
+        ? 'Xem bài mới nhất theo thời gian.'
+        : locale === 'en'
+          ? 'Browse the newest posts by time.'
+          : '최신 글을 시간순으로 보여줘요.'),
+    following:
+      t.followingTooltip ||
+      (locale === 'vi'
+        ? 'Chỉ xem bài từ người bạn đang theo dõi.'
+        : locale === 'en'
+          ? 'See posts from people you follow.'
+          : '팔로우한 사람들의 글만 모아볼 수 있어요.'),
+    subscribed:
+      t.subscribedTooltip ||
+      (locale === 'vi'
+        ? 'Xem bài theo danh mục bạn đã đăng ký.'
+        : locale === 'en'
+          ? 'See posts from categories you follow.'
+          : '구독한 카테고리 글만 모아볼 수 있어요.'),
   };
 
   const menuCategories = [
@@ -226,7 +250,7 @@ export default function CategorySidebar({
         <div
           className={
             isMobileVariant
-              ? 'mt-4 mx-3 rounded-xl border border-amber-200/70 dark:border-amber-800/40 bg-amber-50/40 dark:bg-gray-800/30 py-4'
+              ? 'mt-4 mx-3 rounded-xl border border-gray-200/70 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 py-4'
               : 'py-4 border-b border-gray-200/40 dark:border-gray-700/40'
           }
         >
@@ -241,7 +265,7 @@ export default function CategorySidebar({
                 <button
                   type="button"
                   aria-label={t.menuTooltip || '메뉴 도움말'}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-amber-200/80 dark:border-amber-800/40 bg-white/80 dark:bg-gray-900/40 text-amber-700 dark:text-amber-200"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 text-gray-600 dark:text-gray-200"
                 >
                   <Info className="h-4 w-4" />
                 </button>
@@ -275,7 +299,16 @@ export default function CategorySidebar({
             count={0}
             isActive={false}
             onClick={handleCategoryClick}
-            tooltip={tooltipLines(t.askQuestionTooltip || '커뮤니티에 질문을 올려보세요')}
+            tooltip={
+              tooltipLines(
+                t.askQuestionTooltip ||
+                  (locale === 'vi'
+                    ? 'Đặt câu hỏi về visa/việc làm/cuộc sống\nCộng đồng & người dùng xác minh sẽ hỗ trợ\nGhi rõ tình huống, loại visa, và thời hạn'
+                    : locale === 'en'
+                      ? 'Ask about visa, jobs, or life in Korea\nCommunity & verified users can help\nInclude your situation, visa type, and timeline'
+                      : '비자·취업·생활 질문을 올리면\n커뮤니티와 인증 사용자가 함께 도와줘요\n상황/비자타입/기간을 같이 적어주세요')
+              )
+            }
             tooltipPosition={actionTooltipPosition}
             className="border-l-4 border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
@@ -286,7 +319,16 @@ export default function CategorySidebar({
             count={0}
             isActive={false}
             onClick={handleCategoryClick}
-            tooltip={tooltipLines(t.sharePostTooltip || '유용한 정보를 공유해주세요')}
+            tooltip={
+              tooltipLines(
+                t.sharePostTooltip ||
+                  (locale === 'vi'
+                    ? 'Chia sẻ kinh nghiệm, link chính thức, hoặc thông báo\nGiúp người khác tiết kiệm thời gian\nNhớ ghi nguồn và ngày đăng'
+                    : locale === 'en'
+                      ? 'Share experience, official links, or notices\nHelp others save time\nAdd source and date for trust'
+                      : '경험담/공식링크/공지 등을 공유하면\n다른 사람의 시간을 절약해줘요\n출처·날짜를 함께 남겨주세요')
+              )
+            }
             tooltipPosition={actionTooltipPosition}
             className="border-l-4 border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
@@ -297,7 +339,16 @@ export default function CategorySidebar({
             count={0}
             isActive={selectedCategory === 'verification-request'}
             onClick={handleCategoryClick}
-            tooltip={tooltipLines(t.verificationRequestTooltip || '전문가 인증을 신청하세요')}
+            tooltip={
+              tooltipLines(
+                t.verificationRequestTooltip ||
+                  (locale === 'vi'
+                    ? 'Xác minh hồ sơ để hiển thị huy hiệu\nTăng độ tin cậy và ưu tiên hiển thị\nGửi yêu cầu và chờ xét duyệt'
+                    : locale === 'en'
+                      ? 'Apply to get a verified badge\nBoost trust and visibility\nSubmit a request and wait for review'
+                      : '인증을 받으면 프로필에 인증 마크가 표시돼요\n신뢰도/노출 가중치가 올라갑니다\n신청 후 검토를 기다려주세요')
+              )
+            }
             tooltipPosition={actionTooltipPosition}
             className="border-l-4 border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
@@ -320,25 +371,6 @@ export default function CategorySidebar({
                     onClick={handleCategoryClick}
                     className="!py-2 font-semibold flex-1"
                   />
-                  {(() => {
-                    const apiParent = apiBySlug.get(group.slug);
-                    if (!apiParent) return null;
-                    const subscribed = subscribedIds.has(apiParent.id);
-                    return (
-                      <button
-                        onClick={() => handleSubscribe(apiParent.id)}
-                        className={`text-[11px] min-w-[84px] px-3 py-1.5 rounded-full transition-colors ${
-                          subscribed
-                            ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
-                            : 'border border-transparent bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-sm hover:from-red-700 hover:to-amber-600'
-                        }`}
-                      >
-                        {subscribed
-                          ? (t.subscribedLabel || t.subscribed || '구독 중')
-                          : (t.subscribe || '구독')}
-                      </button>
-                    );
-                  })()}
                 </div>
                 {group.children.length > 0 && (
                   <div className="space-y-1 pl-4">
@@ -362,7 +394,7 @@ export default function CategorySidebar({
                               className={`text-[11px] min-w-[84px] px-3 py-1.5 rounded-full transition-colors ${
                                 subscribed
                                   ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
-                                  : 'border border-transparent bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-sm hover:from-red-700 hover:to-amber-600'
+                                  : 'border border-transparent bg-blue-600 text-white shadow-sm hover:bg-blue-700'
                               }`}
                             >
                               {subscribed

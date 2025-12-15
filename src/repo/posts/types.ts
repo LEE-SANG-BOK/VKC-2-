@@ -26,8 +26,9 @@ export interface Post {
   isBookmarked?: boolean;
   author: {
     id: string;
-    email: string;
-    displayName: string;
+    displayName?: string | null;
+    name?: string | null;
+    image?: string | null;
     avatar?: string;
     isVerified: boolean;
     isExpert?: boolean;

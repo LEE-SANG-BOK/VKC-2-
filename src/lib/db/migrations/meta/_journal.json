@@ -183,6 +183,13 @@
       "when": 1765561588241,
       "tag": "0025_verified_profile_meta",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1765771321927,
+      "tag": "0026_blue_mentallo",
+      "breakpoints": true
     }
   ]
 }

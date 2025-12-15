@@ -3,6 +3,7 @@ import { relations } from 'drizzle-orm';
 
 // Enums
 export const postTypeEnum = pgEnum('post_type', ['question', 'share']);
+export const newsTypeEnum = pgEnum('news_type', ['post', 'cardnews', 'shorts']);
 export const verificationStatusEnum = pgEnum('verification_status', ['pending', 'approved', 'rejected']);
 export const notificationTypeEnum = pgEnum('notification_type', ['answer', 'comment', 'reply', 'adoption', 'like', 'follow']);
 export const reportTypeEnum = pgEnum('report_type', ['spam', 'harassment', 'inappropriate', 'misinformation', 'other']);
@@ -612,6 +613,7 @@ export const news = pgTable('news', {
   title: varchar('title', { length: 255 }).notNull(),
   category: varchar('category', { length: 50 }).notNull(),
   language: varchar('language', { length: 5 }).default('vi').notNull(),
+  type: newsTypeEnum('type').default('post').notNull(),
   content: text('content').default('').notNull(),
   imageUrl: text('image_url'),
   linkUrl: text('link_url'),

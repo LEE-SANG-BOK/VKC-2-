@@ -27,14 +27,33 @@ export function sanitizeUgcLinks(
     internalDomains = []
   } = options;
 
-  // 기본 내부 도메인
+  const toHostname = (value: string) => {
+    try {
+      return new URL(value).hostname;
+    } catch {
+      try {
+        return new URL(`https://${value}`).hostname;
+      } catch {
+        return value;
+      }
+    }
+  };
+
   const defaultInternalDomains = [
-    process.env.NEXT_PUBLIC_SITE_URL || 'example.com',
+    ...[process.env.NEXT_PUBLIC_APP_URL, process.env.NEXT_PUBLIC_SITE_URL]
+      .filter(Boolean)
+      .map((value) => toHostname(String(value))),
+    'example.com',
     'localhost',
     '127.0.0.1',
   ];
 
-  const allInternalDomains = [...defaultInternalDomains, ...internalDomains];
+  const allInternalDomains = Array.from(
+    new Set([
+      ...defaultInternalDomains,
+      ...internalDomains.map((domain) => toHostname(domain)),
+    ])
+  ).filter(Boolean);
 
   // 정규표현식으로 <a> 태그 찾기
   const linkRegex = /<a\s+([^>]*?)href=["']([^"']*)["']([^>]*?)>/gi;
@@ -87,14 +106,15 @@ export function sanitizeUgcLinks(
       const cleanedBefore = beforeHref.replace(/rel=["'][^"']*["']\s*/gi, '');
       const cleanedAfter = afterHref.replace(/rel=["'][^"']*["']\s*/gi, '');
 
-      // target="_blank" 추가 (옵션)
+      const existingTarget = /target=["']([^"']*)["']/i.exec(beforeHref + afterHref);
       let targetAttr = '';
-      if (targetBlank && !match.includes('target=')) {
+      if (targetBlank && !existingTarget) {
         targetAttr = ' target="_blank"';
-        // target="_blank" 사용 시 보안을 위해 rel에 noopener 추가
-        if (!relValues.includes('noopener')) {
-          relValues.push('noopener');
-        }
+      }
+
+      const targetValue = (existingTarget?.[1] || (targetAttr ? '_blank' : '')).toLowerCase();
+      if (targetValue === '_blank' && !relValues.includes('noopener')) {
+        relValues.push('noopener');
       }
 
       // 새로운 a 태그 생성

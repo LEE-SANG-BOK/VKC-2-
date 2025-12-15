@@ -122,6 +122,18 @@
       "title": "Thông báo - viet kconnect",
       "description": "Kiểm tra thông báo mới của bạn."
     },
+    "about": {
+      "title": "Giới thiệu - viet kconnect",
+      "description": "Tìm hiểu về viet kconnect và cách hoạt động."
+    },
+    "terms": {
+      "title": "Điều khoản - viet kconnect",
+      "description": "Xem điều khoản dịch vụ của viet kconnect."
+    },
+    "privacy": {
+      "title": "Quyền riêng tư - viet kconnect",
+      "description": "Tìm hiểu cách viet kconnect xử lý dữ liệu của bạn."
+    },
     "keywords": {
       "vietnam": "Việt Nam",
       "korean": "Người Hàn",
@@ -129,6 +141,22 @@
       "qa": "Hỏi đáp",
       "question": "Câu hỏi",
       "answer": "Câu trả lời"
+    }
+  },
+  "staticPages": {
+    "about": {
+      "heading": "Giới thiệu",
+      "body": "viet kconnect là cộng đồng hỏi đáp để người Việt và người Hàn chia sẻ thông tin thiết thực về visa, công việc và cuộc sống tại Hàn Quốc."
+    },
+    "terms": {
+      "heading": "Điều khoản",
+      "body1": "Khi sử dụng viet kconnect, bạn đồng ý tuân thủ nội quy cộng đồng và pháp luật hiện hành.",
+      "body2": "Không đăng nội dung bất hợp pháp, spam hoặc thông tin cá nhân khi chưa có sự đồng ý."
+    },
+    "privacy": {
+      "heading": "Quyền riêng tư",
+      "body1": "Chúng tôi chỉ thu thập và xử lý dữ liệu cần thiết để cung cấp dịch vụ.",
+      "body2": "Bạn có thể yêu cầu xóa tài khoản và dữ liệu liên quan bất cứ lúc nào."
     }
   },
   "header": {
@@ -251,6 +279,7 @@
     "shareX": "Chia sẻ lên X (Twitter)",
     "shareTelegram": "Chia sẻ lên Telegram",
     "copyLink": "Sao chép liên kết",
+    "sidebarToggle": "Mở thanh điều hướng",
     "brandIntro": "Cộng đồng hỏi đáp về visa, việc làm và cuộc sống tại Hàn Quốc"
   },
   "profile": {

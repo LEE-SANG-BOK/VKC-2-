@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './server';
+import { getSupabaseAdmin } from './server';
 
 export type StorageBucket = 'avatars' | 'profile' | 'posts' | 'documents' | 'temp';
 
@@ -33,6 +33,8 @@ export async function uploadFile(options: UploadOptions): Promise<UploadResult> 
   const { bucket, file, userId, folder, maxSize } = options;
 
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+
     // 파일 타입 검증
     if (!validateFileType(file, bucket)) {
       return {
@@ -112,6 +114,7 @@ export async function createSignedUrl(
   expiresIn: number = 600
 ): Promise<UploadResult> {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, expiresIn);
 
     if (error) {
@@ -177,6 +180,7 @@ function getMaxFileSize(bucket: StorageBucket): number {
  */
 export async function deleteFile(bucket: StorageBucket, path: string): Promise<UploadResult> {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin.storage
       .from(bucket)
       .remove([path]);
@@ -206,6 +210,7 @@ export async function deleteFile(bucket: StorageBucket, path: string): Promise<U
  */
 export async function deleteFiles(bucket: StorageBucket, paths: string[]): Promise<UploadResult> {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin.storage
       .from(bucket)
       .remove(paths);

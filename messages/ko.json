@@ -122,6 +122,18 @@
       "title": "알림 - viet kconnect",
       "description": "새로운 알림을 확인하세요."
     },
+    "about": {
+      "title": "소개 - viet kconnect",
+      "description": "viet kconnect 소개 및 운영 방식."
+    },
+    "terms": {
+      "title": "이용약관 - viet kconnect",
+      "description": "viet kconnect 이용약관을 확인하세요."
+    },
+    "privacy": {
+      "title": "개인정보처리방침 - viet kconnect",
+      "description": "viet kconnect의 개인정보 처리 방침을 확인하세요."
+    },
     "keywords": {
       "vietnam": "베트남",
       "korean": "한인",
@@ -129,6 +141,22 @@
       "qa": "Q&A",
       "question": "질문",
       "answer": "답변"
+    }
+  },
+  "staticPages": {
+    "about": {
+      "heading": "소개",
+      "body": "viet kconnect는 비자·취업·한국 생활 정보를 나누는 Q&A 커뮤니티입니다."
+    },
+    "terms": {
+      "heading": "이용약관",
+      "body1": "viet kconnect 이용 시 커뮤니티 가이드와 관련 법규를 준수해야 합니다.",
+      "body2": "불법 콘텐츠·스팸·동의 없는 개인정보 게시를 금지합니다."
+    },
+    "privacy": {
+      "heading": "개인정보처리방침",
+      "body1": "서비스 제공에 필요한 범위에서만 데이터를 수집·처리합니다.",
+      "body2": "언제든 계정 및 관련 데이터 삭제를 요청할 수 있습니다."
     }
   },
   "header": {
@@ -251,6 +279,7 @@
     "shareX": "X (Twitter)",
     "shareTelegram": "Telegram",
     "copyLink": "링크 복사",
+    "sidebarToggle": "사이드바 열기",
     "brandIntro": "한국 비자·취업·생활 Q&A 커뮤니티"
   },
   "profile": {

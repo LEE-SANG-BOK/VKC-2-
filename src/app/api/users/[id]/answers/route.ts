@@ -81,7 +81,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       publishedAt: answer.createdAt?.toISOString(),
       author: {
         id: answer.author?.id,
-        name: answer.author?.name || answer.author?.email?.split('@')[0] || 'User',
+        name: answer.author?.name || 'User',
         avatar: answer.author?.image || '/avatar-default.jpg',
         isVerified: answer.author?.isVerified || false,
         followers: 0,

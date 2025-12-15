@@ -121,7 +121,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         thumbnail,
         author: {
           id: bookmark.post?.author?.id,
-          name: bookmark.post?.author?.displayName || bookmark.post?.author?.name || bookmark.post?.author?.email?.split('@')[0] || 'User',
+          name: bookmark.post?.author?.displayName || bookmark.post?.author?.name || 'User',
           avatar: bookmark.post?.author?.image || '/avatar-default.jpg',
           isVerified: bookmark.post?.author?.isVerified || false,
           followers: 0,

@@ -122,6 +122,18 @@
       "title": "Notifications - viet kconnect",
       "description": "Check your new notifications."
     },
+    "about": {
+      "title": "About - viet kconnect",
+      "description": "Learn what viet kconnect is and how it works."
+    },
+    "terms": {
+      "title": "Terms - viet kconnect",
+      "description": "Review the terms of service for viet kconnect."
+    },
+    "privacy": {
+      "title": "Privacy - viet kconnect",
+      "description": "Learn how viet kconnect handles your data."
+    },
     "keywords": {
       "vietnam": "Vietnam",
       "korean": "Korean",
@@ -129,6 +141,22 @@
       "qa": "Q&A",
       "question": "Question",
       "answer": "Answer"
+    }
+  },
+  "staticPages": {
+    "about": {
+      "heading": "About",
+      "body": "viet kconnect is a Q&A community for Vietnamese and Koreans to share practical information about visas, jobs, and life in Korea."
+    },
+    "terms": {
+      "heading": "Terms",
+      "body1": "By using viet kconnect, you agree to follow community guidelines and applicable laws.",
+      "body2": "Do not post illegal content, spam, or personal information without consent."
+    },
+    "privacy": {
+      "heading": "Privacy",
+      "body1": "We collect and process only the data necessary to provide the service.",
+      "body2": "You can request deletion of your account and related data at any time."
     }
   },
   "header": {
@@ -251,6 +279,7 @@
     "shareX": "Share to X (Twitter)",
     "shareTelegram": "Share to Telegram",
     "copyLink": "Copy link",
+    "sidebarToggle": "Open sidebar",
     "brandIntro": "Visa, jobs, and life in Korea Q&A community"
   },
   "profile": {

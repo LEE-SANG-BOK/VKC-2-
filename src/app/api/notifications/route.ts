@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       postTitle: n.post?.title || '',
       postId: n.postId || '',
       author: {
-        name: n.sender?.displayName || n.sender?.name || n.sender?.email?.split('@')[0] || '사용자',
+        name: n.sender?.displayName || n.sender?.name || '사용자',
         avatar: n.sender?.image || '/avatar-default.jpg',
       },
       createdAt: formatRelativeTime(n.createdAt),

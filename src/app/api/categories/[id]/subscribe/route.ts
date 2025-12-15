@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { categories, categorySubscriptions, topicSubscriptions } from '@/lib/db/schema';
 import { successResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -48,23 +48,72 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return successResponse({ isSubscribed: true }, '구독했습니다.');
     }
 
-    const existingSubscription = await db.query.categorySubscriptions.findFirst({
-      where: and(
-        eq(categorySubscriptions.userId, user.id),
-        eq(categorySubscriptions.categoryId, categoryId)
-      ),
+    const children = await db.query.categories.findMany({
+      where: eq(categories.parentId, categoryId),
+      columns: {
+        id: true,
+      },
     });
 
-    if (existingSubscription) {
-      await db.delete(categorySubscriptions).where(eq(categorySubscriptions.id, existingSubscription.id));
-      return successResponse({ isSubscribed: false }, '구독을 취소했습니다.');
-    } else {
+    if (children.length === 0) {
+      const existingSubscription = await db.query.categorySubscriptions.findFirst({
+        where: and(eq(categorySubscriptions.userId, user.id), eq(categorySubscriptions.categoryId, categoryId)),
+      });
+
+      if (existingSubscription) {
+        await db.delete(categorySubscriptions).where(eq(categorySubscriptions.id, existingSubscription.id));
+        return successResponse({ isSubscribed: false }, '구독을 취소했습니다.');
+      }
+
       await db.insert(categorySubscriptions).values({
         userId: user.id,
         categoryId,
       });
       return successResponse({ isSubscribed: true }, '구독했습니다.');
     }
+
+    const childIds = children.map((child) => child.id);
+    const existingChildSubs = await db.query.topicSubscriptions.findMany({
+      where: and(eq(topicSubscriptions.userId, user.id), inArray(topicSubscriptions.categoryId, childIds)),
+      columns: {
+        id: true,
+        categoryId: true,
+      },
+    });
+
+    const existingIds = new Set(existingChildSubs.map((sub) => sub.categoryId));
+    const isAllSubscribed = existingIds.size === childIds.length;
+
+    if (isAllSubscribed) {
+      await db
+        .delete(topicSubscriptions)
+        .where(and(eq(topicSubscriptions.userId, user.id), inArray(topicSubscriptions.categoryId, childIds)));
+      await db
+        .delete(categorySubscriptions)
+        .where(and(eq(categorySubscriptions.userId, user.id), eq(categorySubscriptions.categoryId, categoryId)));
+      return successResponse({ isSubscribed: false }, '구독을 취소했습니다.');
+    }
+
+    const toInsert = childIds
+      .filter((id) => !existingIds.has(id))
+      .map((id) => ({
+        userId: user.id,
+        categoryId: id,
+      }));
+
+    if (toInsert.length > 0) {
+      await db
+        .insert(topicSubscriptions)
+        .values(toInsert)
+        .onConflictDoNothing({
+          target: [topicSubscriptions.userId, topicSubscriptions.categoryId],
+        });
+    }
+
+    await db
+      .delete(categorySubscriptions)
+      .where(and(eq(categorySubscriptions.userId, user.id), eq(categorySubscriptions.categoryId, categoryId)));
+    return successResponse({ isSubscribed: true }, '구독했습니다.');
   } catch (error) {
     console.error('POST /api/categories/[id]/subscribe error:', error);
     return serverErrorResponse();
@@ -93,15 +142,36 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return notFoundResponse('카테고리를 찾을 수 없습니다.');
     }
 
-    const existingSubscription = category.parentId
-      ? await db.query.topicSubscriptions.findFirst({
-          where: and(eq(topicSubscriptions.userId, user.id), eq(topicSubscriptions.categoryId, categoryId)),
-        })
-      : await db.query.categorySubscriptions.findFirst({
-          where: and(eq(categorySubscriptions.userId, user.id), eq(categorySubscriptions.categoryId, categoryId)),
-        });
+    if (category.parentId) {
+      const existingSubscription = await db.query.topicSubscriptions.findFirst({
+        where: and(eq(topicSubscriptions.userId, user.id), eq(topicSubscriptions.categoryId, categoryId)),
+      });
+      return successResponse({ isSubscribed: !!existingSubscription });
+    }
 
-    return successResponse({ isSubscribed: !!existingSubscription });
+    const children = await db.query.categories.findMany({
+      where: eq(categories.parentId, categoryId),
+      columns: {
+        id: true,
+      },
+    });
+
+    if (children.length === 0) {
+      const existingSubscription = await db.query.categorySubscriptions.findFirst({
+        where: and(eq(categorySubscriptions.userId, user.id), eq(categorySubscriptions.categoryId, categoryId)),
+      });
+      return successResponse({ isSubscribed: !!existingSubscription });
+    }
+
+    const childIds = children.map((child) => child.id);
+    const existingSubs = await db.query.topicSubscriptions.findMany({
+      where: and(eq(topicSubscriptions.userId, user.id), inArray(topicSubscriptions.categoryId, childIds)),
+      columns: {
+        id: true,
+      },
+    });
+
+    return successResponse({ isSubscribed: existingSubs.length === childIds.length });
   } catch (error) {
     console.error('GET /api/categories/[id]/subscribe error:', error);
     return serverErrorResponse();

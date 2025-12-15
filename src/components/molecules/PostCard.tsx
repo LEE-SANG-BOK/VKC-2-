@@ -6,7 +6,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { Bookmark, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
+import { Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import Tooltip from '../atoms/Tooltip';
 import TrustBadge, { type TrustLevel } from '@/components/atoms/TrustBadge';
@@ -16,31 +16,12 @@ import dayjs from 'dayjs';
 import { useCategories } from '@/repo/categories/query';
 import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
+import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 
 const ALLOWED_CATEGORY_SLUGS = new Set<string>([
   ...Object.keys(CATEGORY_GROUPS),
   ...Object.values(CATEGORY_GROUPS).flatMap((group) => group.slugs),
 ]);
-
-function normalizePostImageSrc(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const lowered = trimmed.toLowerCase();
-  if (lowered === 'undefined' || lowered === 'null') return null;
-  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) return null;
-  if (trimmed.startsWith('//')) return `https:${trimmed}`;
-  if (trimmed.startsWith('/') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return trimmed;
-  }
-  if (/^[a-z0-9.-]+\.[a-z]{2,}(\/|\?|#)/i.test(trimmed)) {
-    return `https://${trimmed}`;
-  }
-  if (/^[^\s]+\.[a-z0-9]{2,}(\/|\?|#)?$/i.test(trimmed)) {
-    return `/${trimmed}`;
-  }
-  return null;
-}
 
 function formatDateTime(dateString: string): string {
   if (!dateString) return '';
@@ -297,21 +278,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       });
   }, [tags, locale]);
 
-  const categoryChips = useMemo(() => {
-    const base = [categoryLabel || tCommon.uncategorized || '미지정', subcategoryLabel]
-      .map((v) => v?.trim())
-      .filter(Boolean) as string[];
-    const seen = new Set<string>();
-    return base.filter((v) => {
-      const key = v.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [categoryLabel, subcategoryLabel, tCommon.uncategorized]);
-
   const tagChips = useMemo(() => {
-    const seen = new Set<string>();
     const reserved = new Set(
       [
         ...Object.values(trustLabels),
@@ -332,21 +299,23 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         .filter(Boolean)
         .map((v) => normalizeKey(v))
     );
+    const seen = new Set<string>();
 
-    categoryChips.forEach((v) => seen.add(normalizeKey(v)));
-
-    return displayTags
+    const candidates = [categoryLabel, subcategoryLabel, ...displayTags]
       .map((v) => v?.trim())
-      .filter(Boolean)
+      .filter(Boolean) as string[];
+
+    return candidates
       .filter((v) => {
         const key = normalizeKey(v);
+        if (!key) return false;
         if (reserved.has(key)) return false;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
-      .slice(0, 3);
-  }, [categoryChips, displayTags, trustLabels]);
+      .slice(0, 4);
+  }, [categoryLabel, subcategoryLabel, displayTags, trustLabels]);
 
   const displayImages = useMemo(() => {
     const candidates: unknown[] = Array.isArray(thumbnails) && thumbnails.length > 0 ? thumbnails : thumbnail ? [thumbnail] : [];
@@ -508,19 +477,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       className={`question-card group ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
         }`}
     >
-      {categoryChips.length > 0 ? (
-        <div className="mb-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-          {categoryChips.map((tag) => (
-            <span
-              key={tag}
-              className="shrink-0 px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-      ) : null}
-
       <div className="question-card-main">
         <div className="question-card-body">
           {/* Author Info & Badges */}
@@ -555,15 +511,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 {safeName(author.name)}
               </span>
             </button>
-            {!isSelf && author.id ? (
-              <FollowButton
-                userId={String(author.id)}
-                userName={safeName(author.name)}
-                isFollowing={author.isFollowing}
-                size="xs"
-                className="shrink-0"
-              />
-            ) : null}
           </div>
 
           {/* Title + Trust badges */}
@@ -626,7 +573,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             const pillClass = isCategoryTag
               ? 'text-gray-700 bg-gray-100 dark:text-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
               : isSubcategoryTag
-                ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40'
+                ? 'text-gray-700 bg-gray-100 dark:text-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
                 : 'text-gray-500 bg-gray-100 dark:text-gray-300 dark:bg-gray-800';
 
             return (
@@ -736,9 +683,62 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               </button>
             </Tooltip>
 
+            {isQuestion ? (
+              <>
+                <Tooltip
+                  content={t.questionPost || (locale === 'vi' ? 'Bài hỏi đáp' : locale === 'en' ? 'Question post' : '질문글')}
+                  position="top"
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={t.questionPost || (locale === 'vi' ? 'Bài hỏi đáp' : locale === 'en' ? 'Question post' : '질문글')}
+                    className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-blue-600 bg-blue-50 dark:bg-blue-900/30"
+                  >
+                    <CircleHelp className="w-4 h-4" />
+                  </button>
+                </Tooltip>
+                <Tooltip
+                  content={
+                    isAdopted
+                      ? t.resolvedPost || (locale === 'vi' ? 'Đã giải quyết' : locale === 'en' ? 'Resolved' : '해결됨')
+                      : t.unresolvedPost || (locale === 'vi' ? 'Chưa giải quyết' : locale === 'en' ? 'Unresolved' : '미해결')
+                  }
+                  position="top"
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={
+                      isAdopted
+                        ? t.resolvedPost || (locale === 'vi' ? 'Đã giải quyết' : locale === 'en' ? 'Resolved' : '해결됨')
+                        : t.unresolvedPost || (locale === 'vi' ? 'Chưa giải quyết' : locale === 'en' ? 'Unresolved' : '미해결')
+                    }
+                    className={`inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] ${
+                      isAdopted
+                        ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
+                        : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'
+                    }`}
+                  >
+                    {isAdopted ? <CircleCheck className="w-4 h-4" /> : <CircleDashed className="w-4 h-4" />}
+                  </button>
+                </Tooltip>
+              </>
+            ) : null}
+
             <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
               {formatDateTime(publishedAt)}
             </span>
+
+            {!isSelf && author.id ? (
+              <FollowButton
+                userId={String(author.id)}
+                userName={safeName(author.name)}
+                isFollowing={author.isFollowing}
+                size="xs"
+                className="shrink-0"
+              />
+            ) : null}
 
           </div>
         </div>
