@@ -5,7 +5,7 @@ import { posts, users, categorySubscriptions, categories, follows, topicSubscrip
 import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkUserStatus } from '@/lib/user-status';
-import { desc, eq, and, or, sql, inArray, SQL } from 'drizzle-orm';
+import { desc, eq, and, or, sql, inArray, SQL, lt } from 'drizzle-orm';
 import dayjs from 'dayjs';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
@@ -228,6 +228,21 @@ export async function GET(request: NextRequest) {
 
     const total = countResult?.count || 0;
 
+    type CursorPayload = { createdAt: string; id: string };
+    const encodeCursor = (payload: CursorPayload) =>
+      Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+    const decodeCursor = (raw: string): CursorPayload | null => {
+      if (!raw) return null;
+      try {
+        const json = Buffer.from(raw, 'base64url').toString('utf8');
+        const parsed = JSON.parse(json) as Partial<CursorPayload>;
+        if (typeof parsed?.createdAt !== 'string' || typeof parsed?.id !== 'string') return null;
+        return { createdAt: parsed.createdAt, id: parsed.id };
+      } catch {
+        return null;
+      }
+    };
+
     const stripHtmlToText = (html: string) =>
       html
         .replace(/<img[^>]*>/gi, '')
@@ -236,6 +251,21 @@ export async function GET(request: NextRequest) {
         .trim();
 
     const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
+
+    const cursorParam = searchParams.get('cursor');
+    const decodedCursor = cursorParam ? decodeCursor(cursorParam) : null;
+    const cursorCreatedAt = decodedCursor ? new Date(decodedCursor.createdAt) : null;
+    const hasValidCursor = Boolean(decodedCursor && cursorCreatedAt && !Number.isNaN(cursorCreatedAt.getTime()));
+    const useCursorPagination = Boolean(cursorParam && hasValidCursor && !hasSearch);
+
+    if (useCursorPagination) {
+      conditions.push(
+        or(
+          lt(posts.createdAt, cursorCreatedAt as Date),
+          and(eq(posts.createdAt, cursorCreatedAt as Date), lt(posts.id, decodedCursor?.id || ''))
+        ) as SQL
+      );
+    }
 
     const decoratePosts = async (list: any[]) => {
       const postIds = list.map((post) => post.id).filter(Boolean) as string[];
@@ -415,12 +445,26 @@ export async function GET(request: NextRequest) {
             columns: userPublicColumns,
           },
         },
-        orderBy: [desc(posts.likes), desc(posts.views), desc(posts.createdAt)],
+        orderBy: [desc(posts.likes), desc(posts.views), desc(posts.createdAt), desc(posts.id)],
         limit,
         offset: (page - 1) * limit,
       });
 
       const decoratedFallback = await decoratePosts(fallbackList);
+
+      const fallbackTotalPages = Math.ceil(fallbackTotal / limit);
+      const fallbackHasMore = page < fallbackTotalPages;
+      const fallbackLast = fallbackList[fallbackList.length - 1];
+      const fallbackNextCursor =
+        fallbackHasMore && fallbackLast
+          ? encodeCursor({
+              createdAt:
+                fallbackLast.createdAt instanceof Date
+                  ? fallbackLast.createdAt.toISOString()
+                  : String(fallbackLast.createdAt),
+              id: String(fallbackLast.id),
+            })
+          : null;
 
       return NextResponse.json({
         success: true,
@@ -429,18 +473,23 @@ export async function GET(request: NextRequest) {
           page,
           limit,
           total: fallbackTotal,
-          totalPages: Math.ceil(fallbackTotal / limit),
+          totalPages: fallbackTotalPages,
         },
         meta: {
           isFallback: true,
           reason: 'no_matches',
           query: search,
           tokens: searchTokens,
+          nextCursor: fallbackNextCursor,
+          hasMore: fallbackHasMore,
+          paginationMode: 'offset',
         },
       });
     }
 
-    const postList = await db.query.posts.findMany({
+    const queryLimit = useCursorPagination ? limit + 1 : limit;
+
+    const rawList = await db.query.posts.findMany({
       where: conditions.length > 0 ? and(...conditions) : undefined,
       with: {
         author: {
@@ -455,13 +504,29 @@ export async function GET(request: NextRequest) {
             desc(posts.likes),
             desc(posts.views),
             desc(posts.createdAt),
+            desc(posts.id),
           ]
-        : [desc(posts.createdAt)],
-      limit,
-      offset: (page - 1) * limit,
+        : [desc(posts.createdAt), desc(posts.id)],
+      limit: queryLimit,
+      offset: useCursorPagination ? undefined : (page - 1) * limit,
     });
 
-    const decoratedPosts = await decoratePosts(postList);
+    const totalPages = Math.ceil(total / limit);
+    const rawHasMore = useCursorPagination ? rawList.length > limit : page < totalPages;
+    const pageList = useCursorPagination && rawList.length > limit ? rawList.slice(0, limit) : rawList;
+    const lastPost = pageList[pageList.length - 1];
+    const nextCursor =
+      rawHasMore && lastPost
+        ? encodeCursor({
+            createdAt:
+              lastPost.createdAt instanceof Date
+                ? lastPost.createdAt.toISOString()
+                : String(lastPost.createdAt),
+            id: String(lastPost.id),
+          })
+        : null;
+
+    const decoratedPosts = await decoratePosts(pageList);
 
     // 인기순일 경우 클라이언트에서 재정렬
     let sortedList = decoratedPosts;
@@ -475,7 +540,21 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return paginatedResponse(sortedList, page, limit, total);
+    return NextResponse.json({
+      success: true,
+      data: sortedList,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+      meta: {
+        nextCursor,
+        hasMore: rawHasMore,
+        paginationMode: useCursorPagination ? 'cursor' : 'offset',
+      },
+    });
   } catch (error) {
     console.error('GET /api/posts error:', error);
     return serverErrorResponse();

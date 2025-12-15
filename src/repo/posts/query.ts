@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useInfiniteQuery, type UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, type InfiniteData, type UseQueryOptions } from '@tanstack/react-query';
 import { queryKeys } from '../keys';
 import {
   fetchPosts,
@@ -19,7 +19,7 @@ import type {
  * 게시글 목록 조회 (무한 스크롤)
  */
 export function useInfinitePosts(
-  filters: Omit<PostFilters, 'page' | 'limit'> = {},
+  filters: Omit<PostFilters, 'page' | 'limit' | 'cursor'> = {},
   options?: any
 ) {
   const resolvedInitialPage = Math.max(
@@ -31,19 +31,32 @@ export function useInfinitePosts(
     delete resolvedOptions.initialPage;
   }
 
-  return useInfiniteQuery({
+  type PageParam = { page: number; cursor?: string | null };
+
+  return useInfiniteQuery<
+    PaginatedResponse<PostListItem>,
+    Error,
+    InfiniteData<PaginatedResponse<PostListItem>>,
+    ReturnType<typeof queryKeys.posts.infinite>,
+    PageParam
+  >({
     queryKey: queryKeys.posts.infinite(filters, resolvedInitialPage),
-    queryFn: ({ pageParam = resolvedInitialPage }) =>
+    queryFn: ({ pageParam = { page: resolvedInitialPage } as PageParam }) =>
       fetchPosts({
         ...filters,
-        page: pageParam as number,
+        page: pageParam.page,
+        cursor: pageParam.cursor || undefined,
         limit: 20,
       }),
     getNextPageParam: (lastPage) => {
+      const nextCursor = lastPage.meta?.nextCursor;
+      if (nextCursor) {
+        return { page: lastPage.pagination.page + 1, cursor: nextCursor } satisfies PageParam;
+      }
       const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
+      return page < totalPages ? ({ page: page + 1 } satisfies PageParam) : undefined;
     },
-    initialPageParam: resolvedInitialPage,
+    initialPageParam: { page: resolvedInitialPage } satisfies PageParam,
     ...resolvedOptions,
   });
 }

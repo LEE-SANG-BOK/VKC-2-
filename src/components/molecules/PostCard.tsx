@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import Tooltip from '../atoms/Tooltip';
-import TrustBadge, { type TrustLevel } from '@/components/atoms/TrustBadge';
+import TrustBadge from '@/components/atoms/TrustBadge';
 import FollowButton from '@/components/atoms/FollowButton';
 import Avatar from '@/components/atoms/Avatar';
 import dayjs from 'dayjs';
@@ -17,6 +17,7 @@ import { useCategories } from '@/repo/categories/query';
 import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
+import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 
 const ALLOWED_CATEGORY_SLUGS = new Set<string>([
   ...Object.keys(CATEGORY_GROUPS),
@@ -80,27 +81,16 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const tPost = (translations?.post || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
 
-  const derivedTrustLevel: TrustLevel = trustBadge
-    ? (trustBadge as TrustLevel)
-    : author.isExpert
-      ? 'expert'
-      : author.isVerified
-        ? 'verified'
-        : 'community';
-
-  const trustLabels: Partial<Record<TrustLevel, string>> = {
-    verified: tTrust.verifiedLabel || '검증됨',
-    community: tTrust.communityLabel || '커뮤니티',
-    expert: tTrust.expertLabel || '전문가',
-    outdated: tTrust.outdatedLabel || '오래된 정보',
-  };
-
-  const trustTooltips: Partial<Record<TrustLevel, string>> = {
-    verified: tTrust.verifiedTooltip || '인증된 사용자 기반 정보',
-    community: tTrust.communityTooltip || '커뮤니티 신뢰 정보',
-    expert: tTrust.expertTooltip || '전문가/공식 답변자',
-    outdated: tTrust.outdatedTooltip || '12개월 이상 지난 정보',
-  };
+  const trustBadgePresentation = getTrustBadgePresentation({
+    locale,
+    trustBadge,
+    author: {
+      isVerified: author.isVerified,
+      isExpert: author.isExpert,
+      badgeType: author.badgeType,
+    },
+    translations: tTrust,
+  });
 
   const answerLabel = `${isQuestion ? tCommon.answer || '답변' : tCommon.comment || '댓글'} ${stats.comments}`;
 
@@ -310,7 +300,16 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const tagChips = useMemo(() => {
     const reserved = new Set(
       [
-        ...Object.values(trustLabels),
+        tTrust.verifiedLabel,
+        tTrust.verifiedStudentLabel,
+        tTrust.verifiedWorkerLabel,
+        tTrust.verifiedUserLabel,
+        tTrust.trustedAnswererLabel,
+        tTrust.expertLabel,
+        tTrust.expertVisaLabel,
+        tTrust.expertEmploymentLabel,
+        tTrust.communityLabel,
+        tTrust.outdatedLabel,
         'verified',
         'expert',
         'community',
@@ -344,7 +343,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         return true;
       })
       .slice(0, 4);
-  }, [categoryLabel, subcategoryLabel, displayTags, trustLabels]);
+  }, [categoryLabel, subcategoryLabel, displayTags, tTrust.communityLabel, tTrust.expertEmploymentLabel, tTrust.expertLabel, tTrust.expertVisaLabel, tTrust.outdatedLabel, tTrust.trustedAnswererLabel, tTrust.verifiedLabel, tTrust.verifiedStudentLabel, tTrust.verifiedUserLabel, tTrust.verifiedWorkerLabel]);
 
   const displayImages = useMemo(() => {
     const candidates: unknown[] = Array.isArray(thumbnails) && thumbnails.length > 0 ? thumbnails : thumbnail ? [thumbnail] : [];
@@ -508,41 +507,76 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     >
       <div className="question-card-main">
         <div className="question-card-body">
-          {/* Author Info & Badges */}
-	          <div className="flex items-center gap-1 mb-3 min-w-0">
-            <button
-              type="button"
-              className="shrink-0"
-              onClick={handleAuthorClick}
-              aria-label={safeName(author.name)}
-            >
-              <Avatar
-                name={safeName(author.name)}
-                imageUrl={author.avatar !== '/default-avatar.jpg' ? author.avatar : undefined}
-                size="md"
-                hoverHighlight
+          {/* Author Info & Badges */
+          <div className="flex items-start justify-between gap-2 mb-3 min-w-0">
+            <div className="flex items-start gap-2 min-w-0">
+              <button
+                type="button"
+                className="shrink-0"
+                onClick={handleAuthorClick}
+                aria-label={safeName(author.name)}
+              >
+                <Avatar
+                  name={safeName(author.name)}
+                  imageUrl={author.avatar !== '/default-avatar.jpg' ? author.avatar : undefined}
+                  size="md"
+                  hoverHighlight
+                />
+              </button>
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <button
+                  type="button"
+                  className="text-left min-w-0"
+                  onClick={handleAuthorClick}
+                >
+                  <span className="block truncate text-base font-semibold text-gray-900 dark:text-gray-100">
+                    {safeName(author.name)}
+                  </span>
+                </button>
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                  <span>{formatDateTime(publishedAt)}</span>
+                  {trustBadgePresentation.show ? (
+                    <>
+                      <Tooltip content={trustBadgePresentation.tooltip} position="top">
+                        <span className="inline-flex items-center gap-1">
+                          <TrustBadge
+                            level={trustBadgePresentation.level}
+                            label={trustBadgePresentation.label}
+                            showLabel={false}
+                            className="!px-1.5 !py-1"
+                          />
+                        </span>
+                      </Tooltip>
+                      <span>{trustBadgePresentation.label}</span>
+                    </>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAnswerCountClick}
+                  className={`text-[11px] font-semibold inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition-colors duration-200 ${
+                    stats.comments === 0
+                      ? 'border-amber-200 bg-amber-50 text-amber-700 animate-pulse'
+                      : 'border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <MessageCircle className="w-3 h-3" />
+                  <span>{answerLabel}</span>
+                </button>
+              </div>
+            </div>
+            {!isSelf && author.id ? (
+              <FollowButton
+                userId={String(author.id)}
+                userName={safeName(author.name)}
+                isFollowing={author.isFollowing}
+                size="xs"
+                className="shrink-0 min-w-[80px]"
               />
-            </button>
-            {derivedTrustLevel !== 'community' ? (
-              <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
-                <span className="shrink-0 inline-flex">
-                  <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
-                </span>
-              </Tooltip>
             ) : null}
-
-            <button
-              type="button"
-              className="min-w-0 text-left"
-              onClick={handleAuthorClick}
-            >
-              <span className="block truncate text-base font-semibold text-gray-900 dark:text-gray-100">
-                {safeName(author.name)}
-              </span>
-            </button>
           </div>
 
-          {/* Title + Trust badges */}
+          /* Title + Trust badges */}
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
               {title}
@@ -759,20 +793,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   </button>
                 </Tooltip>
               </>
-            ) : null}
-
-            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-              {formatDateTime(publishedAt)}
-            </span>
-
-            {!isSelf && author.id ? (
-              <FollowButton
-                userId={String(author.id)}
-                userName={safeName(author.name)}
-                isFollowing={author.isFollowing}
-                size="xs"
-                className="shrink-0"
-              />
             ) : null}
 
           </div>

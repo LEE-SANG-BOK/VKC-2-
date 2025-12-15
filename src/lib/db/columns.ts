@@ -43,6 +43,7 @@ export const userMeColumns = {
   suspendedUntil: true,
   isVerified: true,
   isExpert: true,
+  badgeType: true,
   isProfileComplete: true,
   notifyAnswers: true,
   notifyComments: true,

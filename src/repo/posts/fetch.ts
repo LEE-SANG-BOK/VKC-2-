@@ -23,6 +23,7 @@ export async function fetchPosts(filters: PostFilters = {}): Promise<PaginatedRe
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
+  if (filters.cursor) params.append('cursor', filters.cursor);
   if (filters.parentCategory) params.append('parentCategory', filters.parentCategory);
   if (filters.category) params.append('category', filters.category);
   if (filters.type) params.append('type', filters.type);

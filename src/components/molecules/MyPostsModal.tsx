@@ -141,6 +141,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
                       isFollowing: post.author?.isFollowing ?? false,
                       isVerified: post.author?.isVerified || false,
                       isExpert: post.author?.isExpert || false,
+                      badgeType: post.author?.badgeType || null,
                     }}
                     title={post.title}
                     excerpt={buildExcerpt(post.content) || post.excerpt || ''}

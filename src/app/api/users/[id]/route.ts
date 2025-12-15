@@ -90,6 +90,8 @@ export async function GET(
       joinedAt: user.createdAt?.toISOString() || new Date().toISOString(),
       updatedAt: user.updatedAt?.toISOString() || user.createdAt?.toISOString() || new Date().toISOString(),
       isVerified: user.isVerified || false,
+      isExpert: user.isExpert || false,
+      badgeType: user.badgeType || null,
       verifiedProfileSummary: (user as { verifiedProfileSummary?: string | null }).verifiedProfileSummary ?? null,
       verifiedProfileKeywords: (user as { verifiedProfileKeywords?: string[] | null }).verifiedProfileKeywords ?? null,
       gender: user.gender || null,

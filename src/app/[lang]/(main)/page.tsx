@@ -148,8 +148,14 @@ export default async function Home({ params, searchParams }: PageProps) {
     // 게시글 목록 prefetch (무한스크롤용)
     await queryClient.prefetchInfiniteQuery({
       queryKey: queryKeys.posts.infinite(filters, currentPage),
-      queryFn: ({ pageParam = currentPage }) => fetchPosts({ ...filters, page: pageParam as number, limit: 20 }),
-      initialPageParam: currentPage,
+      queryFn: ({ pageParam = { page: currentPage } }) =>
+        fetchPosts({
+          ...filters,
+          page: (pageParam as { page: number; cursor?: string | null }).page,
+          cursor: (pageParam as { page: number; cursor?: string | null }).cursor || undefined,
+          limit: 20,
+        }),
+      initialPageParam: { page: currentPage },
     });
 
     // 인기 게시글 prefetch

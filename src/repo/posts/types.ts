@@ -98,6 +98,9 @@ export interface PaginatedResponse<T> {
     reason?: string;
     query?: string | null;
     tokens?: string[];
+    nextCursor?: string | null;
+    hasMore?: boolean;
+    paginationMode?: 'offset' | 'cursor';
   };
 }
 
@@ -127,6 +130,7 @@ export interface UpdatePostRequest {
 export interface PostFilters {
   page?: number;
   limit?: number;
+  cursor?: string;
   parentCategory?: string;
   category?: string;
   type?: 'question' | 'share';

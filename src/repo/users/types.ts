@@ -8,6 +8,10 @@ export interface User {
   bio: string;
   joinedAt: string;
   isVerified: boolean;
+  isExpert?: boolean;
+  badgeType?: string | null;
+  verifiedProfileSummary?: string | null;
+  verifiedProfileKeywords?: string[] | null;
   gender?: string | null;
   ageGroup?: string | null;
   nationality?: string | null;
@@ -73,6 +77,8 @@ export interface PostCardData {
     name: string;
     avatar: string;
     isVerified: boolean;
+    isExpert?: boolean;
+    badgeType?: string | null;
     followers: number;
   };
   stats: {

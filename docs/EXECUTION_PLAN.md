@@ -102,7 +102,7 @@
 - [x] private storage 업로드 + **public URL 저장 금지**, path 기반 관리
 - [x] `/api/verification/request` documents 입력 path 정규화 + 본인(userId prefix) 검증
 - [x] 관리자 승인/반려 시 문서 즉시 삭제(or TTL)
-- [ ] 승인 라벨을 프로필/답변 카드에 표시(비자/경력/한국 n년차)
+- [x] 승인 라벨을 프로필/답변 카드에 표시(badgeType 기반 TrustBadge)
 - [ ] 관리자 pending 큐 UI에 사유/배지타입/만료 입력 포함
 
 **현황 분석**
@@ -110,12 +110,12 @@
 - documents 버킷은 private 사용이며 업로드는 path 기반: `src/lib/supabase/storage.ts`, `src/app/api/upload/document/route.ts`.
 - 요청 생성 API는 documents를 path로 정규화하고 본인 path만 저장: `src/app/api/verification/request/route.ts`.
 - 관리자 상세는 pending 상태에서만 signed URL 미리보기를 제공하고, 승인/반려 시 문서를 삭제 + DB에서 제거: `src/app/api/admin/verifications/[id]/route.ts`.
-- “라벨(비자, 경력 등)” UI 노출 없음.
+- 프로필/답변 카드에 badgeType 기반 TrustBadge 라벨을 노출: `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/components/molecules/AnswerCard.tsx`.
 
 **개선 포인트**
 - (완료) documentUrls는 storage path만 저장, 관리자 미리보기는 signed URL, 승인/반려 시 삭제.
 - 사용자 요청 UI를 wizard로 재설계.
-- 승인 라벨을 users 메타로 저장/노출.
+- (완료) 승인 라벨은 users.badgeType 기반으로 저장/노출.
 
 **판정**: 부분 OK(UI wizard/라벨/관리자 큐 확장 필요)
 
@@ -253,6 +253,12 @@
 - [x] `/api/search/posts`에서 토큰 기반 스코어링과 type/category 필터를 함께 적용하고, 일치 결과가 없으면 조회수/좋아요 순서로 fallback 결과를 제공하도록 개선 (`src/app/api/search/posts/route.ts`).
 - [ ] SimilarQuestionPrompt/검색 UI에서 `meta.isFallback`·`meta.reason`·`meta.tokens`를 활용해 사용자에게 fallback 상황을 명확히 안내하고 로그를 쌓는 부분 검토.
 
+## PostCard 신뢰/팔로우 UX 정비
+
+- [x] 프로필 사진 영역 아래에 신뢰 배지를 정렬하고 hover 툴팁을 유지하면서 닉네임과 시간 사이로 배치해 “Verified/Expert/Outdated” 신호를 강조 (`src/components/molecules/PostCard.tsx`).
+- [x] 팔로우 버튼을 제목 바로 오른편으로 이동하고 `size="xs"`/최소 너비를 설정해 크기를 축소한 뒤 기존 하단 액션선에서 제거.
+- [x] 메인페이지 카드 상단에 “답변 {n}개” 안내를 추가하고 댓글 버튼과 별도로 `animate-pulse`/클릭 이동을 부여해 답변이 없는 경우에도 사용자 주의를 유도.
+
 
 ## 4. 병렬 진행을 위한 에이전트/PR 분리 기준
 
@@ -290,8 +296,8 @@
 - [x] 홈 피드 `?page=` 고유 URL + Prev/Next 링크 병행(무한스크롤 UX 유지)
 - [x] TanStack infinite queryKey에 `page` 포함(페이지 이동 시 캐시 충돌 방지)
 - [x] `GET /api/posts` 응답 payload 축소: 기본 `content` 제외 + `excerpt` 제공(무한스크롤 응답 크기↓)
+- [x] 무한스크롤 cursor(keyset) 페이지네이션 적용(SEO용 `?page=` 유지): `GET /api/posts`, `useInfinitePosts`
 - [x] Post 상세 댓글 카운트 정합: `commentsCount = answersCount + postCommentsCount`
 
 ### 6.2 다음
-- [ ] 커서 기반 페이지네이션(대량 데이터에서 offset 성능 저하 방지)
 - [ ] `GET /api/posts` DB부하 추가 절감(필요 컬럼만 select/preview 길이 제한 등)

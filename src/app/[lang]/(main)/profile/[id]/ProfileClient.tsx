@@ -2,18 +2,20 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
-import { Calendar, Mail, Phone, Edit, MessageCircle, FileText, CheckCircle, ShieldCheck, User, Briefcase, Bookmark, LogOut, Info } from 'lucide-react';
+import { Calendar, Mail, Phone, Edit, MessageCircle, FileText, CheckCircle, User, Briefcase, Bookmark, LogOut, Info } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import dayjs from 'dayjs';
 import Button from '@/components/atoms/Button';
 import Avatar from '@/components/atoms/Avatar';
 import FollowButton from '@/components/atoms/FollowButton';
+import TrustBadge from '@/components/atoms/TrustBadge';
 import Header from '@/components/organisms/Header';
 import Tooltip from '@/components/atoms/Tooltip';
 import PostCard from '@/components/molecules/PostCard';
 import AnswerCard from '@/components/molecules/AnswerCard';
 import CommentCard from '@/components/molecules/CommentCard';
 import { useInfiniteUserPosts, useInfiniteUserAnswers, useInfiniteUserComments, useInfiniteUserBookmarks, useFollowStatus } from '@/repo/users/query';
+import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 
 
 export interface ProfileData {
@@ -26,6 +28,8 @@ export interface ProfileData {
   bio: string;
   joinedAt: string;
   isVerified: boolean;
+  isExpert?: boolean;
+  badgeType?: string | null;
   verifiedProfileSummary?: string | null;
   verifiedProfileKeywords?: string[] | null;
   gender?: string | null;
@@ -46,7 +50,7 @@ export interface ProfileData {
 
 interface PostItem {
   id: string;
-  author: { id?: string; name: string; avatar: string; followers: number; isVerified?: boolean };
+  author: { id?: string; name: string; avatar: string; followers: number; isVerified?: boolean; isExpert?: boolean; badgeType?: string | null };
   title: string;
   content: string;
   excerpt: string;
@@ -66,7 +70,7 @@ interface PostItem {
 
 interface AnswerItem {
   id: string;
-  author: { id?: string; name: string; avatar: string; followers?: number; isVerified?: boolean };
+  author: { id?: string; name: string; avatar: string; followers?: number; isVerified?: boolean; isExpert?: boolean; badgeType?: string | null };
   content: string;
   excerpt?: string;
   publishedAt: string;
@@ -79,7 +83,7 @@ interface AnswerItem {
 
 interface CommentItem {
   id: string;
-  author: { id?: string; name: string; avatar: string; followers?: number; isVerified?: boolean };
+  author: { id?: string; name: string; avatar: string; followers?: number; isVerified?: boolean; isExpert?: boolean; badgeType?: string | null };
   content: string;
   excerpt?: string;
   publishedAt: string;
@@ -101,6 +105,17 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
   const user = session?.user;
 
   const t = (translations?.profile || {}) as Record<string, string>;
+  const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
+
+  const trustBadgePresentation = getTrustBadgePresentation({
+    locale,
+    author: {
+      isVerified: initialProfile.isVerified,
+      isExpert: initialProfile.isExpert,
+      badgeType: initialProfile.badgeType,
+    },
+    translations: tTrust,
+  });
 
   const [activeTab, setActiveTab] = useState<'posts' | 'accepted' | 'comments' | 'bookmarks'>('posts');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -373,17 +388,17 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.displayName}</h1>
-                    {initialProfile.isVerified && (
-                      <Tooltip content={t.verifiedUser || 'Verified User'}>
-                        <div>
-                          <ShieldCheck className="w-6 h-6 text-blue-500" />
-                        </div>
+                    {trustBadgePresentation.show ? (
+                      <Tooltip content={trustBadgePresentation.tooltip}>
+                        <span className="inline-flex">
+                          <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />
+                        </span>
                       </Tooltip>
-                    )}
+                    ) : null}
                   </div>
                   <p className="text-gray-500 dark:text-gray-400">@{initialProfile.username}</p>
 
-                  {initialProfile.isVerified &&
+                  {trustBadgePresentation.show &&
                     (Boolean(initialProfile.verifiedProfileSummary) ||
                       Boolean(initialProfile.verifiedProfileKeywords?.length)) && (
                       <div className="mt-3 space-y-2">

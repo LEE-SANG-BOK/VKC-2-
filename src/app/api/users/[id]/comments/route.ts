@@ -96,6 +96,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         name: comment.author?.name || 'User',
         avatar: comment.author?.image || '/avatar-default.jpg',
         isVerified: comment.author?.isVerified || false,
+        isExpert: comment.author?.isExpert || false,
+        badgeType: comment.author?.badgeType || null,
         followers: 0,
       },
       stats: {

@@ -396,9 +396,11 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                         avatar: post.author?.image || post.author?.avatar || '/default-avatar.jpg',
                         followers: 0,
                         isVerified: post.author?.isVerified || false,
+                        isExpert: post.author?.isExpert || false,
+                        badgeType: post.author?.badgeType || null,
                       }}
                       title={post.title}
-                      excerpt={post.content?.replace(/<img[^>]*>/gi, '').replace(/<[^>]*>/g, '').trim().substring(0, 200) || ''}
+                      excerpt={post.excerpt || post.content?.replace(/<img[^>]*>/gi, '').replace(/<[^>]*>/g, '').trim().substring(0, 200) || ''}
                       tags={post.tags || []}
                       stats={{
                         likes: post.likesCount ?? post.likes ?? 0,

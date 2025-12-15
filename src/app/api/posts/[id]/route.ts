@@ -113,6 +113,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         isFollowing,
         isVerified: post.author?.isVerified || false,
         isExpert: post.author?.isExpert || false,
+        badgeType: post.author?.badgeType || null,
       },
       trustBadge: trust.badge,
       trustWeight: trust.weight,

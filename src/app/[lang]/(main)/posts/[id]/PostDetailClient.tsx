@@ -28,13 +28,14 @@ import Tooltip from '@/components/atoms/Tooltip';
 import Modal from '@/components/atoms/Modal';
 import RichTextEditor from '@/components/molecules/RichTextEditor';
 import Header from '@/components/organisms/Header';
-import TrustBadge, { type TrustLevel } from '@/components/atoms/TrustBadge';
+import TrustBadge from '@/components/atoms/TrustBadge';
 import FollowButton from '@/components/atoms/FollowButton';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { useSession } from 'next-auth/react';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 import { UGC_LIMITS, getPlainTextLength, validateUgcText, UgcValidationErrorCode, UgcValidationResult } from '@/lib/validation/ugc';
+import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 import { useTogglePostLike, useTogglePostBookmark, useDeletePost, useUpdatePost, useIncrementPostView } from '@/repo/posts/mutation';
 import { useCreateAnswer, useUpdateAnswer, useDeleteAnswer, useToggleAnswerLike, useAdoptAnswer, useCreateAnswerComment } from '@/repo/answers/mutation';
 import { useCreatePostComment, useUpdateComment, useDeleteComment, useToggleCommentLike } from '@/repo/comments/mutation';
@@ -322,27 +323,12 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     [commentsInfiniteQuery.data]
   );
 
-  const derivedTrustLevel: TrustLevel = post.trustBadge
-    ? (post.trustBadge as TrustLevel)
-    : post.author?.isExpert
-      ? 'expert'
-      : post.author?.isVerified
-        ? 'verified'
-        : 'community';
-
-  const trustLabels: Partial<Record<TrustLevel, string>> = {
-    verified: tTrust.verifiedLabel || '검증됨',
-    community: tTrust.communityLabel || '커뮤니티',
-    expert: tTrust.expertLabel || '전문가',
-    outdated: tTrust.outdatedLabel || '오래된 정보',
-  };
-
-  const trustTooltips: Partial<Record<TrustLevel, string>> = {
-    verified: tTrust.verifiedTooltip || '인증된 사용자 기반 정보',
-    community: tTrust.communityTooltip || '커뮤니티 신뢰 정보',
-    expert: tTrust.expertTooltip || '전문가/공식 답변자',
-    outdated: tTrust.outdatedTooltip || '12개월 이상 지난 정보',
-  };
+  const trustBadgePresentation = getTrustBadgePresentation({
+    locale,
+    trustBadge: post.trustBadge,
+    author: post.author,
+    translations: tTrust,
+  });
 
   const normalizeKey = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 
@@ -549,7 +535,16 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     if (!post?.tags) return [];
     const reserved = new Set(
       [
-        ...Object.values(trustLabels),
+        tTrust.verifiedLabel,
+        tTrust.verifiedStudentLabel,
+        tTrust.verifiedWorkerLabel,
+        tTrust.verifiedUserLabel,
+        tTrust.trustedAnswererLabel,
+        tTrust.expertLabel,
+        tTrust.expertVisaLabel,
+        tTrust.expertEmploymentLabel,
+        tTrust.communityLabel,
+        tTrust.outdatedLabel,
         'verified',
         'expert',
         'community',
@@ -584,7 +579,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       }
     });
     return cleaned;
-  }, [post.tags, categoryLabel, subcategoryLabel, trustLabels]);
+  }, [post.tags, categoryLabel, subcategoryLabel, tTrust.communityLabel, tTrust.expertEmploymentLabel, tTrust.expertLabel, tTrust.expertVisaLabel, tTrust.outdatedLabel, tTrust.trustedAnswererLabel, tTrust.verifiedLabel, tTrust.verifiedStudentLabel, tTrust.verifiedUserLabel, tTrust.verifiedWorkerLabel]);
 
   const categoryChips = useMemo(() => {
     const base = [categoryLabel || tCommon.uncategorized || '미지정', subcategoryLabel]
@@ -1782,10 +1777,10 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   />
                 </button>
 
-                {derivedTrustLevel !== 'community' ? (
-                  <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
+                {trustBadgePresentation.show ? (
+                  <Tooltip content={trustBadgePresentation.tooltip} position="top">
                     <span className="shrink-0 inline-flex">
-                      <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
+                      <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />
                     </span>
                   </Tooltip>
                 ) : null}
@@ -2021,19 +2016,29 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                   isVerified={false}
                                   size="md"
                                 />
-                                {answer.author.isExpert ? (
-                                  <Tooltip content={trustTooltips.expert} position="top">
-                                    <span className="inline-flex">
-                                      <TrustBadge level="expert" showLabel={false} label={trustLabels.expert} className="!px-2 !py-0.5 border-amber-200" />
-                                    </span>
-                                  </Tooltip>
-                                ) : answer.author.isVerified ? (
-                                  <Tooltip content={trustTooltips.verified} position="top">
-                                    <span className="inline-flex">
-                                      <TrustBadge level="verified" showLabel={false} label={trustLabels.verified} className="!px-2 !py-0.5" />
-                                    </span>
-                                  </Tooltip>
-                                ) : null}
+                                {(() => {
+                                  const badge = getTrustBadgePresentation({
+                                    locale,
+                                    author: answer.author,
+                                    translations: tTrust,
+                                  });
+                                  if (!badge.show) return null;
+                                  const badgeClassName = badge.level === 'expert'
+                                    ? '!px-2 !py-0.5 border-amber-200'
+                                    : '!px-2 !py-0.5';
+                                  return (
+                                    <Tooltip content={badge.tooltip} position="top">
+                                      <span className="inline-flex">
+                                        <TrustBadge
+                                          level={badge.level}
+                                          showLabel={false}
+                                          label={badge.label}
+                                          className={badgeClassName}
+                                        />
+                                      </span>
+                                    </Tooltip>
+                                  );
+                                })()}
                               </div>
                               <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                 <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -2228,11 +2233,29 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                   <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                     {safeName(reply.author)}
                                   </span>
-                                  {reply.author.isExpert ? (
-                                    <TrustBadge level="expert" showLabel={false} className="!px-2 !py-0.5 border-amber-200" />
-                                  ) : reply.author.isVerified ? (
-                                    <TrustBadge level="verified" showLabel={false} className="!px-2 !py-0.5" />
-                                  ) : null}
+                                  {(() => {
+                                    const badge = getTrustBadgePresentation({
+                                      locale,
+                                      author: reply.author,
+                                      translations: tTrust,
+                                    });
+                                    if (!badge.show) return null;
+                                    const badgeClassName = badge.level === 'expert'
+                                      ? '!px-2 !py-0.5 border-amber-200'
+                                      : '!px-2 !py-0.5';
+                                    return (
+                                      <Tooltip content={badge.tooltip} position="top">
+                                        <span className="inline-flex">
+                                          <TrustBadge
+                                            level={badge.level}
+                                            showLabel={false}
+                                            label={badge.label}
+                                            className={badgeClassName}
+                                          />
+                                        </span>
+                                      </Tooltip>
+                                    );
+                                  })()}
                                 </div>
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
                                   {formatDateTime(reply.publishedAt, locale)}
@@ -2380,11 +2403,29 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                               <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                                 {safeName(comment.author)}
                               </span>
-                            {comment.author.isExpert ? (
-                              <TrustBadge level="expert" showLabel={false} className="!px-2 !py-0.5 border-amber-200" />
-                            ) : comment.author.isVerified ? (
-                              <TrustBadge level="verified" showLabel={false} className="!px-2 !py-0.5" />
-                            ) : null}
+                            {(() => {
+                              const badge = getTrustBadgePresentation({
+                                locale,
+                                author: comment.author,
+                                translations: tTrust,
+                              });
+                              if (!badge.show) return null;
+                              const badgeClassName = badge.level === 'expert'
+                                ? '!px-2 !py-0.5 border-amber-200'
+                                : '!px-2 !py-0.5';
+                              return (
+                                <Tooltip content={badge.tooltip} position="top">
+                                  <span className="inline-flex">
+                                    <TrustBadge
+                                      level={badge.level}
+                                      showLabel={false}
+                                      label={badge.label}
+                                      className={badgeClassName}
+                                    />
+                                  </span>
+                                </Tooltip>
+                              );
+                            })()}
                           </div>
                           <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                               {formatDateTime(comment.publishedAt, locale)}
@@ -2548,11 +2589,29 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                           <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                             {safeName(reply.author)}
                                           </span>
-                                        {reply.author.isExpert ? (
-                                          <TrustBadge level="expert" showLabel={false} className="!px-2 !py-0.5 border-amber-200" />
-                                        ) : reply.author.isVerified ? (
-                                          <TrustBadge level="verified" showLabel={false} className="!px-2 !py-0.5" />
-                                        ) : null}
+                                        {(() => {
+                                          const badge = getTrustBadgePresentation({
+                                            locale,
+                                            author: reply.author,
+                                            translations: tTrust,
+                                          });
+                                          if (!badge.show) return null;
+                                          const badgeClassName = badge.level === 'expert'
+                                            ? '!px-2 !py-0.5 border-amber-200'
+                                            : '!px-2 !py-0.5';
+                                          return (
+                                            <Tooltip content={badge.tooltip} position="top">
+                                              <span className="inline-flex">
+                                                <TrustBadge
+                                                  level={badge.level}
+                                                  showLabel={false}
+                                                  label={badge.label}
+                                                  className={badgeClassName}
+                                                />
+                                              </span>
+                                            </Tooltip>
+                                          );
+                                        })()}
                                       </div>
                                       <span className="text-xs text-gray-500 dark:text-gray-400">
                                           {formatDateTime(reply.publishedAt, locale)}

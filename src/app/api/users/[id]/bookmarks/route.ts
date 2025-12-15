@@ -181,6 +181,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
           name: bookmark.post?.author?.displayName || bookmark.post?.author?.name || 'User',
           avatar: bookmark.post?.author?.image || '/avatar-default.jpg',
           isVerified: bookmark.post?.author?.isVerified || false,
+          isExpert: bookmark.post?.author?.isExpert || false,
+          badgeType: bookmark.post?.author?.badgeType || null,
           followers: 0,
         },
         stats: {

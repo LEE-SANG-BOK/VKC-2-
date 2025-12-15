@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'nextjs-toploader/app';
 import { useSession } from 'next-auth/react';
 import { ThumbsUp, CheckCircle, ExternalLink } from 'lucide-react';
-import Avatar from '@/components/atoms/Avatar';
 import UserChip from '@/components/molecules/UserChip';
-import TrustBadge, { type TrustLevel } from '@/components/atoms/TrustBadge';
+import TrustBadge from '@/components/atoms/TrustBadge';
 import Tooltip from '@/components/atoms/Tooltip';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
 import { useToggleAnswerLike } from '@/repo/answers/mutation';
+import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 
 export interface AnswerCardProps {
   id: string;
@@ -20,6 +20,7 @@ export interface AnswerCardProps {
     avatar: string;
     isVerified?: boolean;
     isExpert?: boolean;
+    badgeType?: string | null;
   };
   content: string;
   publishedAt: string;
@@ -53,23 +54,11 @@ export default function AnswerCard({
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
 
-  const derivedTrustLevel: TrustLevel = author.isExpert
-    ? 'expert'
-    : author.isVerified
-      ? 'verified'
-      : 'community';
-
-  const trustLabels: Record<string, string> = {
-    verified: tTrust.verifiedLabel || (locale === 'vi' ? 'Đã xác minh' : locale === 'en' ? 'Verified' : '검증됨'),
-    expert: tTrust.expertLabel || (locale === 'vi' ? 'Chuyên gia' : locale === 'en' ? 'Expert' : '전문가'),
-    community: '',
-  };
-
-  const trustTooltips: Record<string, string> = {
-    verified: tTrust.verifiedTooltip || (locale === 'vi' ? 'Thông tin từ người dùng đã xác minh' : locale === 'en' ? 'From a verified user' : '인증된 사용자 기반 정보'),
-    expert: tTrust.expertTooltip || (locale === 'vi' ? 'Được chuyên gia xem xét' : locale === 'en' ? 'Reviewed by an expert' : '전문가/공식 답변자'),
-    community: '',
-  };
+  const trustBadgePresentation = getTrustBadgePresentation({
+    locale,
+    author,
+    translations: tTrust,
+  });
   
   const [localIsLiked, setLocalIsLiked] = useState(isLiked);
   const [localLikes, setLocalLikes] = useState(likes);
@@ -132,13 +121,13 @@ export default function AnswerCard({
                 onClick={() => author.id && router.push(`/${locale}/profile/${author.id}`)}
                 className="hover:opacity-90 transition-all"
               />
-              {derivedTrustLevel !== 'community' && (
-                <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
+              {trustBadgePresentation.show ? (
+                <Tooltip content={trustBadgePresentation.tooltip} position="top">
                   <span className="inline-flex">
-                    <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
+                    <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />
                   </span>
                 </Tooltip>
-              )}
+              ) : null}
               <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {publishedAt}
               </span>

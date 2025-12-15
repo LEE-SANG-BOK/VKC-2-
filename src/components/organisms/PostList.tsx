@@ -310,7 +310,8 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                     followers: (post.author as any)?.followers ?? 0,
                     isFollowing: (post.author as any)?.isFollowing ?? false,
                     isVerified: post.author?.isVerified || false,
-                    isExpert: (post.author as any)?.isExpert || false,
+                    isExpert: post.author?.isExpert || false,
+                    badgeType: post.author?.badgeType || null,
                   }}
                   title={post.title}
                   excerpt={post.excerpt || (post.content || '').replace(/<img[^>]*>/gi, '').replace(/<[^>]*>/g, '').trim().substring(0, 200)}

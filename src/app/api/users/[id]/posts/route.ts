@@ -189,6 +189,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
           name: post.author?.displayName || post.author?.name || 'User',
           avatar: post.author?.image || '/avatar-default.jpg',
           isVerified: post.author?.isVerified || false,
+          isExpert: post.author?.isExpert || false,
+          badgeType: post.author?.badgeType || null,
           followers: 0,
         },
         stats: {
