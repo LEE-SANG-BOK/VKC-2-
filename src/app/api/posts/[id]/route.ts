@@ -5,6 +5,8 @@ import { posts, follows } from '@/lib/db/schema';
 import { successResponse, errorResponse, notFoundResponse, forbiddenResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession, isOwner } from '@/lib/api/auth';
 import { eq, and } from 'drizzle-orm';
+import { hasProhibitedContent } from '@/lib/content-filter';
+import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import dayjs from 'dayjs';
 
 interface RouteContext {
@@ -18,6 +20,20 @@ const resolveTrust = (author: any, createdAt: Date | string) => {
   if (author?.isVerified || author?.badgeType) return { badge: 'verified', weight: 1 };
   return { badge: 'community', weight: 0.7 };
 };
+
+const CATEGORY_GROUP_SLUGS = {
+  visa: ['visa-process', 'status-change', 'visa-checklist'],
+  students: ['scholarship', 'university-ranking', 'korean-language'],
+  career: ['business', 'wage-info', 'legal'],
+  living: ['housing', 'cost-of-living', 'healthcare'],
+} as const;
+
+const GROUP_PARENT_SLUGS = Object.keys(CATEGORY_GROUP_SLUGS);
+
+const isGroupParentSlug = (slug: string) => GROUP_PARENT_SLUGS.includes(slug);
+
+const getChildrenForParent = (slug: string) =>
+  (CATEGORY_GROUP_SLUGS as Record<string, readonly string[]>)[slug] || [];
 
 /**
  * GET /api/posts/[id]
@@ -248,15 +264,75 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const { title, content, category, subcategory, tags } = body;
 
-    // 게시글 수정
+    const finalTitle = title !== undefined ? String(title).trim() : post.title;
+    const finalContent = content !== undefined ? String(content).trim() : post.content;
+    const finalCategory = category !== undefined ? String(category).trim() : post.category;
+    const finalSubcategory = subcategory !== undefined ? (subcategory ? String(subcategory).trim() : '') : post.subcategory || '';
+
+    if (title !== undefined) {
+      if (!finalTitle) {
+        return errorResponse('제목을 비워둘 수 없습니다.', 'POST_TITLE_REQUIRED');
+      }
+      const titleValidation = validateUgcText(finalTitle, UGC_LIMITS.postTitle.min, UGC_LIMITS.postTitle.max);
+      if (!titleValidation.ok) {
+        if (titleValidation.code === 'UGC_TOO_SHORT') {
+          return errorResponse('제목이 너무 짧습니다.', 'POST_TITLE_TOO_SHORT');
+        }
+        if (titleValidation.code === 'UGC_TOO_LONG') {
+          return errorResponse('제목이 너무 깁니다.', 'POST_TITLE_TOO_LONG');
+        }
+        return errorResponse('제목이 너무 단순하거나 반복됩니다.', 'POST_TITLE_LOW_QUALITY');
+      }
+    }
+
+    if (content !== undefined) {
+      if (!finalContent) {
+        return errorResponse('내용을 입력해주세요.', 'POST_CONTENT_REQUIRED');
+      }
+      const contentValidation = validateUgcText(finalContent, UGC_LIMITS.postContent.min, UGC_LIMITS.postContent.max);
+      if (!contentValidation.ok) {
+        if (contentValidation.code === 'UGC_TOO_SHORT') {
+          return errorResponse('내용이 너무 짧습니다.', 'POST_CONTENT_TOO_SHORT');
+        }
+        if (contentValidation.code === 'UGC_TOO_LONG') {
+          return errorResponse('내용이 너무 깁니다.', 'POST_CONTENT_TOO_LONG');
+        }
+        return errorResponse('내용이 너무 단순하거나 반복됩니다.', 'POST_CONTENT_LOW_QUALITY');
+      }
+    }
+
+    if (title !== undefined || content !== undefined) {
+      if (hasProhibitedContent(`${finalTitle} ${finalContent}`)) {
+        return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
+      }
+    }
+
+    if (!finalCategory) {
+      return errorResponse('카테고리를 다시 선택해주세요.', 'POST_INVALID_CATEGORY');
+    }
+
+    if (!isGroupParentSlug(finalCategory)) {
+      return errorResponse('카테고리를 다시 선택해주세요.', 'POST_INVALID_CATEGORY');
+    }
+
+    const childrenForCategory = getChildrenForParent(finalCategory);
+    if (childrenForCategory.length > 0) {
+      if (!finalSubcategory) {
+        return errorResponse('세부분류를 선택해주세요.', 'POST_SUBCATEGORY_REQUIRED');
+      }
+      if (!childrenForCategory.includes(finalSubcategory)) {
+        return errorResponse('세부분류를 다시 선택해주세요.', 'POST_INVALID_SUBCATEGORY');
+      }
+    }
+
     const [updatedPost] = await db
       .update(posts)
       .set({
-        title: title || post.title,
-        content: content || post.content,
-        category: category || post.category,
-        subcategory: subcategory !== undefined ? subcategory : post.subcategory,
-        tags: tags || post.tags,
+        title: finalTitle,
+        content: finalContent,
+        category: finalCategory,
+        subcategory: childrenForCategory.length > 0 ? finalSubcategory : null,
+        tags: Array.isArray(tags) ? tags : post.tags,
         updatedAt: new Date(),
       })
       .where(eq(posts.id, id))
