@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
-import { comments, users } from '@/lib/db/schema';
+import { comments, users, likes } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq, desc, sql, and, isNotNull } from 'drizzle-orm';
+import { eq, desc, sql, and, isNotNull, inArray } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -41,6 +41,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const userComments = await db.query.comments.findMany({
       where: whereCondition,
+      columns: {
+        id: true,
+        authorId: true,
+        postId: true,
+        content: true,
+        createdAt: true,
+        likes: true,
+      },
       with: {
         author: {
           columns: userPublicColumns,
@@ -53,12 +61,23 @@ export async function GET(request: NextRequest, context: RouteContext) {
             views: true,
           },
         },
-        likes: true,
       },
       orderBy: [desc(comments.createdAt)],
       limit,
       offset: (page - 1) * limit,
     });
+
+    const commentIds = userComments.map((comment) => comment.id).filter(Boolean) as string[];
+    const likedCommentIds = new Set<string>();
+    if (currentUser && commentIds.length > 0) {
+      const likedRows = await db
+        .select({ commentId: likes.commentId })
+        .from(likes)
+        .where(and(eq(likes.userId, currentUser.id), inArray(likes.commentId, commentIds)));
+      likedRows.forEach((row) => {
+        if (row.commentId) likedCommentIds.add(row.commentId);
+      });
+    }
 
     const formattedComments = userComments.map(comment => ({
       id: comment.id,
@@ -69,7 +88,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       category: comment.post?.category || '',
       tags: [],
       views: comment.post?.views || 0,
-      likes: comment.likes?.length || 0,
+      likes: comment.likes || 0,
       createdAt: comment.createdAt?.toISOString(),
       publishedAt: comment.createdAt?.toISOString(),
       author: {
@@ -80,11 +99,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
         followers: 0,
       },
       stats: {
-        likes: comment.likes?.length || 0,
+        likes: comment.likes || 0,
         comments: 0,
         shares: 0,
       },
-      isLiked: currentUser ? comment.likes?.some(like => like.userId === currentUser.id) : false,
+      isLiked: currentUser ? likedCommentIds.has(comment.id) : false,
       isBookmarked: false,
       isQuestion: false,
       isAdopted: false,

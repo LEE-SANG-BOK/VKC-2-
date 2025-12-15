@@ -18,7 +18,7 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
   const [selected, setSelected] = useState<NewsItem | null>(null);
 
   const { data: newsItems, isLoading } = useNews(lang);
-  const items = (newsItems || []).slice(0, limit);
+  const items = (newsItems || []).filter((item) => item.type === 'post').slice(0, limit);
 
   const title =
     tNews.title || (lang === 'vi' ? 'Nội dung nổi bật' : lang === 'en' ? 'Featured content' : '추천 콘텐츠');

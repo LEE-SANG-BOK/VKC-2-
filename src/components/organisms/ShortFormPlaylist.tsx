@@ -1,49 +1,76 @@
 'use client';
 
-import { useRouter } from 'nextjs-toploader/app';
+import Image from 'next/image';
 import ShareButton from '../molecules/ShareButton';
 import { useParams } from 'next/navigation';
-
-const CLIPS = {
-  ko: [
-    { title: '60초로 보는 D-10 신청', length: '0:52', tag: '비자팁' },
-    { title: 'E-7 면접 꿀팁 3가지', length: '0:41', tag: '면접' },
-    { title: '한국 생활 꿀팁 TOP3', length: '0:36', tag: '라이프' },
-    { title: 'F-2 가점 요소 한눈에', length: '0:48', tag: '가점' },
-  ],
-  vi: [
-    { title: 'D-10 trong 60 giây', length: '0:52', tag: 'Mẹo visa' },
-    { title: '3 mẹo phỏng vấn E-7', length: '0:41', tag: 'Phỏng vấn' },
-    { title: '3 mẹo sống ở Hàn', length: '0:36', tag: 'Đời sống' },
-    { title: 'Điểm cộng F-2 nhanh', length: '0:48', tag: 'Điểm cộng' },
-  ],
-  en: [
-    { title: 'D-10 in 60 seconds', length: '0:52', tag: 'Visa tips' },
-    { title: '3 E-7 interview tips', length: '0:41', tag: 'Interview' },
-    { title: 'Top 3 Korea life hacks', length: '0:36', tag: 'Life' },
-    { title: 'F-2 bonus points fast', length: '0:48', tag: 'Points' },
-  ],
-};
+import { useNews } from '@/repo/news/query';
 
 export default function ShortFormPlaylist() {
-  const router = useRouter();
   const params = useParams();
-  const locale = ((params?.lang as string) || 'ko') as keyof typeof CLIPS;
-  const clips = CLIPS[locale] || CLIPS.ko;
+  const locale = (params?.lang as string) || 'vi';
+
+  const { data: newsItems, isLoading } = useNews(locale);
+  const clips = (newsItems || []).filter((item) => item.type === 'shorts').slice(0, 8);
+
   const title = locale === 'vi' ? 'Danh sách Shorts' : locale === 'en' ? 'Shorts playlist' : '숏폼 플레이리스트';
   const autoplay = locale === 'vi' ? 'Tự phát' : locale === 'en' ? 'Autoplay' : '자동 재생';
   const more = locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'More' : '더 보기';
   const watch = locale === 'vi' ? 'Xem' : locale === 'en' ? 'Watch' : '보기';
   const save = locale === 'vi' ? 'Lưu' : locale === 'en' ? 'Save' : '저장';
   const share = locale === 'vi' ? 'Chia sẻ' : locale === 'en' ? 'Share' : '공유';
+  const emptyLabel =
+    locale === 'vi' ? 'Chưa có shorts.' : locale === 'en' ? 'No shorts yet.' : '아직 숏폼이 없습니다.';
 
   const handleViewAll = () => {
-    router.push('search?tab=shorts');
+    const target = `/${locale}/media`;
+    if (typeof window !== 'undefined') {
+      window.location.href = target;
+    }
   };
 
-  const handleView = () => {
-    router.push('search?tab=shorts');
+  const handleView = (url?: string | null) => {
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
+
+  if (isLoading) {
+    return (
+      <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3 md:px-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Shorts</p>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
+          </div>
+        </div>
+        <div className="grid gap-3 px-4 pb-4 md:px-5 md:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-20 rounded-xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (clips.length === 0) {
+    return (
+      <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3 md:px-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Shorts</p>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={handleViewAll}
+            className="hidden md:inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+          >
+            {more}
+          </button>
+        </div>
+        <div className="px-4 pb-4 md:px-5 text-sm text-gray-600 dark:text-gray-300">{emptyLabel}</div>
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
@@ -67,22 +94,24 @@ export default function ShortFormPlaylist() {
             key={clip.title}
             className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/60 p-3 flex items-center gap-3 hover:shadow-md transition"
           >
-            <div className="relative w-28 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-blue-500 to-emerald-500 text-white flex items-center justify-center text-sm font-semibold">
-              {clip.length}
-              <span className="absolute bottom-1 right-1 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">{clip.tag}</span>
+            <div className="relative w-28 h-16 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
+              {clip.imageUrl ? (
+                <Image src={clip.imageUrl} alt={clip.title} fill sizes="112px" className="object-cover" />
+              ) : null}
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">{clip.title}</h3>
+              <div className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1">{clip.category}</div>
               <div className="mt-2 flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
                 <button
                   type="button"
-                  onClick={handleView}
+                  onClick={() => handleView(clip.linkUrl)}
                   className="rounded-full bg-blue-600 text-white px-2 py-1 font-semibold hover:bg-blue-700 transition"
                 >
                   {watch}
                 </button>
                 <button className="hover:text-gray-700 dark:hover:text-gray-200 transition">{save}</button>
-                <ShareButton label={share} className="px-2.5 py-1.5" />
+                <ShareButton url={clip.linkUrl || undefined} title={clip.title} label={share} className="px-2.5 py-1.5" />
               </div>
             </div>
           </article>

@@ -146,8 +146,8 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
                     excerpt={buildExcerpt(post.content) || post.excerpt || ''}
                     tags={post.tags || []}
                     stats={{
-                      likes: post.likesCount ?? post.likes ?? 0,
-                      comments: post.commentsCount ?? 0,
+                      likes: post.likesCount ?? post.stats?.likes ?? post.likes ?? 0,
+                      comments: post.commentsCount ?? post.stats?.comments ?? 0,
                       shares: 0,
                     }}
                     category={post.category}

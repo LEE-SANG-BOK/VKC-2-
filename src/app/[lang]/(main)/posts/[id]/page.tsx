@@ -6,6 +6,7 @@ import type { Locale } from '@/i18n/config';
 import { fetchPost } from '@/repo/posts/fetch';
 import { queryKeys } from '@/repo/keys';
 import PostDetailClient from './PostDetailClient';
+import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 
 // 동적 라우트 설정
 export const dynamicParams = true;
@@ -22,13 +23,15 @@ interface PageProps {
 // 메타데이터 생성
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, id } = await params;
+  const dict = await getDictionary(lang as Locale);
+  const t = (dict?.metadata?.post || {}) as Record<string, string>;
   const response = await fetchPost(id);
   const post = response?.data;
 
   if (!post) {
     return {
-      title: '게시글을 찾을 수 없습니다',
-      description: '요청하신 게시글을 찾을 수 없습니다',
+      title: t.notFoundTitle || '게시글을 찾을 수 없습니다',
+      description: t.notFoundDescription || '요청하신 게시글을 찾을 수 없습니다',
     };
   }
 
@@ -41,8 +44,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 
   const description = stripHtml(post.content || '').substring(0, 160);
-  const title = `${post.title} | viet kconnect`;
-  const ogImage = post.thumbnail || post.thumbnails?.[0] || '/brand-logo.png';
+  const titleSuffix = t.titleSuffix || 'viet kconnect';
+  const title = `${post.title} | ${titleSuffix}`;
+  const ogImageSrc = normalizePostImageSrc(post.thumbnail) || normalizePostImageSrc(post.thumbnails?.[0]) || '/brand-logo.png';
+  const ogImage = ogImageSrc.startsWith('/') ? `${baseUrl}${ogImageSrc}` : ogImageSrc;
 
   return {
     title,
@@ -64,7 +69,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       url: currentUrl,
-      siteName: 'viet kconnect',
+      siteName: t.siteName || 'viet kconnect',
       images: ogImage ? [ogImage] : [],
       publishedTime: post.createdAt,
       authors: [post.author?.displayName || post.author?.name || ''],
@@ -150,7 +155,11 @@ export default async function PostDetailPage({ params }: PageProps) {
     title: post.title,
     content: post.content,
     tags: post.tags || [],
-    stats: { likes: post.likes ?? 0, comments: 0, shares: 0 },
+    stats: {
+      likes: post.stats?.likes ?? post.likes ?? 0,
+      comments: post.stats?.comments ?? 0,
+      shares: post.stats?.shares ?? 0,
+    },
     thumbnail: post.thumbnail || post.thumbnails?.[0] || undefined,
     publishedAt: post.createdAt || post.updatedAt,
     isLiked: post.isLiked ?? false,
@@ -162,15 +171,18 @@ export default async function PostDetailPage({ params }: PageProps) {
   };
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+  const answerCount = post.answersCount ?? 0;
+  const jsonLdImageSrc = normalizePostImageSrc(mappedPost.thumbnail) || '/brand-logo.png';
+  const jsonLdImage = jsonLdImageSrc.startsWith('/') ? `${baseUrl}${jsonLdImageSrc}` : jsonLdImageSrc;
 
   // JSON-LD 구조화 데이터
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': mappedPost.isQuestion ? 'QAPage' : 'DiscussionForumPosting',
+    '@type': mappedPost.isQuestion ? ['QAPage', 'DiscussionForumPosting'] : 'DiscussionForumPosting',
     '@id': `${baseUrl}/${lang}/posts/${id}`,
     headline: mappedPost.title,
     description: (mappedPost.content || '').replace(/<[^>]*>/g, '').substring(0, 160),
-    image: mappedPost.thumbnail || '',
+    image: jsonLdImage,
     datePublished: mappedPost.publishedAt,
     author: {
       '@type': 'Person',
@@ -191,7 +203,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       '@type': 'Question',
       name: mappedPost.title,
       text: mappedPost.content,
-      answerCount: 0,
+      answerCount,
       upvoteCount: mappedPost.stats.likes,
       dateCreated: mappedPost.publishedAt,
       author: {

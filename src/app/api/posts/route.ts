@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
-import { posts, categorySubscriptions, categories, follows, topicSubscriptions, answers, comments, likes, bookmarks } from '@/lib/db/schema';
+import { posts, users, categorySubscriptions, categories, follows, topicSubscriptions, answers, comments, likes, bookmarks } from '@/lib/db/schema';
 import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkUserStatus } from '@/lib/user-status';
@@ -226,7 +226,7 @@ export async function GET(request: NextRequest) {
       const postIds = list.map((post) => post.id).filter(Boolean) as string[];
       if (postIds.length === 0) return [];
 
-      const [answerCounts, commentCounts, likedRows, bookmarkedRows] = await Promise.all([
+      const [answerCounts, commentCounts, answerResponders, commentResponders, likedRows, bookmarkedRows] = await Promise.all([
         db
           .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
           .from(answers)
@@ -237,6 +237,16 @@ export async function GET(request: NextRequest) {
           .from(comments)
           .where(inArray(comments.postId, postIds))
           .groupBy(comments.postId),
+        db
+          .select({ postId: answers.postId, authorId: answers.authorId })
+          .from(answers)
+          .where(inArray(answers.postId, postIds))
+          .groupBy(answers.postId, answers.authorId),
+        db
+          .select({ postId: comments.postId, authorId: comments.authorId })
+          .from(comments)
+          .where(inArray(comments.postId, postIds))
+          .groupBy(comments.postId, comments.authorId),
         user
           ? db
               .select({ postId: likes.postId })
@@ -250,6 +260,53 @@ export async function GET(request: NextRequest) {
               .where(and(eq(bookmarks.userId, user.id), inArray(bookmarks.postId, postIds)))
           : Promise.resolve([]),
       ]);
+
+      const responderIds = new Set<string>();
+      [...answerResponders, ...commentResponders].forEach((row) => {
+        if (row.authorId) responderIds.add(row.authorId);
+      });
+
+      const responders = responderIds.size
+        ? await db.query.users.findMany({
+            where: inArray(users.id, Array.from(responderIds)),
+            columns: {
+              id: true,
+              isVerified: true,
+              isExpert: true,
+              badgeType: true,
+            },
+          })
+        : [];
+
+      const responderCertMap = new Map<string, boolean>();
+      responders.forEach((responder) => {
+        responderCertMap.set(responder.id, Boolean(responder.isVerified || responder.isExpert || responder.badgeType));
+      });
+
+      const certifiedRespondersByPostId = new Map<string, Set<string>>();
+      const otherRespondersByPostId = new Map<string, Set<string>>();
+
+      const addResponder = (postId: string | null, authorId: string | null) => {
+        if (!postId || !authorId) return;
+        if (responderCertMap.get(authorId)) {
+          const certifiedSet = certifiedRespondersByPostId.get(postId) || new Set<string>();
+          certifiedSet.add(authorId);
+          certifiedRespondersByPostId.set(postId, certifiedSet);
+          const otherSet = otherRespondersByPostId.get(postId);
+          if (otherSet?.has(authorId)) otherSet.delete(authorId);
+          return;
+        }
+
+        const certifiedSet = certifiedRespondersByPostId.get(postId);
+        if (certifiedSet?.has(authorId)) return;
+
+        const otherSet = otherRespondersByPostId.get(postId) || new Set<string>();
+        otherSet.add(authorId);
+        otherRespondersByPostId.set(postId, otherSet);
+      };
+
+      answerResponders.forEach((row) => addResponder(row.postId, row.authorId));
+      commentResponders.forEach((row) => addResponder(row.postId, row.authorId));
 
       const answerCountMap = new Map<string, number>();
       answerCounts.forEach((row) => {
@@ -280,6 +337,8 @@ export async function GET(request: NextRequest) {
 
         const answersCount = answerCountMap.get(post.id) ?? 0;
         const postCommentsCount = commentCountMap.get(post.id) ?? 0;
+        const certifiedResponderCount = certifiedRespondersByPostId.get(post.id)?.size ?? 0;
+        const otherResponderCount = otherRespondersByPostId.get(post.id)?.size ?? 0;
 
         return {
           ...post,
@@ -300,6 +359,8 @@ export async function GET(request: NextRequest) {
           answersCount,
           postCommentsCount,
           commentsCount: answersCount + postCommentsCount,
+          certifiedResponderCount,
+          otherResponderCount,
         };
       });
     };

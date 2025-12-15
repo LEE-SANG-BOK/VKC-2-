@@ -85,6 +85,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .from(comments)
       .where(and(eq(comments.postId, post.id), isNull(comments.parentId)));
 
+    const answersCount = answersCountResult?.count || 0;
+    const commentsCount = topLevelCommentsCountResult?.count || 0;
+
     const [likeRecord, bookmarkRecord] = user
       ? await Promise.all([
           db.query.likes.findFirst({
@@ -118,9 +121,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
       imageCount: imageMatches.length,
       stats: {
         likes: post.likes || 0,
-        comments: (answersCountResult?.count || 0) + (topLevelCommentsCountResult?.count || 0),
+        comments: answersCount + commentsCount,
         shares: 0,
       },
+      answersCount,
+      commentsCount,
       publishedAt: formatDate(post.createdAt),
       isLiked: Boolean(likeRecord),
       isBookmarked: Boolean(bookmarkRecord),

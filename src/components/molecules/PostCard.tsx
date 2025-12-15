@@ -77,6 +77,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const locale = (params?.lang as string) || 'ko';
   const t = (translations?.tooltips || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tPost = (translations?.post || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
 
   const derivedTrustLevel: TrustLevel = trustBadge
@@ -102,6 +103,34 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   };
 
   const answerLabel = `${isQuestion ? tCommon.answer || '답변' : tCommon.comment || '댓글'} ${stats.comments}`;
+
+  const certifiedCount = Math.max(0, certifiedResponderCount ?? 0);
+  const otherCount = Math.max(0, otherResponderCount ?? 0);
+  const responseNoun = isQuestion
+    ? (locale === 'en' ? 'answers' : tCommon.answer || '답변')
+    : (locale === 'en' ? 'comments' : tCommon.comment || '댓글');
+  const certifiedSummaryLabel = certifiedCount > 0
+    ? (otherCount > 0
+      ? (tPost.certifiedResponderSummary
+        ? tPost.certifiedResponderSummary
+            .replace('{certified}', String(certifiedCount))
+            .replace('{others}', String(otherCount))
+            .replace('{noun}', responseNoun)
+        : locale === 'vi'
+          ? `${responseNoun} từ ${certifiedCount} người dùng đã xác minh và ${otherCount} người khác`
+          : locale === 'en'
+            ? `${certifiedCount} certified users + ${otherCount} others left ${responseNoun}`
+            : `인증 사용자 ${certifiedCount}명 외 ${otherCount}명의 ${responseNoun}이 있습니다`)
+      : (tPost.certifiedResponderSummaryOnly
+        ? tPost.certifiedResponderSummaryOnly
+            .replace('{certified}', String(certifiedCount))
+            .replace('{noun}', responseNoun)
+        : locale === 'vi'
+          ? `${responseNoun} từ ${certifiedCount} người dùng đã xác minh`
+          : locale === 'en'
+            ? `${certifiedCount} certified users left ${responseNoun}`
+            : `인증 사용자 ${certifiedCount}명의 ${responseNoun}이 있습니다`))
+    : '';
 
   const safeName = (raw?: string) => {
     const nm = raw?.trim();
@@ -529,6 +558,12 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2 leading-relaxed">
             {excerpt}
           </p>
+
+          {certifiedSummaryLabel ? (
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-200 line-clamp-1">
+              {certifiedSummaryLabel}
+            </p>
+          ) : null}
 
         </div>
 

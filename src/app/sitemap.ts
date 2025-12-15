@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { desc } from 'drizzle-orm';
+import { CATEGORY_GROUP_SLUGS } from '@/lib/constants/category-groups';
 
 const locales = ['ko', 'en', 'vi'];
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
@@ -21,6 +22,23 @@ async function fetchPostsForSitemap() {
   }
 }
 
+async function fetchProfilesForSitemap() {
+  const skipDb = process.env.SKIP_SITEMAP_DB === 'true';
+  if (skipDb || !process.env.DATABASE_URL) return [];
+  try {
+    const { db } = await import('@/lib/db');
+    const { users } = await import('@/lib/db/schema');
+    const rows = await db
+      .select({ id: users.id, updatedAt: users.updatedAt })
+      .from(users)
+      .orderBy(desc(users.updatedAt))
+      .limit(2000);
+    return rows;
+  } catch {
+    return [];
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
 
@@ -37,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
 
-  const categories = ['visa', 'employment', 'housing', 'daily-life', 'education', 'legal'];
+  const categories = Object.keys(CATEGORY_GROUP_SLUGS);
   const localizedCategories = locales.flatMap((locale) =>
     categories.map((category) => ({
       url: `${baseUrl}/${locale}?c=${category}`,
@@ -68,5 +86,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
 
-  return [...localizedStaticPages, ...localizedCategories, ...localizedPosts];
+  let profileRows: { id: string; updatedAt: Date | null }[] = [];
+  try {
+    profileRows = await fetchProfilesForSitemap();
+  } catch {
+    profileRows = [];
+  }
+
+  const localizedProfiles = profileRows.flatMap((profile) =>
+    locales.map((locale) => ({
+      url: `${baseUrl}/${locale}/profile/${profile.id}`,
+      lastModified: profile.updatedAt || lastModified,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+      alternates: {
+        languages: Object.fromEntries(locales.map((l) => [l, `${baseUrl}/${l}/profile/${profile.id}`])),
+      },
+    }))
+  );
+
+  return [...localizedStaticPages, ...localizedCategories, ...localizedPosts, ...localizedProfiles];
 }

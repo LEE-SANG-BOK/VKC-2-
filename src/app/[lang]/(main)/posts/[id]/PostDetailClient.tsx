@@ -2848,7 +2848,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       )}
 
       <Modal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)}>
-        <LoginPrompt onClose={() => setIsLoginPromptOpen(false)} variant="modal" />
+        <LoginPrompt onClose={() => setIsLoginPromptOpen(false)} variant="modal" translations={translations} />
       </Modal>
     </div>
   );

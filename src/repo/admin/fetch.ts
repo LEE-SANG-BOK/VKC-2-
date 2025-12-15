@@ -415,6 +415,7 @@ export const adminFetch = {
     create: (data: {
       title: string;
       category: string;
+      type: 'post' | 'cardnews' | 'shorts';
       content: string;
       language?: string;
       imageUrl?: string;
@@ -432,6 +433,7 @@ export const adminFetch = {
       data: {
         title?: string;
         category?: string;
+        type?: 'post' | 'cardnews' | 'shorts';
         content?: string;
         language?: string;
         imageUrl?: string | null;

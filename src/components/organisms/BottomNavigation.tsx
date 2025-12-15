@@ -82,8 +82,8 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
 
   return (
     <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 dark:border-gray-800/80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg">
-      <div className="relative">
-        <div className="grid grid-cols-5 px-2 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]">
+      <div className="pb-[env(safe-area-inset-bottom,0px)]">
+        <div className="grid grid-cols-5 h-14 px-2">
           {navItems.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;
@@ -93,7 +93,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
                 key={item.key}
                 type="button"
                 onClick={() => handleNavigate(item.href, item.requiresAuth)}
-                className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-xs font-medium transition-colors ${
+                className={`h-full flex flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition-colors ${
                   active
                     ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/60'

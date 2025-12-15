@@ -46,7 +46,11 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { title, category, imageUrl, linkUrl, isActive, order, language, content } = body;
+    const { title, category, imageUrl, linkUrl, isActive, order, language, content, type } = body;
+
+    if (type !== undefined && !['post', 'cardnews', 'shorts'].includes(type)) {
+      return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+    }
 
     const [existing] = await db
       .select()
@@ -65,6 +69,7 @@ export async function PATCH(
     if (title !== undefined) updateData.title = title;
     if (category !== undefined) updateData.category = category;
     if (language !== undefined) updateData.language = language;
+    if (type !== undefined) updateData.type = type;
     if (content !== undefined) updateData.content = content;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (linkUrl !== undefined) updateData.linkUrl = linkUrl;

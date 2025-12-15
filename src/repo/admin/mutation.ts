@@ -207,6 +207,7 @@ export function useUpdateNews() {
         category?: string;
         content?: string;
         language?: string;
+        type?: 'post' | 'cardnews' | 'shorts';
         imageUrl?: string | null;
         linkUrl?: string | null;
         isActive?: boolean;

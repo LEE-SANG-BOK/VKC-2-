@@ -1,7 +1,7 @@
 
 import { db } from '@/lib/db';
 import { news } from '@/lib/db/schema';
-import { desc, eq, asc, and, or, isNull } from 'drizzle-orm';
+import { desc, eq, asc } from 'drizzle-orm';
 import { successResponse, serverErrorResponse } from '@/lib/api/response';
 
 export async function GET(request: Request) {

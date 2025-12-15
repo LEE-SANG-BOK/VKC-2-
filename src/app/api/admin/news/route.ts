@@ -71,7 +71,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, category, imageUrl, linkUrl, isActive, order, language, content } = body;
+    const { title, category, imageUrl, linkUrl, isActive, order, language, content, type } = body;
+
+    const normalizedType = type || 'post';
+    if (!['post', 'cardnews', 'shorts'].includes(normalizedType)) {
+      return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+    }
 
     if (!title || !category) {
       return NextResponse.json({ error: 'Title and category are required' }, { status: 400 });
@@ -81,6 +86,7 @@ export async function POST(request: NextRequest) {
       title,
       category,
       language: language || 'vi',
+      type: normalizedType,
       content: content || '',
       imageUrl: imageUrl || null,
       linkUrl: linkUrl || null,

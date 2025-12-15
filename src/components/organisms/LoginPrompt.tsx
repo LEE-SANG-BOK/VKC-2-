@@ -5,23 +5,40 @@ import { useParams } from 'next/navigation';
 import Button from '../atoms/Button';
 import { LogIn, UserPlus } from 'lucide-react';
 
+interface LoginPromptTexts {
+  title?: string;
+  desc?: string;
+  login?: string;
+  signup?: string;
+  cancel?: string;
+}
+
 interface LoginPromptProps {
   onClose: () => void;
   variant?: 'inline' | 'modal';
+  translations?: {
+    login?: LoginPromptTexts;
+    common?: {
+      signup?: string;
+      cancel?: string;
+      login?: string;
+    };
+  };
 }
 
-export default function LoginPrompt({ onClose, variant = 'inline' }: LoginPromptProps) {
+export default function LoginPrompt({ onClose, variant = 'inline', translations }: LoginPromptProps) {
   const router = useRouter();
   const params = useParams();
   const locale = (params?.lang as string) || 'ko';
 
-  const text = {
-    title: locale === 'vi' ? 'Cần đăng nhập' : locale === 'en' ? 'Login required' : '로그인이 필요합니다',
-    desc: locale === 'vi' ? 'Vui lòng đăng nhập để dùng tính năng này.' : locale === 'en' ? 'Please log in to use this feature.' : '로그인 후 사용가능한 서비스입니다.',
-    login: locale === 'vi' ? 'Đăng nhập' : locale === 'en' ? 'Log in' : '로그인 하러가기',
-    signup: locale === 'vi' ? 'Đăng ký' : locale === 'en' ? 'Sign up' : '회원가입 하러가기',
-    cancel: locale === 'vi' ? 'Hủy' : locale === 'en' ? 'Cancel' : '취소',
-  };
+  const loginTexts = translations?.login || {};
+  const commonTexts = translations?.common || {};
+
+  const title = loginTexts.title || (locale === 'vi' ? 'Cần đăng nhập' : locale === 'en' ? 'Login required' : '로그인이 필요합니다');
+  const desc = loginTexts.desc || (locale === 'vi' ? 'Vui lòng đăng nhập để dùng tính năng này.' : locale === 'en' ? 'Please log in to use this feature.' : '로그인 후 사용가능한 서비스입니다.');
+  const loginButton = loginTexts.login || commonTexts.login || (locale === 'vi' ? 'Đăng nhập' : locale === 'en' ? 'Log in' : '로그인');
+  const signupButton = loginTexts.signup || commonTexts.signup || (locale === 'vi' ? 'Đăng ký' : locale === 'en' ? 'Sign up' : '회원가입');
+  const cancelButton = loginTexts.cancel || commonTexts.cancel || (locale === 'vi' ? 'Hủy' : locale === 'en' ? 'Cancel' : '취소');
 
   const containerClassName =
     variant === 'modal'
@@ -35,10 +52,10 @@ export default function LoginPrompt({ onClose, variant = 'inline' }: LoginPrompt
           <LogIn className="h-8 w-8 text-red-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          {text.title}
+          {title}
         </h2>
         <p className="text-gray-600">
-          {text.desc}
+          {desc}
         </p>
       </div>
 
@@ -48,7 +65,7 @@ export default function LoginPrompt({ onClose, variant = 'inline' }: LoginPrompt
           className="w-full"
         >
           <LogIn className="h-5 w-5 mr-2" />
-          {text.login}
+          {loginButton}
         </Button>
         <Button
           onClick={() => router.push(`/${locale}/signup`)}
@@ -56,14 +73,14 @@ export default function LoginPrompt({ onClose, variant = 'inline' }: LoginPrompt
           className="w-full"
         >
           <UserPlus className="h-5 w-5 mr-2" />
-          {text.signup}
+          {signupButton}
         </Button>
         <Button
           onClick={onClose}
           variant="secondary"
           className="w-full"
         >
-          {text.cancel}
+          {cancelButton}
         </Button>
       </div>
     </div>

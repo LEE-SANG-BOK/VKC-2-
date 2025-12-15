@@ -24,6 +24,13 @@ export interface Post {
   updatedAt: string;
   isLiked?: boolean;
   isBookmarked?: boolean;
+  answersCount?: number;
+  commentsCount?: number;
+  stats?: {
+    likes: number;
+    comments: number;
+    shares: number;
+  };
   author: {
     id: string;
     displayName?: string | null;

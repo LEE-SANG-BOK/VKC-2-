@@ -45,6 +45,7 @@ interface NewsFormData {
   title: string;
   category: string;
   language: string;
+  type: 'post' | 'cardnews' | 'shorts';
   content: string;
   imageUrl: string;
   linkUrl: string;
@@ -70,10 +71,17 @@ const LANG_OPTIONS = [
   { value: 'en', label: 'English' },
 ];
 
+const TYPE_OPTIONS = [
+  { value: 'post', label: '일반' },
+  { value: 'cardnews', label: '카드뉴스' },
+  { value: 'shorts', label: '숏폼/Shorts' },
+] as const;
+
 const initialFormData: NewsFormData = {
   title: '',
   category: '',
   language: 'vi',
+  type: 'post',
   content: '',
   imageUrl: '',
   linkUrl: '',
@@ -165,6 +173,7 @@ export default function AdminNewsPage() {
         title: newsItem.title,
         category: newsItem.category,
         language: newsItem.language || 'vi',
+        type: newsItem.type || 'post',
         content: newsItem.content || '',
         imageUrl: newsItem.imageUrl || '',
         linkUrl: newsItem.linkUrl || '',
@@ -489,6 +498,22 @@ export default function AdminNewsPage() {
                 {LANG_OPTIONS.map((lang) => (
                   <option key={lang.value} value={lang.value}>
                     {lang.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="type">콘텐츠 유형 *</Label>
+              <select
+                id="type"
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value as NewsFormData['type'] })}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none"
+                required
+              >
+                {TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
                   </option>
                 ))}
               </select>

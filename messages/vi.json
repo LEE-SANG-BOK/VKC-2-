@@ -232,7 +232,9 @@
     "recommendedUsersTitle": "Người dùng đề xuất",
     "question": "Câu hỏi",
     "solved": "Đã giải quyết",
-    "unsolved": "Chưa giải quyết"
+    "unsolved": "Chưa giải quyết",
+    "certifiedResponderSummary": "Có {noun} từ {certified} người dùng đã xác minh và {others} người khác",
+    "certifiedResponderSummaryOnly": "Có {noun} từ {certified} người dùng đã xác minh"
   },
   "banner": {
     "badge": "Cộng đồng Người Hàn tại Việt Nam",

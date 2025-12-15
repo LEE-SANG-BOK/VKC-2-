@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
-import { bookmarks, users } from '@/lib/db/schema';
+import { bookmarks, users, answers, comments, likes } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse, unauthorizedResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq, desc, sql, inArray } from 'drizzle-orm';
+import { eq, desc, sql, inArray, and, isNotNull } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -42,16 +42,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const userBookmarks = await db.query.bookmarks.findMany({
       where: eq(bookmarks.userId, id),
+      columns: {
+        createdAt: true,
+      },
       with: {
         post: {
           with: {
             author: {
               columns: userPublicColumns,
             },
-            likes: true,
-            bookmarks: true,
-            answers: true,
-            comments: true,
           },
         },
       },
@@ -60,14 +59,57 @@ export async function GET(request: NextRequest, context: RouteContext) {
       offset: (page - 1) * limit,
     });
 
+    const postIds = userBookmarks.map((bookmark) => bookmark.post?.id).filter(Boolean) as string[];
+
+    const [answerCounts, commentCounts, likedRows, answerResponders, commentResponders] =
+      postIds.length > 0
+        ? await Promise.all([
+            db
+              .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
+              .from(answers)
+              .where(inArray(answers.postId, postIds))
+              .groupBy(answers.postId),
+            db
+              .select({ postId: comments.postId, count: sql<number>`count(*)::int` })
+              .from(comments)
+              .where(inArray(comments.postId, postIds))
+              .groupBy(comments.postId),
+            db
+              .select({ postId: likes.postId })
+              .from(likes)
+              .where(and(eq(likes.userId, currentUser.id), inArray(likes.postId, postIds))),
+            db
+              .select({ postId: answers.postId, authorId: answers.authorId })
+              .from(answers)
+              .where(and(inArray(answers.postId, postIds), isNotNull(answers.authorId))),
+            db
+              .select({ postId: comments.postId, authorId: comments.authorId })
+              .from(comments)
+              .where(and(inArray(comments.postId, postIds), isNotNull(comments.authorId))),
+          ])
+        : [[], [], [], [], []];
+
+    const answerCountMap = new Map<string, number>();
+    answerCounts.forEach((row) => {
+      if (row.postId) answerCountMap.set(row.postId, row.count);
+    });
+
+    const commentCountMap = new Map<string, number>();
+    commentCounts.forEach((row) => {
+      if (row.postId) commentCountMap.set(row.postId, row.count);
+    });
+
+    const likedPostIds = new Set<string>();
+    likedRows.forEach((row: { postId: string | null }) => {
+      if (row.postId) likedPostIds.add(row.postId);
+    });
+
     const responderIds = new Set<string>();
-    userBookmarks.forEach((bookmark) => {
-      bookmark.post?.answers?.forEach((answer) => {
-        if (answer.authorId) responderIds.add(answer.authorId);
-      });
-      bookmark.post?.comments?.forEach((comment) => {
-        if (comment.authorId) responderIds.add(comment.authorId);
-      });
+    answerResponders.forEach((row: { authorId: string | null }) => {
+      if (row.authorId) responderIds.add(row.authorId);
+    });
+    commentResponders.forEach((row: { authorId: string | null }) => {
+      if (row.authorId) responderIds.add(row.authorId);
     });
 
     const responders = responderIds.size
@@ -87,22 +129,37 @@ export async function GET(request: NextRequest, context: RouteContext) {
       responderCertMap.set(responder.id, Boolean(responder.isVerified || responder.isExpert || responder.badgeType));
     });
 
+    const certifiedRespondersByPost = new Map<string, Set<string>>();
+    const otherRespondersByPost = new Map<string, Set<string>>();
+
+    const addResponder = (postId: string | null, authorId: string | null) => {
+      if (!postId || !authorId) return;
+
+      const isCertified = responderCertMap.get(authorId) ?? false;
+      const targetMap = isCertified ? certifiedRespondersByPost : otherRespondersByPost;
+      const existing = targetMap.get(postId);
+      if (existing) {
+        existing.add(authorId);
+        return;
+      }
+      targetMap.set(postId, new Set([authorId]));
+    };
+
+    answerResponders.forEach((row: { postId: string | null; authorId: string | null }) => {
+      addResponder(row.postId, row.authorId);
+    });
+    commentResponders.forEach((row: { postId: string | null; authorId: string | null }) => {
+      addResponder(row.postId, row.authorId);
+    });
+
     const formattedBookmarks = userBookmarks.map(bookmark => {
       const imgMatch = bookmark.post?.content?.match(/<img[^>]+src=["']([^"']+)["']/i);
       const thumbnail = imgMatch ? imgMatch[1] : null;
 
-      const certifiedResponders = new Set<string>();
-      const otherResponders = new Set<string>();
-      bookmark.post?.answers?.forEach((answer) => {
-        const authorId = answer.authorId;
-        if (!authorId) return;
-        (responderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
-      });
-      bookmark.post?.comments?.forEach((comment) => {
-        const authorId = comment.authorId;
-        if (!authorId) return;
-        (responderCertMap.get(authorId) ? certifiedResponders : otherResponders).add(authorId);
-      });
+      const postId = bookmark.post?.id;
+      const answersCount = postId ? (answerCountMap.get(postId) ?? 0) : 0;
+      const postCommentsCount = postId ? (commentCountMap.get(postId) ?? 0) : 0;
+      const commentsCount = answersCount + postCommentsCount;
       
       return {
         id: bookmark.post?.id,
@@ -114,7 +171,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         subcategory: bookmark.post?.subcategory,
         tags: bookmark.post?.tags || [],
         views: bookmark.post?.views || 0,
-        likes: bookmark.post?.likes?.length || 0,
+        likes: bookmark.post?.likes || 0,
         isResolved: bookmark.post?.isResolved,
         createdAt: bookmark.post?.createdAt?.toISOString(),
         publishedAt: bookmark.post?.createdAt?.toISOString(),
@@ -127,13 +184,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
           followers: 0,
         },
         stats: {
-          likes: bookmark.post?.likes?.length || 0,
-          comments: (bookmark.post?.answers?.length || 0) + (bookmark.post?.comments?.length || 0),
+          likes: bookmark.post?.likes || 0,
+          comments: commentsCount,
           shares: 0,
         },
-        certifiedResponderCount: certifiedResponders.size,
-        otherResponderCount: otherResponders.size,
-        isLiked: currentUser ? bookmark.post?.likes?.some(like => like.userId === currentUser.id) : false,
+        certifiedResponderCount: postId ? (certifiedRespondersByPost.get(postId)?.size ?? 0) : 0,
+        otherResponderCount: postId ? (otherRespondersByPost.get(postId)?.size ?? 0) : 0,
+        isLiked: postId ? likedPostIds.has(postId) : false,
         isBookmarked: true,
         isQuestion: bookmark.post?.type === 'question',
         isAdopted: bookmark.post?.isResolved,

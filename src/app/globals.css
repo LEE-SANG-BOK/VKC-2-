@@ -642,7 +642,7 @@
 .vk-tooltip-portal--brand {
   max-width: min(320px, calc(100vw - 16px));
   text-align: left;
-  transform: translate3d(calc(var(--vk-tooltip-x, 0px) + 24px), var(--vk-tooltip-y, 0px), 0);
+  transform: translate3d(calc(var(--vk-tooltip-x, 0px) + 40px), var(--vk-tooltip-y, 0px), 0);
 }
 
 .vk-tooltip-portal::after {
@@ -1005,6 +1005,6 @@
 
 @media (max-width: 1024px) {
   .vk-safe-bottom {
-    padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 }

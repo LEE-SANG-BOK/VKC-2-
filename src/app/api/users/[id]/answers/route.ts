@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
-import { answers, users } from '@/lib/db/schema';
+import { answers, users, likes } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq, desc, sql, and } from 'drizzle-orm';
+import { eq, desc, sql, and, inArray } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -44,27 +44,45 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const userAnswers = await db.query.answers.findMany({
       where: whereCondition,
+      columns: {
+        id: true,
+        authorId: true,
+        postId: true,
+        content: true,
+        createdAt: true,
+        isAdopted: true,
+        likes: true,
+      },
       with: {
         author: {
           columns: userPublicColumns,
         },
         post: {
-          with: {
-            author: {
-              columns: userPublicColumns,
-            },
-            likes: true,
-            bookmarks: true,
-            answers: true,
-            comments: true,
+          columns: {
+            id: true,
+            title: true,
+            category: true,
+            tags: true,
+            views: true,
           },
         },
-        likes: true,
       },
       orderBy: [desc(answers.isAdopted), desc(answers.createdAt)],
       limit,
       offset: (page - 1) * limit,
     });
+
+    const answerIds = userAnswers.map((answer) => answer.id).filter(Boolean) as string[];
+    const likedAnswerIds = new Set<string>();
+    if (currentUser && answerIds.length > 0) {
+      const likedRows = await db
+        .select({ answerId: likes.answerId })
+        .from(likes)
+        .where(and(eq(likes.userId, currentUser.id), inArray(likes.answerId, answerIds)));
+      likedRows.forEach((row) => {
+        if (row.answerId) likedAnswerIds.add(row.answerId);
+      });
+    }
 
     const formattedAnswers = userAnswers.map(answer => ({
       id: answer.id,
@@ -75,7 +93,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       category: answer.post?.category || '',
       tags: answer.post?.tags || [],
       views: answer.post?.views || 0,
-      likes: answer.likes?.length || 0,
+      likes: answer.likes || 0,
       isResolved: answer.isAdopted,
       createdAt: answer.createdAt?.toISOString(),
       publishedAt: answer.createdAt?.toISOString(),
@@ -87,11 +105,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
         followers: 0,
       },
       stats: {
-        likes: answer.likes?.length || 0,
+        likes: answer.likes || 0,
         comments: 0,
         shares: 0,
       },
-      isLiked: currentUser ? answer.likes?.some(like => like.userId === currentUser.id) : false,
+      isLiked: currentUser ? likedAnswerIds.has(answer.id) : false,
       isBookmarked: false,
       isQuestion: false,
       isAdopted: answer.isAdopted,

@@ -52,7 +52,7 @@ export default function FollowButton({
   if (isSelf) return null;
 
   const followLabel = lang === 'vi' ? 'Theo dõi' : lang === 'en' ? 'Follow' : '팔로우';
-  const followingLabel = lang === 'vi' ? 'Đang theo dõi' : lang === 'en' ? 'Following' : '팔로잉';
+  const followingLabel = lang === 'vi' ? 'Đang theo dõi' : lang === 'en' ? 'Following' : '팔로잉 중';
   const processingLabel =
     lang === 'vi'
       ? 'Đang xử lý'

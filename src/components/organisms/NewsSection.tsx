@@ -27,6 +27,7 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
   const [selected, setSelected] = useState<NewsItem | null>(null);
 
   const { data: newsItems, isLoading } = useNews(locale);
+  const items = (newsItems || []).filter((item) => item.type === 'post');
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -43,7 +44,7 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
   };
 
   useEffect(() => {
-    if (!newsItems || newsItems.length === 0) return;
+    if (!items || items.length === 0) return;
 
     const interval = setInterval(() => {
       if (scrollRef.current) {
@@ -58,7 +59,7 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [newsItems]);
+  }, [items]);
 
   if (isLoading) {
     return (
@@ -75,7 +76,7 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
     );
   }
 
-  if (!newsItems || newsItems.length === 0) {
+  if (!items || items.length === 0) {
     return null;
   }
 
@@ -91,7 +92,7 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
           className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth pb-1.5"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {newsItems.map((news) => (
+          {items.map((news) => (
             <NewsCard
               key={news.id}
               id={news.id}

@@ -21,6 +21,7 @@ export default function MediaClient({ translations, lang }: MediaClientProps) {
 
   const [selected, setSelected] = useState<NewsItem | null>(null);
   const { data: newsItems, isLoading } = useNews(lang);
+  const items = (newsItems || []).filter((item) => item.type === 'post');
 
   if (isLoading) {
     return (
@@ -37,7 +38,7 @@ export default function MediaClient({ translations, lang }: MediaClientProps) {
     );
   }
 
-  if (!newsItems || newsItems.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-4">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
@@ -54,7 +55,7 @@ export default function MediaClient({ translations, lang }: MediaClientProps) {
         </div>
 
         <div className="divide-y divide-gray-200/60 dark:divide-gray-800/60">
-          {newsItems.map((item) => (
+          {items.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -130,4 +131,3 @@ export default function MediaClient({ translations, lang }: MediaClientProps) {
     </>
   );
 }
-

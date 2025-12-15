@@ -232,7 +232,9 @@
     "recommendedUsersTitle": "Recommended users",
     "question": "Question",
     "solved": "Solved",
-    "unsolved": "Unsolved"
+    "unsolved": "Unsolved",
+    "certifiedResponderSummary": "{noun} from {certified} certified users + {others} others",
+    "certifiedResponderSummaryOnly": "{noun} from {certified} certified users"
   },
   "banner": {
     "badge": "Vietnamese Korean Community",
