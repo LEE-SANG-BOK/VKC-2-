@@ -8,35 +8,9 @@ import { toast } from 'sonner';
 import MainLayout from '@/components/templates/MainLayout';
 import PostCard from '@/components/molecules/PostCard';
 import { usePosts } from '@/repo/posts/query';
+import type { PostListItem } from '@/repo/posts/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
-
-interface SearchPost {
-  id: string;
-  title: string;
-  content: string;
-  tags?: string[];
-  thumbnail?: string | null;
-  thumbnails?: string[];
-  category?: string;
-  subcategory?: string;
-  imageCount?: number;
-  createdAt: string;
-  type: 'question' | 'share';
-  isResolved?: boolean;
-  isLiked?: boolean;
-  isBookmarked?: boolean;
-  likesCount?: number;
-  likes?: number;
-  commentsCount?: number;
-  author?: {
-    id?: string;
-    displayName?: string | null;
-    name?: string | null;
-    image?: string | null;
-    isVerified?: boolean;
-  };
-}
 
 interface SearchClientProps {
   translations: Record<string, unknown>;
@@ -363,7 +337,7 @@ export default function SearchClient({
                     {t.fallbackNotice || (lang === 'vi' ? 'Không có kết quả phù hợp — hiển thị câu hỏi phổ biến.' : lang === 'en' ? 'No close matches — showing popular questions instead.' : '정확히 일치하는 결과가 없어 인기 질문을 보여드려요.')}
                   </div>
                 )}
-                {posts.map((post: SearchPost) => (
+                {posts.map((post: PostListItem) => (
                   <PostCard
                     key={post.id}
                     id={post.id}
@@ -375,7 +349,7 @@ export default function SearchClient({
                       isVerified: post.author?.isVerified || false,
                     }}
                     title={post.title}
-                    excerpt={post.content.replace(/<img[^>]*>/gi, t.photo || '(Photo)').replace(/<[^>]*>/g, '').substring(0, 200)}
+                    excerpt={post.excerpt || (post.content || '').replace(/<img[^>]*>/gi, t.photo || '(Photo)').replace(/<[^>]*>/g, '').substring(0, 200)}
                     tags={post.tags || []}
                     stats={{
                       likes: post.likesCount ?? post.likes ?? 0,
@@ -383,7 +357,7 @@ export default function SearchClient({
                       shares: 0,
                     }}
                     category={post.category}
-                    subcategory={post.subcategory}
+                    subcategory={post.subcategory || undefined}
                     thumbnail={post.thumbnail}
                     thumbnails={post.thumbnails}
                     imageCount={post.imageCount}

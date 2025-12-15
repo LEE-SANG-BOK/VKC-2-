@@ -35,7 +35,7 @@ export default function ShortFormPlaylist() {
 
   if (isLoading) {
     return (
-      <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
+      <section id="shorts" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 md:px-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Shorts</p>
@@ -53,7 +53,7 @@ export default function ShortFormPlaylist() {
 
   if (clips.length === 0) {
     return (
-      <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
+      <section id="shorts" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 md:px-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Shorts</p>
@@ -73,7 +73,7 @@ export default function ShortFormPlaylist() {
   }
 
   return (
-    <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
+    <section id="shorts" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
       <div className="flex items-center justify-between px-4 py-3 md:px-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Shorts</p>

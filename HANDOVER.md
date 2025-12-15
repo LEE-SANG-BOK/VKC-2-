@@ -7,7 +7,15 @@
 - 모바일 하단 네비게이션 추가 및 안전 영역 패딩 적용 (다국어 경로, 알림 뱃지 포함)
 - 모바일 사이드바를 Sheet 드로어로 전환, 데스크톱 사이드바는 스티키 유지
 - PostCard 모바일 터치 타깃 확대 및 썸네일 노출 방식 개선
+- 홈 피드 무한스크롤 유지 + `?page=` 기반 Prev/Next 링크 제공(SEO-friendly 페이지네이션)
+- `GET /api/posts` 리스트 응답에서 `content` 기본 제외 + `excerpt` 제공으로 응답 크기/렌더 비용 절감
+- 공개 API/검색 PII 최소화: 공개 user payload에서 `email` 제거 + 검색 API에서 email 기반 검색 제거
+- 프로필 PII 보호: `GET /api/users/[id]`는 본인 요청일 때만 `email/phone/notify*` 반환
+- 게시글 썸네일 안정화: 리스트/상세 썸네일 src 정규화로 이미지 깨짐/런타임 오류 방지
+- SEO 보강: posts/profile `generateMetadata` 정합화 + sitemap(posts/categories/profiles) 동적 생성
+- Verification 보안/정합성: documents는 path-only 저장 + `/api/verification/request` path 정규화/소유권(userId prefix) 검증 + 관리자 승인/반려 시 signed URL 미리보기 및 문서 삭제
 - ESLint 설정 조정: `agents/**`, `scripts/**` 글로벌 ignore, `no-explicit-any` 등 일부 규칙 완화로 린트 통과
+- `paginatedResponse` 메타 지원 + `/api/search/posts`의 토큰 오버랩 스코어링 및 조회/좋아요 기반 fallback 흐름 정비로 Similar Question/검색 UI가 `meta` 신호를 받아 안내할 수 있게 됨
 - 스키마 확장: users에 badge_type/trust_score/helpful_answers/adoption_rate/is_expert 추가, topic_subscriptions 테이블 신설, 비자 매칭 메타(visa_jobs, visa_requirements) 테이블 추가, 인증 승인 시 뱃지 자동 부여 API 반영
 
 ---

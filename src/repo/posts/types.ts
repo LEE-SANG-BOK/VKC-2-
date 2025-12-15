@@ -43,6 +43,47 @@ export interface Post {
   };
 }
 
+export interface PostListItem {
+  id: string;
+  authorId: string;
+  type: 'question' | 'share';
+  title: string;
+  excerpt: string;
+  content?: string;
+  category: string;
+  subcategory?: string | null;
+  tags: string[];
+  views: number;
+  likes: number;
+  likesCount?: number;
+  isResolved: boolean;
+  adoptedAnswerId?: string | null;
+  thumbnail?: string | null;
+  thumbnails?: string[];
+  imageCount?: number;
+  trustBadge?: 'verified' | 'community' | 'expert' | 'outdated';
+  trustWeight?: number;
+  createdAt: string;
+  updatedAt: string;
+  isLiked?: boolean;
+  isBookmarked?: boolean;
+  answersCount?: number;
+  postCommentsCount?: number;
+  commentsCount?: number;
+  certifiedResponderCount?: number;
+  otherResponderCount?: number;
+  author?: {
+    id: string;
+    displayName?: string | null;
+    name?: string | null;
+    image?: string | null;
+    avatar?: string;
+    isVerified: boolean;
+    isExpert?: boolean;
+    badgeType?: string | null;
+  } | null;
+}
+
 export interface PaginatedResponse<T> {
   success: boolean;
   data: T[];
@@ -95,7 +136,7 @@ export interface PostFilters {
 }
 
 export interface InfinitePostsResponse {
-  data: Post[];
+  data: PostListItem[];
   nextPage: number | null;
   hasMore: boolean;
 }

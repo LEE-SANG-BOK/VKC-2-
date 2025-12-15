@@ -221,6 +221,10 @@
   "news": {
     "title": "Featured content"
   },
+  "media": {
+    "title": "Media",
+    "description": "Browse featured posts, card news, and shorts in one place."
+  },
   "post": {
     "readTime": "{minutes} min",
     "loading": "Loading...",

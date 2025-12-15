@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { users } from '@/lib/db/schema';
-import { paginatedResponse, serverErrorResponse } from '@/lib/api/response';
+import { paginatedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { sql, or, ilike, desc } from 'drizzle-orm';
 
 /**
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
 
     if (!query) {
-      return serverErrorResponse('검색어를 입력해주세요.');
+      return errorResponse('검색어를 입력해주세요.', 'SEARCH_QUERY_REQUIRED');
     }
 
     // 전체 개수 조회
@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
       .from(users)
       .where(
         or(
+          ilike(users.name, `%${query}%`),
           ilike(users.displayName, `%${query}%`),
-          ilike(users.email, `%${query}%`),
           ilike(users.bio, `%${query}%`)
         )
       );
@@ -43,8 +43,8 @@ export async function GET(request: NextRequest) {
     const usersResult = await db.query.users.findMany({
       where: (users, { or, ilike }) =>
         or(
+          ilike(users.name, `%${query}%`),
           ilike(users.displayName, `%${query}%`),
-          ilike(users.email, `%${query}%`),
           ilike(users.bio, `%${query}%`)
         ),
       columns: userPublicColumns,

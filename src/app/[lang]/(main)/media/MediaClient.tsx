@@ -25,7 +25,7 @@ export default function MediaClient({ translations, lang }: MediaClientProps) {
 
   if (isLoading) {
     return (
-      <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-4">
+      <section id="featured" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
         </div>
@@ -40,7 +40,7 @@ export default function MediaClient({ translations, lang }: MediaClientProps) {
 
   if (!items || items.length === 0) {
     return (
-      <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-4">
+      <section id="featured" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-4">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{emptyLabel}</p>
       </section>
@@ -49,7 +49,7 @@ export default function MediaClient({ translations, lang }: MediaClientProps) {
 
   return (
     <>
-      <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
+      <section id="featured" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="px-4 py-3 md:px-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
         </div>

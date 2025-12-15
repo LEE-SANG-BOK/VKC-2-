@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { posts } from '@/lib/db/schema';
 import { paginatedResponse, serverErrorResponse } from '@/lib/api/response';
-import { sql, or, ilike, eq, desc, and } from 'drizzle-orm';
+import { sql, or, ilike, eq, desc, and, SQL } from 'drizzle-orm';
 
 /**
  * GET /api/search/posts
@@ -19,7 +19,7 @@ import { sql, or, ilike, eq, desc, and } from 'drizzle-orm';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
+    const query = (searchParams.get('q') || '').trim();
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const type = searchParams.get('type') as 'question' | 'share' | null;
@@ -29,13 +29,38 @@ export async function GET(request: NextRequest) {
       return serverErrorResponse('검색어를 입력해주세요.');
     }
 
-    // 검색 조건 구성
-    const conditions = [
-      or(
-        ilike(posts.title, `%${query}%`),
-        ilike(posts.content, `%${query}%`)
-      ),
-    ];
+    const tokenizeSearch = (input: string) => {
+      const normalized = input
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, ' ')
+        .trim();
+      if (!normalized) return [];
+      const tokens = normalized.split(/\s+/).filter(Boolean);
+      return Array.from(new Set(tokens)).slice(0, 8);
+    };
+
+    const searchTokens = tokenizeSearch(query);
+    const hasSearchTokens = searchTokens.length > 0;
+    const tokenToLike = (token: string) => `%${token}%`;
+
+    const tokenConditions = hasSearchTokens
+      ? searchTokens.map((token) =>
+        sql`(${posts.title} ILIKE ${tokenToLike(token)} OR ${posts.content} ILIKE ${tokenToLike(token)})` as SQL<boolean>
+      )
+      : [];
+
+    const overlapScore = hasSearchTokens
+      ? searchTokens.reduce<SQL<number>>((acc, token) => {
+        const hit = sql<number>`CASE WHEN (${posts.title} ILIKE ${tokenToLike(token)} OR ${posts.content} ILIKE ${tokenToLike(token)}) THEN 1 ELSE 0 END`;
+        return sql<number>`(${acc}) + ${hit}`;
+      }, sql<number>`0`)
+      : sql<number>`0`;
+
+    const searchClause: SQL<boolean> = hasSearchTokens
+      ? or(...tokenConditions)
+      : sql`(${posts.title} ILIKE ${tokenToLike(query)} OR ${posts.content} ILIKE ${tokenToLike(query)})`;
+
+    const conditions: SQL<boolean>[] = [searchClause];
 
     if (type) {
       conditions.push(eq(posts.type, type));
@@ -45,43 +70,94 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(posts.category, category));
     }
 
-    // 전체 개수 조회
-    const [countResult] = await db
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+    let countQuery = db
       .select({ count: sql<number>`count(*)::int` })
-      .from(posts)
-      .where(conditions.length > 1 ? and(...conditions) : conditions[0]);
+      .from(posts);
+    if (whereClause) {
+      countQuery = countQuery.where(whereClause);
+    }
+    const [countResult] = await countQuery;
+    const totalMatches = countResult?.count || 0;
 
-    const total = countResult?.count || 0;
-
-    // 게시글 검색 (작성자 정보 포함)
-    const postsResult = await db.query.posts.findMany({
-      where: (posts, { or, ilike, eq, and }) => {
-        const searchCondition = or(
-          ilike(posts.title, `%${query}%`),
-          ilike(posts.content, `%${query}%`)
-        );
-
-        if (type && category && category !== 'all') {
-          return and(searchCondition, eq(posts.type, type), eq(posts.category, category));
-        } else if (type) {
-          return and(searchCondition, eq(posts.type, type));
-        } else if (category && category !== 'all') {
-          return and(searchCondition, eq(posts.category, category));
-        }
-
-        return searchCondition;
-      },
+    let postsResult = await db.query.posts.findMany({
+      where: () => whereClause,
       with: {
         author: {
           columns: userPublicColumns,
         },
       },
-      orderBy: [desc(posts.createdAt)],
+      orderBy: [
+        desc(overlapScore),
+        desc(posts.createdAt),
+      ],
       limit,
       offset: (page - 1) * limit,
     });
 
-    return paginatedResponse(postsResult, page, limit, total);
+    let responseTotal = totalMatches;
+    let fallbackApplied = false;
+    const meta: Record<string, unknown> = {
+      query,
+      tokens: searchTokens,
+      totalMatches,
+    };
+
+    if (totalMatches === 0 && hasSearchTokens) {
+      const fallbackFilters: SQL<boolean>[] = [];
+      if (type) fallbackFilters.push(eq(posts.type, type));
+      if (category && category !== 'all') fallbackFilters.push(eq(posts.category, category));
+
+      const fallbackWhereClause =
+        fallbackFilters.length > 1
+          ? and(...fallbackFilters)
+          : fallbackFilters[0];
+
+      let fallbackCountQuery = db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(posts);
+      if (fallbackWhereClause) {
+        fallbackCountQuery = fallbackCountQuery.where(fallbackWhereClause);
+      }
+      const [fallbackCountResult] = await fallbackCountQuery;
+      const fallbackTotalCount = fallbackCountResult?.count || 0;
+
+      if (fallbackTotalCount > 0) {
+        const fallbackPosts = await db.query.posts.findMany({
+          where: fallbackWhereClause ? () => fallbackWhereClause : undefined,
+          with: {
+            author: {
+              columns: userPublicColumns,
+            },
+          },
+          orderBy: [
+            desc(posts.views),
+            desc(posts.likes),
+            desc(posts.createdAt),
+          ],
+          limit,
+          offset: (page - 1) * limit,
+        });
+
+        if (fallbackPosts.length > 0) {
+          postsResult = fallbackPosts;
+          responseTotal = fallbackTotalCount;
+          fallbackApplied = true;
+          meta.fallbackFilters = {
+            type: type || null,
+            category: category && category !== 'all' ? category : null,
+          };
+        }
+      }
+    }
+
+    meta.isFallback = fallbackApplied;
+    if (fallbackApplied) {
+      meta.reason = 'popular';
+    }
+
+    return paginatedResponse(postsResult, page, limit, responseTotal, meta);
   } catch (error) {
     console.error('GET /api/search/posts error:', error);
     return serverErrorResponse();

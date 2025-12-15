@@ -17,6 +17,7 @@ export interface PaginatedResponse<T = any> {
     total: number;
     totalPages: number;
   };
+  meta?: Record<string, unknown>;
 }
 
 /**
@@ -51,7 +52,8 @@ export function paginatedResponse<T>(
   data: T[],
   page: number,
   limit: number,
-  total: number
+  total: number,
+  meta?: Record<string, unknown>
 ): NextResponse<PaginatedResponse<T>> {
   return NextResponse.json({
     success: true,
@@ -62,6 +64,7 @@ export function paginatedResponse<T>(
       total,
       totalPages: Math.ceil(total / limit),
     },
+    ...(meta ? { meta } : {}),
   });
 }
 

@@ -45,6 +45,11 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') as 'question' | 'share' | null;
     const sort = searchParams.get('sort') || 'latest';
     const filter = searchParams.get('filter');
+    const include = (searchParams.get('include') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const includeContent = include.includes('content');
 
     const user = await getSession(request);
 
@@ -223,6 +228,15 @@ export async function GET(request: NextRequest) {
 
     const total = countResult?.count || 0;
 
+    const stripHtmlToText = (html: string) =>
+      html
+        .replace(/<img[^>]*>/gi, '')
+        .replace(/<[^>]*>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
+
     const decoratePosts = async (list: any[]) => {
       const postIds = list.map((post) => post.id).filter(Boolean) as string[];
       if (postIds.length === 0) return [];
@@ -335,6 +349,7 @@ export async function GET(request: NextRequest) {
         const thumbnail = thumbnails[0] ?? null;
         const imageCount = imageMatches.length;
         const trust = resolveTrust(post.author, post.createdAt);
+        const excerpt = buildExcerpt(post.content || '');
 
         const answersCount = answerCountMap.get(post.id) ?? 0;
         const postCommentsCount = commentCountMap.get(post.id) ?? 0;
@@ -342,7 +357,21 @@ export async function GET(request: NextRequest) {
         const otherResponderCount = otherRespondersByPostId.get(post.id)?.size ?? 0;
 
         return {
-          ...post,
+          id: post.id,
+          authorId: post.authorId,
+          type: post.type,
+          title: post.title,
+          ...(includeContent ? { content: post.content } : {}),
+          excerpt,
+          category: post.category,
+          subcategory: post.subcategory,
+          tags: Array.isArray(post.tags) ? post.tags : [],
+          views: post.views ?? 0,
+          likes: post.likes ?? 0,
+          isResolved: post.isResolved ?? false,
+          adoptedAnswerId: post.adoptedAnswerId ?? null,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
           author: post.author
             ? {
                 ...post.author,

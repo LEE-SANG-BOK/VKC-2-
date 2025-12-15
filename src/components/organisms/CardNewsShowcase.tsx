@@ -45,7 +45,7 @@ export default function CardNewsShowcase() {
 
   if (isLoading) {
     return (
-      <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
+      <section id="cardnews" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 md:px-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Card News</p>
@@ -63,7 +63,7 @@ export default function CardNewsShowcase() {
 
   if (cards.length === 0) {
     return (
-      <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
+      <section id="cardnews" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 md:px-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Card News</p>
@@ -84,7 +84,7 @@ export default function CardNewsShowcase() {
 
   return (
     <>
-      <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
+      <section id="cardnews" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 md:px-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Card News</p>

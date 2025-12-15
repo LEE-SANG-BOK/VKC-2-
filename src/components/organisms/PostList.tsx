@@ -14,7 +14,7 @@ import { useMySubscriptions } from '@/repo/categories/query';
 import Avatar from '@/components/atoms/Avatar';
 import FollowButton from '@/components/atoms/FollowButton';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
-import type { PaginatedResponse, Post } from '@/repo/posts/types';
+import type { PaginatedResponse, PostListItem } from '@/repo/posts/types';
 
 interface PostListProps {
   selectedCategory?: string;
@@ -162,9 +162,9 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
 
   // 모든 페이지의 게시글을 평탄화
   const allPosts =
-    data?.pages.flatMap((page: PaginatedResponse<Post>) => page.data) || [];
+    data?.pages.flatMap((page: PaginatedResponse<PostListItem>) => page.data) || [];
 
-  const pagination = (data?.pages?.[0] as PaginatedResponse<Post> | undefined)?.pagination;
+  const pagination = (data?.pages?.[0] as PaginatedResponse<PostListItem> | undefined)?.pagination;
   const currentPage = pagination?.page ?? 1;
   const totalPages = pagination?.totalPages ?? 1;
 
@@ -299,7 +299,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
       {!isLoading && (
         <div className="flex flex-col gap-2">
           {allPosts.length > 0 ? (
-            allPosts.map((post: Post) => (
+            allPosts.map((post: PostListItem) => (
               <div key={post.id} className="flex flex-col">
                 <PostCard
                   id={post.id}
@@ -313,7 +313,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                     isExpert: (post.author as any)?.isExpert || false,
                   }}
                   title={post.title}
-                  excerpt={post.content.replace(/<img[^>]*>/gi, '').replace(/<[^>]*>/g, '').trim().substring(0, 200)}
+                  excerpt={post.excerpt || (post.content || '').replace(/<img[^>]*>/gi, '').replace(/<[^>]*>/g, '').trim().substring(0, 200)}
                   tags={post.tags}
                   stats={{
                     likes: (post as any).likesCount ?? post.likes ?? 0,

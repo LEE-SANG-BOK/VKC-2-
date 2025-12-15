@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { posts, users } from '@/lib/db/schema';
-import { successResponse, serverErrorResponse } from '@/lib/api/response';
-import { sql, or, ilike, desc } from 'drizzle-orm';
+import { successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { or, ilike, desc } from 'drizzle-orm';
 
 /**
  * GET /api/search
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
 
     if (!query) {
-      return serverErrorResponse('검색어를 입력해주세요.');
+      return errorResponse('검색어를 입력해주세요.', 'SEARCH_QUERY_REQUIRED');
     }
 
     // 게시글 검색
@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
     // 사용자 검색
     const usersResult = await db.query.users.findMany({
       where: or(
+        ilike(users.name, `%${query}%`),
         ilike(users.displayName, `%${query}%`),
-        ilike(users.email, `%${query}%`),
         ilike(users.bio, `%${query}%`)
       ),
       columns: userPublicColumns,

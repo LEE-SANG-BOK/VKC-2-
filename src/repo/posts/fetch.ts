@@ -5,6 +5,7 @@
 
 import type {
   Post,
+  PostListItem,
   PaginatedResponse,
   ApiResponse,
   CreatePostRequest,
@@ -18,7 +19,7 @@ const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 /**
  * 게시글 목록 조회
  */
-export async function fetchPosts(filters: PostFilters = {}): Promise<PaginatedResponse<Post>> {
+export async function fetchPosts(filters: PostFilters = {}): Promise<PaginatedResponse<PostListItem>> {
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());

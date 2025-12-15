@@ -9,6 +9,7 @@ import {
 } from './fetch';
 import type {
   Post,
+  PostListItem,
   PaginatedResponse,
   ApiResponse,
   PostFilters,
@@ -52,7 +53,7 @@ export function useInfinitePosts(
  */
 export function usePosts(
   filters: PostFilters = {},
-  options?: Omit<UseQueryOptions<PaginatedResponse<Post>>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<PaginatedResponse<PostListItem>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: queryKeys.posts.list(filters),

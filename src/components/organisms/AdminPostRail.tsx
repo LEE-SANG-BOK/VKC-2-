@@ -50,7 +50,7 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
           <Link
-            href={`/${lang}/media`}
+            href={`/${lang}/media#featured`}
             className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
           >
             {moreLabel}

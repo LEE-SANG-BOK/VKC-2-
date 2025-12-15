@@ -221,6 +221,10 @@
   "news": {
     "title": "Nội dung nổi bật"
   },
+  "media": {
+    "title": "Media",
+    "description": "Xem bài nổi bật, card news và shorts ở một nơi."
+  },
   "post": {
     "readTime": "{minutes} phút",
     "loading": "Đang tải...",

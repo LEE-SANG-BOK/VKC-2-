@@ -221,6 +221,10 @@
   "news": {
     "title": "추천 콘텐츠"
   },
+  "media": {
+    "title": "미디어",
+    "description": "추천 콘텐츠, 카드뉴스, 숏폼을 한 곳에서 확인하세요."
+  },
   "post": {
     "readTime": "{minutes}분",
     "loading": "로딩 중...",
@@ -730,10 +734,22 @@
   "trustBadges": {
     "verifiedLabel": "검증됨",
     "verifiedTooltip": "인증된 사용자 기반 정보",
+    "verifiedStudentLabel": "학생 인증",
+    "verifiedStudentTooltip": "학생 신분이 확인된 사용자",
+    "verifiedWorkerLabel": "직장/재직 인증",
+    "verifiedWorkerTooltip": "재직/직장인 증빙이 확인된 사용자",
+    "verifiedUserLabel": "인증 사용자",
+    "verifiedUserTooltip": "신분 서류가 확인된 사용자",
     "communityLabel": "커뮤니티",
     "communityTooltip": "커뮤니티 신뢰 정보",
     "expertLabel": "전문가",
     "expertTooltip": "전문가/공식 답변자",
+    "expertVisaLabel": "비자 전문가",
+    "expertVisaTooltip": "비자/출입국 관련 전문 자격 또는 경력 확인",
+    "expertEmploymentLabel": "취업 전문가",
+    "expertEmploymentTooltip": "취업/채용 관련 전문 경력 확인",
+    "trustedAnswererLabel": "신뢰 답변자",
+    "trustedAnswererTooltip": "커뮤니티 활동 기반 신뢰 답변자",
     "outdatedLabel": "오래된 정보",
     "outdatedTooltip": "12개월 이상 지난 정보"
   },
