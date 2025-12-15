@@ -3,13 +3,14 @@
 import { useMemo } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
-import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake } from 'lucide-react';
+import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Info } from 'lucide-react';
 import { LEGACY_CATEGORIES, getCategoryName, CATEGORY_GROUPS } from '@/lib/constants/categories';
 import CategoryItem from '../molecules/CategoryItem';
 import { useSession } from 'next-auth/react';
 import { useCategories, useMySubscriptions } from '@/repo/categories/query';
 import { useToggleSubscription } from '@/repo/categories/mutation';
 import { toast } from 'sonner';
+import Tooltip from '@/components/atoms/Tooltip';
 
 interface ApiCategory {
   id: string;
@@ -43,6 +44,14 @@ export default function CategorySidebar({
   const { data: apiCategories } = useCategories();
   const { data: mySubs } = useMySubscriptions(!!user);
   const { mutate: toggleSubscription } = useToggleSubscription();
+
+  const menuTooltip =
+    t.menuTooltip ||
+    (locale === 'vi'
+      ? 'Chuyển nhanh giữa Phổ biến/Mới nhất, Theo dõi và Đăng ký.'
+      : locale === 'en'
+        ? 'Quickly switch between Popular/Latest, Following, and Subscribed feeds.'
+        : '인기/최신, 팔로우, 구독 피드를 여기서 빠르게 전환할 수 있어요.');
 
   const tooltipLines = (value?: string) => {
     const trimmed = value?.trim();
@@ -200,7 +209,7 @@ export default function CategorySidebar({
   };
 
   const isMobileVariant = variant === 'mobile';
-  const tooltipsEnabled = !isMobileVariant;
+  const tooltipTouchBehavior = isMobileVariant ? 'longPress' : 'tap';
 
   const containerClass = isMobileVariant
     ? `
@@ -246,12 +255,23 @@ export default function CategorySidebar({
               : 'py-4 border-b border-gray-200/40 dark:border-gray-700/40'
           }
         >
-          <div className={isMobileVariant ? 'px-4 pb-2' : ''}>
+          <div className={isMobileVariant ? 'flex items-center justify-between px-4 pb-2' : ''}>
             <h3
               className={`${isMobileVariant ? '' : 'px-4 pb-2 '}text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider`}
             >
               {t.menu || '메뉴'}
             </h3>
+            {isMobileVariant ? (
+              <Tooltip content={menuTooltip} position="below">
+                <button
+                  type="button"
+                  aria-label={t.menuTooltip || '메뉴 도움말'}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 text-gray-600 dark:text-gray-200"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            ) : null}
           </div>
           {menuCategories.map((category) => (
             <CategoryItem
@@ -262,8 +282,9 @@ export default function CategorySidebar({
               count={category.count}
               isActive={selectedCategory === category.id}
               onClick={handleCategoryClick}
-              tooltip={tooltipsEnabled ? tooltipLines(menuTooltips[category.id]) : undefined}
+              tooltip={tooltipLines(menuTooltips[category.id])}
               tooltipPosition={actionTooltipPosition}
+              tooltipTouchBehavior={tooltipTouchBehavior}
             />
           ))}
         </div>
@@ -281,18 +302,17 @@ export default function CategorySidebar({
             isActive={false}
             onClick={handleCategoryClick}
             tooltip={
-              tooltipsEnabled
-                ? tooltipLines(
-                    t.askQuestionTooltip ||
-                      (locale === 'vi'
-                        ? 'Đặt câu hỏi về visa/việc làm/cuộc sống\nCộng đồng & người dùng xác minh sẽ hỗ trợ\nGhi rõ tình huống, loại visa, và thời hạn'
-                        : locale === 'en'
-                          ? 'Ask about visa, jobs, or life in Korea\nCommunity & verified users can help\nInclude your situation, visa type, and timeline'
-                          : '비자·취업·생활 질문을 올리면\n커뮤니티와 인증 사용자가 함께 도와줘요\n상황/비자타입/기간을 같이 적어주세요')
-                  )
-                : undefined
+              tooltipLines(
+                t.askQuestionTooltip ||
+                  (locale === 'vi'
+                    ? 'Đặt câu hỏi về visa/việc làm/cuộc sống\nCộng đồng & người dùng xác minh sẽ hỗ trợ\nGhi rõ tình huống, loại visa, và thời hạn'
+                    : locale === 'en'
+                      ? 'Ask about visa, jobs, or life in Korea\nCommunity & verified users can help\nInclude your situation, visa type, and timeline'
+                      : '비자·취업·생활 질문을 올리면\n커뮤니티와 인증 사용자가 함께 도와줘요\n상황/비자타입/기간을 같이 적어주세요')
+              )
             }
             tooltipPosition={actionTooltipPosition}
+            tooltipTouchBehavior={tooltipTouchBehavior}
             className="border-l-4 border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
           <CategoryItem
@@ -303,18 +323,17 @@ export default function CategorySidebar({
             isActive={false}
             onClick={handleCategoryClick}
             tooltip={
-              tooltipsEnabled
-                ? tooltipLines(
-                    t.sharePostTooltip ||
-                      (locale === 'vi'
-                        ? 'Chia sẻ kinh nghiệm, link chính thức, hoặc thông báo\nGiúp người khác tiết kiệm thời gian\nNhớ ghi nguồn và ngày đăng'
-                        : locale === 'en'
-                          ? 'Share experience, official links, or notices\nHelp others save time\nAdd source and date for trust'
-                          : '경험담/공식링크/공지 등을 공유하면\n다른 사람의 시간을 절약해줘요\n출처·날짜를 함께 남겨주세요')
-                  )
-                : undefined
+              tooltipLines(
+                t.sharePostTooltip ||
+                  (locale === 'vi'
+                    ? 'Chia sẻ kinh nghiệm, link chính thức, hoặc thông báo\nGiúp người khác tiết kiệm thời gian\nNhớ ghi nguồn và ngày đăng'
+                    : locale === 'en'
+                      ? 'Share experience, official links, or notices\nHelp others save time\nAdd source and date for trust'
+                      : '경험담/공식링크/공지 등을 공유하면\n다른 사람의 시간을 절약해줘요\n출처·날짜를 함께 남겨주세요')
+              )
             }
             tooltipPosition={actionTooltipPosition}
+            tooltipTouchBehavior={tooltipTouchBehavior}
             className="border-l-4 border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
           <CategoryItem
@@ -325,18 +344,17 @@ export default function CategorySidebar({
             isActive={selectedCategory === 'verification-request'}
             onClick={handleCategoryClick}
             tooltip={
-              tooltipsEnabled
-                ? tooltipLines(
-                    t.verificationRequestTooltip ||
-                      (locale === 'vi'
-                        ? 'Xác minh hồ sơ để hiển thị huy hiệu\nTăng độ tin cậy và ưu tiên hiển thị\nGửi yêu cầu và chờ xét duyệt'
-                        : locale === 'en'
-                          ? 'Apply to get a verified badge\nBoost trust and visibility\nSubmit a request and wait for review'
-                          : '인증을 받으면 프로필에 인증 마크가 표시돼요\n신뢰도/노출 가중치가 올라갑니다\n신청 후 검토를 기다려주세요')
-                  )
-                : undefined
+              tooltipLines(
+                t.verificationRequestTooltip ||
+                  (locale === 'vi'
+                    ? 'Xác minh hồ sơ để hiển thị huy hiệu\nTăng độ tin cậy và ưu tiên hiển thị\nGửi yêu cầu và chờ xét duyệt'
+                    : locale === 'en'
+                      ? 'Apply to get a verified badge\nBoost trust and visibility\nSubmit a request and wait for review'
+                      : '인증을 받으면 프로필에 인증 마크가 표시돼요\n신뢰도/노출 가중치가 올라갑니다\n신청 후 검토를 기다려주세요')
+              )
             }
             tooltipPosition={actionTooltipPosition}
+            tooltipTouchBehavior={tooltipTouchBehavior}
             className="border-l-4 border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
         </div>

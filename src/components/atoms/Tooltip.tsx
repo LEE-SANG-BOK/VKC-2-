@@ -4,23 +4,31 @@ import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState
 import { createPortal } from 'react-dom';
 
 type TooltipPlacement = 'top' | 'below' | 'right' | 'left' | 'bottom-right' | 'top-left';
+type TooltipTouchBehavior = 'tap' | 'longPress';
 
 interface TooltipProps {
   content: React.ReactNode;
   children: React.ReactNode;
   position?: TooltipPlacement;
   className?: string;
+  touchBehavior?: TooltipTouchBehavior;
+  longPressDelayMs?: number;
 }
 
 export default function Tooltip({
   content,
   children,
   position = 'top',
-  className = ''
+  className = '',
+  touchBehavior = 'tap',
+  longPressDelayMs = 450,
 }: TooltipProps) {
   const tooltipId = useId();
   const targetRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const longPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
+  const suppressNextClickRef = useRef(false);
 
   const [mounted, setMounted] = useState(false);
   const [touchMode, setTouchMode] = useState(false);
@@ -40,10 +48,23 @@ export default function Tooltip({
     return () => mq.removeEventListener?.('change', update);
   }, []);
 
+  const clearLongPress = useCallback(() => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+    longPressStartRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    return () => clearLongPress();
+  }, [clearLongPress]);
+
   const close = useCallback(() => {
+    clearLongPress();
     setOpen(false);
     setCoords(null);
-  }, []);
+  }, [clearLongPress]);
 
   const openTooltip = useCallback(() => {
     setOpen(true);
@@ -216,6 +237,36 @@ export default function Tooltip({
       <span
         ref={targetRef}
         className={`vk-tooltip-target inline-flex items-center ${className}`}
+        onPointerDown={(event) => {
+          if (!touchMode) return;
+          if (touchBehavior !== 'longPress') return;
+          if (event.pointerType === 'mouse') return;
+          suppressNextClickRef.current = false;
+          clearLongPress();
+          longPressStartRef.current = { x: event.clientX, y: event.clientY };
+          longPressTimeoutRef.current = setTimeout(() => {
+            suppressNextClickRef.current = true;
+            openTooltip();
+          }, longPressDelayMs);
+        }}
+        onPointerMove={(event) => {
+          if (!touchMode) return;
+          if (touchBehavior !== 'longPress') return;
+          if (!longPressTimeoutRef.current) return;
+          const start = longPressStartRef.current;
+          if (!start) return;
+          const dx = event.clientX - start.x;
+          const dy = event.clientY - start.y;
+          if (Math.hypot(dx, dy) > 10) {
+            clearLongPress();
+          }
+        }}
+        onPointerUp={() => {
+          clearLongPress();
+        }}
+        onPointerCancel={() => {
+          clearLongPress();
+        }}
         onPointerEnter={(event) => {
           if (event.pointerType !== 'mouse') return;
           if (!touchMode) return;
@@ -241,9 +292,18 @@ export default function Tooltip({
           if (touchMode) return;
           close();
         }}
+        onClickCapture={(event) => {
+          if (!touchMode) return;
+          if (touchBehavior !== 'longPress') return;
+          if (!suppressNextClickRef.current) return;
+          suppressNextClickRef.current = false;
+          event.preventDefault();
+          event.stopPropagation();
+        }}
         onClick={(event) => {
           event.stopPropagation();
           if (!touchMode) return;
+          if (touchBehavior !== 'tap') return;
           setOpen((prev) => {
             const next = !prev;
             if (next) {

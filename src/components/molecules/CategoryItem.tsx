@@ -12,6 +12,7 @@ interface CategoryItemProps {
   className?: string;
   tooltip?: ReactNode;
   tooltipPosition?: 'top' | 'below' | 'right' | 'bottom-right';
+  tooltipTouchBehavior?: 'tap' | 'longPress';
 }
 
 export default function CategoryItem({
@@ -23,7 +24,8 @@ export default function CategoryItem({
   onClick,
   className = '',
   tooltip,
-  tooltipPosition = 'right'
+  tooltipPosition = 'right',
+  tooltipTouchBehavior,
 }: CategoryItemProps) {
   const hasIcon = Boolean(Icon);
   const baseClasses = `flex items-center ${hasIcon ? 'gap-3' : 'gap-1'} text-sm font-medium transition-all duration-200`;
@@ -54,7 +56,7 @@ export default function CategoryItem({
   if (!tooltip) return button;
 
   return (
-    <Tooltip content={tooltip} position={tooltipPosition} className="w-full">
+    <Tooltip content={tooltip} position={tooltipPosition} className="w-full" touchBehavior={tooltipTouchBehavior}>
       {button}
     </Tooltip>
   );
