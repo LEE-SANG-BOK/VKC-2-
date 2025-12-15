@@ -1,29 +1,33 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
-import { Upload, FileText, CheckCircle, Clock, XCircle, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, FileText, CheckCircle, Clock, XCircle, Calendar, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useVerificationHistory } from '@/repo/verification/query';
 import { useCreateVerificationRequest } from '@/repo/verification/mutation';
 import type { VerificationType, VerificationRequest } from '@/repo/verification/types';
 import { ApiError } from '@/lib/api/errors';
 import { toast } from 'sonner';
+import { suggestBadgeType } from '@/lib/constants/badges';
+import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
+import TrustBadge from '@/components/atoms/TrustBadge';
+import Tooltip from '@/components/atoms/Tooltip';
 
 interface VerificationRequestClientProps {
   translations: Record<string, unknown>;
   lang: string;
 }
-
+  
 export default function VerificationRequestClient({ translations, lang }: VerificationRequestClientProps) {
   const router = useRouter();
-  const { data: session, status } = useSession();
-  const user = session?.user;
+  const { status } = useSession();
   const t = (translations?.verification || {}) as Record<string, string>;
+  const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
 
   const [formData, setFormData] = useState({
     verificationType: '' as VerificationType | '',
-    document: null as File | null,
+    documents: [] as File[],
     additionalInfo: '',
     visaType: '',
     universityName: '',
@@ -32,6 +36,10 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
     companyName: '',
     jobTitle: '',
   });
+
+  const [documentPreviews, setDocumentPreviews] = useState<
+    { id: string; file: File; url?: string; kind: 'image' | 'pdf' | 'file' }[]
+  >([]);
 
   const [dragActive, setDragActive] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
@@ -42,10 +50,64 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
 
   const requests = historyData?.data || [];
 
+  useEffect(() => {
+    const previews = formData.documents.map((file) => {
+      const id = `${file.name}-${file.size}-${file.lastModified}`;
+      const fileName = file.name.toLowerCase();
+      const isPdf = file.type === 'application/pdf' || fileName.endsWith('.pdf');
+      const isImage = file.type.startsWith('image/');
+      const kind: 'image' | 'pdf' | 'file' = isImage ? 'image' : isPdf ? 'pdf' : 'file';
+      const url = kind === 'image' ? URL.createObjectURL(file) : undefined;
+      return { id, file, kind, url };
+    });
+
+    setDocumentPreviews(previews);
+
+    return () => {
+      previews.forEach((preview) => {
+        if (preview.url) URL.revokeObjectURL(preview.url);
+      });
+    };
+  }, [formData.documents]);
+
+  const documentKey = (file: File) => `${file.name}-${file.size}-${file.lastModified}`;
+  const maxDocuments = 5;
+
+  const addDocuments = (files: FileList | File[]) => {
+    const incoming = Array.from(files || []);
+    if (incoming.length === 0) return;
+
+    const existing = formData.documents;
+    const seen = new Set(existing.map(documentKey));
+    const merged = [...existing];
+    incoming.forEach((file) => {
+      const key = documentKey(file);
+      if (seen.has(key)) return;
+      seen.add(key);
+      merged.push(file);
+    });
+
+    if (merged.length > maxDocuments) {
+      toast.error(t.documentLimitError || '서류는 최대 5개까지 첨부할 수 있습니다.');
+    }
+
+    setFormData({
+      ...formData,
+      documents: merged.slice(0, maxDocuments),
+    });
+  };
+
+  const removeDocument = (id: string) => {
+    setFormData({
+      ...formData,
+      documents: formData.documents.filter((file) => documentKey(file) !== id),
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.verificationType || !formData.document) {
+    if (!formData.verificationType || formData.documents.length === 0) {
       toast.error(t.validationError || '인증 유형과 증빙 서류를 선택해주세요.');
       return;
     }
@@ -53,29 +115,32 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
     try {
       setUploading(true);
 
-      const uploadFormData = new FormData();
-      uploadFormData.append('file', formData.document);
+      const documentPaths: string[] = [];
+      for (const file of formData.documents) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', file);
 
-      const uploadRes = await fetch('/api/upload/document', {
-        method: 'POST',
-        body: uploadFormData,
-      });
+        const uploadRes = await fetch('/api/upload/document', {
+          method: 'POST',
+          body: uploadFormData,
+        });
 
-      if (!uploadRes.ok) {
-        throw new Error(t.uploadError || '파일 업로드에 실패했습니다.');
-      }
+        if (!uploadRes.ok) {
+          throw new Error(t.uploadError || '파일 업로드에 실패했습니다.');
+        }
 
-      const uploadData = await uploadRes.json();
-      const documentPath = uploadData.data?.path;
+        const uploadData = await uploadRes.json();
+        const documentPath = uploadData.data?.path;
 
-      if (!documentPath) {
-        throw new Error(t.urlError || '파일 경로를 받지 못했습니다.');
+        if (!documentPath) {
+          throw new Error(t.urlError || '파일 경로를 받지 못했습니다.');
+        }
+        documentPaths.push(documentPath);
       }
 
       await createMutation.mutateAsync({
         type: formData.verificationType as VerificationType,
-        documents: [documentPath],
-        description: formData.additionalInfo || undefined,
+        documents: documentPaths,
         visaType: formData.visaType || undefined,
         universityName: formData.universityName || undefined,
         universityEmail: formData.universityEmail || undefined,
@@ -88,7 +153,7 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
       toast.success(t.submitSuccess || '인증 신청이 완료되었습니다!\n관리자 검토 후 결과를 알려드립니다.');
       setFormData({
         verificationType: '',
-        document: null,
+        documents: [],
         additionalInfo: '',
         visaType: '',
         universityName: '',
@@ -120,7 +185,7 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
   };
 
   const handleCancel = () => {
-    if (formData.verificationType || formData.document || formData.additionalInfo) {
+    if (formData.verificationType || formData.documents.length > 0 || formData.additionalInfo) {
       if (!confirm(t.cancelConfirm || '작성 중인 내용이 있습니다. 정말 취소하시겠습니까?')) {
         return;
       }
@@ -143,14 +208,15 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
     e.stopPropagation();
     setDragActive(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFormData({ ...formData, document: e.dataTransfer.files[0] });
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      addDocuments(e.dataTransfer.files);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData({ ...formData, document: e.target.files[0] });
+    if (e.target.files && e.target.files.length > 0) {
+      addDocuments(e.target.files);
+      e.target.value = '';
     }
   };
 
@@ -195,6 +261,83 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
 
   const hasPendingRequest = requests.some((r: VerificationRequest) => r.status === 'pending');
   const hasApprovedRequest = requests.some((r: VerificationRequest) => r.status === 'approved');
+
+  const suggestedBadgeTypeValue = useMemo(() => {
+    if (!formData.verificationType) return null;
+    return suggestBadgeType({
+      verificationType: formData.verificationType,
+      visaType: formData.visaType || null,
+      industry: formData.industry || null,
+      jobTitle: formData.jobTitle || null,
+      extraInfo: formData.additionalInfo || null,
+    });
+  }, [formData.additionalInfo, formData.industry, formData.jobTitle, formData.verificationType, formData.visaType]);
+
+  const trustBadgePreview = useMemo(() => {
+    if (!suggestedBadgeTypeValue) return null;
+    return getTrustBadgePresentation({
+      locale: lang,
+      author: {
+        badgeType: suggestedBadgeTypeValue,
+      },
+      translations: tTrust,
+    });
+  }, [lang, suggestedBadgeTypeValue, tTrust]);
+
+  const verifiedProfilePreview = useMemo(() => {
+    if (!formData.verificationType) {
+      return { summary: '', keywords: [] as string[] };
+    }
+
+    const trim = (value: string) => value.trim();
+    const visaType = trim(formData.visaType);
+    const universityName = trim(formData.universityName);
+    const companyName = trim(formData.companyName);
+    const jobTitle = trim(formData.jobTitle);
+    const industry = trim(formData.industry);
+
+    const summaryParts: string[] = [];
+    const keywordParts: string[] = [];
+
+    const add = (value: string) => {
+      if (!value) return;
+      const normalized = value.replace(/^#/, '').trim();
+      if (!normalized) return;
+      keywordParts.push(normalized);
+    };
+
+    const addSummary = (value: string) => {
+      if (!value) return;
+      summaryParts.push(value);
+      add(value);
+    };
+
+    if (formData.verificationType === 'student') {
+      addSummary(visaType);
+      addSummary(universityName);
+    } else if (formData.verificationType === 'worker' || formData.verificationType === 'business') {
+      addSummary(companyName);
+      addSummary(jobTitle);
+      addSummary(industry);
+      addSummary(visaType);
+    } else if (formData.verificationType === 'expert') {
+      addSummary(jobTitle);
+      addSummary(industry);
+      addSummary(companyName);
+      addSummary(visaType);
+    } else {
+      addSummary(visaType);
+      addSummary(jobTitle);
+    }
+
+    const normalizedKeywords = keywordParts.map((keyword) => keyword.trim()).filter(Boolean);
+    const uniqueKeywords = Array.from(new Set(normalizedKeywords)).slice(0, 12);
+
+    return {
+      summary: summaryParts.filter(Boolean).join(' · ').slice(0, 140),
+      keywords: uniqueKeywords,
+    };
+  }, [formData.companyName, formData.industry, formData.jobTitle, formData.universityName, formData.verificationType, formData.visaType]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -419,7 +562,7 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                   </div>
                 )}
 
-                {formData.verificationType === 'worker' && (
+                {['worker', 'business', 'expert'].includes(formData.verificationType) && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="industry" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -450,6 +593,59 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                   </div>
                 )}
 
+                {formData.verificationType && trustBadgePreview ? (
+                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          {t.profilePreviewTitle || (lang === 'vi' ? 'Xem trước hồ sơ' : lang === 'en' ? 'Profile preview' : '프로필 표시 미리보기')}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {t.profilePreviewDescription ||
+                            (lang === 'vi'
+                              ? 'Thông tin dưới đây có thể được hiển thị trên hồ sơ sau khi được duyệt.'
+                              : lang === 'en'
+                                ? 'This information may appear on your profile after approval.'
+                                : '승인 후 아래 정보가 프로필에 표시될 수 있어요.')}
+                        </p>
+                      </div>
+                      <Tooltip content={trustBadgePreview.tooltip} position="top">
+                        <span className="inline-flex">
+                          <TrustBadge level={trustBadgePreview.level} label={trustBadgePreview.label} />
+                        </span>
+                      </Tooltip>
+                    </div>
+
+                    {verifiedProfilePreview.keywords.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {verifiedProfilePreview.keywords.map((keyword) => (
+                          <span
+                            key={keyword}
+                            className="inline-flex items-center rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-200"
+                          >
+                            #{keyword}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {verifiedProfilePreview.summary ? (
+                      <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+                        {verifiedProfilePreview.summary}
+                      </p>
+                    ) : null}
+
+                    <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                      {t.profilePreviewDisclaimer ||
+                        (lang === 'vi'
+                          ? 'Quản trị viên có thể chỉnh sửa nội dung hiển thị sau khi xác minh.'
+                          : lang === 'en'
+                            ? 'Admins may adjust what is shown after review.'
+                            : '관리자 검토 과정에서 표시 내용이 일부 수정될 수 있어요.')}
+                    </p>
+                  </div>
+                ) : null}
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     {t.documentLabel || '증빙 서류'} <span className="text-red-500">*</span>
@@ -467,24 +663,36 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                   >
                     <input
                       type="file"
-                      id="document"
+                      id="documents"
                       onChange={handleFileChange}
                       accept="image/*,.pdf"
+                      multiple
                       className="hidden"
-                      required={!formData.document}
+                      required={formData.documents.length === 0}
                     />
                     <label
-                      htmlFor="document"
+                      htmlFor="documents"
                       className="cursor-pointer flex flex-col items-center"
                     >
-                      {formData.document ? (
+                      {formData.documents.length > 0 ? (
                         <>
                           <FileText className="w-12 h-12 text-green-500 mb-3" />
                           <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                            {formData.document.name}
+                            {(t.documentsSelectedCount || '').includes('{count}')
+                              ? t.documentsSelectedCount.replace('{count}', String(formData.documents.length))
+                              : lang === 'vi'
+                                ? `Đã chọn ${formData.documents.length} tệp`
+                                : lang === 'en'
+                                  ? `${formData.documents.length} files selected`
+                                  : `선택된 파일 ${formData.documents.length}개`}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {t.documentSelected || '클릭하여 다른 파일 선택'}
+                            {t.documentsAddMore ||
+                              (lang === 'vi'
+                                ? 'Nhấn để thêm tệp khác'
+                                : lang === 'en'
+                                  ? 'Click to add more files'
+                                  : '클릭하여 추가 파일 선택')}
                           </p>
                         </>
                       ) : (
@@ -500,6 +708,37 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                       )}
                     </label>
                   </div>
+                  {documentPreviews.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {documentPreviews.map((preview) => (
+                        <div
+                          key={preview.id}
+                          className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2"
+                        >
+                          {preview.kind === 'image' && preview.url ? (
+                            <img
+                              src={preview.url}
+                              alt={preview.file.name}
+                              className="h-10 w-10 rounded-md object-cover border border-gray-200 dark:border-gray-700"
+                            />
+                          ) : (
+                            <FileText className="h-10 w-10 p-2 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200" />
+                          )}
+                          <p className="min-w-0 flex-1 text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {preview.file.name}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => removeDocument(preview.id)}
+                            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-300"
+                            aria-label={t.removeDocument || 'Remove document'}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                     {t.documentHint || '※ 학생증, 재직증명서, 자격증 등 인증을 위한 서류를 첨부해주세요'}
                   </p>
