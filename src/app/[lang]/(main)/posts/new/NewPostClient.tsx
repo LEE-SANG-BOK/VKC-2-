@@ -13,6 +13,7 @@ import SimilarQuestionPrompt from '@/components/organisms/SimilarQuestionPrompt'
 import Modal from '@/components/atoms/Modal';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
+import { UGC_LIMITS, getPlainTextLength, isLowQualityText } from '@/lib/validation/ugc';
 
 const RichTextEditor = dynamic(() => import('@/components/molecules/RichTextEditor'), {
   ssr: false,
@@ -32,8 +33,10 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const createPost = useCreatePost();
   const t = (translations?.newPost || {}) as Record<string, string>;
   const tErrors = (translations?.errors || {}) as Record<string, string>;
-  const MIN_TITLE = 10;
-  const MIN_CONTENT = 10;
+  const MIN_TITLE = UGC_LIMITS.postTitle.min;
+  const MAX_TITLE = UGC_LIMITS.postTitle.max;
+  const MIN_CONTENT = UGC_LIMITS.postContent.min;
+  const MAX_CONTENT = UGC_LIMITS.postContent.max;
 
   const typeParam = searchParams.get('type');
   const initialType = typeParam === 'share' ? 'share' : 'question';
@@ -53,6 +56,9 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const openLoginPrompt = () => setIsLoginPromptOpen(true);
 
+  const titleLength = title.trim().length;
+  const contentLength = getPlainTextLength(content);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -62,8 +68,33 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     }
 
     const hasChildren = childCategories.length > 0;
-    if (!title.trim() || title.trim().length < MIN_TITLE || !content.trim() || content.trim().length < MIN_CONTENT || !parentCategory || (hasChildren && !childCategory)) {
-      toast.error(t.validationError || `제목/내용을 최소 ${MIN_TITLE}자 이상 입력하고, 카테고리를 선택해주세요.`);
+    if (!title.trim() || titleLength < MIN_TITLE) {
+      toast.error(tErrors.POST_TITLE_TOO_SHORT || t.validationError || `제목을 최소 ${MIN_TITLE}자 이상 입력해주세요.`);
+      return;
+    }
+    if (titleLength > MAX_TITLE) {
+      toast.error(tErrors.POST_TITLE_TOO_LONG || t.validationError || `제목을 ${MAX_TITLE}자 이하로 작성해주세요.`);
+      return;
+    }
+    if (!content.trim() || contentLength < MIN_CONTENT) {
+      toast.error(tErrors.POST_CONTENT_TOO_SHORT || t.validationError || `본문을 최소 ${MIN_CONTENT}자 이상 입력해주세요.`);
+      return;
+    }
+    if (contentLength > MAX_CONTENT) {
+      toast.error(tErrors.POST_CONTENT_TOO_LONG || t.validationError || `본문을 ${MAX_CONTENT}자 이하로 작성해주세요.`);
+      return;
+    }
+    if (!parentCategory || (hasChildren && !childCategory)) {
+      toast.error(t.validationError || '카테고리를 선택해주세요.');
+      return;
+    }
+
+    if (isLowQualityText(title)) {
+      toast.error(tErrors.POST_TITLE_LOW_QUALITY || t.validationError || '제목이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.');
+      return;
+    }
+    if (isLowQualityText(content)) {
+      toast.error(tErrors.POST_CONTENT_LOW_QUALITY || t.validationError || '내용이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.');
       return;
     }
 
@@ -590,6 +621,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  maxLength={MAX_TITLE}
                   readOnly={!user}
                   onFocus={() => {
                     if (!user) openLoginPrompt();
@@ -601,7 +633,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                   placeholder={postType === 'question' ? (t.titlePlaceholderQuestion || '질문을 입력하세요') : (t.titlePlaceholderShare || '제목을 입력하세요')}
                   required
                 />
-                {title.trim().length > 0 && title.trim().length < MIN_TITLE ? (
+                {titleLength > 0 && titleLength < MIN_TITLE ? (
                   <p className="mt-1 text-xs text-red-600">
                     {t.titleMinWarning
                       ? t.titleMinWarning.replace('{min}', String(MIN_TITLE))
@@ -639,11 +671,18 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                     />
                   </div>
                 </div>
-                {content.trim().length > 0 && content.trim().length < MIN_CONTENT ? (
+                {contentLength > 0 && contentLength < MIN_CONTENT ? (
                   <p className="mt-1 text-xs text-red-600">
                     {t.contentMinWarning
                       ? t.contentMinWarning.replace('{min}', String(MIN_CONTENT))
                       : `본문을 최소 ${MIN_CONTENT}자 이상 작성해주세요.`}
+                  </p>
+                ) : null}
+                {contentLength > MAX_CONTENT ? (
+                  <p className="mt-1 text-xs text-red-600">
+                    {t.contentMaxWarning
+                      ? t.contentMaxWarning.replace('{max}', String(MAX_CONTENT))
+                      : `본문은 최대 ${MAX_CONTENT}자까지 작성할 수 있습니다.`}
                   </p>
                 ) : null}
               </div>

@@ -642,6 +642,7 @@
 .vk-tooltip-portal--brand {
   max-width: min(320px, calc(100vw - 16px));
   text-align: left;
+  transform: translate3d(calc(var(--vk-tooltip-x, 0px) + 24px), var(--vk-tooltip-y, 0px), 0);
 }
 
 .vk-tooltip-portal::after {
@@ -766,6 +767,10 @@
 
 .question-card--with-media {
   min-height: 0;
+}
+
+.question-card--with-media .question-card-actions {
+  padding-top: 0.9rem;
 }
 
 .question-card--with-media .question-card-main {
@@ -900,19 +905,19 @@
 
 .question-card-actions {
   margin-top: auto;
-  padding-top: 0.75rem;
+  padding-top: 0.65rem;
 }
 .question-card-footer-fixed {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  min-height: 48px;
+  gap: 10px;
+  min-height: 40px;
 }
 .question-card-actions-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-left: 0;
   flex-wrap: nowrap;
 }

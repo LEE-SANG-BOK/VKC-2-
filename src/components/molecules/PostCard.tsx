@@ -6,7 +6,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { AlertCircle, Bookmark, CheckCircle, HelpCircle, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
+import { Bookmark, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import Tooltip from '../atoms/Tooltip';
 import TrustBadge, { type TrustLevel } from '@/components/atoms/TrustBadge';
@@ -106,64 +106,21 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         ? 'verified'
         : 'community';
 
-  const trustLabels: Record<string, string> = {
-    verified: tTrust.verifiedLabel || (locale === 'vi' ? 'Đã xác minh' : locale === 'en' ? 'Verified' : '검증됨'),
-    community: tTrust.communityLabel || (locale === 'vi' ? 'Cộng đồng' : locale === 'en' ? 'Community' : '커뮤니티'),
-    expert: tTrust.expertLabel || (locale === 'vi' ? 'Chuyên gia' : locale === 'en' ? 'Expert' : '전문가'),
-    outdated: tTrust.outdatedLabel || (locale === 'vi' ? 'Hết hạn' : locale === 'en' ? 'Outdated' : '오래된 정보'),
+  const trustLabels: Record<TrustLevel, string> = {
+    verified: tTrust.verifiedLabel || '검증됨',
+    community: tTrust.communityLabel || '커뮤니티',
+    expert: tTrust.expertLabel || '전문가',
+    outdated: tTrust.outdatedLabel || '오래된 정보',
   };
 
-  const trustTooltips: Record<string, string> = {
-    verified: tTrust.verifiedTooltip || (locale === 'vi' ? 'Thông tin từ người dùng đã xác minh' : locale === 'en' ? 'From a verified user' : '인증된 사용자 기반 정보'),
-    community: tTrust.communityTooltip || (locale === 'vi' ? 'Được cộng đồng tin cậy' : locale === 'en' ? 'Trusted by community' : '커뮤니티 신뢰 정보'),
-    expert: tTrust.expertTooltip || (locale === 'vi' ? 'Được chuyên gia xem xét' : locale === 'en' ? 'Reviewed by an expert' : '전문가/공식 답변자'),
-    outdated: tTrust.outdatedTooltip || (locale === 'vi' ? 'Thông tin hơn 12 tháng trước' : locale === 'en' ? 'More than 12 months old' : '12개월 이상 지난 정보'),
+  const trustTooltips: Record<TrustLevel, string> = {
+    verified: tTrust.verifiedTooltip || '인증된 사용자 기반 정보',
+    community: tTrust.communityTooltip || '커뮤니티 신뢰 정보',
+    expert: tTrust.expertTooltip || '전문가/공식 답변자',
+    outdated: tTrust.outdatedTooltip || '12개월 이상 지난 정보',
   };
-  const defaultAnswerLabel = isQuestion
-    ? locale === 'vi'
-      ? `${stats.comments} câu trả lời`
-      : locale === 'en'
-        ? `${stats.comments} answers`
-        : `${stats.comments}개의 답변이 있습니다`
-    : locale === 'vi'
-      ? `${stats.comments} bình luận`
-      : locale === 'en'
-        ? `${stats.comments} comments`
-        : `${stats.comments}개의 댓글이 있습니다`;
 
-  const certifiedCount = certifiedResponderCount ?? 0;
-  const otherCount = otherResponderCount ?? 0;
-  const hasCertified = certifiedCount > 0;
-
-  const answerLabel = hasCertified
-    ? isQuestion
-      ? locale === 'vi'
-        ? `Có câu trả lời từ ${certifiedCount} người dùng đã xác minh${otherCount > 0 ? ` và ${otherCount} người khác` : ''}`
-        : locale === 'en'
-          ? `Answers from ${certifiedCount} certified user${certifiedCount === 1 ? '' : 's'}${otherCount > 0 ? ` + ${otherCount} other${otherCount === 1 ? '' : 's'}` : ''}`
-          : otherCount > 0
-            ? `인증된 사용자 ${certifiedCount}명 외 ${otherCount}명의 답변이 있습니다`
-            : `인증된 사용자 ${certifiedCount}명의 답변이 있습니다`
-      : locale === 'vi'
-        ? `Có bình luận từ ${certifiedCount} người dùng đã xác minh${otherCount > 0 ? ` và ${otherCount} người khác` : ''}`
-        : locale === 'en'
-          ? `Comments from ${certifiedCount} certified user${certifiedCount === 1 ? '' : 's'}${otherCount > 0 ? ` + ${otherCount} other${otherCount === 1 ? '' : 's'}` : ''}`
-          : otherCount > 0
-            ? `인증된 사용자 ${certifiedCount}명 외 ${otherCount}명의 댓글이 있습니다`
-            : `인증된 사용자 ${certifiedCount}명의 댓글이 있습니다`
-    : defaultAnswerLabel;
-
-  const compactAnswerLabel = isQuestion
-    ? locale === 'vi'
-      ? `${stats.comments} câu trả lời`
-      : locale === 'en'
-        ? `${stats.comments} answers`
-        : `답변 ${stats.comments}`
-    : locale === 'vi'
-      ? `${stats.comments} bình luận`
-      : locale === 'en'
-        ? `${stats.comments} comments`
-        : `댓글 ${stats.comments}`;
+  const answerLabel = `${isQuestion ? tCommon.answer || '답변' : tCommon.comment || '댓글'} ${stats.comments}`;
 
   const safeName = (raw?: string) => {
     const nm = raw?.trim();
@@ -324,6 +281,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     return raw;
   };
 
+  const normalizeKey = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+
   const displayTags = useMemo(() => {
     const seen = new Set<string>();
     return tags
@@ -331,26 +290,63 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       .filter(Boolean)
       .map(localizeTag)
       .filter((tg) => {
-        if (seen.has(tg.toLowerCase())) return false;
-        seen.add(tg.toLowerCase());
+        const key = normalizeKey(tg);
+        if (seen.has(key)) return false;
+        seen.add(key);
         return true;
       });
   }, [tags, locale]);
 
+  const categoryChips = useMemo(() => {
+    const base = [categoryLabel || tCommon.uncategorized || '미지정', subcategoryLabel]
+      .map((v) => v?.trim())
+      .filter(Boolean) as string[];
+    const seen = new Set<string>();
+    return base.filter((v) => {
+      const key = v.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [categoryLabel, subcategoryLabel, tCommon.uncategorized]);
+
   const tagChips = useMemo(() => {
     const seen = new Set<string>();
+    const reserved = new Set(
+      [
+        ...Object.values(trustLabels),
+        'verified',
+        'expert',
+        'community',
+        'outdated',
+        'đã xác minh',
+        'chuyên gia',
+        'cộng đồng',
+        'hết hạn',
+        '검증됨',
+        '전문가',
+        '커뮤니티',
+        '오래된 정보',
+      ]
+        .map((v) => v?.toString().trim())
+        .filter(Boolean)
+        .map((v) => normalizeKey(v))
+    );
 
-    return [categoryLabel, subcategoryLabel, ...displayTags]
+    categoryChips.forEach((v) => seen.add(normalizeKey(v)));
+
+    return displayTags
       .map((v) => v?.trim())
+      .filter(Boolean)
       .filter((v) => {
-        if (!v) return false;
-        const key = v.toLowerCase();
+        const key = normalizeKey(v);
+        if (reserved.has(key)) return false;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
-      .slice(0, 4);
-  }, [displayTags, categoryLabel, subcategoryLabel]);
+      .slice(0, 3);
+  }, [categoryChips, displayTags, trustLabels]);
 
   const displayImages = useMemo(() => {
     const candidates: unknown[] = Array.isArray(thumbnails) && thumbnails.length > 0 ? thumbnails : thumbnail ? [thumbnail] : [];
@@ -512,10 +508,23 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       className={`question-card group ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
         }`}
     >
+      {categoryChips.length > 0 ? (
+        <div className="mb-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+          {categoryChips.map((tag) => (
+            <span
+              key={tag}
+              className="shrink-0 px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       <div className="question-card-main">
         <div className="question-card-body">
           {/* Author Info & Badges */}
-          <div className="flex items-start gap-2 mb-3 min-w-0">
+	          <div className="flex items-center gap-1 mb-3 min-w-0">
             <button
               type="button"
               className="shrink-0"
@@ -529,37 +538,32 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 hoverHighlight
               />
             </button>
+            {derivedTrustLevel !== 'community' ? (
+              <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
+                <span className="shrink-0 inline-flex">
+                  <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
+                </span>
+              </Tooltip>
+            ) : null}
 
-            <div className="flex min-w-0 flex-col">
-              <div className="flex items-center gap-2 min-w-0">
-                <button
-                  type="button"
-                  className="min-w-0 text-left"
-                  onClick={handleAuthorClick}
-                >
-                  <span className="block truncate text-base font-semibold text-gray-900 dark:text-gray-100">
-                    {safeName(author.name)}
-                  </span>
-                </button>
-                {derivedTrustLevel !== 'community' && (
-                  <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
-                    <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
-                  </Tooltip>
-                )}
-              </div>
-
-              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                <span className="whitespace-nowrap">{formatDateTime(publishedAt)}</span>
-                {!isSelf && author.id ? (
-                  <FollowButton
-                    userId={String(author.id)}
-                    userName={safeName(author.name)}
-                    isFollowing={author.isFollowing}
-                    size="xs"
-                  />
-                ) : null}
-              </div>
-            </div>
+            <button
+              type="button"
+              className="min-w-0 text-left"
+              onClick={handleAuthorClick}
+            >
+              <span className="block truncate text-base font-semibold text-gray-900 dark:text-gray-100">
+                {safeName(author.name)}
+              </span>
+            </button>
+            {!isSelf && author.id ? (
+              <FollowButton
+                userId={String(author.id)}
+                userName={safeName(author.name)}
+                isFollowing={author.isFollowing}
+                size="xs"
+                className="shrink-0"
+              />
+            ) : null}
           </div>
 
           {/* Title + Trust badges */}
@@ -575,23 +579,10 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           </div>
 
           {/* Excerpt */}
-          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3 leading-relaxed">
+          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2 leading-relaxed">
             {excerpt}
           </p>
 
-          {/* Tags */}
-          {tagChips.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {tagChips.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         {hasMedia && renderImageSrc ? (
@@ -627,18 +618,28 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         ) : null}
       </div>
 
+      {tagChips.length > 0 ? (
+        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+          {tagChips.map((tag) => (
+            <span
+              key={tag}
+              className="shrink-0 px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       <div className="question-card-actions">
         <div className="question-card-footer-fixed">
           <button
             type="button"
             onClick={handleAnswerCountClick}
-            className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0"
+            className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0"
           >
             <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span className="truncate">
-              <span className="hidden sm:inline">{answerLabel}</span>
-              <span className="sm:hidden">{compactAnswerLabel}</span>
-            </span>
+            <span className="whitespace-nowrap">{answerLabel}</span>
           </button>
 
           <div className="question-card-actions-row shrink-0">
@@ -646,7 +647,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               <button
                 type="button"
                 onClick={handleLikeClick}
-                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 min-h-[32px] text-xs font-semibold transition-colors ${localIsLiked ? 'text-blue-600 font-semibold bg-blue-50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                className={`flex items-center gap-1 rounded-full px-2 py-1 min-h-[30px] text-xs font-semibold transition-colors ${localIsLiked ? 'text-blue-600 font-semibold bg-blue-50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
               >
                 <ThumbsUp className={`w-4 h-4 ${localIsLiked ? 'fill-current' : ''}`} />
                 <span>{localLikes}</span>
@@ -657,7 +658,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               <Tooltip content={t.share || '공유'} position="top">
                 <button
                   onClick={handleShareClick}
-                  className="inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
@@ -719,50 +720,15 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               <button
                 type="button"
                 onClick={handleBookmarkClick}
-                className={`inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                className={`inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
               >
                 <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
               </button>
             </Tooltip>
 
-            {isQuestion ? (
-              <Tooltip content={tCommon.question || (locale === 'vi' ? 'Câu hỏi' : locale === 'en' ? 'Question' : '질문')} position="top">
-                <button
-                  type="button"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] text-blue-600 dark:text-blue-300 bg-blue-50/60 dark:bg-blue-900/20 border border-blue-200/80 dark:border-blue-800/50"
-                  aria-label={tCommon.question || '질문'}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </button>
-              </Tooltip>
-            ) : null}
-
-            {isQuestion ? (
-              isAdopted ? (
-                <Tooltip content={tCommon.solved || (locale === 'vi' ? 'Đã giải quyết' : locale === 'en' ? 'Solved' : '해결')} position="top">
-                  <button
-                    type="button"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] text-emerald-600 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-900/20 border border-emerald-200/80 dark:border-emerald-800/50"
-                    aria-label={tCommon.solved || '해결'}
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                  </button>
-                </Tooltip>
-              ) : (
-                <Tooltip content={tCommon.unsolved || (locale === 'vi' ? 'Chưa giải quyết' : locale === 'en' ? 'Unsolved' : '미해결')} position="top">
-                  <button
-                    type="button"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center justify-center rounded-full p-2 min-h-[32px] min-w-[32px] text-amber-700 dark:text-amber-200 bg-amber-50/60 dark:bg-amber-900/20 border border-amber-200/80 dark:border-amber-800/50"
-                    aria-label={tCommon.unsolved || '미해결'}
-                  >
-                    <AlertCircle className="h-4 w-4" />
-                  </button>
-                </Tooltip>
-              )
-            ) : null}
+            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              {formatDateTime(publishedAt)}
+            </span>
 
           </div>
         </div>

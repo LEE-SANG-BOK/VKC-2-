@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import Image from 'next/image';
 import { MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, HelpCircle, CheckCircle, ThumbsUp, AlertTriangle, Link as LinkIcon, ShieldAlert } from 'lucide-react';
@@ -38,11 +38,12 @@ import { useCreateAnswer, useUpdateAnswer, useDeleteAnswer, useToggleAnswerLike,
 import { useCreatePostComment, useUpdateComment, useDeleteComment, useToggleCommentLike } from '@/repo/comments/mutation';
 import { useReportPost, useReportComment, useReportAnswer } from '@/repo/reports/mutation';
 import { useFollowStatus } from '@/repo/users/query';
+import { useCategories } from '@/repo/categories/query';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/repo/keys';
 import type { ReportType } from '@/repo/reports/types';
-import { isAccountRestrictedError } from '@/lib/api/errors';
+import { ApiError, isAccountRestrictedError } from '@/lib/api/errors';
 import { toast } from 'sonner';
 
 interface Comment {
@@ -171,6 +172,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tPostDetail = (translations?.postDetail || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
+  const tErrors = (translations?.errors || {}) as Record<string, string>;
   const guidelineTooltip =
     tCommon.guidelineTooltip ||
     '예의·혐오 표현 금지, 광고/연락처 제한, 위반 시 게시 제한 또는 계정 제재가 있을 수 있습니다.';
@@ -201,6 +203,13 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const tRules = (translations?.newPost || {}) as Record<string, string>;
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const openLoginPrompt = () => setIsLoginPromptOpen(true);
+
+  const resolveErrorMessage = (error: unknown, fallback: string) => {
+    if (isAccountRestrictedError(error)) return error.message;
+    if (error instanceof ApiError && error.code && tErrors[error.code]) return tErrors[error.code];
+    if (error instanceof Error && error.message) return error.message;
+    return fallback;
+  };
 
   const toggleLike = useTogglePostLike();
   const toggleBookmark = useTogglePostBookmark();
@@ -236,19 +245,21 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
         ? 'verified'
         : 'community';
 
-  const trustLabels: Record<string, string> = {
-    verified: tTrust.verifiedLabel || (locale === 'vi' ? 'Đã xác minh' : locale === 'en' ? 'Verified' : '검증됨'),
-    community: tTrust.communityLabel || (locale === 'vi' ? 'Cộng đồng' : locale === 'en' ? 'Community' : '커뮤니티'),
-    expert: tTrust.expertLabel || (locale === 'vi' ? 'Chuyên gia' : locale === 'en' ? 'Expert' : '전문가'),
-    outdated: tTrust.outdatedLabel || (locale === 'vi' ? 'Hết hạn' : locale === 'en' ? 'Outdated' : '오래된 정보'),
+  const trustLabels: Record<TrustLevel, string> = {
+    verified: tTrust.verifiedLabel || '검증됨',
+    community: tTrust.communityLabel || '커뮤니티',
+    expert: tTrust.expertLabel || '전문가',
+    outdated: tTrust.outdatedLabel || '오래된 정보',
   };
 
-  const trustTooltips: Record<string, string> = {
-    verified: tTrust.verifiedTooltip || (locale === 'vi' ? 'Thông tin từ người dùng đã xác minh' : locale === 'en' ? 'From a verified user' : '인증된 사용자 기반 정보'),
-    community: tTrust.communityTooltip || (locale === 'vi' ? 'Được cộng đồng tin cậy' : locale === 'en' ? 'Trusted by community' : '커뮤니티 신뢰 정보'),
-    expert: tTrust.expertTooltip || (locale === 'vi' ? 'Được chuyên gia xem xét' : locale === 'en' ? 'Reviewed by an expert' : '전문가/공식 답변자'),
-    outdated: tTrust.outdatedTooltip || (locale === 'vi' ? 'Thông tin hơn 12 tháng trước' : locale === 'en' ? 'More than 12 months old' : '12개월 이상 지난 정보'),
+  const trustTooltips: Record<TrustLevel, string> = {
+    verified: tTrust.verifiedTooltip || '인증된 사용자 기반 정보',
+    community: tTrust.communityTooltip || '커뮤니티 신뢰 정보',
+    expert: tTrust.expertTooltip || '전문가/공식 답변자',
+    outdated: tTrust.outdatedTooltip || '12개월 이상 지난 정보',
   };
+
+  const normalizeKey = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 
   useEffect(() => {
     if (postQuery?.data) {
@@ -297,6 +308,27 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [showAnswerEditor, setShowAnswerEditor] = useState(true);
   const [helpfulLoadingId, setHelpfulLoadingId] = useState<string | null>(null);
+
+  const { data: fetchedCategories } = useCategories();
+  const flatCategories = useMemo(() => {
+    if (!fetchedCategories) return [];
+    const children = fetchedCategories.flatMap((cat) => cat.children || []);
+    return [...fetchedCategories, ...children];
+  }, [fetchedCategories]);
+
+  const resolveCategorySlug = useCallback(
+    (value?: string | null) => {
+      const raw = value?.trim();
+      if (!raw) return '';
+      if (ALLOWED_CATEGORY_SLUGS.has(raw)) return raw;
+      const match = flatCategories.find((cat) => cat.id === raw || cat.slug === raw);
+      return match?.slug || '';
+    },
+    [flatCategories]
+  );
+
+  const categorySlug = useMemo(() => resolveCategorySlug(post.category), [post.category, resolveCategorySlug]);
+  const subcategorySlug = useMemo(() => resolveCategorySlug(post.subcategory), [post.subcategory, resolveCategorySlug]);
   function mapSlugToLabel(slug?: string) {
     if (!slug) return '';
     if (!ALLOWED_CATEGORY_SLUGS.has(slug)) return '';
@@ -307,26 +339,64 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     return slug;
   }
 
+  const categoryLabel = useMemo(() => mapSlugToLabel(categorySlug), [categorySlug, locale]);
+  const subcategoryLabel = useMemo(() => mapSlugToLabel(subcategorySlug), [subcategorySlug, locale]);
+
   const uniqueTags = useMemo(() => {
     if (!post?.tags) return [];
-    const catLabels = [
-      mapSlugToLabel(post.category)?.toLowerCase(),
-      mapSlugToLabel(post.subcategory)?.toLowerCase(),
-    ].filter(Boolean) as string[];
+    const reserved = new Set(
+      [
+        ...Object.values(trustLabels),
+        'verified',
+        'expert',
+        'community',
+        'outdated',
+        'đã xác minh',
+        'chuyên gia',
+        'cộng đồng',
+        'hết hạn',
+        '검증됨',
+        '전문가',
+        '커뮤니티',
+        '오래된 정보',
+      ]
+        .map((v) => v?.toString().trim())
+        .filter(Boolean)
+        .map((v) => normalizeKey(v))
+    );
+    const catLabels = [categoryLabel, subcategoryLabel]
+      .filter(Boolean)
+      .map((v) => normalizeKey(v as string));
     const seen = new Set<string>();
     const cleaned: string[] = [];
     post.tags.forEach((tag) => {
       const raw = tag?.replace(/^#/, '').trim();
       if (!raw) return;
-      const lower = raw.toLowerCase();
-      if (catLabels.includes(lower)) return;
-      if (!seen.has(lower)) {
-        seen.add(lower);
+      const key = normalizeKey(raw);
+      if (catLabels.includes(key)) return;
+      if (reserved.has(key)) return;
+      if (!seen.has(key)) {
+        seen.add(key);
         cleaned.push(raw);
       }
     });
     return cleaned;
-  }, [post]);
+  }, [post.tags, categoryLabel, subcategoryLabel, trustLabels]);
+
+  const categoryChips = useMemo(() => {
+    const base = [categoryLabel || tCommon.uncategorized || '미지정', subcategoryLabel]
+      .map((v) => v?.trim())
+      .filter(Boolean) as string[];
+    const seen = new Set<string>();
+    return base.filter((value) => {
+      const key = normalizeKey(value);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [categoryLabel, subcategoryLabel, tCommon.uncategorized]);
+
+  const tagChips = useMemo(() => uniqueTags.slice(0, 3), [uniqueTags]);
   const sortedAnswers = useMemo(() => {
     if (!post?.answers) return [];
     const byDate = (value: string) => dayjs(value).valueOf() || 0;
@@ -448,11 +518,11 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
     try {
       await deletePostMutation.mutateAsync(post.id);
-      alert(tPostDetail.postDeleted || '게시글이 삭제되었습니다.');
+      toast.success(tPostDetail.postDeleted || '게시글이 삭제되었습니다.');
       router.push(`/${locale}`);
     } catch (error) {
       console.error('Failed to delete post:', error);
-      alert(tPostDetail.postDeleteFailed || '게시글 삭제에 실패했습니다.');
+      toast.error(resolveErrorMessage(error, tPostDetail.postDeleteFailed || '게시글 삭제에 실패했습니다.'));
     }
   };
 
@@ -470,7 +540,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const handleSaveEditPost = async () => {
     if (!editPostTitle.trim() || !editPostContent.trim()) {
-      alert(tPostDetail.titleContentRequired || '제목과 내용을 입력해주세요.');
+      toast.error(tPostDetail.titleContentRequired || '제목과 내용을 입력해주세요.');
       return;
     }
 
@@ -495,7 +565,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       }
     } catch (error) {
       console.error('Failed to update post:', error);
-      alert(tPostDetail.postUpdateFailed || '게시글 수정에 실패했습니다.');
+      toast.error(resolveErrorMessage(error, tPostDetail.postUpdateFailed || '게시글 수정에 실패했습니다.'));
     }
   };
 
@@ -621,11 +691,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       setPost(prevPost);
       setNewComment(newComment);
       console.error('Failed to create comment:', error);
-      if (isAccountRestrictedError(error)) {
-        alert(error.message);
-      } else {
-        alert(tPostDetail.commentCreateFailed || '댓글 작성에 실패했습니다.');
-      }
+      toast.error(resolveErrorMessage(error, tPostDetail.commentCreateFailed || '댓글 작성에 실패했습니다.'));
     }
   };
 
@@ -703,11 +769,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       setPost(prevPost);
       setNewAnswer(newAnswer);
       console.error('Failed to create answer:', error);
-      if (isAccountRestrictedError(error)) {
-        alert(error.message);
-      } else {
-        alert(tPostDetail.answerCreateFailed || '답변 작성에 실패했습니다.');
-      }
+      toast.error(resolveErrorMessage(error, tPostDetail.answerCreateFailed || '답변 작성에 실패했습니다.'));
     }
   };
 
@@ -780,7 +842,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       setEditAnswerContent('');
     } catch (error) {
       console.error('Failed to update answer:', error);
-      alert(tPostDetail.answerUpdateFailed || '답변 수정에 실패했습니다.');
+      toast.error(resolveErrorMessage(error, tPostDetail.answerUpdateFailed || '답변 수정에 실패했습니다.'));
     }
   };
 
@@ -800,14 +862,14 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       });
     } catch (error) {
       console.error('Failed to delete answer:', error);
-      alert(tPostDetail.answerDeleteFailed || '답변 삭제에 실패했습니다.');
+      toast.error(resolveErrorMessage(error, tPostDetail.answerDeleteFailed || '답변 삭제에 실패했습니다.'));
     }
   };
 
   const handleAdoptAnswer = async (answerId: string) => {
     if (!post || !post.answers) return;
     if (!isUserPost) {
-      alert(tPostDetail.onlyAuthorCanAdopt || '질문 작성자만 답변을 채택할 수 있습니다.');
+      toast.error(tPostDetail.onlyAuthorCanAdopt || '질문 작성자만 답변을 채택할 수 있습니다.');
       return;
     }
 
@@ -921,11 +983,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       setReplyContent(replyContent);
       setReplyTo(commentId);
       console.error('Failed to create reply:', error);
-      if (isAccountRestrictedError(error)) {
-        alert(error.message);
-      } else {
-        alert(tPostDetail.replyCreateFailed || '대댓글 작성에 실패했습니다.');
-      }
+      toast.error(resolveErrorMessage(error, tPostDetail.replyCreateFailed || '대댓글 작성에 실패했습니다.'));
     }
   };
 
@@ -951,7 +1009,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const handleReport = async (type: ReportType) => {
     if (!reportTarget) return;
     if (type === 'other' && reportReason.length < 10) {
-      alert(tPostDetail.reportReasonRequired || '신고 사유를 10자 이상 입력해주세요.');
+      toast.error(tPostDetail.reportReasonRequired || '신고 사유를 10자 이상 입력해주세요.');
       return;
     }
 
@@ -974,13 +1032,13 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           data: { type, reason },
         });
       }
-      alert(tPostDetail.reportSubmitted || '신고가 접수되었습니다. 검토 후 조치하겠습니다.');
+      toast.success(tPostDetail.reportSubmitted || '신고가 접수되었습니다. 검토 후 조치하겠습니다.');
       setShowReportDialog(false);
       setReportTarget(null);
       setReportReason('');
       setSelectedReportType(null);
     } catch (error) {
-      alert(error instanceof Error ? error.message : (tPostDetail.reportFailed || '신고 처리 중 오류가 발생했습니다.'));
+      toast.error(resolveErrorMessage(error, tPostDetail.reportFailed || '신고 처리 중 오류가 발생했습니다.'));
     }
   };
 
@@ -1018,7 +1076,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       });
     } catch (error) {
       console.error('Failed to delete comment:', error);
-      alert(tPostDetail.commentDeleteFailed || '댓글 삭제에 실패했습니다.');
+      toast.error(resolveErrorMessage(error, tPostDetail.commentDeleteFailed || '댓글 삭제에 실패했습니다.'));
     }
   };
 
@@ -1059,7 +1117,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       setEditContent('');
     } catch (error) {
       console.error('Failed to update comment:', error);
-      alert(tPostDetail.commentUpdateFailed || '댓글 수정에 실패했습니다.');
+      toast.error(resolveErrorMessage(error, tPostDetail.commentUpdateFailed || '댓글 수정에 실패했습니다.'));
     }
   };
 
@@ -1155,11 +1213,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       setAnswerReplyContent(answerReplyContent);
       setReplyToAnswer(answerId);
       console.error('Failed to create answer reply:', error);
-      if (isAccountRestrictedError(error)) {
-        alert(error.message);
-      } else {
-        alert(tPostDetail.answerCommentCreateFailed || '답변 댓글 작성에 실패했습니다.');
-      }
+      toast.error(resolveErrorMessage(error, tPostDetail.answerCommentCreateFailed || '답변 댓글 작성에 실패했습니다.'));
     }
   };
 
@@ -1227,7 +1281,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       });
     } catch (error) {
       console.error('Failed to delete reply:', error);
-      alert(tPostDetail.replyDeleteFailed || '답글 삭제에 실패했습니다.');
+      toast.error(resolveErrorMessage(error, tPostDetail.replyDeleteFailed || '답글 삭제에 실패했습니다.'));
     }
   };
 
@@ -1265,7 +1319,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       setEditContent('');
     } catch (error) {
       console.error('Failed to update reply:', error);
-      alert(tPostDetail.replyUpdateFailed || '답글 수정에 실패했습니다.');
+      toast.error(resolveErrorMessage(error, tPostDetail.replyUpdateFailed || '답글 수정에 실패했습니다.'));
     }
   };
 
@@ -1446,16 +1500,20 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               </div>
             ) : (
               <>
-                {/* Title */}
+                {categoryChips.length > 0 ? (
+                  <div className="mb-3 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+                    {categoryChips.map((tag) => (
+                      <span
+                        key={tag}
+                        className="shrink-0 px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-700/60 rounded-md"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+
                 <div className="flex items-center gap-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 flex-wrap">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
-                    {mapSlugToLabel(post.category) || tCommon.uncategorized || '미지정'}
-                  </span>
-                  {mapSlugToLabel(post.subcategory) ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700">
-                      {mapSlugToLabel(post.subcategory)}
-                    </span>
-                  ) : null}
                   <span className="text-gray-500 dark:text-gray-400">{formatDateTime(post.publishedAt, locale)}</span>
                   {post.isQuestion ? (
                     <>
@@ -1484,38 +1542,50 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
             {/* Author Info */}
             {!isEditingPost && (
-            <div className="mb-4 sm:mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-4 sm:gap-6">
-                <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
-		                  <button
-		                    type="button"
-		                    onClick={() => post.author?.id && router.push(`/${locale}/profile/${post.author.id}`)}
-		                    className="flex items-center gap-2 text-left"
-		                  >
-		                    <UserChip
-		                      name={safeName(post.author)}
-		                      avatar={post.author?.avatar}
-		                      isVerified={false}
-		                      size="lg"
-		                    />
-		                    {derivedTrustLevel !== 'community' && (
-		                      <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
-		                        <span className="inline-flex">
-		                          <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
-		                        </span>
-		                      </Tooltip>
-		                    )}
-		                  </button>
-                  {!isUserPost && post.author?.id ? (
-                    <FollowButton
-                      userId={post.author.id}
-                      userName={safeName(post.author)}
-                      isFollowing={post.author.isFollowing}
-                      size="sm"
-                      onToggle={handleFollowChange}
-                    />
-                  ) : null}
-                </div>
+	            <div className="mb-4 sm:mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+	              <div className="flex items-center gap-1 min-w-0">
+                <button
+                  type="button"
+                  className="shrink-0"
+                  onClick={() => post.author?.id && router.push(`/${locale}/profile/${post.author.id}`)}
+                  aria-label={safeName(post.author)}
+                >
+                  <Avatar
+                    name={safeName(post.author)}
+                    imageUrl={post.author?.avatar}
+                    size="lg"
+                    hoverHighlight
+                  />
+                </button>
+
+                {derivedTrustLevel !== 'community' ? (
+                  <Tooltip content={trustTooltips[derivedTrustLevel]} position="top">
+                    <span className="shrink-0 inline-flex">
+                      <TrustBadge level={derivedTrustLevel} label={trustLabels[derivedTrustLevel]} />
+                    </span>
+                  </Tooltip>
+                ) : null}
+
+                <button
+                  type="button"
+                  className="min-w-0 text-left"
+                  onClick={() => post.author?.id && router.push(`/${locale}/profile/${post.author.id}`)}
+                >
+                  <span className="block truncate text-base font-semibold text-gray-900 dark:text-gray-100">
+                    {safeName(post.author)}
+                  </span>
+                </button>
+
+                {!isUserPost && post.author?.id ? (
+                  <FollowButton
+                    userId={post.author.id}
+                    userName={safeName(post.author)}
+                    isFollowing={post.author.isFollowing}
+                    size="xs"
+                    className="shrink-0"
+                    onToggle={handleFollowChange}
+                  />
+                ) : null}
               </div>
             </div>
             )}
@@ -1532,23 +1602,16 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             </div>
             )}
 
-            {!isEditingPost && uniqueTags.length > 0 ? (
-              <div className="pt-2 sm:pt-3">
-                <div className="flex flex-wrap gap-2 sm:gap-2.5 mt-2 mb-2">
-                  {uniqueTags.slice(0, 5).map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-full border border-gray-200 dark:border-gray-600"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                  {uniqueTags.length > 5 ? (
-                    <span className="px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-semibold bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700">
-                      +{uniqueTags.length - 5}
-                    </span>
-                  ) : null}
-                </div>
+            {!isEditingPost && tagChips.length > 0 ? (
+              <div className="mt-3 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+                {tagChips.map((tag) => (
+                  <span
+                    key={tag}
+                    className="shrink-0 px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-700/60 rounded-md"
+                  >
+                    #{tag}
+                  </span>
+                ))}
               </div>
             ) : null}
 
@@ -1566,16 +1629,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               >
                 <ThumbsUp className={`h-4 w-4 sm:h-5 sm:w-5 ${post.isLiked ? 'fill-current' : ''}`} />
                 <span className="font-medium text-sm sm:text-base">{post.stats?.likes ?? 0}</span>
-              </button>
-            </Tooltip>
-
-            <Tooltip content={tCommon.comment || "댓글"} position="top">
-              <button
-                onClick={scrollToAnswers}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="font-medium text-sm sm:text-base">{post.stats?.comments ?? 0}</span>
               </button>
             </Tooltip>
 
@@ -1849,14 +1902,18 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   </button>
                 </Tooltip>
 
-                            {user && (
-                              <button
-                                onClick={() => setReplyToAnswer(answer.id)}
-                                className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                              >
-                                {tCommon.reply || "답글"}
-                              </button>
-                            )}
+                            <button
+                              onClick={() => {
+                                if (!user) {
+                                  openLoginPrompt();
+                                  return;
+                                }
+                                setReplyToAnswer(answer.id);
+                              }}
+                              className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            >
+                              {tCommon.reply || "답글"}
+                            </button>
 
                             {!answer.isAdopted && isUserPost && !post.isAdopted && (
                               <div className="ml-auto">
@@ -2169,14 +2226,18 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                   <span>{comment.likes}</span>
                                 </button>
                               </Tooltip>
-                              {user && (
-                                <button
-                                  onClick={() => setReplyTo(comment.id)}
-                                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                >
-                                  {tCommon.reply || "답글"}
-                                </button>
-                              )}
+                              <button
+                                onClick={() => {
+                                  if (!user) {
+                                    openLoginPrompt();
+                                    return;
+                                  }
+                                  setReplyTo(comment.id);
+                                }}
+                                className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                              >
+                                {tCommon.reply || "답글"}
+                              </button>
                             </div>
                           )}
 

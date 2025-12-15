@@ -12,7 +12,7 @@ export const UGC_LIMITS = {
     max: 5000,
   },
   commentContent: {
-    min: 2,
+    min: 10,
     max: 800,
   },
 } as const;
