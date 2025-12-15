@@ -245,14 +245,14 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
         ? 'verified'
         : 'community';
 
-  const trustLabels: Record<TrustLevel, string> = {
+  const trustLabels: Partial<Record<TrustLevel, string>> = {
     verified: tTrust.verifiedLabel || '검증됨',
     community: tTrust.communityLabel || '커뮤니티',
     expert: tTrust.expertLabel || '전문가',
     outdated: tTrust.outdatedLabel || '오래된 정보',
   };
 
-  const trustTooltips: Record<TrustLevel, string> = {
+  const trustTooltips: Partial<Record<TrustLevel, string>> = {
     verified: tTrust.verifiedTooltip || '인증된 사용자 기반 정보',
     community: tTrust.communityTooltip || '커뮤니티 신뢰 정보',
     expert: tTrust.expertTooltip || '전문가/공식 답변자',

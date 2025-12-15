@@ -106,14 +106,14 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         ? 'verified'
         : 'community';
 
-  const trustLabels: Record<TrustLevel, string> = {
+  const trustLabels: Partial<Record<TrustLevel, string>> = {
     verified: tTrust.verifiedLabel || '검증됨',
     community: tTrust.communityLabel || '커뮤니티',
     expert: tTrust.expertLabel || '전문가',
     outdated: tTrust.outdatedLabel || '오래된 정보',
   };
 
-  const trustTooltips: Record<TrustLevel, string> = {
+  const trustTooltips: Partial<Record<TrustLevel, string>> = {
     verified: tTrust.verifiedTooltip || '인증된 사용자 기반 정보',
     community: tTrust.communityTooltip || '커뮤니티 신뢰 정보',
     expert: tTrust.expertTooltip || '전문가/공식 답변자',
@@ -620,14 +620,24 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
       {tagChips.length > 0 ? (
         <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-          {tagChips.map((tag) => (
-            <span
-              key={tag}
-              className="shrink-0 px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              #{tag}
-            </span>
-          ))}
+          {tagChips.map((tag) => {
+            const isCategoryTag = !!categoryLabel && tag === categoryLabel;
+            const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
+            const pillClass = isCategoryTag
+              ? 'text-gray-700 bg-gray-100 dark:text-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
+              : isSubcategoryTag
+                ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40'
+                : 'text-gray-500 bg-gray-100 dark:text-gray-300 dark:bg-gray-800';
+
+            return (
+              <span
+                key={tag}
+                className={`shrink-0 px-2 py-0.5 text-xs rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${pillClass}`}
+              >
+                #{tag}
+              </span>
+            );
+          })}
         </div>
       ) : null}
 
