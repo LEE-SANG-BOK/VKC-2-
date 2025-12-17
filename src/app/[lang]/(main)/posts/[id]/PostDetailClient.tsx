@@ -43,7 +43,7 @@ import { useReportPost, useReportComment, useReportAnswer } from '@/repo/reports
 import { useFollowStatus } from '@/repo/users/query';
 import { useCategories } from '@/repo/categories/query';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { queryKeys } from '@/repo/keys';
 import type { ReportType } from '@/repo/reports/types';
 import { ApiError, isAccountRestrictedError } from '@/lib/api/errors';
@@ -57,6 +57,11 @@ interface PaginatedListResponse<T> {
     limit: number;
     total: number;
     totalPages: number;
+  };
+  meta?: {
+    nextCursor?: string | null;
+    hasMore?: boolean;
+    paginationMode?: 'offset' | 'cursor';
   };
 }
 
@@ -205,6 +210,21 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const tPostDetail = (translations?.postDetail || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
   const tErrors = (translations?.errors || {}) as Record<string, string>;
+
+  const getUgcErrorKeyMap: Record<'answerContent' | 'commentContent', Record<UgcValidationErrorCode, string>> = {
+    answerContent: {
+      UGC_REQUIRED: 'ANSWER_REQUIRED',
+      UGC_TOO_SHORT: 'ANSWER_TOO_SHORT',
+      UGC_TOO_LONG: 'ANSWER_TOO_LONG',
+      UGC_LOW_QUALITY: 'ANSWER_LOW_QUALITY',
+    },
+    commentContent: {
+      UGC_REQUIRED: 'COMMENT_REQUIRED',
+      UGC_TOO_SHORT: 'COMMENT_TOO_SHORT',
+      UGC_TOO_LONG: 'COMMENT_TOO_LONG',
+      UGC_LOW_QUALITY: 'COMMENT_LOW_QUALITY',
+    },
+  };
   const guidelineTooltip =
     tCommon.guidelineTooltip ||
     '예의·혐오 표현 금지, 광고/연락처 제한, 위반 시 게시 제한 또는 계정 제재가 있을 수 있습니다.';
@@ -286,30 +306,66 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     setRenderThumbnailSrc(normalizedThumbnail);
   }, [normalizedThumbnail]);
 
-  const answersInfiniteQuery = useInfiniteQuery<PaginatedListResponse<Answer>>({
+  type InfinitePageParam = { page: number; cursor?: string | null };
+  type AnswersInfiniteKey = ReturnType<typeof queryKeys.answers.infinite>;
+  type CommentsInfiniteKey = ReturnType<typeof queryKeys.comments.infinite>;
+
+  const answersInfiniteQuery = useInfiniteQuery<
+    PaginatedListResponse<Answer>,
+    Error,
+    InfiniteData<PaginatedListResponse<Answer>, InfinitePageParam>,
+    AnswersInfiniteKey,
+    InfinitePageParam
+  >({
+    initialPageParam: { page: 1, cursor: null },
     queryKey: queryKeys.answers.infinite(initialPost.id),
-    queryFn: ({ pageParam }) =>
-      fetch(`/api/posts/${initialPost.id}/answers?page=${pageParam}&limit=10`, { credentials: 'include' }).then((r) =>
+    queryFn: ({ pageParam = { page: 1, cursor: null } }) => {
+      const cursor = pageParam.cursor;
+      const query = new URLSearchParams();
+      query.set('page', String(pageParam.page));
+      query.set('limit', '10');
+      if (cursor) query.set('cursor', cursor);
+      return fetch(`/api/posts/${initialPost.id}/answers?${query.toString()}`, { credentials: 'include' }).then((r) =>
         r.json()
-      ),
-    initialPageParam: 1,
+      );
+    },
     getNextPageParam: (lastPage) => {
+      const nextCursor = lastPage.meta?.nextCursor;
+      if (nextCursor) {
+        return { page: lastPage.pagination.page + 1, cursor: nextCursor };
+      }
       const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
+      return page < totalPages ? { page: page + 1, cursor: null } : undefined;
     },
     enabled: Boolean(initialPost.id && post.isQuestion),
   });
 
-  const commentsInfiniteQuery = useInfiniteQuery<PaginatedListResponse<Comment>>({
+  const commentsInfiniteQuery = useInfiniteQuery<
+    PaginatedListResponse<Comment>,
+    Error,
+    InfiniteData<PaginatedListResponse<Comment>, InfinitePageParam>,
+    CommentsInfiniteKey,
+    InfinitePageParam
+  >({
+    initialPageParam: { page: 1, cursor: null },
     queryKey: queryKeys.comments.infinite(initialPost.id),
-    queryFn: ({ pageParam }) =>
-      fetch(`/api/posts/${initialPost.id}/comments?page=${pageParam}&limit=20`, { credentials: 'include' }).then((r) =>
+    queryFn: ({ pageParam = { page: 1, cursor: null } }) => {
+      const cursor = pageParam.cursor;
+      const query = new URLSearchParams();
+      query.set('page', String(pageParam.page));
+      query.set('limit', '20');
+      if (cursor) query.set('cursor', cursor);
+      return fetch(`/api/posts/${initialPost.id}/comments?${query.toString()}`, { credentials: 'include' }).then((r) =>
         r.json()
-      ),
-    initialPageParam: 1,
+      );
+    },
     getNextPageParam: (lastPage) => {
+      const nextCursor = lastPage.meta?.nextCursor;
+      if (nextCursor) {
+        return { page: lastPage.pagination.page + 1, cursor: nextCursor };
+      }
       const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
+      return page < totalPages ? { page: page + 1, cursor: null } : undefined;
     },
     enabled: Boolean(initialPost.id && !post.isQuestion),
   });
@@ -505,21 +561,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const categoryLabel = useMemo(() => mapSlugToLabel(categorySlug), [categorySlug, locale]);
   const subcategoryLabel = useMemo(() => mapSlugToLabel(subcategorySlug), [subcategorySlug, locale]);
-
-  const getUgcErrorKeyMap: Record<'answerContent' | 'commentContent', Record<UgcValidationErrorCode, string>> = {
-    answerContent: {
-      UGC_REQUIRED: 'ANSWER_REQUIRED',
-      UGC_TOO_SHORT: 'ANSWER_TOO_SHORT',
-      UGC_TOO_LONG: 'ANSWER_TOO_LONG',
-      UGC_LOW_QUALITY: 'ANSWER_LOW_QUALITY',
-    },
-    commentContent: {
-      UGC_REQUIRED: 'COMMENT_REQUIRED',
-      UGC_TOO_SHORT: 'COMMENT_TOO_SHORT',
-      UGC_TOO_LONG: 'COMMENT_TOO_LONG',
-      UGC_LOW_QUALITY: 'COMMENT_LOW_QUALITY',
-    },
-  };
 
   function getUgcErrorMessage(
     result: UgcValidationResult,
