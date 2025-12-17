@@ -4,12 +4,12 @@ import { notFound } from 'next/navigation';
 import { i18n } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { getDictionary } from '@/i18n/get-dictionary';
-import StructuredData from "@/components/StructuredData";
+import StructuredData from "@/components/organisms/StructuredData";
 import BottomNavigation from '@/components/organisms/BottomNavigation';
 import QueryProvider from "@/providers/QueryProvider";
 import NextTopLoader from 'nextjs-toploader';
 import { SessionProvider } from 'next-auth/react';
-import ProfileChecker from '@/components/ProfileChecker';
+import ProfileChecker from '@/components/organisms/ProfileChecker';
 import { Toaster } from "@/components/ui/sonner";
 import "../globals.css";
 
