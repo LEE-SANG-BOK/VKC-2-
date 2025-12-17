@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { contentReports, posts, answers, comments } from '@/lib/db/schema';
+import { reports, posts, answers, comments } from '@/lib/db/schema';
 import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { and, eq, gte, sql } from 'drizzle-orm';
@@ -28,46 +28,88 @@ export async function POST(request: NextRequest) {
     const since = new Date(Date.now() - 60 * 60 * 1000);
     const [recentCount] = await db
       .select({ count: sql<number>`count(*)::int` })
-      .from(contentReports)
-      .where(and(eq(contentReports.reporterId, user.id), gte(contentReports.createdAt, since)));
+      .from(reports)
+      .where(and(eq(reports.reporterId, user.id), gte(reports.createdAt, since)));
     if ((recentCount?.count || 0) >= 5) {
       return errorResponse('신고 한도를 초과했습니다. 잠시 후 다시 시도하세요.');
     }
 
-    let exists = null;
+    const validTypes = ['spam', 'harassment', 'inappropriate', 'misinformation', 'other'] as const;
+    if (!validTypes.includes(type)) {
+      return errorResponse('올바르지 않은 신고 유형입니다.');
+    }
+
+    if (type === 'other' && reason.trim().length < 10) {
+      return errorResponse('기타 신고 시 사유를 10자 이상 입력해주세요.');
+    }
+
+    const trimmedReason = reason.trim();
+    const finalReason = type === 'other' ? trimmedReason : type;
+
+    let exists: { authorId: string } | null = null;
     if (targetType === 'post') {
-      exists = await db.query.posts.findFirst({ where: eq(posts.id, targetId) });
+      const post = await db.query.posts.findFirst({ where: eq(posts.id, targetId) });
+      exists = post ? { authorId: post.authorId } : null;
     } else if (targetType === 'answer') {
-      exists = await db.query.answers.findFirst({ where: eq(answers.id, targetId) });
+      const answer = await db.query.answers.findFirst({ where: eq(answers.id, targetId) });
+      exists = answer ? { authorId: answer.authorId } : null;
     } else if (targetType === 'comment') {
-      exists = await db.query.comments.findFirst({ where: eq(comments.id, targetId) });
+      const comment = await db.query.comments.findFirst({ where: eq(comments.id, targetId) });
+      exists = comment ? { authorId: comment.authorId } : null;
     }
 
     if (!exists) {
       return notFoundResponse('대상을 찾을 수 없습니다.');
     }
 
-    const dup = await db.query.contentReports.findFirst({
-      where: and(
-        eq(contentReports.reporterId, user.id),
-        eq(contentReports.targetType, targetType),
-        eq(contentReports.targetId, targetId)
-      ),
-    });
+    if (exists.authorId === user.id) {
+      return errorResponse('본인의 콘텐츠는 신고할 수 없습니다.');
+    }
+
+    const dup =
+      targetType === 'post'
+        ? await db.query.reports.findFirst({
+            where: and(eq(reports.reporterId, user.id), eq(reports.postId, targetId)),
+          })
+        : targetType === 'answer'
+          ? await db.query.reports.findFirst({
+              where: and(eq(reports.reporterId, user.id), eq(reports.answerId, targetId)),
+            })
+          : await db.query.reports.findFirst({
+              where: and(eq(reports.reporterId, user.id), eq(reports.commentId, targetId)),
+            });
 
     if (dup) {
       return successResponse(dup, '이미 신고한 항목입니다.');
     }
 
     const [report] = await db
-      .insert(contentReports)
-      .values({
-        reporterId: user.id,
-        targetType,
-        targetId,
-        type,
-        reason,
-      })
+      .insert(reports)
+      .values(
+        targetType === 'post'
+          ? {
+              reporterId: user.id,
+              postId: targetId,
+              type,
+              reason: finalReason,
+              status: 'pending',
+            }
+          : targetType === 'answer'
+            ? {
+                reporterId: user.id,
+                answerId: targetId,
+                type,
+                reason: finalReason,
+                status: 'pending',
+              }
+            : {
+                reporterId: user.id,
+                commentId: targetId,
+                type,
+                reason: finalReason,
+                status: 'pending',
+              }
+      )
       .returning();
 
     return successResponse(report, '신고가 접수되었습니다.');

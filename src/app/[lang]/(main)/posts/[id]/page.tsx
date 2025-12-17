@@ -7,6 +7,7 @@ import { fetchPost } from '@/repo/posts/fetch';
 import { queryKeys } from '@/repo/keys';
 import PostDetailClient from './PostDetailClient';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
+import { stripHtml } from '@/utils/htmlToText';
 
 // 동적 라우트 설정
 export const dynamicParams = true;
@@ -37,11 +38,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
   const currentUrl = `${baseUrl}/${lang}/posts/${id}`;
-
-  // HTML 태그 제거 및 텍스트 추출 (최대 160자)
-  const stripHtml = (html: string) => {
-    return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-  };
 
   const description = stripHtml(post.content || '').substring(0, 160);
   const titleSuffix = t.titleSuffix || 'viet kconnect';

@@ -34,10 +34,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MoreHorizontal, Search, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import dayjs from 'dayjs';
 import Link from 'next/link';
-
-const stripHtml = (html: string) => {
-  return html.replace(/<[^>]*>/g, '').trim();
-};
+import { stripHtml } from '@/utils/htmlToText';
 
 export default function AdminCommentsPage() {
   const [page, setPage] = useState(1);

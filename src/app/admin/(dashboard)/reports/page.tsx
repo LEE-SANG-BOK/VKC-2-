@@ -26,10 +26,7 @@ import dayjs from 'dayjs';
 import Link from 'next/link';
 import { AdminReport } from '@/repo/admin/types';
 import { useSearchParams } from 'next/navigation';
-
-const stripHtml = (html: string) => {
-  return html.replace(/<[^>]*>/g, '').trim();
-};
+import { stripHtml } from '@/utils/htmlToText';
 
 const reportTypeLabels: Record<string, string> = {
   spam: '스팸',

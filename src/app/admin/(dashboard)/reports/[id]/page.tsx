@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminReport } from '@/repo/admin/query';
@@ -39,6 +39,7 @@ import {
   Ban,
 } from 'lucide-react';
 import dayjs from 'dayjs';
+import { stripHtmlToText } from '@/utils/htmlToText';
 
 export default function AdminReportDetailPage() {
   const params = useParams();
@@ -56,6 +57,23 @@ export default function AdminReportDetailPage() {
   const [suspendDays, setSuspendDays] = useState<number>(7);
 
   const report = data?.report;
+
+  useEffect(() => {
+    if (!report) return;
+    setReviewNote(report.reviewNote || '');
+  }, [report?.id]);
+
+  const handleReviewed = async () => {
+    try {
+      await updateReportMutation.mutateAsync({
+        id: reportId,
+        data: { status: 'reviewed', reviewNote },
+      });
+      router.push('/admin/reports');
+    } catch (error) {
+      console.error('Failed to mark report as reviewed:', error);
+    }
+  };
 
   const handleResolve = async () => {
     try {
@@ -263,12 +281,11 @@ export default function AdminReportDetailPage() {
                   {report.targetContent.title && (
                     <h3 className="font-medium">{report.targetContent.title}</h3>
                   )}
-                  <div
-                    className="text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-lg max-h-[300px] overflow-y-auto"
-                    dangerouslySetInnerHTML={{
-                      __html: report.targetContent.content || report.targetContent.title || '',
-                    }}
-                  />
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg max-h-[300px] overflow-y-auto">
+                    <pre className="m-0 whitespace-pre-wrap break-words text-sm font-sans">
+                      {stripHtmlToText(report.targetContent.content || report.targetContent.title || '')}
+                    </pre>
+                  </div>
                 </div>
               ) : (
                 <p className="text-muted-foreground">콘텐츠가 삭제되었습니다</p>
@@ -276,7 +293,7 @@ export default function AdminReportDetailPage() {
             </CardContent>
           </Card>
 
-          {report.status === 'pending' && (
+          {(report.status === 'pending' || report.status === 'reviewed') && (
             <Card>
               <CardHeader>
                 <CardTitle>조치</CardTitle>
@@ -303,15 +320,24 @@ export default function AdminReportDetailPage() {
                   <label htmlFor="deleteTarget" className="text-sm">
                     해결 시 신고된 콘텐츠 삭제
                   </label>
-                </div>
+	                </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleResolve}
-                    disabled={updateReportMutation.isPending}
-                  >
-                    해결
-                  </Button>
+	                <div className="flex gap-2">
+	                  {report.status === 'pending' && (
+	                    <Button
+	                      variant="secondary"
+	                      onClick={handleReviewed}
+	                      disabled={updateReportMutation.isPending}
+	                    >
+	                      검토됨
+	                    </Button>
+	                  )}
+	                  <Button
+	                    onClick={handleResolve}
+	                    disabled={updateReportMutation.isPending}
+	                  >
+	                    해결
+	                  </Button>
                   <Button
                     variant="outline"
                     onClick={handleDismiss}

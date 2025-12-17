@@ -203,27 +203,35 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 });
     }
 
-    if (status === 'resolved' || status === 'dismissed') {
-      const [updatedReport] = await db.update(reports).set({
-        status: status as 'resolved' | 'dismissed',
-        reviewNote: reviewNote || null,
-        updatedAt: new Date(),
-      }).where(eq(reports.id, id)).returning();
+    if (report.status === 'resolved' || report.status === 'dismissed') {
+      return NextResponse.json({ error: 'Report already processed' }, { status: 400 });
+    }
 
-      if (deleteTarget && status === 'resolved') {
-        if (report.postId) {
-          await db.delete(posts).where(eq(posts.id, report.postId));
-        } else if (report.answerId) {
-          await db.delete(answers).where(eq(answers.id, report.answerId));
-        } else if (report.commentId) {
-          await db.delete(comments).where(eq(comments.id, report.commentId));
-        }
-      }
-
-      return NextResponse.json({ report: updatedReport });
-    } else {
+    if (status !== 'reviewed' && status !== 'resolved' && status !== 'dismissed') {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
+
+    const [updatedReport] = await db
+      .update(reports)
+      .set({
+        status,
+        reviewNote: reviewNote || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(reports.id, id))
+      .returning();
+
+    if (deleteTarget && status === 'resolved') {
+      if (report.postId) {
+        await db.delete(posts).where(eq(posts.id, report.postId));
+      } else if (report.answerId) {
+        await db.delete(answers).where(eq(answers.id, report.answerId));
+      } else if (report.commentId) {
+        await db.delete(comments).where(eq(comments.id, report.commentId));
+      }
+    }
+
+    return NextResponse.json({ report: updatedReport });
   } catch (error) {
     console.error('Admin report action error:', error);
     return NextResponse.json({ error: 'Failed to update report' }, { status: 500 });
