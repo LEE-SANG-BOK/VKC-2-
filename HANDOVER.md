@@ -8,6 +8,7 @@
 - 모바일 사이드바를 Sheet 드로어로 전환, 데스크톱 사이드바는 스티키 유지
 - PostCard 모바일 터치 타깃 확대 및 썸네일 노출 방식 개선
 - 운영: 지속 PR(단일 브랜치) 운영 시작 — `codex-beta-improvements` (PR: https://github.com/LEE-SANG-BOK/VKC-2-/pull/1)
+- 컴포넌트 운영 모드(B) 가드: User 영역은 atoms 중심, Admin 영역은 ui 중심이 되도록 ESLint import 제한 적용 + user layout은 AppToaster 래퍼로 ui 직접 import 제거
 - 홈 피드 무한스크롤 유지 + `?page=` 기반 Prev/Next 링크 제공(SEO-friendly 페이지네이션)
 - `GET /api/posts` 리스트 응답에서 `content` 기본 제외 + `excerpt` 제공으로 응답 크기/렌더 비용 절감
 - `GET /api/posts` 추가 최적화: content preview 8000→4000, 검색 fallback에서도 full-content 로딩 제거, 이미지/썸네일 파싱 경량화

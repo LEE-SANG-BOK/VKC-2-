@@ -27,6 +27,43 @@ const eslintConfig = defineConfig([
       "@next/next/no-img-element": "off",
     },
   },
+  {
+    files: ["src/app/admin/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/components/atoms/*",
+                "@/components/molecules/*",
+                "@/components/organisms/*",
+                "@/components/templates/*",
+              ],
+              message: "Admin pages should use '@/components/ui/*' (B-mode: User=atoms, Admin=ui).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/app/[lang]/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/components/ui/*"],
+              message: "User pages should not import '@/components/ui/*' directly (B-mode: User=atoms, Admin=ui).",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

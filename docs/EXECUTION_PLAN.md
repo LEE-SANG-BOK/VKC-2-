@@ -383,7 +383,7 @@
 
 **운영/프로세스(Lead)**
 - [x] (2025-12-18) [LEAD] 단일 브랜치/지속 PR 세팅 + `@codex` 멘션(자동 코드리뷰) (PR: https://github.com/LEE-SANG-BOK/VKC-2-/pull/1)
-- [ ] (2025-12-18) [LEAD] 컴포넌트 운영 모드(B) 문서 고정 + 혼용 방지 가드(ESLint import rule) (User=atoms, Admin=ui)
+- [x] (2025-12-18) [LEAD] 컴포넌트 운영 모드(B) 문서 고정 + 혼용 방지 가드(ESLint import rule) (User=atoms, Admin=ui)
 
 **UI/UX(Design Front)**
 - [ ] (2025-12-18) [FE] Home 버튼 클릭 시 “초기 상태”로 복귀(사이드바 스크롤/선택/필터 포함) (메모: 기준 정의 필요)

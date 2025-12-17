@@ -10,7 +10,7 @@ import QueryProvider from "@/providers/QueryProvider";
 import NextTopLoader from 'nextjs-toploader';
 import { SessionProvider } from 'next-auth/react';
 import ProfileChecker from '@/components/organisms/ProfileChecker';
-import { Toaster } from "@/components/ui/sonner";
+import AppToaster from '@/components/organisms/AppToaster';
 import "../globals.css";
 
 type Props = {
@@ -157,7 +157,7 @@ export default async function LocaleLayout({
               <BottomNavigation translations={translations} />
             </Suspense>
           </div>
-          <Toaster position="top-center" richColors />
+          <AppToaster position="top-center" richColors />
         </SessionProvider>
       </QueryProvider>
     </>
