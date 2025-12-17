@@ -21,6 +21,7 @@
 - 관리자 신고 처리 보강: `reviewed(검토됨)` 상태 액션 지원 + 신고 상세에서 HTML을 텍스트로 렌더링해 XSS 방어
 - HTML→텍스트 공통 유틸 추가: `src/utils/htmlToText.ts` (admin reports/comments + posts metadata에서 재사용)
 - Tooltip 잔상 방지: 라우트/검색 파라미터 변경 시 Tooltip 강제 close (`src/components/atoms/Tooltip.tsx`)
+- Home 리셋 UX: 홈(로고/하단 Home) 클릭 시 메인 스크롤 Top + 사이드바 스크롤 Top + 모바일 메뉴 닫기 (`src/utils/homeReset.ts`)
 - 게시글 상세 UI 정리: 상단 썸네일/상단 카테고리칩 제거, 카테고리+태그 칩은 본문 하단으로 통합, 북마크는 헤더에서 제거 후 하단 액션바(공유 옆)로 이동
 - UGC 글자수 상한 조정: 제목 100 / 본문 5000 / 답변 3000 / 댓글 400 + ko/en/vi 오류 메시지 동기화
 - UGC 최소 글자수 완화: 게시글 제목/본문/답변/댓글 최소 10→5 + ko/en/vi 오류 메시지 동기화

@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import Header from "@/components/organisms/Header";
 import CategorySidebar from "@/components/organisms/CategorySidebar";
 import AccountStatusBanner from "@/components/molecules/AccountStatusBanner";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { onHomeReset } from "@/utils/homeReset";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -18,6 +19,11 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children, selectedCategory = 'all', onCategoryChange, hideSidebar = false, hideSearch = false, rightRail, translations }: MainLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => onHomeReset(() => {
+    setIsMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }), []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative transition-colors duration-300">

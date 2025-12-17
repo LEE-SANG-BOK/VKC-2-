@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { dispatchHomeReset } from '@/utils/homeReset';
 
 export default function Logo() {
   const params = useParams();
@@ -12,6 +13,7 @@ export default function Logo() {
       href={`/${locale}?c=popular`}
       className="flex items-center gap-1 group"
       translate="no"
+      onClick={() => dispatchHomeReset()}
     >
       <div className="h-7 w-9 flex items-center justify-center">
         <svg

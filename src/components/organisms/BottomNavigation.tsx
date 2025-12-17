@@ -5,6 +5,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Home, Search, PenSquare, ShieldCheck, User } from 'lucide-react';
+import { dispatchHomeReset } from '@/utils/homeReset';
 
 interface BottomNavigationProps {
   translations: Record<string, unknown>;
@@ -39,6 +40,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
   }, [lang, translations]);
 
   const handleHomeFeedToggle = (next: 'popular' | 'latest') => {
+    dispatchHomeReset();
     const nextParams = new URLSearchParams(searchParams?.toString());
     nextParams.set('c', next);
     nextParams.delete('page');
@@ -134,6 +136,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
       return;
     }
     if (href === `/${lang}`) {
+      dispatchHomeReset();
       router.push(`/${lang}?c=${homeFeed || 'popular'}`);
       return;
     }

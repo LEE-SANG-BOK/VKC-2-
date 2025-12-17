@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Info } from 'lucide-react';
@@ -11,6 +11,7 @@ import { useCategories, useMySubscriptions } from '@/repo/categories/query';
 import { useToggleSubscription } from '@/repo/categories/mutation';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
+import { onHomeReset } from '@/utils/homeReset';
 
 interface ApiCategory {
   id: string;
@@ -44,6 +45,11 @@ export default function CategorySidebar({
   const { data: apiCategories } = useCategories();
   const { data: mySubs } = useMySubscriptions(!!user);
   const { mutate: toggleSubscription } = useToggleSubscription();
+  const containerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => onHomeReset(() => {
+    containerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+  }), []);
 
   const menuTooltip =
     t.menuTooltip ||
@@ -236,6 +242,7 @@ export default function CategorySidebar({
 
       {/* Sidebar */}
       <aside
+        ref={containerRef}
         className={`
         ${isMobileVariant ? '' : 'hidden lg:flex'}
         ${isMobileVariant ? '' : 'sticky'}
