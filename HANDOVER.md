@@ -40,6 +40,7 @@
 - import 규칙 정리: `src/components|providers|utils`는 `@/` alias로 통일하고 `../` 상위 상대경로 import는 ESLint로 금지(중복/충돌 방지)
 - 상수 중복 제거: category group slugs는 `src/lib/constants/category-groups.ts`를 단일 소스로 사용하고 UI 그룹(`CATEGORY_GROUPS`)는 이를 참조
 - 미사용 컴포넌트 정리: 실제 라우트/컴포넌트 트리에서 참조되지 않는 컴포넌트 삭제로 구조 단순화
+- 인라인 스타일 최소화: 스크롤바 숨김/하단 safe-area offset은 `src/app/globals.css` 유틸로 이동
 - 스키마 확장: users에 badge_type/trust_score/helpful_answers/adoption_rate/is_expert 추가, topic_subscriptions 테이블 신설, 비자 매칭 메타(visa_jobs, visa_requirements) 테이블 추가, 인증 승인 시 뱃지 자동 부여 API 반영
 
 ---

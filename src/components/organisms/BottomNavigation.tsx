@@ -149,10 +149,9 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
     <>
       {showHomeFeedToggle ? (
         <div
-          className={`md:hidden pointer-events-none fixed inset-x-0 z-40 flex justify-center transition-all duration-200 ease-out ${
+          className={`vk-home-feed-toggle md:hidden pointer-events-none fixed inset-x-0 z-40 flex justify-center transition-all duration-200 ease-out ${
             isFeedToggleReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
           }`}
-          style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px) + 10px)' }}
         >
           <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-gray-200/70 dark:border-gray-700/60 bg-white/80 dark:bg-gray-900/65 backdrop-blur px-1.5 py-1.5 shadow-lg">
             <button

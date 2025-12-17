@@ -224,6 +224,7 @@
 - [x] (2025-12-17) import 규칙 정리: `src/components|providers|utils`의 `../` 상대경로 제거 + ESLint로 재발 방지
 - [x] (2025-12-17) 상수 중복 제거: category group slugs 단일 소스(`category-groups.ts` → `categories.ts` 참조)
 - [x] (2025-12-17) 미사용 컴포넌트 제거(구현/라우트에서 참조 없는 컴포넌트 정리) + lint/build 재검증
+- [x] (2025-12-17) 인라인 style 최소화: 공통 CSS(util)로 이동(스크롤바 숨김/하단 safe-area offset 등)
 
 **현황 분석**
 - 컴포넌트는 ATOMIC 폴더가 있으나, 일부 전역 컴포넌트가 `src/components/*` 루트에 존재.
