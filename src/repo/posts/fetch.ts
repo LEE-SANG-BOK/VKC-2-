@@ -13,7 +13,6 @@ import type {
   PostFilters,
 } from './types';
 import { ApiError, AccountRestrictedError } from '@/lib/api/errors';
-
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 /**

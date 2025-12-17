@@ -6,8 +6,10 @@ import type { Locale } from '@/i18n/config';
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import ProfileClient, { ProfileData } from './ProfileClient';
 import { fetchUserPosts, fetchUserAnswers, fetchUserComments } from '@/repo/users/fetch';
+import { PaginatedResponse, UserPost, UserAnswer, UserComment } from '@/repo/users/types';
 import { queryKeys } from '@/repo/keys';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
+import { API_BASE } from '@/lib/apiBase';
 
 export const dynamicParams = true;
 export const revalidate = 60;
@@ -18,8 +20,6 @@ interface PageProps {
     id: string;
   }>;
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 // API로 프로필 가져오기 (쿠키 포함)
 async function getProfileById(id: string, cookieHeader?: string): Promise<ProfileData | null> {
@@ -171,38 +171,45 @@ export default async function ProfilePage({ params }: PageProps) {
     : undefined;
 
   type PageParam = { page: number; cursor?: string | null };
+  const defaultPageParam: PageParam = { page: 1, cursor: null };
 
   await Promise.all([
     queryClient.prefetchInfiniteQuery({
       queryKey: queryKeys.users.posts(id, {}),
-      queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
-        fetchUserPosts(id, {
-          page: pageParam.page,
-          cursor: pageParam.cursor || undefined,
+      queryFn: ({ pageParam = defaultPageParam }: { pageParam?: PageParam }) => {
+        const param = pageParam as PageParam;
+        return fetchUserPosts(id, {
+          page: param.page,
+          cursor: param.cursor || undefined,
           limit: 20,
-        }),
-      initialPageParam: { page: 1 } satisfies PageParam,
+        });
+      },
+      initialPageParam: defaultPageParam,
     }),
     queryClient.prefetchInfiniteQuery({
       queryKey: queryKeys.users.answers(id, { adoptedOnly: true }),
-      queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
-        fetchUserAnswers(id, {
+      queryFn: ({ pageParam = defaultPageParam }: { pageParam?: PageParam }) => {
+        const param = pageParam as PageParam;
+        return fetchUserAnswers(id, {
           adoptedOnly: true,
-          page: pageParam.page,
-          cursor: pageParam.cursor || undefined,
+          page: param.page,
+          cursor: param.cursor || undefined,
           limit: 20,
-        }),
-      initialPageParam: { page: 1 } satisfies PageParam,
+        });
+      },
+      initialPageParam: defaultPageParam,
     }),
     queryClient.prefetchInfiniteQuery({
       queryKey: queryKeys.users.comments(id, {}),
-      queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
-        fetchUserComments(id, {
-          page: pageParam.page,
-          cursor: pageParam.cursor || undefined,
+      queryFn: ({ pageParam = defaultPageParam }: { pageParam?: PageParam }) => {
+        const param = pageParam as PageParam;
+        return fetchUserComments(id, {
+          page: param.page,
+          cursor: param.cursor || undefined,
           limit: 20,
-        }),
-      initialPageParam: { page: 1 } satisfies PageParam,
+        });
+      },
+      initialPageParam: defaultPageParam,
     }),
   ]);
 

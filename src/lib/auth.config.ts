@@ -99,5 +99,6 @@ export const authConfig = {
   session: {
     strategy: 'jwt',
   },
+  basePath: '/api/auth',
 
 } satisfies NextAuthConfig;

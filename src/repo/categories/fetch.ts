@@ -4,7 +4,6 @@
  */
 
 import type { Category, SubscribedCategory, ApiResponse, SubscriptionResponse } from './types';
-
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 const withCredentials = typeof window === 'undefined'

@@ -6,7 +6,6 @@ import type {
   ApiResponse,
 } from './types';
 import { ApiError } from '@/lib/api/errors';
-
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 export async function fetchVerificationHistory(

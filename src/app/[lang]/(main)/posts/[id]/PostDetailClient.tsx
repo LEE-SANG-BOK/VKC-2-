@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
-import Image from 'next/image';
 import { MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, HelpCircle, CheckCircle, ThumbsUp, AlertTriangle, Link as LinkIcon, ShieldAlert } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import dayjs from 'dayjs';
@@ -201,6 +200,32 @@ const ALLOWED_CATEGORY_SLUGS = new Set<string>([
   ...Object.values(CATEGORY_GROUPS).flatMap((group) => group.slugs),
 ]);
 
+const UGC_ERROR_KEY_MAP: Record<'answerContent' | 'commentContent', Record<UgcValidationErrorCode, string>> = {
+  answerContent: {
+    UGC_REQUIRED: 'ANSWER_REQUIRED',
+    UGC_TOO_SHORT: 'ANSWER_TOO_SHORT',
+    UGC_TOO_LONG: 'ANSWER_TOO_LONG',
+    UGC_LOW_QUALITY: 'ANSWER_LOW_QUALITY',
+  },
+  commentContent: {
+    UGC_REQUIRED: 'COMMENT_REQUIRED',
+    UGC_TOO_SHORT: 'COMMENT_TOO_SHORT',
+    UGC_TOO_LONG: 'COMMENT_TOO_LONG',
+    UGC_LOW_QUALITY: 'COMMENT_LOW_QUALITY',
+  },
+};
+
+function getUgcErrorMessage(
+  result: UgcValidationResult,
+  field: 'answerContent' | 'commentContent',
+  tErrors: Record<string, string>
+) {
+  if (result.ok) return '';
+  const key = UGC_ERROR_KEY_MAP[field][result.code];
+  if (key && tErrors[key]) return tErrors[key];
+  return tErrors.CONTENT_PROHIBITED || '금칙어/저품질 콘텐츠로 작성할 수 없습니다.';
+}
+
 export default function PostDetailClient({ initialPost, locale, translations }: PostDetailClientProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -211,20 +236,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
   const tErrors = (translations?.errors || {}) as Record<string, string>;
 
-  const getUgcErrorKeyMap: Record<'answerContent' | 'commentContent', Record<UgcValidationErrorCode, string>> = {
-    answerContent: {
-      UGC_REQUIRED: 'ANSWER_REQUIRED',
-      UGC_TOO_SHORT: 'ANSWER_TOO_SHORT',
-      UGC_TOO_LONG: 'ANSWER_TOO_LONG',
-      UGC_LOW_QUALITY: 'ANSWER_LOW_QUALITY',
-    },
-    commentContent: {
-      UGC_REQUIRED: 'COMMENT_REQUIRED',
-      UGC_TOO_SHORT: 'COMMENT_TOO_SHORT',
-      UGC_TOO_LONG: 'COMMENT_TOO_LONG',
-      UGC_LOW_QUALITY: 'COMMENT_LOW_QUALITY',
-    },
-  };
   const guidelineTooltip =
     tCommon.guidelineTooltip ||
     '예의·혐오 표현 금지, 광고/연락처 제한, 위반 시 게시 제한 또는 계정 제재가 있을 수 있습니다.';
@@ -496,10 +507,18 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     () => validateUgcText(answerReplyContent, UGC_LIMITS.commentContent.min, UGC_LIMITS.commentContent.max),
     [answerReplyContent]
   );
-  const commentValidationMessage = commentValidation.ok ? '' : getUgcErrorMessage(commentValidation, 'commentContent');
-  const replyValidationMessage = replyValidation.ok ? '' : getUgcErrorMessage(replyValidation, 'commentContent');
-  const answerValidationMessage = answerValidation.ok ? '' : getUgcErrorMessage(answerValidation, 'answerContent');
-  const answerReplyValidationMessage = answerReplyValidation.ok ? '' : getUgcErrorMessage(answerReplyValidation, 'commentContent');
+  const commentValidationMessage = commentValidation.ok
+    ? ''
+    : getUgcErrorMessage(commentValidation, 'commentContent', tErrors);
+  const replyValidationMessage = replyValidation.ok
+    ? ''
+    : getUgcErrorMessage(replyValidation, 'commentContent', tErrors);
+  const answerValidationMessage = answerValidation.ok
+    ? ''
+    : getUgcErrorMessage(answerValidation, 'answerContent', tErrors);
+  const answerReplyValidationMessage = answerReplyValidation.ok
+    ? ''
+    : getUgcErrorMessage(answerReplyValidation, 'commentContent', tErrors);
   const commentHasValidationError = !commentValidation.ok;
   const replyHasValidationError = !replyValidation.ok;
   const answerHasValidationError = !answerValidation.ok;
@@ -561,16 +580,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const categoryLabel = useMemo(() => mapSlugToLabel(categorySlug), [categorySlug, locale]);
   const subcategoryLabel = useMemo(() => mapSlugToLabel(subcategorySlug), [subcategorySlug, locale]);
-
-  function getUgcErrorMessage(
-    result: UgcValidationResult,
-    field: 'answerContent' | 'commentContent'
-  ) {
-    if (result.ok) return '';
-    const key = getUgcErrorKeyMap[field][result.code];
-    if (key && tErrors[key]) return tErrors[key];
-    return tErrors.CONTENT_PROHIBITED || '금칙어/저품질 콘텐츠로 작성할 수 없습니다.';
-  }
 
   const uniqueTags = useMemo(() => {
     if (!post?.tags) return [];
@@ -867,7 +876,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       return;
     }
     if (!commentValidation.ok) {
-      toast.error(getUgcErrorMessage(commentValidation, 'commentContent'));
+      toast.error(getUgcErrorMessage(commentValidation, 'commentContent', tErrors));
       return;
     }
 
@@ -950,7 +959,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       return;
     }
     if (!answerValidation.ok) {
-      toast.error(getUgcErrorMessage(answerValidation, 'answerContent'));
+      toast.error(getUgcErrorMessage(answerValidation, 'answerContent', tErrors));
       return;
     }
 
@@ -1151,7 +1160,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       return;
     }
     if (!replyValidation.ok) {
-      toast.error(getUgcErrorMessage(replyValidation, 'commentContent'));
+      toast.error(getUgcErrorMessage(replyValidation, 'commentContent', tErrors));
       return;
     }
 
@@ -1389,7 +1398,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       return;
     }
     if (!answerReplyValidation.ok) {
-      toast.error(getUgcErrorMessage(answerReplyValidation, 'commentContent'));
+      toast.error(getUgcErrorMessage(answerReplyValidation, 'commentContent', tErrors));
       return;
     }
 
@@ -1711,12 +1720,12 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           {/* Thumbnail */}
           {renderThumbnailSrc && (
             <div className="relative w-full h-[200px] sm:h-[300px] md:h-[400px]">
-              <Image
+              <img
                 src={renderThumbnailSrc}
                 alt={post.title}
-                fill
-                className="object-cover"
-                priority
+                className="w-full h-full object-cover"
+                loading="eager"
+                decoding="async"
                 onError={() => setRenderThumbnailSrc('/brand-logo.png')}
               />
             </div>

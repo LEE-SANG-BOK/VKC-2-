@@ -1,6 +1,5 @@
 import type { Answer, ApiResponse, CreateAnswerRequest, UpdateAnswerRequest, CreateCommentRequest, Comment } from './types';
 import { ApiError, AccountRestrictedError } from '@/lib/api/errors';
-
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 export async function fetchAnswers(postId: string): Promise<ApiResponse<Answer[]>> {
