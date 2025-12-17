@@ -5,7 +5,7 @@ import { comments, posts, likes } from '@/lib/db/schema';
 import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, paginatedResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkUserStatus } from '@/lib/user-status';
-import { eq, asc, and, sql, isNull, inArray } from 'drizzle-orm';
+import { eq, asc, and, sql, isNull, inArray, or, gt, type SQL } from 'drizzle-orm';
 import { createCommentNotification, createReplyNotification } from '@/lib/notifications/create';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
@@ -18,9 +18,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id: postId } = await context.params;
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const wantsPagination = searchParams.has('page') || searchParams.has('limit');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
+    const cursorParam = searchParams.get('cursor');
+    const wantsPagination = searchParams.has('page') || searchParams.has('limit') || searchParams.has('cursor');
 
     const user = await getSession(request);
 
@@ -32,39 +33,108 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return notFoundResponse('게시글을 찾을 수 없습니다.');
     }
 
-    const [countResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(comments)
-      .where(and(eq(comments.postId, postId), isNull(comments.parentId)));
+    type CursorPayload = { createdAt: string; id: string };
+    const encodeCursor = (payload: CursorPayload) =>
+      Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+    const decodeCursor = (raw: string): CursorPayload | null => {
+      if (!raw) return null;
+      try {
+        const json = Buffer.from(raw, 'base64url').toString('utf8');
+        const parsed = JSON.parse(json) as Partial<CursorPayload>;
+        if (typeof parsed?.createdAt !== 'string' || typeof parsed?.id !== 'string') return null;
+        return { createdAt: parsed.createdAt, id: parsed.id };
+      } catch {
+        return null;
+      }
+    };
 
-    const total = countResult?.count || 0;
+    const decodedCursor = cursorParam ? decodeCursor(cursorParam) : null;
+    const cursorCreatedAt = decodedCursor ? new Date(decodedCursor.createdAt) : null;
+    const hasValidCursor = Boolean(decodedCursor && cursorCreatedAt && !Number.isNaN(cursorCreatedAt.getTime()));
+    const useCursorPagination = Boolean(wantsPagination && cursorParam && hasValidCursor);
+
+    const total =
+      wantsPagination && !useCursorPagination
+        ? (
+            (
+              await db
+                .select({ count: sql<number>`count(*)::int` })
+                .from(comments)
+                .where(and(eq(comments.postId, postId), isNull(comments.parentId)))
+            )[0]?.count || 0
+          )
+        : 0;
+
+    const totalPages = wantsPagination && !useCursorPagination ? Math.ceil(total / limit) : 0;
+    const queryLimit = useCursorPagination ? limit + 1 : limit;
+
+    const cursorPredicate = useCursorPagination
+      ? (or(
+          gt(comments.createdAt, cursorCreatedAt as Date),
+          and(eq(comments.createdAt, cursorCreatedAt as Date), gt(comments.id, decodedCursor?.id || ''))
+        ) as SQL)
+      : null;
 
     const topLevelComments = await db.query.comments.findMany({
-      where: and(eq(comments.postId, postId), isNull(comments.parentId)),
+      where: cursorPredicate
+        ? and(eq(comments.postId, postId), isNull(comments.parentId), cursorPredicate)
+        : and(eq(comments.postId, postId), isNull(comments.parentId)),
+      columns: {
+        id: true,
+        content: true,
+        createdAt: true,
+        likes: true,
+        authorId: true,
+      },
       with: {
         author: {
           columns: userPublicColumns,
         },
         replies: {
+          columns: {
+            id: true,
+            content: true,
+            createdAt: true,
+            likes: true,
+            authorId: true,
+            parentId: true,
+          },
           with: {
             author: {
               columns: userPublicColumns,
             },
           },
-          orderBy: [asc(comments.createdAt)],
+          orderBy: [asc(comments.createdAt), asc(comments.id)],
         },
       },
-      orderBy: [asc(comments.createdAt)],
+      orderBy: [asc(comments.createdAt), asc(comments.id)],
       ...(wantsPagination
         ? {
-            limit,
-            offset: (page - 1) * limit,
+            limit: queryLimit,
+            offset: useCursorPagination ? 0 : (page - 1) * limit,
           }
         : {}),
     });
 
-    const replyIds = topLevelComments.flatMap((comment) => comment.replies?.map((reply) => reply.id) || []);
-    const commentIds = topLevelComments.map((comment) => comment.id);
+    const rawHasMore = wantsPagination ? (useCursorPagination ? topLevelComments.length > limit : page < totalPages) : false;
+    const pageList =
+      wantsPagination && useCursorPagination && topLevelComments.length > limit
+        ? topLevelComments.slice(0, limit)
+        : topLevelComments;
+    const lastComment = wantsPagination ? pageList[pageList.length - 1] : null;
+    const nextCursor =
+      wantsPagination && rawHasMore && lastComment
+        ? encodeCursor({
+            createdAt:
+              lastComment.createdAt instanceof Date
+                ? lastComment.createdAt.toISOString()
+                : String(lastComment.createdAt),
+            id: String(lastComment.id),
+          })
+        : null;
+
+    const replyIds = pageList.flatMap((comment) => comment.replies?.map((reply) => reply.id) || []);
+    const commentIds = pageList.map((comment) => comment.id);
     const likeTargetIds = [...commentIds, ...replyIds];
 
     const likedCommentIds = new Set<string>();
@@ -88,7 +158,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return `${year}.${month}.${day} ${hours}:${minutes}`;
     };
 
-    const formatted = topLevelComments.map((comment) => ({
+    const formatted = pageList.map((comment) => ({
       id: comment.id,
       author: {
         id: comment.author?.id,
@@ -124,7 +194,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return successResponse(formatted);
     }
 
-    return paginatedResponse(formatted, page, limit, total);
+    return paginatedResponse(formatted, page, limit, total, {
+      nextCursor,
+      hasMore: rawHasMore,
+      paginationMode: useCursorPagination ? 'cursor' : 'offset',
+    });
   } catch (error) {
     console.error('GET /api/posts/[id]/comments error:', error);
     return serverErrorResponse();

@@ -117,22 +117,29 @@ export function useUserBookmarks(
 
 export function useInfiniteFollowers(
   userId: string,
-  filters: Omit<UserFilters, 'page' | 'limit' | 'type'> = {},
+  filters: Omit<UserFilters, 'page' | 'limit' | 'type' | 'cursor'> = {},
   options?: Record<string, unknown>
 ) {
+  type PageParam = { page: number; cursor?: string | null };
+
   return useInfiniteQuery({
     queryKey: queryKeys.users.followers(userId, filters),
-    queryFn: ({ pageParam = 1 }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
       fetchFollowers(userId, {
         ...filters,
-        page: pageParam as number,
+        page: pageParam.page,
+        cursor: pageParam.cursor || undefined,
         limit: 20,
       }),
     getNextPageParam: (lastPage: PaginatedResponse<User>) => {
+      const nextCursor = lastPage.meta?.nextCursor;
+      if (nextCursor) {
+        return { page: lastPage.pagination.page + 1, cursor: nextCursor } satisfies PageParam;
+      }
       const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
+      return page < totalPages ? ({ page: page + 1 } satisfies PageParam) : undefined;
     },
-    initialPageParam: 1,
+    initialPageParam: { page: 1 } satisfies PageParam,
     enabled: !!userId,
     ...options,
   });
@@ -140,22 +147,29 @@ export function useInfiniteFollowers(
 
 export function useInfiniteFollowing(
   userId: string,
-  filters: Omit<UserFilters, 'page' | 'limit' | 'type'> = {},
+  filters: Omit<UserFilters, 'page' | 'limit' | 'type' | 'cursor'> = {},
   options?: Record<string, unknown>
 ) {
+  type PageParam = { page: number; cursor?: string | null };
+
   return useInfiniteQuery({
     queryKey: queryKeys.users.following(userId, filters),
-    queryFn: ({ pageParam = 1 }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
       fetchFollowing(userId, {
         ...filters,
-        page: pageParam as number,
+        page: pageParam.page,
+        cursor: pageParam.cursor || undefined,
         limit: 20,
       }),
     getNextPageParam: (lastPage: PaginatedResponse<User>) => {
+      const nextCursor = lastPage.meta?.nextCursor;
+      if (nextCursor) {
+        return { page: lastPage.pagination.page + 1, cursor: nextCursor } satisfies PageParam;
+      }
       const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
+      return page < totalPages ? ({ page: page + 1 } satisfies PageParam) : undefined;
     },
-    initialPageParam: 1,
+    initialPageParam: { page: 1 } satisfies PageParam,
     enabled: !!userId,
     ...options,
   });

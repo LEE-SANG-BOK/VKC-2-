@@ -5,7 +5,7 @@ import { answers, posts, likes } from '@/lib/db/schema';
 import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, paginatedResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkUserStatus } from '@/lib/user-status';
-import { eq, desc, sql, and, inArray } from 'drizzle-orm';
+import { eq, desc, sql, and, inArray, or, lt, type SQL } from 'drizzle-orm';
 import { createAnswerNotification } from '@/lib/notifications/create';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
@@ -22,9 +22,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id: postId } = await context.params;
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const wantsPagination = searchParams.has('page') || searchParams.has('limit');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '10', 10) || 10));
+    const cursorParam = searchParams.get('cursor');
+    const wantsPagination = searchParams.has('page') || searchParams.has('limit') || searchParams.has('cursor');
 
     const user = await getSession(request);
 
@@ -41,21 +42,87 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return errorResponse('질문 게시글만 답변을 조회할 수 있습니다.', 'INVALID_POST_TYPE');
     }
 
-    const [countResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(answers)
-      .where(eq(answers.postId, postId));
+    type CursorPayload = { isAdopted: boolean; likes: number; createdAt: string; id: string };
+    const encodeCursor = (payload: CursorPayload) =>
+      Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+    const decodeCursor = (raw: string): CursorPayload | null => {
+      if (!raw) return null;
+      try {
+        const json = Buffer.from(raw, 'base64url').toString('utf8');
+        const parsed = JSON.parse(json) as Partial<CursorPayload>;
+        if (typeof parsed?.createdAt !== 'string' || typeof parsed?.id !== 'string') return null;
+        if (typeof parsed?.isAdopted !== 'boolean') return null;
+        if (typeof parsed?.likes !== 'number' || Number.isNaN(parsed.likes)) return null;
+        return {
+          createdAt: parsed.createdAt,
+          id: parsed.id,
+          isAdopted: parsed.isAdopted,
+          likes: parsed.likes,
+        };
+      } catch {
+        return null;
+      }
+    };
 
-    const total = countResult?.count || 0;
+    const decodedCursor = cursorParam ? decodeCursor(cursorParam) : null;
+    const cursorCreatedAt = decodedCursor ? new Date(decodedCursor.createdAt) : null;
+    const hasValidCursor = Boolean(decodedCursor && cursorCreatedAt && !Number.isNaN(cursorCreatedAt.getTime()));
+    const useCursorPagination = Boolean(wantsPagination && cursorParam && hasValidCursor);
+
+    const total =
+      wantsPagination && !useCursorPagination
+        ? (
+            (
+              await db
+                .select({ count: sql<number>`count(*)::int` })
+                .from(answers)
+                .where(eq(answers.postId, postId))
+            )[0]?.count || 0
+          )
+        : 0;
+
+    const totalPages = wantsPagination && !useCursorPagination ? Math.ceil(total / limit) : 0;
+    const queryLimit = useCursorPagination ? limit + 1 : limit;
+
+    const cursorPredicate = useCursorPagination
+      ? (or(
+          lt(answers.isAdopted, decodedCursor?.isAdopted || false),
+          and(eq(answers.isAdopted, decodedCursor?.isAdopted || false), lt(answers.likes, decodedCursor?.likes || 0)),
+          and(
+            eq(answers.isAdopted, decodedCursor?.isAdopted || false),
+            eq(answers.likes, decodedCursor?.likes || 0),
+            lt(answers.createdAt, cursorCreatedAt as Date)
+          ),
+          and(
+            eq(answers.isAdopted, decodedCursor?.isAdopted || false),
+            eq(answers.likes, decodedCursor?.likes || 0),
+            eq(answers.createdAt, cursorCreatedAt as Date),
+            lt(answers.id, decodedCursor?.id || '')
+          )
+        ) as SQL)
+      : null;
 
     // 답변 목록 조회 (작성자 정보 및 댓글 포함)
     const answerList = await db.query.answers.findMany({
-      where: eq(answers.postId, postId),
+      where: cursorPredicate ? and(eq(answers.postId, postId), cursorPredicate) : eq(answers.postId, postId),
+      columns: {
+        id: true,
+        content: true,
+        createdAt: true,
+        likes: true,
+        isAdopted: true,
+      },
       with: {
         author: {
           columns: userPublicColumns,
         },
         comments: {
+          columns: {
+            id: true,
+            content: true,
+            createdAt: true,
+            likes: true,
+          },
           with: {
             author: {
               columns: userPublicColumns,
@@ -64,17 +131,34 @@ export async function GET(request: NextRequest, context: RouteContext) {
           orderBy: (comments, { asc }) => [asc(comments.createdAt)],
         },
       },
-      orderBy: [desc(answers.isAdopted), desc(answers.likes), desc(answers.createdAt)],
+      orderBy: [desc(answers.isAdopted), desc(answers.likes), desc(answers.createdAt), desc(answers.id)],
       ...(wantsPagination
         ? {
-            limit,
-            offset: (page - 1) * limit,
+            limit: queryLimit,
+            offset: useCursorPagination ? 0 : (page - 1) * limit,
           }
         : {}),
     });
 
-    const answerIds = answerList.map((answer) => answer.id);
-    const replyIds = answerList.flatMap((answer) => answer.comments?.map((comment) => comment.id) || []);
+    const rawHasMore = wantsPagination ? (useCursorPagination ? answerList.length > limit : page < totalPages) : false;
+    const pageList =
+      wantsPagination && useCursorPagination && answerList.length > limit ? answerList.slice(0, limit) : answerList;
+    const lastAnswer = wantsPagination ? pageList[pageList.length - 1] : null;
+    const nextCursor =
+      wantsPagination && rawHasMore && lastAnswer
+        ? encodeCursor({
+            isAdopted: Boolean(lastAnswer.isAdopted),
+            likes: Number(lastAnswer.likes ?? 0),
+            createdAt:
+              lastAnswer.createdAt instanceof Date
+                ? lastAnswer.createdAt.toISOString()
+                : String(lastAnswer.createdAt),
+            id: String(lastAnswer.id),
+          })
+        : null;
+
+    const answerIds = pageList.map((answer) => answer.id);
+    const replyIds = pageList.flatMap((answer) => answer.comments?.map((comment) => comment.id) || []);
 
     const likedAnswerIds = new Set<string>();
     const likedReplyIds = new Set<string>();
@@ -109,7 +193,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return `${year}.${month}.${day} ${hours}:${minutes}`;
     };
 
-    const formatted = answerList.map((answer) => ({
+    const formatted = pageList.map((answer) => ({
       id: answer.id,
       author: {
         id: answer.author?.id,
@@ -146,7 +230,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return successResponse(formatted);
     }
 
-    return paginatedResponse(formatted, page, limit, total);
+    return paginatedResponse(formatted, page, limit, total, {
+      nextCursor,
+      hasMore: rawHasMore,
+      paginationMode: useCursorPagination ? 'cursor' : 'offset',
+    });
   } catch (error) {
     console.error('GET /api/posts/[id]/answers error:', error);
     return serverErrorResponse();

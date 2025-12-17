@@ -167,6 +167,7 @@ export const bookmarks = pgTable('bookmarks', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   userPostIdx: uniqueIndex('bookmarks_user_post_idx').on(table.userId, table.postId),
+  userCreatedAtIdx: index('bookmarks_user_created_at_id_idx').on(table.userId, table.createdAt, table.id),
 }));
 
 // Verification Requests Table
@@ -222,6 +223,8 @@ export const follows = pgTable('follows', {
   followerFollowingIdx: uniqueIndex('follows_follower_following_idx').on(table.followerId, table.followingId),
   followerIdx: index('follows_follower_idx').on(table.followerId),
   followingIdx: index('follows_following_idx').on(table.followingId),
+  followerCreatedAtIdx: index('follows_follower_created_at_id_idx').on(table.followerId, table.createdAt, table.id),
+  followingCreatedAtIdx: index('follows_following_created_at_id_idx').on(table.followingId, table.createdAt, table.id),
 }));
 
 // Post Views Table (조회수 추적)
