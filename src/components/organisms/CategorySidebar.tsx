@@ -12,6 +12,7 @@ import { useToggleSubscription } from '@/repo/categories/mutation';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
 import { onHomeReset } from '@/utils/homeReset';
+import { useLoginPrompt } from '@/providers/LoginPromptProvider';
 
 interface ApiCategory {
   id: string;
@@ -45,6 +46,7 @@ export default function CategorySidebar({
   const { data: apiCategories } = useCategories();
   const { data: mySubs } = useMySubscriptions(!!user);
   const { mutate: toggleSubscription } = useToggleSubscription();
+  const { openLoginPrompt } = useLoginPrompt();
   const containerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => onHomeReset(() => {
@@ -155,7 +157,7 @@ export default function CategorySidebar({
 
   const handleSubscribe = (categoryId: string) => {
     if (!user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       setIsMobileMenuOpen(false);
       return;
     }
@@ -181,7 +183,7 @@ export default function CategorySidebar({
     // 로그인 필요한 메뉴
     const authRequiredMenus = ['ask-question', 'share-post', 'verification-request', 'following', 'subscribed', 'my-posts'];
     if (authRequiredMenus.includes(categoryId) && !user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       setIsMobileMenuOpen(false);
       return;
     }

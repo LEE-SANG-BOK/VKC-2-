@@ -8,6 +8,7 @@ import { Bold, Italic, List, ListOrdered, Quote, Undo, Redo, Heading1, Heading2,
 import { useCallback, useRef, useState, useEffect } from 'react';
 import Tooltip from '../atoms/Tooltip';
 import { toast } from 'sonner';
+import { useLoginPrompt } from '@/providers/LoginPromptProvider';
 
 interface RichTextEditorProps {
   content: string;
@@ -24,6 +25,7 @@ export default function RichTextEditor({ content, onChange, placeholder = 'ë‚´ìš
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const { openLoginPrompt } = useLoginPrompt();
 
   const editor = useEditor({
     extensions: [
@@ -90,6 +92,11 @@ export default function RichTextEditor({ content, onChange, placeholder = 'ë‚´ìš
         body: formData,
       });
 
+      if (response.status === 401) {
+        openLoginPrompt();
+        return;
+      }
+
       const result = await response.json();
 
       if (!response.ok || !result.success) {
@@ -107,7 +114,7 @@ export default function RichTextEditor({ content, onChange, placeholder = 'ë‚´ìš
 
     // Reset input
     event.target.value = '';
-  }, [editor]);
+  }, [editor, openLoginPrompt]);
 
   const handleSetLink = useCallback(() => {
     if (!editor) return;

@@ -7,6 +7,7 @@ import { getDictionary } from '@/i18n/get-dictionary';
 import StructuredData from "@/components/organisms/StructuredData";
 import BottomNavigation from '@/components/organisms/BottomNavigation';
 import QueryProvider from "@/providers/QueryProvider";
+import LoginPromptProvider from '@/providers/LoginPromptProvider';
 import NextTopLoader from 'nextjs-toploader';
 import { SessionProvider } from 'next-auth/react';
 import ProfileChecker from '@/components/organisms/ProfileChecker';
@@ -149,15 +150,17 @@ export default async function LocaleLayout({
       />
       <QueryProvider>
         <SessionProvider basePath="/api/auth">
-          <ProfileChecker locale={lang} />
-          <StructuredData locale={lang as Locale} />
-          <div className="vk-safe-bottom">
-            {children}
-            <Suspense fallback={null}>
-              <BottomNavigation translations={translations} />
-            </Suspense>
-          </div>
-          <AppToaster position="top-center" richColors />
+          <LoginPromptProvider translations={translations}>
+            <ProfileChecker locale={lang} />
+            <StructuredData locale={lang as Locale} />
+            <div className="vk-safe-bottom">
+              {children}
+              <Suspense fallback={null}>
+                <BottomNavigation translations={translations} />
+              </Suspense>
+            </div>
+            <AppToaster position="top-center" richColors />
+          </LoginPromptProvider>
         </SessionProvider>
       </QueryProvider>
     </>

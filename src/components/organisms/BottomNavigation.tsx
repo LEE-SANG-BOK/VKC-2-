@@ -6,6 +6,7 @@ import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Home, Search, PenSquare, ShieldCheck, User } from 'lucide-react';
 import { dispatchHomeReset } from '@/utils/homeReset';
+import { useLoginPrompt } from '@/providers/LoginPromptProvider';
 
 interface BottomNavigationProps {
   translations: Record<string, unknown>;
@@ -18,6 +19,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
   const params = useParams();
   const { data: session } = useSession();
   const user = session?.user;
+  const { openLoginPrompt } = useLoginPrompt();
   const lang = (params?.lang as string) || 'ko';
 
   const isHomePath = pathname === `/${lang}`;
@@ -132,7 +134,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
 
   const handleNavigate = (href: string, requiresAuth: boolean) => {
     if (requiresAuth && !user) {
-      router.push(`/${lang}/login`);
+      openLoginPrompt();
       return;
     }
     if (href === `/${lang}`) {
