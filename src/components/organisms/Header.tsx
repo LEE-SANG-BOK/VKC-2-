@@ -77,9 +77,9 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
   const [childCategory, setChildCategory] = useState('');
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const brandIntroFallback = useMemo(() => {
-    if (locale === 'en') return 'Visa, jobs, and life in Korea Q&A community';
-    if (locale === 'vi') return 'Cộng đồng hỏi đáp về visa, việc làm và cuộc sống tại Hàn Quốc';
-    return '한국 비자·취업·생활 Q&A 커뮤니티';
+    if (locale === 'en') return 'Ask about Korea, get trustworthy answers.';
+    if (locale === 'vi') return 'Hỏi về Hàn Quốc, trả lời đáng tin.';
+    return '한국을 묻고, 믿을 수 있게 답하다.';
   }, [locale]);
   const sidebarToggleTooltip =
     tTooltip.sidebarToggleHint ||

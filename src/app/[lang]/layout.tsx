@@ -78,8 +78,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [
         {
           url: '/brand-logo.png',
-          width: 208,
-          height: 98,
+          width: 1000,
+          height: 244,
           alt: siteName,
         },
       ],
