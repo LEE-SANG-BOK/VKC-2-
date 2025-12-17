@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import Image from 'next/image';
 import { Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import Tooltip from '../atoms/Tooltip';
@@ -591,7 +590,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           >
             <div className={mediaGridClass}>
               <div className="question-card-thumb__inner">
-                <Image
+                <img
                   src={renderImageSrc}
                   alt={title}
                   loading="lazy"
