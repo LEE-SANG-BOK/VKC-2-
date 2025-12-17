@@ -37,6 +37,8 @@
 - `paginatedResponse` 메타 지원 + `/api/search/posts`의 토큰 오버랩 스코어링 및 조회/좋아요 기반 fallback 흐름 정비로 Similar Question/검색 UI가 `meta` 신호를 받아 안내할 수 있게 됨
 - PostCard 카드의 신뢰 배지를 닉네임 바로 아래로 이동, 팔로우 버튼을 제목 오른쪽 상단으로 축소 배치하고 답변 안내 뱃지를 애니메이션 효과와 함께 추가해서 무인증 글에도 신뢰 신호/전환을 부각
 - 컴포넌트 구조 정리: `ProfileChecker`, `StructuredData`를 `src/components/organisms/*`로 이동해 `src/components` 루트 ATOMIC 정리, `src/scripts` 중복 폴더 제거
+- import 규칙 정리: `src/components|providers|utils`는 `@/` alias로 통일하고 `../` 상위 상대경로 import는 ESLint로 금지(중복/충돌 방지)
+- 상수 중복 제거: category group slugs는 `src/lib/constants/category-groups.ts`를 단일 소스로 사용하고 UI 그룹(`CATEGORY_GROUPS`)는 이를 참조
 - 스키마 확장: users에 badge_type/trust_score/helpful_answers/adoption_rate/is_expert 추가, topic_subscriptions 테이블 신설, 비자 매칭 메타(visa_jobs, visa_requirements) 테이블 추가, 인증 승인 시 뱃지 자동 부여 API 반영
 
 ---

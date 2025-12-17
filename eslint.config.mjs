@@ -64,6 +64,26 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  {
+    files: [
+      "src/components/**/*.{ts,tsx}",
+      "src/providers/**/*.{ts,tsx}",
+      "src/utils/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["../**"],
+              message: "Use '@/...' path aliases for cross-folder imports (avoid '../').",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

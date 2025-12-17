@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'nextjs-toploader/app';
-import TrustBadge from '../atoms/TrustBadge';
+import TrustBadge from '@/components/atoms/TrustBadge';
 import { MessageSquare } from 'lucide-react';
 
 interface CertifiedUserCardProps {

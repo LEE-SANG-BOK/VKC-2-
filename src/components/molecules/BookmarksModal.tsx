@@ -5,8 +5,8 @@ import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { X, Mailbox } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import Modal from '../atoms/Modal';
-import PostCard from './PostCard';
+import Modal from '@/components/atoms/Modal';
+import PostCard from '@/components/molecules/PostCard';
 import { useInfiniteUserBookmarks } from '@/repo/users/query';
 
 interface BookmarksModalProps {

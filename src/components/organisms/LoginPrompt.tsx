@@ -2,7 +2,7 @@
 
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
-import Button from '../atoms/Button';
+import Button from '@/components/atoms/Button';
 import { LogIn, UserPlus } from 'lucide-react';
 
 interface LoginPromptTexts {

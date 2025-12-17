@@ -10,7 +10,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
 import 'dayjs/locale/en';
 import 'dayjs/locale/vi';
-import Modal from '../atoms/Modal';
+import Modal from '@/components/atoms/Modal';
 import Tooltip from '@/components/atoms/Tooltip';
 import { useUserProfile, useMyProfile } from '@/repo/users/query';
 

@@ -6,7 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useRouter } from 'nextjs-toploader/app';
 import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
-import PostCard from '../molecules/PostCard';
+import PostCard from '@/components/molecules/PostCard';
 import { useInfinitePosts, useMyPostInteractions } from '@/repo/posts/query';
 import { useRecommendedUsers } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';

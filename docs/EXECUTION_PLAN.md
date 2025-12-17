@@ -221,6 +221,8 @@
 - [x] (2025-12-18) `src/scripts` 정리 (미사용 스크립트 삭제, 중복 폴더 제거)
 - [x] (2025-12-18) UI 컴포넌트 중복 가이드 확정 (문서화: `docs/REPO_STRUCTURE_GUIDE.md`)
 - [x] (2025-12-18) 불필요/임시 파일 정리(recovery/tmp 등) (gitignore 포함)
+- [x] (2025-12-17) import 규칙 정리: `src/components|providers|utils`의 `../` 상대경로 제거 + ESLint로 재발 방지
+- [x] (2025-12-17) 상수 중복 제거: category group slugs 단일 소스(`category-groups.ts` → `categories.ts` 참조)
 
 **현황 분석**
 - 컴포넌트는 ATOMIC 폴더가 있으나, 일부 전역 컴포넌트가 `src/components/*` 루트에 존재.
@@ -235,6 +237,7 @@
 
 **다음 액션(PR)**
 - PR‑S1: `repo-structure-cleanup-phase1`
+- PR‑S2: `repo-structure-cleanup-phase2`
 
 ## 3. P1 — 차순위(베타 직후) 작업
 
@@ -373,6 +376,7 @@
 
 ### 6.2 다음
 - [x] (2025-12-18) PR‑S1 `repo-structure-cleanup-phase1` (컴포넌트/스크립트/임시파일 정리로 중복 증가 방지)
+- [x] (2025-12-17) PR‑S2 `repo-structure-cleanup-phase2` (import alias 통일 + ESLint `../` 금지 + 상수 중복 제거)
 - [x] (2025-12-18) PR‑D0 `reports-pipeline-unify` (POST `/api/reports` → `reports` 단일화 + legacy backfill 엔드포인트 추가)
 - [x] (2025-12-18) PR‑D1 `reports-admin-actions-reviewed` (관리자 `reviewed` 액션 + 신고 상세 XSS 방어)
 - [x] (2025-12-17) 비로그인 입력 게이팅 UX 통일 (NewPost/Answer/Comment/Upload: 클릭 시 로그인 모달, 에러 대신 안내)

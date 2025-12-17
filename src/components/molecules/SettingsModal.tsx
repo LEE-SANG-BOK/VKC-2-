@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Bell, MessageCircle, Lightbulb, MessageSquare, Award, Users, Save } from 'lucide-react';
-import Modal from '../atoms/Modal';
+import Modal from '@/components/atoms/Modal';
 import { useSession } from 'next-auth/react';
 import { useUserProfile } from '@/repo/users/query';
 import { useUpdateMyProfile } from '@/repo/users/mutation';

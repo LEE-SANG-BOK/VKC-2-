@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { X, Upload, FileText, CheckCircle } from 'lucide-react';
-import Button from '../atoms/Button';
+import Button from '@/components/atoms/Button';
 import { toast } from 'sonner';
 import { useParams } from 'next/navigation';
 

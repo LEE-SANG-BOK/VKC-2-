@@ -28,6 +28,7 @@
 ### `src/components/**` (User/Admin 공용)
 - ATOMIC 구조: `atoms/`, `molecules/`, `organisms/`, `templates/`
 - “페이지 전용 컴포넌트”가 늘어나면 templates/organisms에 배치하고, 재사용이 확실할 때만 atoms/molecules로 내린다.
+- import는 `@/components/*` 경로를 사용하고, `../` 상위 상대경로 import는 금지(ESLint로 방지).
 
 ### `src/components/ui/**` (shadcn/Magic UI)
 - Radix 기반 프리미티브/복합 컴포넌트.
@@ -59,4 +60,3 @@
 
 - 문서/번역: `docs/EXECUTION_PLAN.md`, `HANDOVER.md`, `messages/*.json`는 Agent Lead만 수정한다.
 - DB 스키마/마이그레이션: `src/lib/db/schema.ts`, `src/lib/db/migrations/**`는 단일 소유(동시 수정 금지).
-

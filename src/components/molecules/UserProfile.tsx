@@ -4,13 +4,13 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { User, FileText, Users, Bookmark, Settings, LogOut } from 'lucide-react';
-import Avatar from '../atoms/Avatar';
-import FollowButton from '../atoms/FollowButton';
-import ProfileModal from './ProfileModal';
-import MyPostsModal from './MyPostsModal';
-import FollowingModal from './FollowingModal';
-import BookmarksModal from './BookmarksModal';
-import SettingsModal from './SettingsModal';
+import Avatar from '@/components/atoms/Avatar';
+import FollowButton from '@/components/atoms/FollowButton';
+import ProfileModal from '@/components/molecules/ProfileModal';
+import MyPostsModal from '@/components/molecules/MyPostsModal';
+import FollowingModal from '@/components/molecules/FollowingModal';
+import BookmarksModal from '@/components/molecules/BookmarksModal';
+import SettingsModal from '@/components/molecules/SettingsModal';
 
 interface UserProfileProps {
   name: string;

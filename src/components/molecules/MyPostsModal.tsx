@@ -5,8 +5,8 @@ import { useParams } from 'next/navigation';
 import { X, FileText } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
-import Modal from '../atoms/Modal';
-import PostCard from './PostCard';
+import Modal from '@/components/atoms/Modal';
+import PostCard from '@/components/molecules/PostCard';
 import { useInfiniteUserPosts } from '@/repo/users/query';
 
 interface MyPostsModalProps {

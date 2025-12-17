@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { LucideIcon } from 'lucide-react';
-import Tooltip from '../atoms/Tooltip';
+import Tooltip from '@/components/atoms/Tooltip';
 
 interface CategoryItemProps {
   id: string;

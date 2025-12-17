@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
-import Tooltip from '../atoms/Tooltip';
+import Tooltip from '@/components/atoms/Tooltip';
 import TrustBadge from '@/components/atoms/TrustBadge';
 import FollowButton from '@/components/atoms/FollowButton';
 import Avatar from '@/components/atoms/Avatar';

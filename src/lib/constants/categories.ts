@@ -15,6 +15,7 @@ import {
     Users,
     HeartHandshake
 } from 'lucide-react';
+import { CATEGORY_GROUP_SLUGS } from '@/lib/constants/category-groups';
 
 export interface LegacyCategory {
     id: string;
@@ -346,28 +347,28 @@ export const CATEGORY_GROUPS = {
         label_en: 'Korea Visa & Stay',
         label_vi: 'Visa & Lưu trú Hàn Quốc',
         emoji: '🛂',
-        slugs: ['visa-process', 'status-change', 'visa-checklist']
+        slugs: CATEGORY_GROUP_SLUGS.visa
     },
     students: {
         label: '한국 유학·학생',
         label_en: 'Study & Students in Korea',
         label_vi: 'Du học & Sinh viên tại Hàn Quốc',
         emoji: '🎓',
-        slugs: ['scholarship', 'university-ranking', 'korean-language']
+        slugs: CATEGORY_GROUP_SLUGS.students
     },
     career: {
         label: '한국 취업·경력',
         label_en: 'Jobs & Career in Korea',
         label_vi: 'Việc làm & Sự nghiệp tại Hàn Quốc',
         emoji: '💼',
-        slugs: ['business', 'wage-info', 'legal']
+        slugs: CATEGORY_GROUP_SLUGS.career
     },
     living: {
         label: '한국 생활정보',
         label_en: 'Living in Korea',
         label_vi: 'Đời sống tại Hàn Quốc',
         emoji: '🏠',
-        slugs: ['housing', 'cost-of-living', 'healthcare']
+        slugs: CATEGORY_GROUP_SLUGS.living
     }
 } as const;
 

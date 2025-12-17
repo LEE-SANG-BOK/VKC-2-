@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import Badge from '../atoms/Badge';
+import Badge from '@/components/atoms/Badge';
 
 interface NewsCardProps {
   id: string;

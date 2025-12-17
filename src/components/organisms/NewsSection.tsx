@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
-import NewsCard from '../molecules/NewsCard';
+import NewsCard from '@/components/molecules/NewsCard';
 import { useNews } from '@/repo/news/query';
 import { NewsItem } from '@/repo/news/types';
 

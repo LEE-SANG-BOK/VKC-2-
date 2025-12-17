@@ -6,7 +6,7 @@ import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import { Bold, Italic, List, ListOrdered, Quote, Undo, Redo, Heading1, Heading2, Code, ImageIcon, Link2 } from 'lucide-react';
 import { useCallback, useRef, useState, useEffect } from 'react';
-import Tooltip from '../atoms/Tooltip';
+import Tooltip from '@/components/atoms/Tooltip';
 import { toast } from 'sonner';
 import { useLoginPrompt } from '@/providers/LoginPromptProvider';
 
