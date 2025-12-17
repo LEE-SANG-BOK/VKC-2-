@@ -19,8 +19,8 @@ export default function Logo() {
       <Image
         src="/brand-logo.png"
         alt="Hỏi Hàn"
-        width={1000}
-        height={244}
+        width={700}
+        height={168}
         priority
         sizes="140px"
         className="h-7 sm:h-8 w-auto transition-transform duration-200 group-hover:scale-[1.02]"
