@@ -23,6 +23,7 @@
 - Tooltip 잔상 방지: 라우트/검색 파라미터 변경 시 Tooltip 강제 close (`src/components/atoms/Tooltip.tsx`)
 - 게시글 상세 UI 정리: 상단 썸네일/상단 카테고리칩 제거, 카테고리+태그 칩은 본문 하단으로 통합, 북마크는 헤더에서 제거 후 하단 액션바(공유 옆)로 이동
 - UGC 글자수 상한 조정: 제목 100 / 본문 5000 / 답변 3000 / 댓글 400 + ko/en/vi 오류 메시지 동기화
+- UGC 최소 글자수 완화: 게시글 제목/본문/답변/댓글 최소 10→5 + ko/en/vi 오류 메시지 동기화
 - SimilarQuestionPrompt 성능: `GET /api/search/posts`는 `id/title`만 반환하도록 축소 + `Cache-Control: no-store`
 - 홈 SSR 성능: Hydration에 미사용 `posts.trending` prefetch 제거(초기 payload↓)
 - 공개 API/검색 PII 최소화: 공개 user payload에서 `email` 제거 + 검색 API에서 email 기반 검색 제거

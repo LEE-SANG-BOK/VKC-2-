@@ -1,18 +1,18 @@
 export const UGC_LIMITS = {
   postTitle: {
-    min: 10,
+    min: 5,
     max: 100,
   },
   postContent: {
-    min: 10,
+    min: 5,
     max: 5000,
   },
   answerContent: {
-    min: 10,
+    min: 5,
     max: 3000,
   },
   commentContent: {
-    min: 10,
+    min: 5,
     max: 400,
   },
 } as const;
