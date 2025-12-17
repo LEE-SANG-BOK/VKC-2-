@@ -595,7 +595,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -619,151 +619,149 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
       <div className="question-card-actions">
         <div className="question-card-footer-fixed">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={handleAnswerCountClick}
+              className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0"
+            >
+              <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">{answerLabel}</span>
+            </button>
+            {certifiedSummaryLabel ? (
+              <>
+                <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-200 truncate min-w-0 md:hidden">
+                  {certifiedCompactLabel}
+                </span>
+                <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-200 truncate min-w-0 hidden md:inline">
+                  {certifiedSummaryLabel}
+                </span>
+              </>
+            ) : null}
+          </div>
+          <div className="question-card-actions-row shrink-0">
+            <Tooltip content={t.like || '좋아요'} position="top">
               <button
                 type="button"
-                onClick={handleAnswerCountClick}
-                className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0"
+                onClick={handleLikeClick}
+                className={`flex items-center gap-1 rounded-full px-2 py-1 min-h-[30px] text-xs font-semibold transition-colors ${localIsLiked ? 'text-blue-600 font-semibold bg-blue-50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
               >
-                <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span className="whitespace-nowrap">{answerLabel}</span>
+                <ThumbsUp className={`w-4 h-4 ${localIsLiked ? 'fill-current' : ''}`} />
+                <span>{localLikes}</span>
               </button>
-              {certifiedSummaryLabel ? (
-                <>
-                  <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-200 truncate min-w-0 md:hidden">
-                    {certifiedCompactLabel}
-                  </span>
-                  <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-200 truncate min-w-0 hidden md:inline">
-                    {certifiedSummaryLabel}
-                  </span>
-                </>
-              ) : null}
-            </div>
-            <div className="question-card-actions-row shrink-0 flex items-center gap-2">
-              <Tooltip content={t.like || '좋아요'} position="top">
+            </Tooltip>
+            <div className="relative">
+              <Tooltip content={t.share || '공유'} position="top">
                 <button
-                  type="button"
-                  onClick={handleLikeClick}
-                  className={`flex items-center gap-1 rounded-full px-2 py-1 min-h-[30px] text-xs font-semibold transition-colors ${localIsLiked ? 'text-blue-600 font-semibold bg-blue-50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                  onClick={handleShareClick}
+                  className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
-                  <ThumbsUp className={`w-4 h-4 ${localIsLiked ? 'fill-current' : ''}`} />
-                  <span>{localLikes}</span>
+                  <Share2 className="w-4 h-4" />
                 </button>
               </Tooltip>
-              <div className="relative">
-                <Tooltip content={t.share || '공유'} position="top">
-                  <button
-                    onClick={handleShareClick}
-                    className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              {showShareMenu && typeof document !== 'undefined'
+                ? createPortal(
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+                    onClick={() => setShowShareMenu(false)}
                   >
-                    <Share2 className="w-4 h-4" />
+                    <div
+                      className="w-full max-w-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{shareLabels.title}</span>
+                        <button
+                          onClick={() => setShowShareMenu(false)}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                          aria-label={t.close || '닫기'}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
+                        <button
+                          onClick={handleShareFacebook}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {shareLabels.facebook}
+                        </button>
+                        <button
+                          onClick={handleShareX}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {shareLabels.x}
+                        </button>
+                        <button
+                          onClick={handleShareTelegram}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {shareLabels.telegram}
+                        </button>
+                        <button
+                          onClick={handleCopyLink}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {shareLabels.copy}
+                        </button>
+                      </div>
+                    </div>
+                  </div>,
+                  document.body
+                )
+                : null}
+            </div>
+            <Tooltip content={t.bookmark || '북마크'} position="top">
+              <button
+                type="button"
+                onClick={handleBookmarkClick}
+                className={`inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              >
+                <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
+              </button>
+            </Tooltip>
+            {isQuestion ? (
+              <>
+                <Tooltip
+                  content={t.questionPost || (locale === 'vi' ? 'Bài hỏi đáp' : locale === 'en' ? 'Question post' : '질문글')}
+                  position="top"
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={t.questionPost || (locale === 'vi' ? 'Bài hỏi đáp' : locale === 'en' ? 'Question post' : '질문글')}
+                    className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-blue-600 bg-blue-50 dark:bg-blue-900/30"
+                  >
+                    <CircleHelp className="w-4 h-4" />
                   </button>
                 </Tooltip>
-                {showShareMenu && typeof document !== 'undefined'
-                  ? createPortal(
-                    <div
-                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-                      onClick={() => setShowShareMenu(false)}
-                    >
-                      <div
-                        className="w-full max-w-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">{shareLabels.title}</span>
-                          <button
-                            onClick={() => setShowShareMenu(false)}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                            aria-label={t.close || '닫기'}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
-                          <button
-                            onClick={handleShareFacebook}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
-                          >
-                            {shareLabels.facebook}
-                          </button>
-                          <button
-                            onClick={handleShareX}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
-                          >
-                            {shareLabels.x}
-                          </button>
-                          <button
-                            onClick={handleShareTelegram}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
-                          >
-                            {shareLabels.telegram}
-                          </button>
-                          <button
-                            onClick={handleCopyLink}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
-                          >
-                            {shareLabels.copy}
-                          </button>
-                        </div>
-                      </div>
-                    </div>,
-                    document.body
-                  )
-                  : null}
-              </div>
-              <Tooltip content={t.bookmark || '북마크'} position="top">
-                <button
-                  type="button"
-                  onClick={handleBookmarkClick}
-                  className={`inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                <Tooltip
+                  content={
+                    isAdopted
+                      ? t.resolvedPost || (locale === 'vi' ? 'Đã giải quyết' : locale === 'en' ? 'Resolved' : '해결됨')
+                      : t.unresolvedPost || (locale === 'vi' ? 'Chưa giải quyết' : locale === 'en' ? 'Unresolved' : '미해결')
+                  }
+                  position="top"
                 >
-                  <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
-                </button>
-              </Tooltip>
-              {isQuestion ? (
-                <>
-                  <Tooltip
-                    content={t.questionPost || (locale === 'vi' ? 'Bài hỏi đáp' : locale === 'en' ? 'Question post' : '질문글')}
-                    position="top"
-                  >
-                    <button
-                      type="button"
-                      onClick={(e) => e.stopPropagation()}
-                      aria-label={t.questionPost || (locale === 'vi' ? 'Bài hỏi đáp' : locale === 'en' ? 'Question post' : '질문글')}
-                      className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-blue-600 bg-blue-50 dark:bg-blue-900/30"
-                    >
-                      <CircleHelp className="w-4 h-4" />
-                    </button>
-                  </Tooltip>
-                  <Tooltip
-                    content={
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={
                       isAdopted
                         ? t.resolvedPost || (locale === 'vi' ? 'Đã giải quyết' : locale === 'en' ? 'Resolved' : '해결됨')
                         : t.unresolvedPost || (locale === 'vi' ? 'Chưa giải quyết' : locale === 'en' ? 'Unresolved' : '미해결')
                     }
-                    position="top"
+                    className={`inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] ${
+                      isAdopted
+                        ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
+                        : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'
+                    }`}
                   >
-                    <button
-                      type="button"
-                      onClick={(e) => e.stopPropagation()}
-                      aria-label={
-                        isAdopted
-                          ? t.resolvedPost || (locale === 'vi' ? 'Đã giải quyết' : locale === 'en' ? 'Resolved' : '해결됨')
-                          : t.unresolvedPost || (locale === 'vi' ? 'Chưa giải quyết' : locale === 'en' ? 'Unresolved' : '미해결')
-                      }
-                      className={`inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] ${
-                        isAdopted
-                          ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
-                          : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'
-                      }`}
-                    >
-                      {isAdopted ? <CircleCheck className="w-4 h-4" /> : <CircleDashed className="w-4 h-4" />}
-                    </button>
-                  </Tooltip>
-                </>
-              ) : null}
-            </div>
+                    {isAdopted ? <CircleCheck className="w-4 h-4" /> : <CircleDashed className="w-4 h-4" />}
+                  </button>
+                </Tooltip>
+              </>
+            ) : null}
           </div>
         </div>
       </div>
