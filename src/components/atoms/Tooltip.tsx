@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { usePathname } from 'next/navigation';
 
 type TooltipPlacement = 'top' | 'below' | 'right' | 'left' | 'bottom-right' | 'top-left';
 type TooltipTouchBehavior = 'tap' | 'longPress';
@@ -29,6 +30,7 @@ export default function Tooltip({
   const longPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
   const suppressNextClickRef = useRef(false);
+  const pathname = usePathname();
 
   const [mounted, setMounted] = useState(false);
   const [touchMode, setTouchMode] = useState(false);
@@ -65,6 +67,21 @@ export default function Tooltip({
     setOpen(false);
     setCoords(null);
   }, [clearLongPress]);
+
+  useEffect(() => {
+    close();
+  }, [pathname, close]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handle = () => close();
+    window.addEventListener('popstate', handle);
+    window.addEventListener('hashchange', handle);
+    return () => {
+      window.removeEventListener('popstate', handle);
+      window.removeEventListener('hashchange', handle);
+    };
+  }, [close]);
 
   const openTooltip = useCallback(() => {
     setOpen(true);
