@@ -16,12 +16,19 @@
 - 서버 액션 금지, `/api/**` API Routes만 사용
 
 ### 0.2 PR 산출물 규칙
-- 각 작업은 **PR 단위로 커밋 분리**
+- 운영 방식: **단일 작업 브랜치(공유) + 지속 PR 1개**로 진행(같은 브랜치에서 커밋을 누적 push)
+- 각 작업은 **커밋 단위로 분리** (에이전트/스코프 prefix 포함)
 - PR 설명에 아래 3개 항목 필수 포함
   - **why**: 어떤 문제를 해결하는가
   - **what**: 무엇을 변경했는가(파일/기능 단위)
   - **test**: 어떻게 검증했는가(수동/테스트/로그)
 - 주요 화면은 **모바일/데스크톱 반응형 스크린샷 첨부**
+- PR 본문에 `@codex` 멘션(자동 코드리뷰 트리거) + 새 커밋 push마다 리뷰 갱신
+
+### 0.3 커밋/브랜치 규칙(충돌 최소화)
+- 브랜치: **1개 고정(공유)**, PR도 **1개 고정(지속)**
+- 커밋 메시지 prefix 권장: `[LEAD]`, `[WEB]`, `[FE]`, `[BE]`
+- 네트워크 제한으로 `git push`/PR 생성은 **승인 필요**(작업 단위로 push)
 
 ---
 
@@ -99,6 +106,7 @@
 
 **플랜(체크리스트)**
 - [ ] `/verify` 3‑step wizard UX(타입 선택 → 업로드 가이드 → 상태/이력)
+- [ ] `/verification/history` 실데이터 연동(현재 demo empty array)
 - [x] private storage 업로드 + **public URL 저장 금지**, path 기반 관리
 - [x] `/api/verification/request` documents 입력 path 정규화 + 본인(userId prefix) 검증
 - [x] 관리자 승인/반려 시 문서 즉시 삭제(or TTL)
@@ -153,22 +161,28 @@
 ### P0‑4) 운영/관리 최소 기능
 
 **플랜(체크리스트)**
-- [ ] 신고 UI/흐름 점검 및 누락 보완
-- [ ] 관리자 신고 큐 액션 정합화(숨김/삭제/경고/차단)
-- [ ] 상단 공지/배너 관리자 설정형 CRUD + 홈 노출
+- [x] (2025-12-18) POST `/api/reports` → `reports` 테이블로 통합 (운영 데이터 분산 방지)
+- [x] (2025-12-18) `content_reports` 정리 방향 확정 (쓰기 중단 + 백필 `/api/admin/reports/backfill-content-reports`, 테이블 drop은 후속)
+- [x] (2025-12-18) 관리자 신고 `reviewed` 상태 지원(API+UI 액션) + 신고 상세 XSS 방어
+- [ ] (2025-12-18) 관리자 신고 큐 액션 정합화(숨김/삭제/경고/차단) (운영 최소 기능)
+- [ ] (2025-12-18) 상단 공지/배너 관리자 설정형 CRUD + 홈 노출(SSR)
 
 **현황 분석**
-- 신고 기능(사용자/관리자) 기본 흐름 구현됨: `src/repo/reports/*`, `src/app/admin/(dashboard)/reports/*`.
+- 사용자 신고 엔드포인트 `POST /api/reports`는 `reports` 기반이며, legacy `content_reports`는 백필 전용: `src/app/api/reports/route.ts`, `src/app/api/admin/reports/backfill-content-reports/route.ts`.
+- 관리자 신고 화면/API는 `reports` 기반: `src/app/admin/(dashboard)/reports/*`, `src/app/api/admin/reports/*`.
+- 관리자 UI/상세는 `reviewed` 액션을 포함하며, 신고된 HTML 콘텐츠는 텍스트로 렌더링해 XSS를 방어: `src/app/api/admin/reports/[id]/route.ts`, `src/app/admin/(dashboard)/reports/[id]/page.tsx`.
 - 공지/배너는 미구현. VietnamBanner는 정적 CTA 배너로만 존재.
 
 **개선 포인트**
-- reports admin 액션이 요구 스펙을 모두 커버하는지 점검 후 부족분만 보완.
+- 운영 데이터가 `reports`로 단일화되도록 신고 파이프라인 통합(사용자→관리자 일관).
+- 관리자 `reviewed`(검토됨) 상태/액션을 최소치로 추가해 “대기→검토→처리” 흐름을 닫기.
 - banners/notices 도메인 신설(테이블+API+admin UI+홈 캐러셀 SSR).
 
 **판정**: reports는 OK에 가까움(점검 필요), 배너는 개선 필요(P0)
 
 **다음 액션(PR)**
-- PR‑D1: `reports-admin-audit-fix`
+- PR‑D0: `reports-pipeline-unify`
+- PR‑D1: `reports-admin-actions-reviewed`
 - PR‑D2: `admin-banners-crud-home-slot`
 
 ---
@@ -199,6 +213,28 @@
 - (완료) PR‑A4: `similarprompt-locale-fix`
 
 ---
+
+### P0‑6) 리포지토리 구조/중복 정리(Foundation)
+
+**플랜(체크리스트)**
+- [x] (2025-12-18) `src/components/*` ATOMIC 경계 정리 (루트 파일 정리/이동 + import 정리)
+- [x] (2025-12-18) `src/scripts` 정리 (미사용 스크립트 삭제, 중복 폴더 제거)
+- [x] (2025-12-18) UI 컴포넌트 중복 가이드 확정 (문서화: `docs/REPO_STRUCTURE_GUIDE.md`)
+- [x] (2025-12-18) 불필요/임시 파일 정리(recovery/tmp 등) (gitignore 포함)
+
+**현황 분석**
+- 컴포넌트는 ATOMIC 폴더가 있으나, 일부 전역 컴포넌트가 `src/components/*` 루트에 존재.
+- `scripts/`(root)와 `src/scripts/`가 공존(스크립트 위치/역할이 혼재).
+- Admin은 `src/components/ui/*`(shadcn/Magic UI), User는 `src/components/atoms/*`를 주로 사용(중복 Button/Badge 등 존재).
+
+**개선 포인트**
+- “어디에 어떤 성격의 컴포넌트를 두는지” 규칙이 없으면 신규 개발마다 중복이 증가 → 리팩토링 비용 급증.
+- 최소 리스크(파일 이동/정리)부터 시작하고, UI kit 통합은 Phase-2로 분리.
+
+**판정**: 개선 필요(P0)
+
+**다음 액션(PR)**
+- PR‑S1: `repo-structure-cleanup-phase1`
 
 ## 3. P1 — 차순위(베타 직후) 작업
 
@@ -266,24 +302,23 @@
 3) **DB 마이그레이션 PR 단일 소유**: 동일 테이블 수정 PR 병렬 금지.
 4) **홈/상세/공통 레이아웃 통합은 마지막에**: 충돌 지점 최소화.
 
-### 4.2 P0 병렬 스트림(충돌 최소화)
+### 4.2 병렬 스트림(3분류, 동일 브랜치)
 
-#### 4.2.1 통합 에이전트(고정)
+#### 4.2.1 통합 리더(고정)
 
-**Agent Lead (통합/QA) — Codex(본 대화)**
-- (역할) 플랜/우선순위 통합, 중복 제거, 충돌 조정, 최종 QA(`npm run lint`, `npm run build`), 인수인계/HANDOVER 반영
+**Agent Lead (총괄/감독) — Codex**
+- (역할) 플랜/우선순위 통합, 업무 배분/조정, 충돌 조정, 최종 QA(`npm run lint`, `npm run build`), 인수인계/HANDOVER 반영
 - (문서 운영) 체크리스트 표기 규칙: `- [ ] (YYYY-MM-DD) 작업명 (메모)` / 완료 시 `[x]`로 변경
 - (단일 소유 파일) `docs/EXECUTION_PLAN.md`, `HANDOVER.md`, `messages/*.json` (다른 에이전트는 변경 요청/키 목록만 전달)
+- (추가 고정 업무) 폴더/컴포넌트 정리(S*)는 Lead가 직접 진행
 
-#### 4.2.2 병렬 에이전트 역할(3분류)
+#### 4.2.2 3분류 에이전트(업무 배분)
 
-| 분류 | 스트림/에이전트 | PR 목록 | 담당 업무(요약) | 소유 파일 범위(충돌 방지) |
-|---|---|---|---|---|
-| **백엔드 기반** | **Agent P (Performance/Scaling)** | P0‑P*, P1‑P* | 피드/프로필/검색 성능(쿼리·payload·캐시), 인덱스/마이그레이션 단일 소유, 알림 과호출/레이트리밋, 보안(관리자 UGC/XSS) | `src/lib/db/schema.ts`, `src/lib/db/migrations/**`, `src/app/api/posts/**`, `src/app/api/notifications/**`, `src/app/api/search/**`, `src/repo/posts/**`, `src/repo/users/**` |
-| **웹 기능 구현** | **Agent A (SEO/상세/체류시간)** | A1–A4 | PostDetail 관련 콘텐츠(SSR+HydrationBoundary), generateMetadata/JSON‑LD 정합, sitemap/robots 개선 | `src/app/[lang]/(main)/posts/[id]/**`, `src/app/sitemap.ts`, `src/app/robots.ts` |
-| **웹 기능 구현** | **Agent B (Verification E2E)** | B1–B3 | Verification 사용자 플로우 마감 + 관리자 큐 확장(사유/배지/만료/상태), 스토리지/문서 미리보기 정합 | `src/app/[lang]/(main)/verification/**`, `src/app/api/verification/**`, `src/app/api/upload/document/**`, `src/app/api/admin/verifications/**`, `src/app/admin/(dashboard)/verifications/**`, `src/lib/supabase/storage.ts` |
-| **디자인 프론트** | **Agent C (Mobile UX/Forms)** | C1–C2 | 모바일 폼 UX(키보드/safe‑area/제출바), 공통 액션 버튼/툴팁/게이팅 UX 일원화(인라인 지양), i18n 누락 탐지(키 목록 전달) | `src/components/**`(단, `PostCard.tsx`는 제외), `src/app/[lang]/(main)/posts/new/**`, `src/app/[lang]/(main)/profile/**` |
-| **웹 기능 구현** | **Agent D (Ops/Banners/Moderation)** | D1–D2 | 신고/모더레이션 운영 정리(`reports` vs `content_reports` 단일화 결정/정리), 배너/공지 CRUD + 홈 노출, 관리자 UX/권한 점검 | `src/app/admin/(dashboard)/reports/**`, `src/app/api/admin/reports/**`, `src/app/api/admin/content-reports/**`, `src/app/api/banners/**`(신규), `src/app/admin/(dashboard)/banners/**`(신규) |
+| 분류 | 에이전트 | 담당 업무(요약) | 소유 파일 범위(충돌 방지) |
+|---|---|---|---|
+| **웹 기능 구현** | **Agent WEB** | 사용자/관리자 기능 구현(verification/follow/추천 섹션 등), SSR/SEO/메타/JSON‑LD, 페이지 단위 통합 | `src/app/[lang]/**`, `src/app/admin/**`(페이지), `src/components/organisms/**` |
+| **디자인 프론트** | **Agent FE** | 모바일 UX/반응형, 레이아웃/컴포넌트 일관성, 무한스크롤/step-by-step 로딩 UI, 카피(i18n 키 요청) | `src/components/**`, `src/app/[lang]/**`(UI 조정 범위) |
+| **백엔드 기반** | **Agent BE** | DB/마이그레이션, API, 캐시/성능, 레이트리밋/보안(관리자 포함), 데이터 규칙(인기글/추천/자동 태그) | `src/lib/db/**`, `src/app/api/**`, `src/repo/**` |
 
 **공통 제출 포맷(모든 병렬 에이전트 PR)**
 - (필수) PR 본문에 `why / what / test` 포함
@@ -292,18 +327,17 @@
 - (필수) 문서 반영이 필요하면 PR 본문에 `docs request:`로 `HANDOVER.md`, `docs/EXECUTION_PLAN.md` 반영할 bullet 목록 제공(리드가 반영)
 
 **에이전트별 상세 책임**
-- **Agent P (백엔드 기반)**: 피드/프로필/검색/알림의 “응답 크기↓ + DB 부하↓ + 캐시 안전성↑”; 인덱스/마이그레이션 단일 소유; 레이트리밋/봇 방어; 공개/개인화 캐시 정책 충돌 방지
-- **Agent A (웹 기능/SEO)**: posts 상세 SSR/메타/JSON‑LD 정합(ko/en/vi alternates 포함); 체류시간 섹션(관련글/유사글/카테고리 인기글) SSR+HydrationBoundary로 추가; UGC 링크 안전화(`rel="ugc"`) 점검
-- **Agent B (웹 기능/Verification)**: 사용자 wizard → API request → 관리자 승인/반려 → 사용자/프로필 라벨 반영까지 E2E; 문서 보관/삭제 정책 일관화(signed URL/TTL)
-- **Agent C (디자인 프론트)**: 모바일 전환율에 직접 영향 있는 폼/탭/CTA micro‑UX 개선; 공통 컴포넌트화로 디자인 일관성 확보(인라인 스타일 지양); 비로그인 게이팅 UX 통일(에러 대신 로그인 유도)
-- **Agent D (웹 기능/Ops)**: 신고/모더레이션 운영 데이터 단일화(reports로 통합 여부 결정); 관리자 UGC 렌더링 XSS 방어; 배너/공지 CRUD(관리자) + 홈 노출(SSR)
+- **Agent WEB**: 사용자/관리자 기능을 end-to-end로 닫되, API/DB 변경은 BE와 합의 후 진행(페이지 단위로 완결)
+- **Agent FE**: 모바일 체감 품질(키보드/safe-area/스크롤/터치), UI 일관성, step-by-step 로딩/무한스크롤 UX를 공통 컴포넌트로 재사용 가능하게 정리
+- **Agent BE**: 데이터/성능/캐시/보안의 기준선을 올리고(대량 유저/대량 게시글 대비), 추천/인기/태그 등 “규칙”을 API/DB 레벨에서 결정
 
 #### 4.2.3 충돌 방지 규칙(필수)
 
 1) `docs/EXECUTION_PLAN.md`, `HANDOVER.md`, `messages/*.json`는 **Agent Lead만 수정** (다른 에이전트는 “변경 요청 리스트”로 전달)  
-2) DB 마이그레이션(`src/lib/db/schema.ts`, `src/lib/db/migrations/**`)은 **Agent P 단일 소유** (동일 테이블 변경 PR 병렬 금지)  
-3) PostDetail 영역(`src/app/[lang]/(main)/posts/[id]/**`)은 **Agent A 단일 소유** (성능 관련 수정도 A와 협의 후 진행)  
-4) 각 PR은 “백엔드/API + (필요 시) 관리자 + 사용자 UX + i18n 키 요청 + 검증 명령 결과”를 한 패키지로 제출
+2) DB 마이그레이션/스키마(`src/lib/db/**`)은 **Agent BE 단일 소유** (동일 테이블 변경 병렬 금지)  
+3) PostDetail 영역(`src/app/[lang]/(main)/posts/[id]/**`)은 **Agent WEB 단일 소유** (UI 조정은 FE와 사전 합의)  
+4) UI 컴포넌트 운영 모드(B 고정): **User는 `components/atoms|molecules|organisms` 중심**, **Admin은 `components/ui` 중심**(중복 Button/Badge를 혼용하지 않기)  
+5) 작업 시작 전: `docs/EXECUTION_PLAN.md` 체크리스트/담당 확인 → 작업 범위 확정 → 커밋/푸시 → 다시 체크리스트 갱신(Lead)
 
 이 구조로 가면 P0는 서로 거의 파일 충돌 없이 병렬 진행 가능하고, P1은 P0 이후 동일 원칙으로 새 스트림을 추가하면 됩니다.
 
@@ -311,7 +345,7 @@
 
 ## 5. 실행 순서 제안
 
-1) **P0 스트림 병렬 착수** (A/B/C/D 동시)
+1) **P0 스트림 병렬 착수** (WEB/FE/BE 동시, Lead 조정)
 2) P0 완료 후 **P1‑6 → P1‑7 순서로 스트림 확장**
 3) 모든 PR 통합 후 Lighthouse/수동 QA로 베타 출시
 
@@ -338,7 +372,47 @@
 - [x] (2025-12-17) 검증: `npm run lint`, `npm run build` 통과 (릴리즈 품질)
 
 ### 6.2 다음
-- [ ] (2025-12-17) 비로그인 입력 게이팅 UX 통일 (NewPost/Answer/Comment/Upload: 클릭 시 로그인 모달, 에러 대신 안내)
-- [ ] (2025-12-17) Tooltip 잔상/전환 이슈 방지 (라우트 이동 시 강제 close)
-- [ ] (2025-12-17) 관리자 신고 상세 XSS 방어 (UGC 렌더링 sanitize 또는 텍스트 렌더로 전환)
-- [ ] (2025-12-17) `content_reports` 정리 방향 결정 및 단일화 작업 (reports 기준으로 운영 데이터 분산 방지)
+- [x] (2025-12-18) PR‑S1 `repo-structure-cleanup-phase1` (컴포넌트/스크립트/임시파일 정리로 중복 증가 방지)
+- [x] (2025-12-18) PR‑D0 `reports-pipeline-unify` (POST `/api/reports` → `reports` 단일화 + legacy backfill 엔드포인트 추가)
+- [x] (2025-12-18) PR‑D1 `reports-admin-actions-reviewed` (관리자 `reviewed` 액션 + 신고 상세 XSS 방어)
+- [ ] (2025-12-18) 비로그인 입력 게이팅 UX 통일 (NewPost/Answer/Comment/Upload: 클릭 시 로그인 모달, 에러 대신 안내)
+- [ ] (2025-12-18) i18n 누락/혼용 전수 점검(툴팁/배지/카테고리 라벨) + PostDetail 잔여 하드코딩 텍스트 정리
+- [x] (2025-12-18) Tooltip 잔상/전환 이슈 방지 (라우트 이동 시 강제 close)
+
+### 6.3 신규 요청 백로그(Owner/우선순위)
+
+**운영/프로세스(Lead)**
+- [ ] (2025-12-18) [LEAD] 단일 브랜치/지속 PR 세팅 + `@codex` 멘션(자동 코드리뷰) (network 승인 필요)
+- [ ] (2025-12-18) [LEAD] 컴포넌트 운영 모드(B) 문서 고정 + 혼용 방지 가드(ESLint import rule) (User=atoms, Admin=ui)
+
+**UI/UX(Design Front)**
+- [ ] (2025-12-18) [FE] Home 버튼 클릭 시 “초기 상태”로 복귀(사이드바 스크롤/선택/필터 포함) (메모: 기준 정의 필요)
+- [ ] (2025-12-18) [FE] 모바일 헤더: 사이드바 버튼 테두리 강조 + 사이드바 아이콘 툴팁 제거(홈 헤더 툴팁 1개만 유지)
+- [ ] (2025-12-18) [FE] 사이드바 가로폭을 우측 추천 콘텐츠 레일 폭과 동일하게 정렬
+- [ ] (2025-12-18) [FE] PostCard: “인증 사용자 N명…” 라벨 좌측에 “답변 N개” CTA 추가(클릭 시 답변/댓글 영역 이동)
+- [ ] (2025-12-18) [FE] 팔로잉 추천 카드 UI: `#(1): 값, #(2): 값, #(3): 값` 3개 고정 표기(실데이터 매핑) + step-by-step 로딩 UI
+- [ ] (2025-12-18) [FE] 프로필 모달(북마크/팔로잉/내게시글)도 step-by-step 로딩(과부하 방지)
+- [ ] (2025-12-18) [FE] 홈 로고 근처 툴팁 카피 개선(브랜드 포지셔닝/가치 명확, ko/en/vi)
+- [ ] (2025-12-18) [FE] CTA 텍스트/카피 개선: “질문하기/공유하기/인증하기” 네이밍 + 상세 설명(ko/en/vi)
+- [ ] (2025-12-18) [FE] 모바일 프로필 정보(가입일/성별/연령대/상태/메일 등) 콤팩트 레이아웃(가로 배치 우선)
+- [ ] (2025-12-18) [FE] 관리자 페이지(웹/모바일) 긴 콘텐츠 스크롤 처리(특히 인증/신고 상세)
+
+**웹 기능(사용자/관리자 기능)**
+- [ ] (2025-12-18) [WEB] 팔로잉 “추천 팔로잉” 현황 분석 + 개선안 제시(추천 기준/제외 규칙/노출 우선순위)
+- [ ] (2025-12-18) [WEB] 추천 팔로잉: 1회 전체 노출 금지 → 페이지네이션/무한스크롤 도입(서버/클라 키 정리)
+- [ ] (2025-12-18) [WEB] 헤더 검색 예시 질문: 실제 인기 질문 데이터 기반으로 동적 반영(API/캐시/locale 처리)
+- [ ] (2025-12-18) [WEB] 게시글 작성: 대표 이미지 선택 UI(다중 이미지 중 thumbnail 지정) + 저장/표시 연동
+- [ ] (2025-12-18) [WEB] 인증 신청: 기존 신청 후 “추가 신청/수정하기” 플로우 지원(상태/권한/히스토리 포함)
+- [ ] (2025-12-18) [WEB] 관리자 인증 심사 UI: 입력 항목/검증/기본값 적절성 현황 분석 + 개선안
+- [ ] (2025-12-18) [WEB] 관리자 페이지 기능/정보구조 적절성 현황 분석 + 개선 플랜(성능/UX 포함)
+- [ ] (2025-12-18) [WEB] 프로필 설정: 온보딩 값 자동 반영 여부 점검 + 닉네임 자동 부여 규칙 적절성 점검/개선
+
+**백엔드 기반(성능/규칙/데이터)**
+- [ ] (2025-12-18) [BE] 인기글(trending) 규칙 현황 분석 + 개선안(점수/기간/캐시/부하) 제시
+- [ ] (2025-12-18) [BE] 추천 팔로잉용 사용자 메타 3개 산출 규칙 정의(예: 인증/채택률/관심사 일치율) + API 응답 확장
+- [ ] (2025-12-18) [BE] 헤더 검색 예시 질문 API 지원(실데이터 기반, 캐시 전략 포함)
+- [ ] (2025-12-18) [BE] 자동 해시태그 3개 생성 규칙 정의/구현(키워드+대/소분류 기반, 고정 3개)
+- [ ] (2025-12-18) [BE] UGC 최소 글자수 완화: 댓글/답변 10→5, 글 제목/본문 최소치 재조정 + ko/en/vi 메시지 동기화
+- [ ] (2025-12-18) [BE] “한국생활정보” 카테고리 폐기(노출 제거/비활성화/마이그레이션 방안) + 미지정/레거시 카테고리 글 숨김 정책
+- [ ] (2025-12-18) [BE] 관리자 페이지 성능 점검(응답 payload/쿼리/페이지네이션) + step-by-step 로딩에 맞는 API 최적화
+- [ ] (2025-12-18) [BE] 관리자 페이지 “추천 게시글 작성” 기능 제공 여부/홈 적용 여부 현황 파악
