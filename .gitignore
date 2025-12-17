@@ -59,3 +59,4 @@ client_secret*.json
 /.npm-cache/
 /.last-processed-agents
 /recovery/
+docs/Knowlege/
