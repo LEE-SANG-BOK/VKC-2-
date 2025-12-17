@@ -225,6 +225,7 @@
 - [x] (2025-12-17) 상수 중복 제거: category group slugs 단일 소스(`category-groups.ts` → `categories.ts` 참조)
 - [x] (2025-12-17) 미사용 컴포넌트 제거(구현/라우트에서 참조 없는 컴포넌트 정리) + lint/build 재검증
 - [x] (2025-12-17) 인라인 style 최소화: 공통 CSS(util)로 이동(스크롤바 숨김/하단 safe-area offset 등)
+- [x] (2025-12-18) 리팩토링 심화: `dateTime/safeText` 유틸로 중복 제거 + `ALLOWED_CATEGORY_SLUGS` 단일화 + `components/ui` 미사용 파일 정리
 
 **현황 분석**
 - 컴포넌트는 ATOMIC 폴더가 있으나, 일부 전역 컴포넌트가 `src/components/*` 루트에 존재.

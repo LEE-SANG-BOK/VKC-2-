@@ -11,26 +11,13 @@ import Tooltip from '@/components/atoms/Tooltip';
 import TrustBadge from '@/components/atoms/TrustBadge';
 import FollowButton from '@/components/atoms/FollowButton';
 import Avatar from '@/components/atoms/Avatar';
-import dayjs from 'dayjs';
 import { useCategories } from '@/repo/categories/query';
 import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
-import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
+import { ALLOWED_CATEGORY_SLUGS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
-
-const ALLOWED_CATEGORY_SLUGS = new Set<string>([
-  ...Object.keys(CATEGORY_GROUPS),
-  ...Object.values(CATEGORY_GROUPS).flatMap((group) => group.slugs),
-]);
-
-function formatDateTime(dateString: string): string {
-  if (!dateString) return '';
-
-  const date = dayjs(dateString);
-  if (!date.isValid()) return dateString;
-
-  return date.format('YYYY.MM.DD HH:mm');
-}
+import { formatDateTime } from '@/utils/dateTime';
+import { safeDisplayName, safeShortLabel } from '@/utils/safeText';
 
 interface PostCardProps {
   id: string | number;
@@ -132,29 +119,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             : `인증 사용자 ${certifiedCount}명의 ${responseNoun}이 있습니다`))
     : '';
 
-  const safeName = (raw?: string) => {
-    const nm = raw?.trim();
-    if (!nm) return tCommon.anonymous || '사용자';
-    const uuidLike = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    const hexishId = /^[0-9a-fA-F-]{20,}$/;
-    const emailLike = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (uuidLike.test(nm) || hexishId.test(nm)) return tCommon.anonymous || '사용자';
-    if (emailLike.test(nm)) {
-      const local = nm.split('@')[0];
-      if (!local || local.length > 20) return tCommon.anonymous || '사용자';
-      return local;
-    }
-    return nm;
-  };
-
-  const safeLabel = (raw?: string) => {
-    const val = raw?.trim();
-    if (!val) return '';
-    const uuidLike = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    const hexishId = /^[0-9a-fA-F-]{20,}$/;
-    if (uuidLike.test(val) || hexishId.test(val) || val.length > 40) return '';
-    return val;
-  };
+  const anonymousFallback = tCommon.anonymous || '사용자';
+  const safeName = (raw?: string) => safeDisplayName(raw, anonymousFallback);
+  const safeLabel = (raw?: string) => safeShortLabel(raw);
 
   const { data: fetchedCategories } = useCategories();
   const flatCategories = useMemo(() => {
@@ -555,7 +522,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
-                  <span>{formatDateTime(publishedAt)}</span>
+                  <span>{formatDateTime(publishedAt, locale)}</span>
                   {trustBadgePresentation.show ? (
                     <>
                       <Tooltip content={trustBadgePresentation.tooltip} position="top">

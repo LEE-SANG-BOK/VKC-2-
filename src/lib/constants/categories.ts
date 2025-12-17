@@ -378,3 +378,8 @@ export function getCategoryName(category: LegacyCategory, locale: string = 'ko')
     if (locale === 'en' && category.name_en) return category.name_en;
     return category.name;
 }
+
+export const ALLOWED_CATEGORY_SLUGS = new Set<string>([
+    ...Object.keys(CATEGORY_GROUPS),
+    ...Object.values(CATEGORY_GROUPS).flatMap((group) => Array.from(group.slugs)),
+]);

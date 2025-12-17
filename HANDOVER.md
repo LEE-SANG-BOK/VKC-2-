@@ -5,6 +5,7 @@
 ## 최근 주요 변경 사항
 
 - 로고 교체: `public/brand-logo.png` 적용 + `Logo`를 이미지 기반(`next/image`)으로 전환, 헤더 브랜드 툴팁 표어 ko/en/vi 업데이트
+- 리팩토링 심화: PostCard/PostDetail 중복 유틸(dateTime/safeText) 통합 + 카테고리 허용 slug 단일화 + 미사용 `components/ui` 파일 정리
 - 모바일 하단 네비게이션 추가 및 안전 영역 패딩 적용 (다국어 경로, 알림 뱃지 포함)
 - 모바일 사이드바를 Sheet 드로어로 전환, 데스크톱 사이드바는 스티키 유지
 - PostCard 모바일 터치 타깃 확대 및 썸네일 노출 방식 개선

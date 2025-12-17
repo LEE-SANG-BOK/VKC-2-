@@ -1,25 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, HelpCircle, CheckCircle, ThumbsUp, AlertTriangle, Link as LinkIcon, ShieldAlert } from 'lucide-react';
-import { createPortal } from 'react-dom';
-import dayjs from 'dayjs';
-
-function getJustNowLabel(locale: string) {
-  if (locale === 'vi') return 'Vừa xong';
-  if (locale === 'en') return 'Just now';
-  return '방금 전';
-}
-
-function formatDateTime(dateString: string, locale: string = 'ko'): string {
-  if (!dateString || dateString === getJustNowLabel(locale)) return dateString;
-  
-  const date = dayjs(dateString);
-  if (!date.isValid()) return dateString;
-  
-  return date.format('YYYY.MM.DD HH:mm');
-}
 import Avatar from '@/components/atoms/Avatar';
 import UserChip from '@/components/molecules/UserChip';
 import Button from '@/components/atoms/Button';
@@ -32,6 +16,8 @@ import FollowButton from '@/components/atoms/FollowButton';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { useSession } from 'next-auth/react';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
+import { formatDateTime, getJustNowLabel } from '@/utils/dateTime';
+import { safeDisplayName, safeShortLabel } from '@/utils/safeText';
 import { UGC_LIMITS, getPlainTextLength, validateUgcText, UgcValidationErrorCode, UgcValidationResult } from '@/lib/validation/ugc';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 import { useTogglePostLike, useTogglePostBookmark, useDeletePost, useUpdatePost, useIncrementPostView } from '@/repo/posts/mutation';
@@ -40,7 +26,7 @@ import { useCreatePostComment, useUpdateComment, useDeleteComment, useToggleComm
 import { useReportPost, useReportComment, useReportAnswer } from '@/repo/reports/mutation';
 import { useFollowStatus } from '@/repo/users/query';
 import { useCategories } from '@/repo/categories/query';
-import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
+import { ALLOWED_CATEGORY_SLUGS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { useQuery, useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { queryKeys } from '@/repo/keys';
 import type { ReportType } from '@/repo/reports/types';
@@ -194,11 +180,6 @@ const spamPatterns = [
   /(무료\s?상담|할인|대행|브로커|알선|유학원|visa\s?agency)/i,
 ];
 
-const ALLOWED_CATEGORY_SLUGS = new Set<string>([
-  ...Object.keys(CATEGORY_GROUPS),
-  ...Object.values(CATEGORY_GROUPS).flatMap((group) => group.slugs),
-]);
-
 const UGC_ERROR_KEY_MAP: Record<'answerContent' | 'commentContent', Record<UgcValidationErrorCode, string>> = {
   answerContent: {
     UGC_REQUIRED: 'ANSWER_REQUIRED',
@@ -240,29 +221,9 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     tCommon.guidelineTooltip ||
     '예의·혐오 표현 금지, 광고/연락처 제한, 위반 시 게시 제한 또는 계정 제재가 있을 수 있습니다.';
   const justNowLabel = getJustNowLabel(locale);
-  const safeName = (author?: { name?: string }) => {
-    const nm = author?.name?.trim();
-    const fallback = tCommon.anonymous || '익명 사용자';
-    if (!nm) return fallback;
-    const uuidLike = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    const hexishId = /^[0-9a-fA-F-]{20,}$/;
-    const emailLike = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (uuidLike.test(nm) || hexishId.test(nm)) return fallback;
-    if (emailLike.test(nm)) {
-      const local = nm.split('@')[0];
-      if (!local || local.length > 20) return fallback;
-      return local;
-    }
-    return nm;
-  };
-  const safeLabel = (raw?: string) => {
-    const val = raw?.trim();
-    if (!val) return '';
-    const uuidLike = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    const hexishId = /^[0-9a-fA-F-]{20,}$/;
-    if (uuidLike.test(val) || hexishId.test(val) || val.length > 40) return '';
-    return val;
-  };
+  const anonymousFallback = tCommon.anonymous || '익명 사용자';
+  const safeName = (author?: { name?: string }) => safeDisplayName(author?.name, anonymousFallback);
+  const safeLabel = (raw?: string) => safeShortLabel(raw);
   const tRules = (translations?.newPost || {}) as Record<string, string>;
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const openLoginPrompt = () => setIsLoginPromptOpen(true);
@@ -631,7 +592,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const displayChips = useMemo(() => [...categoryChips, ...tagChips], [categoryChips, tagChips]);
   const sortedAnswers = useMemo(() => {
     if (!post?.answers) return [];
-    const byDate = (value: string) => dayjs(value).valueOf() || 0;
+    const byDate = (value: string) => Date.parse(value) || 0;
     return [...post.answers].sort((a, b) => {
       if (a.isAdopted && !b.isAdopted) return -1;
       if (!a.isAdopted && b.isAdopted) return 1;
