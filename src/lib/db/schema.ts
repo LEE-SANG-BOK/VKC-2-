@@ -125,6 +125,13 @@ export const answers = pgTable('answers', {
 }, (table) => ({
   postIdx: index('answers_post_idx').on(table.postId),
   authorIdx: index('answers_author_idx').on(table.authorId),
+  postSortIdx: index('answers_post_adopted_likes_created_at_id_idx').on(
+    table.postId,
+    table.isAdopted,
+    table.likes,
+    table.createdAt,
+    table.id
+  ),
 }));
 
 // Comments Table (게시글/답변에 대한 댓글 및 대댓글)
@@ -143,6 +150,18 @@ export const comments = pgTable('comments', {
   answerIdx: index('comments_answer_idx').on(table.answerId),
   parentIdx: index('comments_parent_idx').on(table.parentId),
   authorIdx: index('comments_author_idx').on(table.authorId),
+  postParentCreatedAtIdx: index('comments_post_parent_created_at_id_idx').on(
+    table.postId,
+    table.parentId,
+    table.createdAt,
+    table.id
+  ),
+  answerParentCreatedAtIdx: index('comments_answer_parent_created_at_id_idx').on(
+    table.answerId,
+    table.parentId,
+    table.createdAt,
+    table.id
+  ),
 }));
 
 // Likes Table (게시글, 답변, 댓글 좋아요)

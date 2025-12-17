@@ -1,11 +1,13 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userMeColumns } from '@/lib/db/columns';
-import { users, posts, answers, follows, comments, bookmarks } from '@/lib/db/schema';
+import { users, posts, answers, follows, comments, bookmarks, likes } from '@/lib/db/schema';
 import { successResponse, unauthorizedResponse, serverErrorResponse, errorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
-import { eq, sql, and } from 'drizzle-orm';
+import { eq, sql, and, inArray } from 'drizzle-orm';
 import { DISPLAY_NAME_MIN_LENGTH, normalizeDisplayName } from '@/lib/utils/profile';
+
+const MAX_POST_IDS = 100;
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,6 +56,56 @@ export async function GET(request: NextRequest) {
     return successResponse(userWithStats);
   } catch (error) {
     console.error('GET /api/users/me error:', error);
+    return serverErrorResponse();
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getSession(request);
+    if (!user) {
+      return unauthorizedResponse();
+    }
+
+    const body = (await request.json().catch(() => null)) as { action?: unknown; postIds?: unknown } | null;
+    if (!body || body.action !== 'post_interactions' || !Array.isArray(body.postIds)) {
+      return errorResponse('요청 데이터가 올바르지 않습니다.', 'INVALID_BODY');
+    }
+
+    const postIds = Array.from(
+      new Set(
+        body.postIds
+          .filter((value): value is string => typeof value === 'string')
+          .map((value) => value.trim())
+          .filter(Boolean)
+      )
+    ).slice(0, MAX_POST_IDS);
+
+    if (postIds.length === 0) {
+      const response = successResponse({ likedPostIds: [], bookmarkedPostIds: [] });
+      response.headers.set('Cache-Control', 'private, no-store');
+      return response;
+    }
+
+    const [likedRows, bookmarkedRows] = await Promise.all([
+      db
+        .select({ postId: likes.postId })
+        .from(likes)
+        .where(and(eq(likes.userId, user.id), inArray(likes.postId, postIds))),
+      db
+        .select({ postId: bookmarks.postId })
+        .from(bookmarks)
+        .where(and(eq(bookmarks.userId, user.id), inArray(bookmarks.postId, postIds))),
+    ]);
+
+    const likedPostIds = likedRows.map((row) => row.postId).filter(Boolean) as string[];
+    const bookmarkedPostIds = bookmarkedRows.map((row) => row.postId).filter(Boolean) as string[];
+
+    const response = successResponse({ likedPostIds, bookmarkedPostIds });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
+  } catch (error) {
+    console.error('POST /api/users/me error:', error);
     return serverErrorResponse();
   }
 }

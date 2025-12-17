@@ -129,13 +129,11 @@
 ### P0‑3) 모바일 UX 필수 개선
 
 **플랜(체크리스트)**
-- [ ] 하단 탭 5개 + “질문하기” CTA 강조
 - [ ] 질문/답변 폼 모바일 키보드 안전영역 + autosize 입력 + skeleton
 - [ ] 리스트는 infinite scroll로 통일
 
 **현황 분석**
 - 하단 탭 5개는 구현 완료: `src/components/organisms/BottomNavigation.tsx`.
-- 질문하기 CTA는 시각적 위계 강화가 부족.
 - 글 작성 폼 skeleton은 있으나 autosize/키보드 safe‑area 대응은 불충분.
 - 리스트 infinite scroll은 홈/검색/카테고리 모두 통일됨(PostList 기반).
 
@@ -179,7 +177,7 @@
 
 **플랜(체크리스트)**
 - [ ] 질문 상세 하단 “유사 질문/같은 카테고리 인기글/다음 글 추천” 배치
-- [ ] SimilarQuestionPrompt locale 링크 오류 수정
+- [x] SimilarQuestionPrompt locale 링크 오류 수정
 - [ ] 비회원 참여 액션 로그인 게이팅 재확인
 - [ ] 신규 유저 1회성 규칙/기능 툴팁 제공
 
@@ -198,7 +196,7 @@
 
 **다음 액션(PR)**
 - PR‑A3: `postdetail-related-content-section`
-- PR‑A4: `similarprompt-locale-fix`
+- (완료) PR‑A4: `similarprompt-locale-fix`
 
 ---
 
@@ -270,13 +268,42 @@
 
 ### 4.2 P0 병렬 스트림(충돌 최소화)
 
-| 스트림/에이전트 | PR 목록 | 소유 파일 범위 |
-|---|---|---|
-| **Agent A (SEO/상세/체류시간)** | A1, A2, A3, A4 | `src/app/[lang]/(main)/posts/[id]/*`, `src/app/sitemap.ts` |
-| **Agent B (Verification E2E)** | B1, B2, B3 | `src/app/[lang]/(main)/verification/*`, `src/lib/supabase/storage.ts`, `src/app/api/upload/document/*`, `src/app/api/admin/verifications/*`, `src/app/admin/(dashboard)/verifications/*` |
-| **Agent C (Mobile UX/Forms)** | C1, C2 | `src/components/organisms/BottomNavigation.tsx`, `src/app/[lang]/(main)/posts/new/*`, `src/components/molecules/RichTextEditor.tsx` (상세 파일은 제외) |
-| **Agent D (Ops/Banners)** | D1, D2 | `src/app/admin/(dashboard)/reports/*`, `src/app/api/admin/reports/*`, `src/app/api/banners/*(신규)`, `src/app/admin/(dashboard)/banners/*(신규)`, 배너 관련 organism |
-| **Agent P (Performance/Scaling)** | P1, P2 | `src/app/api/posts/*`, `src/repo/posts/*`, `src/components/organisms/PostList.tsx`, `src/repo/keys.ts` |
+#### 4.2.1 통합 에이전트(고정)
+
+**Agent Lead (통합/QA) — Codex(본 대화)**
+- (역할) 플랜/우선순위 통합, 중복 제거, 충돌 조정, 최종 QA(`npm run lint`, `npm run build`), 인수인계/HANDOVER 반영
+- (문서 운영) 체크리스트 표기 규칙: `- [ ] (YYYY-MM-DD) 작업명 (메모)` / 완료 시 `[x]`로 변경
+- (단일 소유 파일) `docs/EXECUTION_PLAN.md`, `HANDOVER.md`, `messages/*.json` (다른 에이전트는 변경 요청/키 목록만 전달)
+
+#### 4.2.2 병렬 에이전트 역할(3분류)
+
+| 분류 | 스트림/에이전트 | PR 목록 | 담당 업무(요약) | 소유 파일 범위(충돌 방지) |
+|---|---|---|---|---|
+| **백엔드 기반** | **Agent P (Performance/Scaling)** | P0‑P*, P1‑P* | 피드/프로필/검색 성능(쿼리·payload·캐시), 인덱스/마이그레이션 단일 소유, 알림 과호출/레이트리밋, 보안(관리자 UGC/XSS) | `src/lib/db/schema.ts`, `src/lib/db/migrations/**`, `src/app/api/posts/**`, `src/app/api/notifications/**`, `src/app/api/search/**`, `src/repo/posts/**`, `src/repo/users/**` |
+| **웹 기능 구현** | **Agent A (SEO/상세/체류시간)** | A1–A4 | PostDetail 관련 콘텐츠(SSR+HydrationBoundary), generateMetadata/JSON‑LD 정합, sitemap/robots 개선 | `src/app/[lang]/(main)/posts/[id]/**`, `src/app/sitemap.ts`, `src/app/robots.ts` |
+| **웹 기능 구현** | **Agent B (Verification E2E)** | B1–B3 | Verification 사용자 플로우 마감 + 관리자 큐 확장(사유/배지/만료/상태), 스토리지/문서 미리보기 정합 | `src/app/[lang]/(main)/verification/**`, `src/app/api/verification/**`, `src/app/api/upload/document/**`, `src/app/api/admin/verifications/**`, `src/app/admin/(dashboard)/verifications/**`, `src/lib/supabase/storage.ts` |
+| **디자인 프론트** | **Agent C (Mobile UX/Forms)** | C1–C2 | 모바일 폼 UX(키보드/safe‑area/제출바), 공통 액션 버튼/툴팁/게이팅 UX 일원화(인라인 지양), i18n 누락 탐지(키 목록 전달) | `src/components/**`(단, `PostCard.tsx`는 제외), `src/app/[lang]/(main)/posts/new/**`, `src/app/[lang]/(main)/profile/**` |
+| **웹 기능 구현** | **Agent D (Ops/Banners/Moderation)** | D1–D2 | 신고/모더레이션 운영 정리(`reports` vs `content_reports` 단일화 결정/정리), 배너/공지 CRUD + 홈 노출, 관리자 UX/권한 점검 | `src/app/admin/(dashboard)/reports/**`, `src/app/api/admin/reports/**`, `src/app/api/admin/content-reports/**`, `src/app/api/banners/**`(신규), `src/app/admin/(dashboard)/banners/**`(신규) |
+
+**공통 제출 포맷(모든 병렬 에이전트 PR)**
+- (필수) PR 본문에 `why / what / test` 포함
+- (필수) “사용자 UX(화면) + API + (해당 시) 관리자 화면”까지 end‑to‑end로 닫기
+- (필수) 번역 키가 필요하면 PR 본문에 `i18n keys request:`로 `key = ko/en/vi 초안` 목록 제공(리드가 `messages/*.json`에 반영)
+- (필수) 문서 반영이 필요하면 PR 본문에 `docs request:`로 `HANDOVER.md`, `docs/EXECUTION_PLAN.md` 반영할 bullet 목록 제공(리드가 반영)
+
+**에이전트별 상세 책임**
+- **Agent P (백엔드 기반)**: 피드/프로필/검색/알림의 “응답 크기↓ + DB 부하↓ + 캐시 안전성↑”; 인덱스/마이그레이션 단일 소유; 레이트리밋/봇 방어; 공개/개인화 캐시 정책 충돌 방지
+- **Agent A (웹 기능/SEO)**: posts 상세 SSR/메타/JSON‑LD 정합(ko/en/vi alternates 포함); 체류시간 섹션(관련글/유사글/카테고리 인기글) SSR+HydrationBoundary로 추가; UGC 링크 안전화(`rel="ugc"`) 점검
+- **Agent B (웹 기능/Verification)**: 사용자 wizard → API request → 관리자 승인/반려 → 사용자/프로필 라벨 반영까지 E2E; 문서 보관/삭제 정책 일관화(signed URL/TTL)
+- **Agent C (디자인 프론트)**: 모바일 전환율에 직접 영향 있는 폼/탭/CTA micro‑UX 개선; 공통 컴포넌트화로 디자인 일관성 확보(인라인 스타일 지양); 비로그인 게이팅 UX 통일(에러 대신 로그인 유도)
+- **Agent D (웹 기능/Ops)**: 신고/모더레이션 운영 데이터 단일화(reports로 통합 여부 결정); 관리자 UGC 렌더링 XSS 방어; 배너/공지 CRUD(관리자) + 홈 노출(SSR)
+
+#### 4.2.3 충돌 방지 규칙(필수)
+
+1) `docs/EXECUTION_PLAN.md`, `HANDOVER.md`, `messages/*.json`는 **Agent Lead만 수정** (다른 에이전트는 “변경 요청 리스트”로 전달)  
+2) DB 마이그레이션(`src/lib/db/schema.ts`, `src/lib/db/migrations/**`)은 **Agent P 단일 소유** (동일 테이블 변경 PR 병렬 금지)  
+3) PostDetail 영역(`src/app/[lang]/(main)/posts/[id]/**`)은 **Agent A 단일 소유** (성능 관련 수정도 A와 협의 후 진행)  
+4) 각 PR은 “백엔드/API + (필요 시) 관리자 + 사용자 UX + i18n 키 요청 + 검증 명령 결과”를 한 패키지로 제출
 
 이 구조로 가면 P0는 서로 거의 파일 충돌 없이 병렬 진행 가능하고, P1은 P0 이후 동일 원칙으로 새 스트림을 추가하면 됩니다.
 
@@ -293,11 +320,25 @@
 ## 6. 현재 진행/예정 작업 체크리스트 (Codex)
 
 ### 6.1 완료
-- [x] 홈 피드 `?page=` 고유 URL + Prev/Next 링크 병행(무한스크롤 UX 유지)
-- [x] TanStack infinite queryKey에 `page` 포함(페이지 이동 시 캐시 충돌 방지)
-- [x] `GET /api/posts` 응답 payload 축소: 기본 `content` 제외 + `excerpt` 제공(무한스크롤 응답 크기↓)
-- [x] 무한스크롤 cursor(keyset) 페이지네이션 적용(SEO용 `?page=` 유지): `GET /api/posts`, `useInfinitePosts`
-- [x] Post 상세 댓글 카운트 정합: `commentsCount = answersCount + postCommentsCount`
+- [x] (2025-12-17) 홈 피드 `?page=` 고유 URL + Prev/Next 링크 병행 (SEO: 정상 URL 구조 + 무한스크롤 병행)
+- [x] (2025-12-17) TanStack infinite queryKey에 `page` 포함 (페이지 이동 시 캐시 충돌 방지)
+- [x] (2025-12-17) `GET /api/posts` 응답 payload 축소: 기본 `content` 제외 + `excerpt` 제공 (무한스크롤 응답 크기↓)
+- [x] (2025-12-17) 무한스크롤 cursor(keyset) 페이지네이션 적용(SEO용 `?page=` 유지) (API 성능/안정성)
+- [x] (2025-12-17) `GET /api/posts` DB부하 추가 절감 (preview 8000→4000, fallback full-content 제거, 이미지 파싱 경량화)
+- [x] (2025-12-17) Post 상세 댓글 카운트 정합: `commentsCount = answersCount + postCommentsCount` (정확도)
+- [x] (2025-12-17) 게시글 상세 answers/comments keyset 인덱스 추가(마이그레이션) (상세 로딩 성능): `src/lib/db/migrations/0028_long_ben_grimm.sql`
+- [x] (2025-12-17) 공개 GET API 캐시 헤더 추가 (익명 트래픽 비용↓): `src/app/api/categories/route.ts`, `src/app/api/posts/trending/route.ts`, `src/app/api/posts/route.ts`
+- [x] (2025-12-17) SimilarQuestionPrompt용 `GET /api/search/posts` payload 최소화(id/title) + `Cache-Control: no-store` (응답 크기↓)
+- [x] (2025-12-17) 홈 SSR Hydration에서 미사용 `posts.trending` prefetch 제거 (HTML payload↓)
+- [x] (2025-12-17) i18n: `messages/*`에 `common.anonymous`, `common.uncategorized` 추가 (표기 일관성)
+- [x] (2025-12-17) PostDetail UI 정리(썸네일/상단 칩 제거, 칩 하단 통합, 북마크 하단 액션바 이동) (중복/산만 제거)
+- [x] (2025-12-17) UGC 글자수 상한 조정: 제목 100 / 본문 5000 / 답변 3000 / 댓글 400 + ko/en/vi 오류 메시지 동기화 (모바일/성능)
+- [x] (2025-12-17) `docs/EXECUTION_PLAN.md`에 에이전트 역할/소유권/충돌 방지 규칙 확정 (병렬 작업 준비)
+- [x] (2025-12-17) 알림 API 과호출 방지 (unread-count 전용 API 추가 + polling 완화 + Notifications 페이지 enabled 게이팅)
+- [x] (2025-12-17) 검증: `npm run lint`, `npm run build` 통과 (릴리즈 품질)
 
 ### 6.2 다음
-- [ ] `GET /api/posts` DB부하 추가 절감(필요 컬럼만 select/preview 길이 제한 등)
+- [ ] (2025-12-17) 비로그인 입력 게이팅 UX 통일 (NewPost/Answer/Comment/Upload: 클릭 시 로그인 모달, 에러 대신 안내)
+- [ ] (2025-12-17) Tooltip 잔상/전환 이슈 방지 (라우트 이동 시 강제 close)
+- [ ] (2025-12-17) 관리자 신고 상세 XSS 방어 (UGC 렌더링 sanitize 또는 텍스트 렌더로 전환)
+- [ ] (2025-12-17) `content_reports` 정리 방향 결정 및 단일화 작업 (reports 기준으로 운영 데이터 분산 방지)

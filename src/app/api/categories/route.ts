@@ -34,10 +34,13 @@ export async function GET(request: NextRequest) {
         })),
     }));
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: result,
     });
+
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    return response;
   } catch (error) {
     console.error('Error fetching categories:', error);
     return NextResponse.json(

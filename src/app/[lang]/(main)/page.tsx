@@ -5,7 +5,7 @@ import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/config';
 import HomeClient from './HomeClient';
 import OnboardingClient from './onboarding/OnboardingClient';
-import { fetchPosts, fetchTrendingPosts } from '@/repo/posts/fetch';
+import { fetchPosts } from '@/repo/posts/fetch';
 import { fetchCategories } from '@/repo/categories/fetch';
 import { queryKeys } from '@/repo/keys';
 import { fetchNews } from '@/repo/news/fetch';
@@ -156,12 +156,6 @@ export default async function Home({ params, searchParams }: PageProps) {
           limit: 20,
         }),
       initialPageParam: { page: currentPage },
-    });
-
-    // 인기 게시글 prefetch
-    await queryClient.prefetchQuery({
-      queryKey: queryKeys.posts.trending('week'),
-      queryFn: () => fetchTrendingPosts('week', 10),
     });
 
     // 뉴스 prefetch

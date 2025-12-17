@@ -98,6 +98,17 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const responseNoun = isQuestion
     ? (locale === 'en' ? 'answers' : tCommon.answer || '답변')
     : (locale === 'en' ? 'comments' : tCommon.comment || '댓글');
+  const certifiedCompactLabel = certifiedCount > 0
+    ? (tPost.certifiedResponderCompact
+      ? tPost.certifiedResponderCompact
+          .replace('{certified}', String(certifiedCount))
+          .replace('{noun}', responseNoun)
+      : locale === 'vi'
+        ? `Đã xác minh +${certifiedCount} ${responseNoun}`
+        : locale === 'en'
+          ? `Certified +${certifiedCount} ${responseNoun}`
+          : `인증 사용자 +${certifiedCount} ${responseNoun}`)
+    : '';
   const certifiedSummaryLabel = certifiedCount > 0
     ? (otherCount > 0
       ? (tPost.certifiedResponderSummary
@@ -642,7 +653,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       <div className="question-card-actions">
         <div className="question-card-footer-fixed">
           <div className="flex items-center gap-3">
-            <div className="flex flex-col items-start gap-1 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               <button
                 type="button"
                 onClick={handleAnswerCountClick}
@@ -652,9 +663,14 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 <span className="whitespace-nowrap">{answerLabel}</span>
               </button>
               {certifiedSummaryLabel ? (
-                <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-200 line-clamp-1">
-                  {certifiedSummaryLabel}
-                </span>
+                <>
+                  <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-200 truncate min-w-0 md:hidden">
+                    {certifiedCompactLabel}
+                  </span>
+                  <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-200 truncate min-w-0 hidden md:inline">
+                    {certifiedSummaryLabel}
+                  </span>
+                </>
               ) : null}
             </div>
             <div className="question-card-actions-row shrink-0 flex items-center gap-2">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -47,11 +47,27 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
   };
 
   const showHomeFeedToggle = isHomePath && homeFeed !== null;
+  const [isFeedToggleReady, setIsFeedToggleReady] = useState(false);
+
+  useEffect(() => {
+    if (!showHomeFeedToggle) {
+      setIsFeedToggleReady(false);
+      return;
+    }
+
+    const raf = window.requestAnimationFrame(() => {
+      setIsFeedToggleReady(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+    };
+  }, [showHomeFeedToggle]);
 
   useEffect(() => {
     const root = document.documentElement;
     const baseOffset = 72;
-    const feedToggleOffset = 116;
+    const feedToggleOffset = 128;
     root.style.setProperty('--vk-bottom-safe-offset', `${showHomeFeedToggle ? feedToggleOffset : baseOffset}px`);
     return () => {
       root.style.setProperty('--vk-bottom-safe-offset', `${baseOffset}px`);
@@ -67,11 +83,11 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
     const labelProfile = labels.profile || (lang === 'vi' ? 'Hồ sơ' : lang === 'en' ? 'Profile' : '프로필');
     return [
       {
-        key: 'home',
-        label: labelHome,
-        icon: Home,
-        href: `/${lang}`,
-        requiresAuth: false,
+        key: 'write',
+        label: labelWrite,
+        icon: PenSquare,
+        href: `/${lang}/posts/new`,
+        requiresAuth: true,
       },
       {
         key: 'search',
@@ -81,11 +97,11 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
         requiresAuth: false,
       },
       {
-        key: 'write',
-        label: labelWrite,
-        icon: PenSquare,
-        href: `/${lang}/posts/new`,
-        requiresAuth: true,
+        key: 'home',
+        label: labelHome,
+        icon: Home,
+        href: `/${lang}`,
+        requiresAuth: false,
       },
       {
         key: 'verification',
@@ -128,25 +144,41 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
     <>
       {showHomeFeedToggle ? (
         <div
-          className="md:hidden pointer-events-none fixed inset-x-0 z-40 flex justify-center"
+          className={`md:hidden pointer-events-none fixed inset-x-0 z-40 flex justify-center transition-all duration-200 ease-out ${
+            isFeedToggleReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          }`}
           style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px) + 10px)' }}
         >
-          <button
-            type="button"
-            onClick={() => handleHomeFeedToggle(homeFeed === 'popular' ? 'latest' : 'popular')}
-            className="pointer-events-auto inline-flex items-center rounded-full border border-gray-200/80 dark:border-gray-700/70 bg-transparent px-4 py-2 text-xs font-semibold transition-colors hover:bg-gray-50/60 dark:hover:bg-gray-800/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
-            aria-label={`${popularLabel} / ${latestLabel}`}
-          >
-            <span className={homeFeed === 'popular' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}>
-              {popularLabel}
-            </span>
-            <span aria-hidden className="mx-1 text-gray-400 dark:text-gray-500">
-              /
-            </span>
-            <span className={homeFeed === 'latest' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}>
-              {latestLabel}
-            </span>
-          </button>
+          <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-gray-200/70 dark:border-gray-700/60 bg-white/80 dark:bg-gray-900/65 backdrop-blur px-1.5 py-1.5 shadow-lg">
+            <button
+              type="button"
+              onClick={() => handleHomeFeedToggle('popular')}
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition duration-200 ease-out active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${
+                homeFeed === 'popular'
+                  ? 'bg-blue-600/90 text-white shadow-sm'
+                  : 'text-gray-700 dark:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/70'
+              }`}
+              aria-label={popularLabel}
+              aria-pressed={homeFeed === 'popular'}
+            >
+              <span aria-hidden>🔥</span>
+              <span>{popularLabel}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleHomeFeedToggle('latest')}
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition duration-200 ease-out active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${
+                homeFeed === 'latest'
+                  ? 'bg-blue-600/90 text-white shadow-sm'
+                  : 'text-gray-700 dark:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/70'
+              }`}
+              aria-label={latestLabel}
+              aria-pressed={homeFeed === 'latest'}
+            >
+              <span aria-hidden>🕒</span>
+              <span>{latestLabel}</span>
+            </button>
+          </div>
         </div>
       ) : null}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 dark:border-gray-800/80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg">

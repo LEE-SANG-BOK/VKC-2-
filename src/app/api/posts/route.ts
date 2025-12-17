@@ -262,6 +262,48 @@ export async function GET(request: NextRequest) {
 
     const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
 
+    const extractImages = (html: string, maxThumbs = 4) => {
+      if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
+      const regex = /<img[^>]+src=["']([^"']+)["']/gi;
+      const thumbnails: string[] = [];
+      let match: RegExpExecArray | null;
+      let imageCount = 0;
+      while ((match = regex.exec(html))) {
+        imageCount += 1;
+        if (thumbnails.length < maxThumbs) thumbnails.push(match[1]);
+      }
+      return { thumbnails, thumbnail: thumbnails[0] ?? null, imageCount };
+    };
+
+    const contentPreviewLimit = 4000;
+    const postSelect = {
+      id: posts.id,
+      authorId: posts.authorId,
+      type: posts.type,
+      title: posts.title,
+      content: includeContent
+        ? posts.content
+        : sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
+      category: posts.category,
+      subcategory: posts.subcategory,
+      tags: posts.tags,
+      views: posts.views,
+      likes: posts.likes,
+      isResolved: posts.isResolved,
+      adoptedAnswerId: posts.adoptedAnswerId,
+      createdAt: posts.createdAt,
+      updatedAt: posts.updatedAt,
+      author: {
+        id: users.id,
+        name: users.name,
+        displayName: users.displayName,
+        image: users.image,
+        isVerified: users.isVerified,
+        isExpert: users.isExpert,
+        badgeType: users.badgeType,
+      },
+    };
+
     if (useCursorPagination) {
       conditions.push(
         or(
@@ -385,12 +427,10 @@ export async function GET(request: NextRequest) {
       });
 
       return list.map((post) => {
-        const imageMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)) as RegExpMatchArray[];
-        const thumbnails = imageMatches.slice(0, 4).map((match) => match[1]);
-        const thumbnail = thumbnails[0] ?? null;
-        const imageCount = imageMatches.length;
+        const content = typeof post.content === 'string' ? post.content : '';
+        const { thumbnail, thumbnails, imageCount } = extractImages(content, 4);
         const trust = resolveTrust(post.author, post.createdAt);
-        const excerpt = buildExcerpt(post.content || '');
+        const excerpt = buildExcerpt(content);
 
         const answersCount = answerCountMap.get(post.id) ?? 0;
         const postCommentsCount = commentCountMap.get(post.id) ?? 0;
@@ -449,17 +489,14 @@ export async function GET(request: NextRequest) {
 
       const fallbackTotal = fallbackCountResult?.count || 0;
 
-      const fallbackList = await db.query.posts.findMany({
-        where: fallbackConditions.length > 0 ? and(...fallbackConditions) : undefined,
-        with: {
-          author: {
-            columns: userPublicColumns,
-          },
-        },
-        orderBy: [desc(posts.likes), desc(posts.views), desc(posts.createdAt), desc(posts.id)],
-        limit,
-        offset: (page - 1) * limit,
-      });
+      const fallbackList = await db
+        .select(postSelect)
+        .from(posts)
+        .leftJoin(users, eq(posts.authorId, users.id))
+        .where(fallbackConditions.length > 0 ? and(...fallbackConditions) : undefined)
+        .orderBy(desc(posts.likes), desc(posts.views), desc(posts.createdAt), desc(posts.id))
+        .offset((page - 1) * limit)
+        .limit(limit);
 
       const decoratedFallback = await decoratePosts(fallbackList);
 
@@ -477,7 +514,7 @@ export async function GET(request: NextRequest) {
             })
           : null;
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         data: decoratedFallback,
         pagination: {
@@ -496,11 +533,13 @@ export async function GET(request: NextRequest) {
           paginationMode: 'offset',
         },
       });
+
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
     }
 
     const queryLimit = useCursorPagination ? limit + 1 : limit;
 
-    const contentPreviewLimit = 8000;
     const orderByClauses = hasSearch && overlapScore
       ? [
           desc(overlapScore),
@@ -512,34 +551,6 @@ export async function GET(request: NextRequest) {
           desc(posts.id),
         ]
       : [desc(posts.createdAt), desc(posts.id)];
-
-    const postSelect = {
-      id: posts.id,
-      authorId: posts.authorId,
-      type: posts.type,
-      title: posts.title,
-      content: includeContent
-        ? posts.content
-        : sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
-      category: posts.category,
-      subcategory: posts.subcategory,
-      tags: posts.tags,
-      views: posts.views,
-      likes: posts.likes,
-      isResolved: posts.isResolved,
-      adoptedAnswerId: posts.adoptedAnswerId,
-      createdAt: posts.createdAt,
-      updatedAt: posts.updatedAt,
-      author: {
-        id: users.id,
-        name: users.name,
-        displayName: users.displayName,
-        image: users.image,
-        isVerified: users.isVerified,
-        isExpert: users.isExpert,
-        badgeType: users.badgeType,
-      },
-    };
 
     const baseQuery = db
       .select(postSelect)
@@ -581,7 +592,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: sortedList,
       pagination: {
@@ -596,6 +607,16 @@ export async function GET(request: NextRequest) {
         paginationMode: useCursorPagination ? 'cursor' : 'offset',
       },
     });
+
+    const shouldCachePublic = !user && !filter && !hasSearch;
+    response.headers.set(
+      'Cache-Control',
+      shouldCachePublic
+        ? 'public, s-maxage=60, stale-while-revalidate=300'
+        : 'private, no-store'
+    );
+
+    return response;
   } catch (error) {
     console.error('GET /api/posts error:', error);
     return serverErrorResponse();

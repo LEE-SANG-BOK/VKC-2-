@@ -36,6 +36,7 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.posts.details(), id] as const,
     trending: (period: 'day' | 'week' | 'month' = 'week') =>
       [...queryKeys.posts.all, 'trending', period] as const,
+    interactions: (postIds: string[]) => [...queryKeys.posts.all, 'interactions', postIds] as const,
   },
 
   // Comments

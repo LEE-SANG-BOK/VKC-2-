@@ -58,3 +58,4 @@ client_secret*.json
 /.yarnrc.yml
 /.npm-cache/
 /.last-processed-agents
+/recovery/

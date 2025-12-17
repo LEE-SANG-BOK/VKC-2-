@@ -27,9 +27,11 @@ export function useUnreadNotificationCount(enabled: boolean = true) {
   return useQuery({
     queryKey: [...queryKeys.notifications.all, 'unread-count'],
     queryFn: fetchUnreadCount,
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
     refetchOnWindowFocus: true,
     enabled,
+    retry: 1,
+    retryDelay: (attempt: number) => Math.min(10_000, 1000 * 2 ** attempt),
   });
 }

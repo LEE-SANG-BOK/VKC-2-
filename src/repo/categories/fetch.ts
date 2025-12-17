@@ -41,7 +41,14 @@ async function fetchWithAuth(url: string, init?: RequestInit) {
  * 카테고리 목록 조회 (2단계 구조) - Client-side
  */
 export async function fetchCategories(): Promise<Category[]> {
-  const result: ApiResponse<Category[]> = await fetchWithAuth(`${API_BASE}/api/categories`);
+  const url = typeof window === 'undefined' ? `${API_BASE}/api/categories` : '/api/categories';
+  const res = await fetch(url, {
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) {
+    throw new Error('Failed to fetch categories');
+  }
+  const result: ApiResponse<Category[]> = await res.json();
   return result.data;
 }
 

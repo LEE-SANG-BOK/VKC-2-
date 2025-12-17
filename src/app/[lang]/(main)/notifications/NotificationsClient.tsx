@@ -40,7 +40,16 @@ export default function NotificationsClient({ locale, translations }: Notificati
 
   const t = (translations?.notifications || {}) as Record<string, string>;
 
-  const { data, isLoading, refetch } = useNotifications({ limit: 50 });
+  const { data, isLoading, refetch } = useNotifications(
+    { limit: 50 },
+    {
+      enabled: status === 'authenticated',
+      retry: 1,
+      retryDelay: (attempt: number) => Math.min(10_000, 1000 * 2 ** attempt),
+      staleTime: 10_000,
+      refetchOnWindowFocus: false,
+    }
+  );
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
   const deleteNotification = useDeleteNotification();

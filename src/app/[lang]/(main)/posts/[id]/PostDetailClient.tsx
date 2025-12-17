@@ -32,7 +32,6 @@ import FollowButton from '@/components/atoms/FollowButton';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { useSession } from 'next-auth/react';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
-import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 import { UGC_LIMITS, getPlainTextLength, validateUgcText, UgcValidationErrorCode, UgcValidationResult } from '@/lib/validation/ugc';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 import { useTogglePostLike, useTogglePostBookmark, useDeletePost, useUpdatePost, useIncrementPostView } from '@/repo/posts/mutation';
@@ -231,6 +230,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const { data: session } = useSession();
   const user = session?.user;
   const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tTooltips = (translations?.tooltips || {}) as Record<string, string>;
   const tPost = (translations?.post || {}) as Record<string, string>;
   const tPostDetail = (translations?.postDetail || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
@@ -299,23 +299,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   });
 
   const [post, setPost] = useState<PostDetail>(initialPost);
-  const contentThumbnail = useMemo(() => {
-    const matches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)) as RegExpMatchArray[];
-    for (const match of matches) {
-      const normalized = normalizePostImageSrc(match[1]);
-      if (normalized) return normalized;
-    }
-    return null;
-  }, [post.content]);
-  const normalizedThumbnail = useMemo(
-    () => normalizePostImageSrc(post.thumbnail) || contentThumbnail,
-    [contentThumbnail, post.thumbnail]
-  );
-  const [renderThumbnailSrc, setRenderThumbnailSrc] = useState<string | null>(normalizedThumbnail);
-
-  useEffect(() => {
-    setRenderThumbnailSrc(normalizedThumbnail);
-  }, [normalizedThumbnail]);
 
   type InfinitePageParam = { page: number; cursor?: string | null };
   type AnswersInfiniteKey = ReturnType<typeof queryKeys.answers.infinite>;
@@ -645,6 +628,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   }, [categoryLabel, subcategoryLabel, tCommon.uncategorized]);
 
   const tagChips = useMemo(() => uniqueTags.slice(0, 3), [uniqueTags]);
+  const displayChips = useMemo(() => [...categoryChips, ...tagChips], [categoryChips, tagChips]);
   const sortedAnswers = useMemo(() => {
     if (!post?.answers) return [];
     const byDate = (value: string) => dayjs(value).valueOf() || 0;
@@ -1696,19 +1680,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                 </Tooltip>
               </>
             )}
-            <Tooltip content={"북마크"}>
-              <button
-                onClick={handleBookmark}
-                className={`p-1.5 sm:p-2 rounded-full transition-colors ${
-                  post.isBookmarked
-                    ? 'text-red-600 bg-red-50 dark:bg-red-900/30'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <Bookmark className={`h-4 w-4 sm:h-5 sm:w-5 ${post.isBookmarked ? 'fill-current' : ''}`} />
-              </button>
-            </Tooltip>
-            
           </>
         }
       />
@@ -1717,20 +1688,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Article */}
         <article className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-4 sm:mb-6">
-          {/* Thumbnail */}
-          {renderThumbnailSrc && (
-            <div className="relative w-full h-[200px] sm:h-[300px] md:h-[400px]">
-              <img
-                src={renderThumbnailSrc}
-                alt={post.title}
-                className="w-full h-full object-cover"
-                loading="eager"
-                decoding="async"
-                onError={() => setRenderThumbnailSrc('/brand-logo.png')}
-              />
-            </div>
-          )}
-
           <div className="p-4 sm:p-6 md:p-8">
             {/* Edit Mode */}
             {isEditingPost ? (
@@ -1769,19 +1726,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               </div>
             ) : (
               <>
-                {categoryChips.length > 0 ? (
-                  <div className="mb-3 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-                    {categoryChips.map((tag) => (
-                      <span
-                        key={tag}
-                        className="shrink-0 px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-700/60 rounded-md"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-
                 <div className="flex items-center gap-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 flex-wrap">
                   <span className="text-gray-500 dark:text-gray-400">{formatDateTime(post.publishedAt, locale)}</span>
                   {post.isQuestion ? (
@@ -1871,9 +1815,9 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             </div>
             )}
 
-            {!isEditingPost && tagChips.length > 0 ? (
+            {!isEditingPost && displayChips.length > 0 ? (
               <div className="mt-3 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-                {tagChips.map((tag) => (
+                {displayChips.map((tag) => (
                   <span
                     key={tag}
                     className="shrink-0 px-2 py-0.5 text-xs text-gray-500 bg-gray-100 dark:bg-gray-700/60 rounded-md"
@@ -1887,7 +1831,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 	            {/* Action Buttons */}
 	            {!isEditingPost && (
 	          <div className="flex items-center gap-2 sm:gap-4 pt-4 sm:pt-6">
-	            <Tooltip content={"좋아요"} position="top">
+	            <Tooltip content={tTooltips.like || '좋아요'} position="top">
 	              <button
 	                onClick={handleLike}
 	                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all ${
@@ -1901,7 +1845,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               </button>
             </Tooltip>
 
-            <Tooltip content={"링크 복사"} position="top">
+            <Tooltip content={tTooltips.copyLink || '링크 복사'} position="top">
               <button
                 onClick={handleShare}
                 className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -1909,6 +1853,19 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                 <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </Tooltip>
+
+	            <Tooltip content={tTooltips.bookmark || '북마크'} position="top">
+	              <button
+	                onClick={handleBookmark}
+	                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all ${
+	                  post.isBookmarked
+	                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
+	                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+	                }`}
+	              >
+	                <Bookmark className={`h-4 w-4 sm:h-5 sm:w-5 ${post.isBookmarked ? 'fill-current' : ''}`} />
+	              </button>
+	            </Tooltip>
 
             <Tooltip content={tCommon.report || "신고"} position="top">
               <button

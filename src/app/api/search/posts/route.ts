@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { userPublicColumns } from '@/lib/db/columns';
 import { posts } from '@/lib/db/schema';
 import { paginatedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { sql, eq, desc, and, SQL } from 'drizzle-orm';
@@ -20,8 +19,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = (searchParams.get('q') || '').trim();
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20));
     const type = searchParams.get('type') as 'question' | 'share' | null;
     const category = searchParams.get('category');
 
@@ -82,20 +81,16 @@ export async function GET(request: NextRequest) {
       .where(whereClause);
     const totalMatches = countResult?.count || 0;
 
-    let postsResult = await db.query.posts.findMany({
-      where: () => whereClause,
-      with: {
-        author: {
-          columns: userPublicColumns,
-        },
-      },
-      orderBy: [
-        desc(overlapScore),
-        desc(posts.createdAt),
-      ],
-      limit,
-      offset: (page - 1) * limit,
-    });
+    let postsResult = await db
+      .select({
+        id: posts.id,
+        title: posts.title,
+      })
+      .from(posts)
+      .where(whereClause)
+      .orderBy(desc(overlapScore), desc(posts.createdAt), desc(posts.id))
+      .limit(limit)
+      .offset((page - 1) * limit);
 
     let responseTotal = totalMatches;
     let fallbackApplied = false;
@@ -125,21 +120,16 @@ export async function GET(request: NextRequest) {
       const fallbackTotalCount = fallbackCountResult?.count || 0;
 
       if (fallbackTotalCount > 0) {
-        const fallbackPosts = await db.query.posts.findMany({
-          where: fallbackWhereClause ? () => fallbackWhereClause : undefined,
-          with: {
-            author: {
-              columns: userPublicColumns,
-            },
-          },
-          orderBy: [
-            desc(posts.views),
-            desc(posts.likes),
-            desc(posts.createdAt),
-          ],
-          limit,
-          offset: (page - 1) * limit,
-        });
+        const fallbackPosts = await db
+          .select({
+            id: posts.id,
+            title: posts.title,
+          })
+          .from(posts)
+          .where(fallbackWhereClause)
+          .orderBy(desc(posts.views), desc(posts.likes), desc(posts.createdAt), desc(posts.id))
+          .limit(limit)
+          .offset((page - 1) * limit);
 
         if (fallbackPosts.length > 0) {
           postsResult = fallbackPosts;
@@ -158,7 +148,9 @@ export async function GET(request: NextRequest) {
       meta.reason = 'popular';
     }
 
-    return paginatedResponse(postsResult, page, limit, responseTotal, meta);
+    const response = paginatedResponse(postsResult, page, limit, responseTotal, meta);
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/search/posts error:', error);
     return serverErrorResponse();

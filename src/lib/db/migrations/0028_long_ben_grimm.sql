@@ -1,0 +1,3 @@
+CREATE INDEX "answers_post_adopted_likes_created_at_id_idx" ON "answers" USING btree ("post_id","is_adopted","likes","created_at","id");--> statement-breakpoint
+CREATE INDEX "comments_post_parent_created_at_id_idx" ON "comments" USING btree ("post_id","parent_id","created_at","id");--> statement-breakpoint
+CREATE INDEX "comments_answer_parent_created_at_id_idx" ON "comments" USING btree ("answer_id","parent_id","created_at","id");

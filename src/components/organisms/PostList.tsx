@@ -7,8 +7,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
 import PostCard from '../molecules/PostCard';
-import CategorySubscription from './CategorySubscription';
-import { useInfinitePosts } from '@/repo/posts/query';
+import { useInfinitePosts, useMyPostInteractions } from '@/repo/posts/query';
 import { useRecommendedUsers } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
 import Avatar from '@/components/atoms/Avatar';
@@ -164,6 +163,18 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const allPosts =
     data?.pages.flatMap((page: PaginatedResponse<PostListItem>) => page.data) || [];
 
+  const shouldFetchInteractions = Boolean(session?.user) && !filterForQueryResolved && allPosts.length > 0;
+  const interactionPostIds = useMemo(() => allPosts.map((post) => post.id), [allPosts]);
+  const { data: interactionsData } = useMyPostInteractions(interactionPostIds, {
+    enabled: shouldFetchInteractions,
+  });
+  const likedPostIdSet = useMemo(() => {
+    return new Set(interactionsData?.data?.likedPostIds ?? []);
+  }, [interactionsData?.data?.likedPostIds]);
+  const bookmarkedPostIdSet = useMemo(() => {
+    return new Set(interactionsData?.data?.bookmarkedPostIds ?? []);
+  }, [interactionsData?.data?.bookmarkedPostIds]);
+
   const pagination = (data?.pages?.[0] as PaginatedResponse<PostListItem> | undefined)?.pagination;
   const currentPage = pagination?.page ?? 1;
   const totalPages = pagination?.totalPages ?? 1;
@@ -212,45 +223,40 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
 
   return (
     <div className="pt-0 pb-4">
-      {/* 구독 메뉴에서 카테고리 구독 UI 표시 */}
-      {selectedCategory === 'subscribed' && (
-        <div className="mb-4">
-          <CategorySubscription translations={translations} />
-        </div>
-      )}
-
       {selectedCategory === 'subscribed' && topicSubscriptions.length > 0 ? (
-        <div className="mb-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setSelectedSubscribedCategory('all')}
-            className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-              selectedSubscribedCategory === 'all'
-                ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
-                : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
-            }`}
-          >
-            {allSubscriptionsLabel}
-          </button>
-          {topicSubscriptions.map((cat) => {
-            const legacy = LEGACY_CATEGORIES.find((c) => c.slug === cat.slug);
-            const label = legacy ? getCategoryName(legacy, locale) : cat.name;
-            const active = selectedSubscribedCategory === cat.slug;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setSelectedSubscribedCategory(cat.slug)}
-                className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  active
-                    ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
-                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
+        <div className="lg:hidden mb-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
+            <button
+              type="button"
+              onClick={() => setSelectedSubscribedCategory('all')}
+              className={`shrink-0 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
+                selectedSubscribedCategory === 'all'
+                  ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
+                  : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
+              }`}
+            >
+              {allSubscriptionsLabel}
+            </button>
+            {topicSubscriptions.map((cat) => {
+              const legacy = LEGACY_CATEGORIES.find((c) => c.slug === cat.slug);
+              const label = legacy ? getCategoryName(legacy, locale) : cat.name;
+              const active = selectedSubscribedCategory === cat.slug;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedSubscribedCategory(cat.slug)}
+                  className={`shrink-0 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
+                    active
+                      ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
+                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       ) : null}
 
@@ -328,8 +334,8 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                   publishedAt={dayjs(post.createdAt).format('YYYY.MM.DD HH:mm')}
                   isQuestion={post.type === 'question'}
                   isAdopted={post.isResolved}
-                  isLiked={post.isLiked}
-                  isBookmarked={post.isBookmarked}
+                  isLiked={shouldFetchInteractions ? likedPostIdSet.has(post.id) : post.isLiked}
+                  isBookmarked={shouldFetchInteractions ? bookmarkedPostIdSet.has(post.id) : post.isBookmarked}
                   imageCount={(post as any).imageCount}
                   certifiedResponderCount={(post as any).certifiedResponderCount}
                   otherResponderCount={(post as any).otherResponderCount}

@@ -9,7 +9,16 @@
 - PostCard 모바일 터치 타깃 확대 및 썸네일 노출 방식 개선
 - 홈 피드 무한스크롤 유지 + `?page=` 기반 Prev/Next 링크 제공(SEO-friendly 페이지네이션)
 - `GET /api/posts` 리스트 응답에서 `content` 기본 제외 + `excerpt` 제공으로 응답 크기/렌더 비용 절감
+- `GET /api/posts` 추가 최적화: content preview 8000→4000, 검색 fallback에서도 full-content 로딩 제거, 이미지/썸네일 파싱 경량화
 - 무한스크롤은 cursor(keyset) 페이지네이션(`/api/posts?cursor=...`)으로 offset 비용 절감(`?page=`는 SEO/공유용 유지)
+- 게시글 상세 answers/comments keyset 조회 성능 개선을 위한 인덱스 마이그레이션 추가: `src/lib/db/migrations/0028_long_ben_grimm.sql`
+- 공개 GET API 캐시 헤더 추가: `/api/categories`, `/api/posts/trending`, `/api/posts`(비로그인/검색·필터 없음일 때)
+- 알림 과호출 방지: `GET /api/notifications/unread-count` 전용 API 추가 + unread polling 완화 + Notifications 페이지 인증 enabled 게이팅
+- i18n 보강: `messages/*`에 `common.anonymous`, `common.uncategorized` 추가(익명/미지정 라벨 현지화)
+- 게시글 상세 UI 정리: 상단 썸네일/상단 카테고리칩 제거, 카테고리+태그 칩은 본문 하단으로 통합, 북마크는 헤더에서 제거 후 하단 액션바(공유 옆)로 이동
+- UGC 글자수 상한 조정: 제목 100 / 본문 5000 / 답변 3000 / 댓글 400 + ko/en/vi 오류 메시지 동기화
+- SimilarQuestionPrompt 성능: `GET /api/search/posts`는 `id/title`만 반환하도록 축소 + `Cache-Control: no-store`
+- 홈 SSR 성능: Hydration에 미사용 `posts.trending` prefetch 제거(초기 payload↓)
 - 공개 API/검색 PII 최소화: 공개 user payload에서 `email` 제거 + 검색 API에서 email 기반 검색 제거
 - 프로필 PII 보호: `GET /api/users/[id]`는 본인 요청일 때만 `email/phone/notify*` 반환
 - 게시글 썸네일 안정화: 리스트/상세 썸네일 src 정규화로 이미지 깨짐/런타임 오류 방지

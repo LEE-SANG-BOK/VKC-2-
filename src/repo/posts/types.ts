@@ -144,3 +144,8 @@ export interface InfinitePostsResponse {
   nextPage: number | null;
   hasMore: boolean;
 }
+
+export interface PostInteractions {
+  likedPostIds: string[];
+  bookmarkedPostIds: string[];
+}

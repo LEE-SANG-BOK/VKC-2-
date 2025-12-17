@@ -29,7 +29,7 @@ export async function fetchNotifications(
 }
 
 export async function fetchUnreadCount(): Promise<ApiResponse<UnreadCountResponse>> {
-  const res = await fetch(`${API_BASE}/api/notifications?unreadOnly=true&limit=1`, {
+  const res = await fetch(`${API_BASE}/api/notifications/unread-count`, {
     cache: 'no-store',
     credentials: 'include',
   });
@@ -38,11 +38,7 @@ export async function fetchUnreadCount(): Promise<ApiResponse<UnreadCountRespons
     throw new Error('Failed to fetch unread count');
   }
 
-  const data = await res.json();
-  return {
-    success: true,
-    data: { count: data.pagination?.total || 0 },
-  };
+  return res.json();
 }
 
 export async function markAsRead(notificationId: string): Promise<ApiResponse<Notification>> {

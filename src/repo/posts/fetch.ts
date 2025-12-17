@@ -8,6 +8,7 @@ import type {
   PostListItem,
   PaginatedResponse,
   ApiResponse,
+  PostInteractions,
   CreatePostRequest,
   UpdatePostRequest,
   PostFilters,
@@ -30,12 +31,23 @@ export async function fetchPosts(filters: PostFilters = {}): Promise<PaginatedRe
   if (filters.sort) params.append('sort', filters.sort);
   if (filters.filter) params.append('filter', filters.filter);
 
-  const fetchOptions: RequestInit = {
-    cache: 'no-store',
-    credentials: 'include',
-  };
+  const needsAuth = Boolean(filters.filter) || Boolean(filters.search);
+  const isServer = typeof window === 'undefined';
 
-  if (typeof window === 'undefined') {
+  const fetchOptions: RequestInit = needsAuth
+    ? {
+        cache: 'no-store',
+        credentials: 'include',
+      }
+    : isServer
+      ? {
+          next: { revalidate: 60 },
+        }
+      : {
+          credentials: 'omit',
+        };
+
+  if (needsAuth && isServer) {
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.toString();
@@ -46,7 +58,11 @@ export async function fetchPosts(filters: PostFilters = {}): Promise<PaginatedRe
     }
   }
 
-  const res = await fetch(`${API_BASE}/api/posts?${params.toString()}`, fetchOptions);
+  const url = isServer
+    ? `${API_BASE}/api/posts?${params.toString()}`
+    : `/api/posts?${params.toString()}`;
+
+  const res = await fetch(url, fetchOptions);
 
   if (!res.ok) {
     throw new Error('Failed to fetch posts');
@@ -92,6 +108,53 @@ export async function fetchPost(id: string): Promise<ApiResponse<Post>> {
   return res.json();
 }
 
+export async function fetchMyPostInteractions(postIds: string[]): Promise<ApiResponse<PostInteractions>> {
+  const normalizedPostIds = Array.from(
+    new Set(postIds.filter((value): value is string => typeof value === 'string').map((value) => value.trim()).filter(Boolean))
+  ).slice(0, 100);
+
+  if (normalizedPostIds.length === 0) {
+    return {
+      success: true,
+      data: {
+        likedPostIds: [],
+        bookmarkedPostIds: [],
+      },
+    };
+  }
+
+  const url = typeof window === 'undefined' ? `${API_BASE}/api/users/me` : '/api/users/me';
+
+  const fetchOptions: RequestInit = {
+    method: 'POST',
+    cache: 'no-store',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'post_interactions', postIds: normalizedPostIds }),
+  };
+
+  if (typeof window === 'undefined') {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.toString();
+    if (cookieHeader) {
+      fetchOptions.headers = {
+        ...(fetchOptions.headers || {}),
+        Cookie: cookieHeader,
+      };
+    }
+  }
+
+  const res = await fetch(url, fetchOptions);
+  if (!res.ok) {
+    throw new Error('Failed to fetch post interactions');
+  }
+
+  return res.json();
+}
+
 /**
  * 인기 게시글 조회
  */
@@ -104,9 +167,13 @@ export async function fetchTrendingPosts(
     limit: limit.toString(),
   });
 
-  const res = await fetch(`${API_BASE}/api/posts/trending?${params.toString()}`, {
+  const url = typeof window === 'undefined'
+    ? `${API_BASE}/api/posts/trending?${params.toString()}`
+    : `/api/posts/trending?${params.toString()}`;
+
+  const res = await fetch(url, {
     next: { revalidate: 300 },
-    credentials: 'include',
+    credentials: 'omit',
   });
 
   if (!res.ok) {
