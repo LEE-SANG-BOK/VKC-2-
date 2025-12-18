@@ -11,6 +11,8 @@
 - [FE] PostCard 답변 CTA 정합성: 질문은 `answersCount` 기준으로 “답변 N개” 표시(ko는 `개` 표기) + 클릭 시 `#answers/#comments`로 이동
 - [FE] 팔로잉 추천 카드 UI: 추천 유저 카드에 `#1/#2/#3` 3개 고정 표기(팔로워/게시글/팔로잉) + 로딩 스켈레톤, 추천 API에 postsCount 실데이터 반영
 - [FE] 프로필 모달 step-by-step 로딩: 북마크/팔로잉/내게시글 리스트는 `useProgressiveList`로 점진 렌더 + 스켈레톤 표시
+- [FE] CTA 카피 개선: Sidebar “질문하기/공유하기/인증하기” 라벨 통일 + 모바일에서 보조 설명(tooltip 2번째 줄) 노출
+- [FE] `/verification/history` 실데이터 연동: TanStack Query로 이력 로딩 + “더 보기” 페이지네이션 지원
 - [FE] 모바일 PostCard 하단 잘림 보강: 액션 아이콘 행 wrap 처리로 “해결됨/미해결됨” 및 긴 라벨/태그가 클립되지 않도록 안정화
 - [LEAD] public 정리: 사용되지 않는 기본 SVG/원본 로고 파일 제거(레포 용량/혼선 감소)
 - [BE] 추천 사용자 API 과부하 방지: 기본 `limit` 축소 + 상한 clamp(default 8, max 12)

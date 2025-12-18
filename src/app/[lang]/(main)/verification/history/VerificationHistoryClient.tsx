@@ -1,18 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { Clock, CheckCircle, XCircle, FileText, Calendar } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-
-interface VerificationRequest {
-  id: string;
-  type: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedAt: string;
-  reviewedAt?: string;
-  reason?: string;
-}
+import { useVerificationHistory } from '@/repo/verification/query';
+import type { VerificationRequest } from '@/repo/verification/types';
 
 interface VerificationHistoryClientProps {
   translations: Record<string, unknown>;
@@ -21,12 +14,43 @@ interface VerificationHistoryClientProps {
 
 export default function VerificationHistoryClient({ translations, lang }: VerificationHistoryClientProps) {
   const router = useRouter();
-  const { data: session, status } = useSession();
-  const user = session?.user;
+  const { status } = useSession();
   const t = (translations?.verification || {}) as Record<string, string>;
 
-  // 데모 데이터 (빈 배열)
-  const [requests] = useState<VerificationRequest[]>([]);
+  const [page, setPage] = useState(1);
+  const limit = 20;
+
+  const {
+    data: historyData,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useVerificationHistory({ page, limit });
+
+  const totalPages = historyData?.pagination.totalPages ?? 1;
+  const [items, setItems] = useState<VerificationRequest[]>([]);
+
+  useEffect(() => {
+    if (!historyData) return;
+    if (page === 1) {
+      setItems(historyData.data);
+      return;
+    }
+
+    setItems((prev) => {
+      const seen = new Set(prev.map((request) => request.id));
+      const merged = [...prev];
+      historyData.data.forEach((request) => {
+        if (seen.has(request.id)) return;
+        seen.add(request.id);
+        merged.push(request);
+      });
+      return merged;
+    });
+  }, [historyData, page]);
+
+  const requests = useMemo(() => items, [items]);
 
   const handleNewRequest = () => {
     router.push(`/${lang}/verification/request`);
@@ -77,6 +101,12 @@ export default function VerificationHistoryClient({ translations, lang }: Verifi
     }
   }, [status, router, lang]);
 
+  const handleLoadMore = () => {
+    if (isFetching) return;
+    if (page >= totalPages) return;
+    setPage((prev) => prev + 1);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -113,7 +143,32 @@ export default function VerificationHistoryClient({ translations, lang }: Verifi
 
           {/* Requests List */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200/50 dark:border-gray-700/50">
-            {requests.length === 0 ? (
+            {isLoading ? (
+              <div className="p-6">
+                <div className="h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
+                <div className="h-4 w-72 bg-gray-200 dark:bg-gray-700 rounded mb-6" />
+                <div className="space-y-3">
+                  <div className="h-16 bg-gray-100 dark:bg-gray-700/30 rounded" />
+                  <div className="h-16 bg-gray-100 dark:bg-gray-700/30 rounded" />
+                  <div className="h-16 bg-gray-100 dark:bg-gray-700/30 rounded" />
+                </div>
+              </div>
+            ) : isError ? (
+              <div className="p-10 text-center">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  {t.historyLoadErrorTitle || '내역을 불러오지 못했습니다'}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                  {t.historyLoadErrorDescription || '잠시 후 다시 시도해주세요.'}
+                </p>
+                <button
+                  onClick={() => refetch()}
+                  className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  {t.retry || '다시 시도'}
+                </button>
+              </div>
+            ) : requests.length === 0 ? (
               <div className="text-center py-16">
                 <FileText className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -183,6 +238,20 @@ export default function VerificationHistoryClient({ translations, lang }: Verifi
                     )}
                   </div>
                 ))}
+
+                {page < totalPages && (
+                  <div className="p-6 flex justify-center">
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={isFetching}
+                      className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isFetching
+                        ? (t.loadingMore || '불러오는 중...')
+                        : (t.loadMore || '더 보기')}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
