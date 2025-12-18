@@ -66,6 +66,13 @@ export default function CategorySidebar({
     );
   };
 
+  const tooltipSummary = (value?: string) => {
+    const trimmed = value?.trim();
+    if (!trimmed) return undefined;
+    const parts = trimmed.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+    return parts[1] || parts[0];
+  };
+
   const menuTooltips: Record<string, string | undefined> = {
     popular:
       t.popularTooltip ||
@@ -283,9 +290,39 @@ export default function CategorySidebar({
 
         {/* Create Post Section - Each action separated and emphasized */}
         <div className="py-2 space-y-2">
+          {(() => {
+            const askQuestionTooltipText =
+              t.askQuestionTooltip ||
+              (locale === 'vi'
+                ? 'Đặt câu hỏi về visa/việc làm/cuộc sống\nCộng đồng & người dùng xác minh sẽ hỗ trợ\nGhi rõ tình huống, loại visa, và thời hạn'
+                : locale === 'en'
+                  ? 'Ask about visa, jobs, or life in Korea\nCommunity & verified users can help\nInclude your situation, visa type, and timeline'
+                  : '비자·취업·생활 질문을 올리면\n커뮤니티와 인증 사용자가 함께 도와줘요\n상황/비자타입/기간을 같이 적어주세요');
+            const sharePostTooltipText =
+              t.sharePostTooltip ||
+              (locale === 'vi'
+                ? 'Chia sẻ kinh nghiệm, link chính thức, hoặc thông báo\nGiúp người khác tiết kiệm thời gian\nNhớ ghi nguồn và ngày đăng'
+                : locale === 'en'
+                  ? 'Share experience, official links, or notices\nHelp others save time\nAdd source and date for trust'
+                  : '경험담/공식링크/공지 등을 공유하면\n다른 사람의 시간을 절약해줘요\n출처·날짜를 함께 남겨주세요');
+            const verificationTooltipText =
+              t.verificationRequestTooltip ||
+              (locale === 'vi'
+                ? 'Xác minh hồ sơ để hiển thị huy hiệu\nTăng độ tin cậy và ưu tiên hiển thị\nGửi yêu cầu và chờ xét duyệt'
+                : locale === 'en'
+                  ? 'Apply to get a verified badge\nBoost trust and visibility\nSubmit a request and wait for review'
+                  : '인증을 받으면 프로필에 인증 마크가 표시돼요\n신뢰도/노출 가중치가 올라갑니다\n신청 후 검토를 기다려주세요');
+
+            const askQuestionDescription = isMobileVariant ? tooltipSummary(askQuestionTooltipText) : undefined;
+            const sharePostDescription = isMobileVariant ? tooltipSummary(sharePostTooltipText) : undefined;
+            const verificationDescription = isMobileVariant ? tooltipSummary(verificationTooltipText) : undefined;
+
+            return (
+              <>
           <CategoryItem
             id="ask-question"
             name={t.askQuestion || '질문하기'}
+            description={askQuestionDescription}
             icon={MessageCircle}
             count={0}
             isActive={false}
@@ -294,12 +331,7 @@ export default function CategorySidebar({
               isMobileVariant
                 ? undefined
                 : tooltipLines(
-                    t.askQuestionTooltip ||
-                      (locale === 'vi'
-                        ? 'Đặt câu hỏi về visa/việc làm/cuộc sống\nCộng đồng & người dùng xác minh sẽ hỗ trợ\nGhi rõ tình huống, loại visa, và thời hạn'
-                        : locale === 'en'
-                          ? 'Ask about visa, jobs, or life in Korea\nCommunity & verified users can help\nInclude your situation, visa type, and timeline'
-                          : '비자·취업·생활 질문을 올리면\n커뮤니티와 인증 사용자가 함께 도와줘요\n상황/비자타입/기간을 같이 적어주세요')
+                    askQuestionTooltipText
                   )
             }
             tooltipPosition={actionTooltipPosition}
@@ -308,7 +340,8 @@ export default function CategorySidebar({
           />
           <CategoryItem
             id="share-post"
-            name={t.sharePost || '게시글 공유'}
+            name={t.sharePost || (locale === 'vi' ? 'Chia sẻ' : locale === 'en' ? 'Share' : '공유하기')}
+            description={sharePostDescription}
             icon={Share2}
             count={0}
             isActive={false}
@@ -317,12 +350,7 @@ export default function CategorySidebar({
               isMobileVariant
                 ? undefined
                 : tooltipLines(
-                    t.sharePostTooltip ||
-                      (locale === 'vi'
-                        ? 'Chia sẻ kinh nghiệm, link chính thức, hoặc thông báo\nGiúp người khác tiết kiệm thời gian\nNhớ ghi nguồn và ngày đăng'
-                        : locale === 'en'
-                          ? 'Share experience, official links, or notices\nHelp others save time\nAdd source and date for trust'
-                          : '경험담/공식링크/공지 등을 공유하면\n다른 사람의 시간을 절약해줘요\n출처·날짜를 함께 남겨주세요')
+                    sharePostTooltipText
                   )
             }
             tooltipPosition={actionTooltipPosition}
@@ -331,7 +359,8 @@ export default function CategorySidebar({
           />
           <CategoryItem
             id="verification-request"
-            name={t.verificationRequest || '인증 요청'}
+            name={t.verificationRequest || (locale === 'vi' ? 'Xác minh' : locale === 'en' ? 'Verify' : '인증하기')}
+            description={verificationDescription}
             icon={ShieldCheck}
             count={0}
             isActive={selectedCategory === 'verification-request'}
@@ -340,18 +369,16 @@ export default function CategorySidebar({
               isMobileVariant
                 ? undefined
                 : tooltipLines(
-                    t.verificationRequestTooltip ||
-                      (locale === 'vi'
-                        ? 'Xác minh hồ sơ để hiển thị huy hiệu\nTăng độ tin cậy và ưu tiên hiển thị\nGửi yêu cầu và chờ xét duyệt'
-                        : locale === 'en'
-                          ? 'Apply to get a verified badge\nBoost trust and visibility\nSubmit a request and wait for review'
-                          : '인증을 받으면 프로필에 인증 마크가 표시돼요\n신뢰도/노출 가중치가 올라갑니다\n신청 후 검토를 기다려주세요')
+                    verificationTooltipText
                   )
             }
             tooltipPosition={actionTooltipPosition}
             tooltipTouchBehavior={tooltipTouchBehavior}
             className="border-l-4 border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
+              </>
+            );
+          })()}
         </div>
 
         <div className="py-3 space-y-3 border-b border-gray-200/40 dark:border-gray-700/40 border-t border-gray-200/40 dark:border-gray-700/40 mt-2">

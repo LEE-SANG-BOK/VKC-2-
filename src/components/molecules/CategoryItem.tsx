@@ -5,6 +5,7 @@ import Tooltip from '@/components/atoms/Tooltip';
 interface CategoryItemProps {
   id: string;
   name: string;
+  description?: string;
   icon?: LucideIcon;
   count: number;
   isActive: boolean;
@@ -18,6 +19,7 @@ interface CategoryItemProps {
 export default function CategoryItem({
   id,
   name,
+  description,
   icon: Icon,
   count,
   isActive,
@@ -33,7 +35,6 @@ export default function CategoryItem({
   const defaultPadding = className.includes('px-') || className.includes('!px-') ? '' : 'px-4';
   const defaultVerticalPadding = className.includes('py-') || className.includes('!py-') ? '' : 'py-3';
 
-  // Check if custom colors are provided in className
   const hasCustomColors = className.includes('text-') || className.includes('border-l-');
 
   const button = (
@@ -48,7 +49,14 @@ export default function CategoryItem({
         }`}
     >
       {Icon ? <Icon className="w-5 h-5 flex-shrink-0" /> : null}
-      <span className="flex-1 text-left">{name}</span>
+      <span className="flex-1 min-w-0 text-left">
+        <span className="block truncate">{name}</span>
+        {description ? (
+          <span className="block text-xs font-normal text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">
+            {description}
+          </span>
+        ) : null}
+      </span>
       {count > 0 && <span className="text-xs text-gray-500 dark:text-gray-400">{count}</span>}
     </button>
   );
