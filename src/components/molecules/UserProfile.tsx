@@ -7,11 +7,11 @@ import { useParams } from 'next/navigation';
 import { User, FileText, Users, Bookmark, Settings, LogOut } from 'lucide-react';
 import Avatar from '@/components/atoms/Avatar';
 
-const ProfileModal = dynamic(() => import('@/components/molecules/ProfileModal'), { ssr: false });
-const MyPostsModal = dynamic(() => import('@/components/molecules/MyPostsModal'), { ssr: false });
-const FollowingModal = dynamic(() => import('@/components/molecules/FollowingModal'), { ssr: false });
-const BookmarksModal = dynamic(() => import('@/components/molecules/BookmarksModal'), { ssr: false });
-const SettingsModal = dynamic(() => import('@/components/molecules/SettingsModal'), { ssr: false });
+const ProfileModal = dynamic(() => import('@/components/molecules/modals/ProfileModal'), { ssr: false });
+const MyPostsModal = dynamic(() => import('@/components/molecules/modals/MyPostsModal'), { ssr: false });
+const FollowingModal = dynamic(() => import('@/components/molecules/modals/FollowingModal'), { ssr: false });
+const BookmarksModal = dynamic(() => import('@/components/molecules/modals/BookmarksModal'), { ssr: false });
+const SettingsModal = dynamic(() => import('@/components/molecules/modals/SettingsModal'), { ssr: false });
 
 interface UserProfileProps {
   name: string;

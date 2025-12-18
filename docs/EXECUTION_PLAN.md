@@ -37,6 +37,235 @@
 - **[BE] Backend Agent**: API Routes/DB(Drizzle)/마이그레이션/캐시·레이트리밋/관리자 API (주 소유: `src/app/api/**`, `src/lib/db/**`, `src/lib/**(auth/supabase)`)
 - **공통 규칙**: 에이전트는 작업 시작 전 `docs/EXECUTION_PLAN.md`에서 담당/범위 확인 → 작업 완료 후 “체크/변경 요청”을 Lead에 전달 → Lead가 검증 후 체크리스트/문서 반영 및 커밋/푸시
 
+### 0.5 에이전트 작업 기록/플랜(필수)
+
+- **원칙**: 각 에이전트는 작업 단위마다 **본 문서에 작업 기록 + 자체 플랜/현황 분석**을 남긴다.
+- **충돌 방지**: 에이전트는 **본인 섹션만 수정**하고, 기존 라인은 수정/재정렬하지 않고 **아래에 append만** 한다.
+- **검수 흐름**: 에이전트는 `[ ]`로 기록 → Lead가 `lint/build` 포함 검증 후 `[x]`로 변경(Lead 서명/메모 추가).
+- **주의**: `docs/EXECUTION_PLAN.md`와 `HANDOVER.md`는 “수정 금지” 파일이 아니라 **업무 수행 시 반드시 갱신해야 하는 산출물**이다.
+
+**작성 포맷(복붙 템플릿)**
+
+```md
+#### (YYYY-MM-DD) [AGENT] 작업명 (P0/P1)
+
+- 플랜(체크리스트)
+  - [ ] 서브태스크 1
+  - [ ] 서브태스크 2
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치:
+  - 재현/리스크:
+- 변경 내용(why/what)
+  - why:
+  - what:
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - path1
+  - path2
+- 다음 액션/의존성
+  - (예: BE API 선행 필요 / FE UI 확정 필요)
+```
+
+---
+
+## 0.6 에이전트별 작업 기록(append only)
+
+> 각 에이전트들이 자체 분석한 플랜/기록은 아래 섹션에 **append-only**로 남긴다(본인 섹션만 수정).
+
+### 0.6.0 [LEAD] Control Tower
+
+#### (2025-12-18) [LEAD] 컴포넌트 폴더 구조 정리: Modals 분리 (P0)
+
+- 플랜(체크리스트)
+  - [x] `src/components/molecules/*Modal.tsx` → `src/components/molecules/modals/*`로 이동
+  - [x] import 경로 갱신(dynamic import 포함)
+- 현황 분석(코드 기준)
+  - molecules 루트에 Modal 컴포넌트가 혼재되어 탐색/소유권 관리가 어려움
+- 변경 내용(why/what)
+  - why: 모달은 성능/데이터 호출과 직결되어 별도 폴더로 분리 시 관리/감독이 쉬워짐
+  - what: `molecules/modals`로 파일 이동 후 Header/UserProfile의 dynamic import 경로를 갱신
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/modals/*
+  - src/components/organisms/Header.tsx
+  - src/components/molecules/UserProfile.tsx
+- 다음 액션/의존성
+  - FE/WEB 에이전트 소유권 경계 재확인(모달 관련 작업은 이 폴더만 수정)
+
+### 0.6.1 [FE] Design Front Agent
+
+#### (2025-12-18) [FE] 피드/레이아웃 UX 안정화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 데스크톱 외곽 여백 회색 분리(콘텐츠 영역 유지)
+  - [x] PostCard 작성자 라인 `· Follow/Following` 표현 적용
+  - [x] 모바일에서 상태 아이콘/태그/긴 라벨 잘림 방지
+- 현황 분석(코드 기준)
+  - PostCard 하단/태그 라인이 `overflow-x-auto`/nowrap 조합으로 locale(vi)에서 일부 잘림
+  - 데스크톱은 콘텐츠 영역과 바깥 여백의 시각적 구분이 약함
+- 변경 내용(why/what)
+  - why: 모바일 잘림(특히 vi)이 전환/클릭 실패로 이어짐, 데스크톱 레이아웃 구분이 약해 가독성 저하
+  - what: PostCard 태그는 mobile에서 wrap, 데스크톱은 가로 스크롤 유지; 하단 액션 행은 모바일 wrap 허용; MainLayout에 데스크톱 외곽 bg 적용
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/templates/MainLayout.tsx
+  - src/components/molecules/PostCard.tsx
+  - src/app/globals.css
+- 다음 액션/의존성
+  - i18n 누락/혼용 전수 점검(툴팁/배지/카테고리)
+
+#### (2025-12-18) [FE] Design Front Agent Prompt 요구사항 검증/기록 (P0)
+
+- 플랜(체크리스트)
+  - [x] 피드 카드 작성자 라인에 `· Following/Follow` 표시(카드 클릭과 분리)
+  - [x] Desktop 페이지 “바깥 여백만” 회색 구분(콘텐츠 영역 UI 변경 최소화)
+- 현황 분석(코드 기준)
+  - PostCard 작성자 라인 CTA는 카드 클릭/프로필 이동과 이벤트 분리가 필요(버튼 클릭 시 stopPropagation)
+  - 레이아웃은 `container` 영역은 유지하고, `container` 바깥 배경만 분리되어야 함
+- 변경 내용(why/what)
+  - why: CTA 오동작(카드 클릭 트리거) 방지 + 데스크톱에서 콘텐츠 영역 가독성/구분 강화
+  - what: 작성자 라인에 `· Follow/Following` CTA를 별도 버튼으로 분리하고(`stopPropagation`), MainLayout의 데스크톱 바깥 여백 배경을 회색으로 분리
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/PostCard.tsx
+  - src/components/templates/MainLayout.tsx
+- i18n
+  - 사용: `translations.common.follow`, `translations.common.following` (없으면 locale fallback)
+  - 신규 키 요청: 없음
+
+#### (2025-12-18) [FE] Sidebar CTA 카피/보조설명 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] Sidebar CTA 3종 라벨(질문/공유/인증) ko/en/vi 통일
+  - [x] 모바일에서 CTA 보조 설명(1줄) 표시
+  - [x] Tooltip은 데스크톱에서 multi-line 유지
+- 현황 분석(코드 기준)
+  - CTA 라벨/툴팁이 locale별로 의미/길이가 달라 UI 일관성이 떨어짐
+  - 모바일은 hover 기반 tooltip 접근이 어려워 “왜 필요한 액션인지” 전달이 약함
+- 변경 내용(why/what)
+  - why: CTA의 의미/가치(질문/공유/인증)를 빠르게 이해시키고 전환(클릭)을 높이기 위함
+  - what: `CategoryItem`에 `description` 지원을 추가하고, mobile variant에서 tooltip 2번째 줄을 1줄 요약으로 노출; messages ko/en/vi 카피를 간결하게 통일
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/molecules/CategoryItem.tsx
+  - messages/ko.json
+  - messages/en.json
+  - messages/vi.json
+- 다음 액션/의존성
+  - CTA 카피는 `/verify` wizard UX 완료 시 상세 안내(3-step)와 톤 정합 재점검
+
+#### (2025-12-18) [FE] 프로필 메타 정보 모바일 콤팩트 레이아웃 (P0)
+
+- 플랜(체크리스트)
+  - [x] Joined/Gender/Age/Status는 2열(가로 우선) 배치
+  - [x] Email/Phone은 본인에게만 노출 + 전체 폭(span-2) 처리
+  - [x] 긴 텍스트(메일/상태)는 truncate로 레이아웃 깨짐 방지
+- 현황 분석(코드 기준)
+  - 프로필 메타 영역이 모바일에서 1열 위주로 길어져 스크롤/가독성이 나빠짐
+  - email/phone은 길이가 길어 wrap/overflow로 레이아웃이 흔들릴 수 있음
+- 변경 내용(why/what)
+  - why: 모바일에서 핵심 정보 스캔 속도를 높이고, 개인 정보 라인이 레이아웃을 깨지 않게 하기 위함
+  - what: `ProfileClient`의 메타 grid를 2열로 조정하고, 민감 정보(email/phone)는 `col-span-2` + `truncate` 적용
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+- 다음 액션/의존성
+  - 프로필 상세(모달/탭)에서도 동일 그리드 패턴 재사용 여부 검토
+
+### 0.6.2 [WEB] Web Feature Agent
+
+#### (2025-12-18) [WEB] 헤더/프로필 모달 성능 최적화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 프로필 드롭다운 모달 lazy-load + 오픈 시에만 mount
+  - [x] 모달 리스트 step-by-step 렌더(스켈레톤 포함)
+  - [x] 무한스크롤 fetch 조건 강화(visibleCount와 연동)
+- 현황 분석(코드 기준)
+  - 모달을 열 때마다 리스트 전체 렌더/재조회로 렉/과호출 체감 가능
+- 변경 내용(why/what)
+  - why: 모달은 짧게 열고 닫는 UX가 많아, 재오픈 시 refetch/풀 렌더는 UX/부하 모두 악화
+  - what: dynamic import + mount on open + progressive list 패턴 도입, query staleTime/gcTime로 재오픈 refetch 억제
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/UserProfile.tsx
+  - src/components/molecules/modals/BookmarksModal.tsx
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+  - src/lib/hooks/useProgressiveList.ts
+- 다음 액션/의존성
+  - 관리자 모달/상세에서도 동일 패턴 확장(과부하 방지)
+
+#### (2025-12-18) [LEAD] 정합성 메모: Modal 파일 경로 일원화
+
+- 현황
+  - 모달 컴포넌트는 `src/components/molecules/modals/*`로 일원화되어야 한다.
+- 조치
+  - 이후 모달 관련 작업은 기존 경로(`src/components/molecules/*Modal.tsx`)를 신규로 만들지 않고, `molecules/modals`만 수정한다.
+
+#### (2025-12-18) [WEB] `/verification/history` 실데이터 연동 (P0)
+
+- 플랜(체크리스트)
+  - [x] demo empty array 제거 → TanStack Query로 이력 조회
+  - [x] pagination(load more) 지원
+  - [x] loading/error 상태 UI 추가 + 재시도
+- 현황 분석(코드 기준)
+  - `VerificationHistoryClient`가 로컬 state(빈 배열)만 사용해 실제 신청 이력이 표시되지 않음
+  - `/api/verification/history`는 page/limit 기반 페이지네이션을 제공
+- 변경 내용(why/what)
+  - why: 인증 신청 플로우의 신뢰/투명성을 위해 “현재 상태/과거 이력”을 실데이터로 보여줘야 함
+  - what: `useVerificationHistory`를 연결하고, page 증가 시 중복 없이 누적 렌더; 실패 시 refetch 버튼 제공
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/verification/history/VerificationHistoryClient.tsx
+- 다음 액션/의존성
+  - `/verify` 3-step wizard에 history 섹션/딥링크 동선 통합
+
+### 0.6.3 [BE] Backend Agent
+
+#### (2025-12-18) [BE] 추천 사용자 API 보강 + 과부하 방지 (P0)
+
+- 플랜(체크리스트)
+  - [x] 추천 사용자 응답에 postsCount 실데이터 포함
+  - [x] 기본 limit 축소 + 상한 clamp(default 8, max 12)
+- 현황 분석(코드 기준)
+  - 추천 유저는 UI에서 카드 단위로 노출되어, 대량 반환 시 DB/응답이 불필요하게 커질 수 있음
+- 변경 내용(why/what)
+  - why: 추천 유저는 반복 호출/모달 진입이 잦아 과부하 위험이 큼
+  - what: postsCount 서브쿼리 추가 + limit 범위 제한으로 응답/부하를 제어
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/api/users/recommended/route.ts
+- 다음 액션/의존성
+  - 추천 팔로잉 메타 3개 산출 규칙 정의(인증/채택률/관심사 일치 등) + 인덱스/캐시 검토
+
+#### (2025-12-18) [LEAD] 리팩토링 심화 트랙(폴더/중복/미사용 정리) — 실행 플랜 (P0)
+
+- 플랜(체크리스트)
+  - [ ] `src/components/**` 구조 점검: 폴더별 책임(atomic) 재정의 및 이동 후보 목록화
+  - [ ] 미사용/중복 파일 후보 스캔(정적 import 기준) 및 삭제/통합 우선순위 결정
+  - [ ] 안전 삭제(빌드 게이트): 1) 제거 2) `npm run lint` 3) `npm run build`
+  - [ ] 중복 유틸/타입 정리(선택): repo/types/utils 중복 최소화
+  - [ ] 완료 항목은 `HANDOVER.md`에 “완료”로 반영
+
 ---
 
 ## 1. 작업 진행 “공식”(팀 공통 포맷)

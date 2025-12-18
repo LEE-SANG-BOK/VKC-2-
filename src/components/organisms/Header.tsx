@@ -17,7 +17,7 @@ import { pickExampleQuestion } from '@/lib/constants/search-examples';
 import { LEGACY_CATEGORIES } from '@/lib/constants/categories';
 import { CATEGORY_GROUPS } from '@/lib/constants/categories';
 
-const NotificationModal = dynamic(() => import('@/components/molecules/NotificationModal'), { ssr: false });
+const NotificationModal = dynamic(() => import('@/components/molecules/modals/NotificationModal'), { ssr: false });
 
 interface HeaderProps {
   isMobileMenuOpen: boolean;

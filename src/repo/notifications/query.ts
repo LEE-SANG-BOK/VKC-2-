@@ -7,6 +7,8 @@ export function useNotifications(filters: NotificationFilters = {}, options: Rec
   return useQuery({
     queryKey: queryKeys.notifications.list(filters),
     queryFn: () => fetchNotifications(filters),
+    staleTime: 60_000,
+    gcTime: 5 * 60 * 1000,
     ...options,
   });
 }

@@ -45,6 +45,9 @@ export default function NotificationModal({ isOpen, onClose, translations = {} }
       enabled: !!user?.id && isOpen,
       retry: 2,
       retryDelay: (attempt: number) => Math.min(2000, 1000 * 2 ** attempt),
+      staleTime: 60_000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
     }
   );
   const markAsRead = useMarkAsRead();

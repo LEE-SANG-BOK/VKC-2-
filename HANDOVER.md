@@ -15,6 +15,7 @@
 - [FE] 모바일 프로필 정보 콤팩트 레이아웃: Joined/Gender/Age/Status는 2열 배치, Email/Phone은 전체 폭으로 안정화
 - [FE] `/verification/history` 실데이터 연동: TanStack Query로 이력 로딩 + “더 보기” 페이지네이션 지원
 - [FE] 모바일 PostCard 하단 잘림 보강: 액션 아이콘 행 wrap 처리로 “해결됨/미해결됨” 및 긴 라벨/태그가 클립되지 않도록 안정화
+- [LEAD] 폴더 구조 정리: `src/components/molecules/modals/*`로 모달 컴포넌트 경로 일원화(탐색/소유권/성능 작업 관리)
 - [LEAD] public 정리: 사용되지 않는 기본 SVG/원본 로고 파일 제거(레포 용량/혼선 감소)
 - [BE] 추천 사용자 API 과부하 방지: 기본 `limit` 축소 + 상한 clamp(default 8, max 12)
 - [BE] 팔로우 상태 응답 보강: 피드/프로필 리스트/북마크/팔로워/팔로잉/유저검색에 `isFollowing` 제공(배치 조회) + 리스트 기본 `content` 제외, `excerpt/thumbnails/imageCount` 제공
