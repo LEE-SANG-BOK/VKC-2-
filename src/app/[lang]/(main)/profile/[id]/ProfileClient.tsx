@@ -455,21 +455,21 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                 <p className="text-gray-700 dark:text-gray-300 mb-4">{initialProfile.bio}</p>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-400">
-                <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-2 sm:gap-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-2 min-w-0">
                   <Calendar className="w-4 h-4" />
-                  <span>{t.joinedAt || 'Joined'}: {new Date(initialProfile.joinedAt).toLocaleDateString(locale)}</span>
+                  <span className="truncate">{t.joinedAt || 'Joined'}: {new Date(initialProfile.joinedAt).toLocaleDateString(locale)}</span>
                 </div>
                 {initialProfile.gender && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <User className="w-4 h-4" />
-                    <span>{t.gender || 'Gender'}: {getGenderLabel(initialProfile.gender)}</span>
+                    <span className="truncate">{t.gender || 'Gender'}: {getGenderLabel(initialProfile.gender)}</span>
                   </div>
                 )}
                 {initialProfile.ageGroup && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <User className="w-4 h-4" />
-                    <span>{t.ageGroup || 'Age'}: {getAgeGroupLabel(initialProfile.ageGroup)}</span>
+                    <span className="truncate">{t.ageGroup || 'Age'}: {getAgeGroupLabel(initialProfile.ageGroup)}</span>
                   </div>
                 )}
                 {(() => {
@@ -479,22 +479,22 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                     (legacyStatus && legacyStatus !== 'banned' && legacyStatus !== 'suspended' ? legacyStatus : null);
                   if (!effectiveUserType) return null;
                   return (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <Briefcase className="w-4 h-4" />
-                      <span>{t.status || 'Status'}: {getUserTypeLabel(effectiveUserType)}</span>
+                      <span className="truncate">{t.status || 'Status'}: {getUserTypeLabel(effectiveUserType)}</span>
                     </div>
                   );
                 })()}
                 {isOwnProfile && initialProfile.email && (
-                  <div className="flex items-center gap-2">
+                  <div className="col-span-2 flex items-center gap-2 min-w-0">
                     <Mail className="w-4 h-4" />
-                    <span>{initialProfile.email}</span>
+                    <span className="truncate">{initialProfile.email}</span>
                   </div>
                 )}
                 {isOwnProfile && initialProfile.phone && (
-                  <div className="flex items-center gap-2">
+                  <div className="col-span-2 flex items-center gap-2 min-w-0">
                     <Phone className="w-4 h-4" />
-                    <span>{initialProfile.phone}</span>
+                    <span className="truncate">{initialProfile.phone}</span>
                   </div>
                 )}
               </div>
