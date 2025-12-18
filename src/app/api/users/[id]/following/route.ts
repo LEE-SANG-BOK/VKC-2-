@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { follows, users } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
+import { getSession } from '@/lib/api/auth';
+import { getFollowingIdSet } from '@/lib/api/follow';
 import { eq, desc, sql, and, or, lt, type SQL } from 'drizzle-orm';
 
 interface RouteContext {
@@ -23,6 +25,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
     const cursorParam = searchParams.get('cursor');
+
+    const currentUser = await getSession(request);
 
     // 사용자 존재 여부 확인
     const user = await db.query.users.findFirst({
@@ -115,8 +119,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
           })
         : null;
 
+    const followingUserIds = pageList.map((row) => row.following.id).filter(Boolean) as string[];
+    const followingIdSet = currentUser
+      ? await getFollowingIdSet(currentUser.id, followingUserIds)
+      : new Set<string>();
+
     const following = pageList.map((row) => ({
       ...row.following,
+      isFollowing: currentUser ? followingIdSet.has(row.following.id) : false,
       followedAt: row.followedAt,
     }));
 
