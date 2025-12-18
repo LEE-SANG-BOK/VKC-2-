@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { users, follows } from '@/lib/db/schema';
+import { users, follows, posts } from '@/lib/db/schema';
 import { eq, ne, notInArray, sql, desc, and } from 'drizzle-orm';
 import { successResponse, errorResponse } from '@/lib/api/response';
 
@@ -65,7 +65,11 @@ export async function GET(req: NextRequest) {
           FROM ${follows} 
           WHERE ${follows.followerId} = ${users.id}
         )`,
-        postsCount: sql<number>`0`,
+        postsCount: sql<number>`(
+          SELECT COUNT(*)::int
+          FROM ${posts}
+          WHERE ${posts.authorId} = ${users.id}
+        )`,
       })
       .from(users)
       .where(and(...whereConditions))

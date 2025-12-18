@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import Modal from '@/components/atoms/Modal';
 import PostCard from '@/components/molecules/PostCard';
 import { useInfiniteUserPosts } from '@/repo/users/query';
+import useProgressiveList from '@/lib/hooks/useProgressiveList';
 
 interface MyPostsModalProps {
   isOpen: boolean;
@@ -36,6 +37,15 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
 
 
   const posts = data?.pages?.flatMap(page => page.data) || [];
+
+  const visibleCount = useProgressiveList({
+    enabled: isOpen && !isLoading,
+    total: posts.length,
+    initial: 6,
+    step: 6,
+  });
+
+  const visiblePosts = posts.slice(0, visibleCount);
 
 
   // 무한 스크롤 Intersection Observer
@@ -91,7 +101,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
             </div>
           ) : (
             <div className="space-y-4">
-              {posts.map((post: any) => {
+              {visiblePosts.map((post: any) => {
                 const thumbnails = Array.isArray(post.thumbnails) && post.thumbnails.length ? post.thumbnails : undefined;
                 const resolvedThumbnail = post.thumbnail || post.thumbnails?.[0];
                 return (
@@ -117,7 +127,9 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
                     tags={post.tags || []}
                     stats={{
                       likes: post.likesCount ?? post.stats?.likes ?? post.likes ?? 0,
-                      comments: post.commentsCount ?? post.stats?.comments ?? 0,
+                      comments: (post.type === 'question' || post.isQuestion)
+                        ? (post.answersCount ?? post.commentsCount ?? post.stats?.comments ?? 0)
+                        : (post.commentsCount ?? post.stats?.comments ?? 0),
                       shares: 0,
                     }}
                     category={post.category}
@@ -138,6 +150,21 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
                   />
                 );
               })}
+
+              {visibleCount < posts.length ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 2 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 animate-pulse"
+                    >
+                      <div className="h-4 w-2/3 rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className="mt-3 h-3 w-full rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className="mt-2 h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               {/* Loading indicator */}
               {hasNextPage && (

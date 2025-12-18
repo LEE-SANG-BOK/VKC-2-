@@ -30,7 +30,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const router = useRouter();
   const locale = (params?.lang as string) || 'ko';
   const { data: session } = useSession();
-  const { data: recommended } = useRecommendedUsers({ enabled: selectedCategory === 'following' });
+  const { data: recommended, isLoading: recommendedLoading } = useRecommendedUsers({ enabled: selectedCategory === 'following' });
   const { data: mySubs } = useMySubscriptions(selectedCategory === 'subscribed' && !!session?.user);
   const topicSlugs = useMemo(() => {
     return new Set(Object.values(CATEGORY_GROUPS).flatMap((group) => group.slugs as readonly string[]));
@@ -196,6 +196,8 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   };
 
   const followerLabel = tCommon.followers || (locale === 'vi' ? 'Người theo dõi' : locale === 'en' ? 'Followers' : '팔로워');
+  const postsLabel = tCommon.posts || (locale === 'vi' ? 'Bài viết' : locale === 'en' ? 'Posts' : '게시글');
+  const followingLabel = tCommon.following || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로잉');
   const recommendedUsersLabel = t.recommendedUsersTitle || t.recommendedUsers || (locale === 'vi' ? 'Người dùng đề xuất' : locale === 'en' ? 'Recommended users' : '추천 사용자');
   const recommendedCtaLabel = t.recommendedUsersCta || (locale === 'vi' ? 'Xem người dùng đề xuất' : locale === 'en' ? 'View recommended users' : '추천 사용자 보기');
   const allSubscriptionsLabel = t.allSubscriptions || (locale === 'vi' ? 'Tất cả' : locale === 'en' ? 'All' : '전체');
@@ -324,7 +326,9 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                   tags={post.tags}
                   stats={{
                     likes: (post as any).likesCount ?? post.likes ?? 0,
-                    comments: (post as any).commentsCount ?? 0,
+                    comments: post.type === 'question'
+                      ? (post.answersCount ?? post.commentsCount ?? 0)
+                      : (post.commentsCount ?? 0),
                     shares: 0,
                   }}
                   category={(post as any).category}
@@ -357,15 +361,33 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
             </div>
           )}
 
-          {selectedCategory === 'following' && recommended?.data?.length ? (
+          {selectedCategory === 'following' && (recommendedLoading || recommended?.data?.length) ? (
             <div ref={recommendedRef} className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 mt-3">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {recommendedUsersLabel}
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[...recommended.data].sort((a, b) => (b.stats?.followers ?? 0) - (a.stats?.followers ?? 0)).map((user) => (
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {recommendedUsersLabel}
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {recommendedLoading
+                  ? Array.from({ length: 4 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3"
+                    >
+                      <div className="flex items-center gap-3 w-full animate-pulse">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700" />
+                          <div className="h-8 w-20 rounded-md bg-gray-200 dark:bg-gray-700" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="h-4 w-36 rounded bg-gray-200 dark:bg-gray-700" />
+                          <div className="mt-2 h-3 w-48 rounded bg-gray-200 dark:bg-gray-700" />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                  : [...recommended!.data].sort((a, b) => (b.stats?.followers ?? 0) - (a.stats?.followers ?? 0)).map((user) => (
                     <div
                       key={user.id}
                       className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3"
@@ -400,18 +422,16 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                             <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                               {user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음')}
                             </div>
-                            {user.stats?.followers !== undefined && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {followerLabel} {user.stats.followers}
-                              </div>
-                            )}
+                            <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                              #1: {user.stats?.followers ?? 0} {followerLabel}, #2: {user.stats?.posts ?? 0} {postsLabel}, #3: {user.stats?.following ?? 0} {followingLabel}
+                            </div>
                           </button>
                         </div>
                       </div>
                     </div>
                   ))}
-                </div>
               </div>
+            </div>
           ) : null}
         </div>
       )}

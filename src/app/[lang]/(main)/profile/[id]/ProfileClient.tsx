@@ -56,6 +56,9 @@ interface PostItem {
   excerpt: string;
   tags?: string[];
   stats: { likes: number; comments: number; shares: number };
+  answersCount?: number;
+  postCommentsCount?: number;
+  commentsCount?: number;
   category: string;
   subcategory?: string;
   thumbnail?: string | null;
@@ -606,7 +609,12 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                         title={post.title}
                         excerpt={post.excerpt || ''}
                         tags={post.tags || []}
-                        stats={post.stats}
+                        stats={{
+                          ...post.stats,
+                          comments: post.isQuestion
+                            ? (post.answersCount ?? post.stats.comments)
+                            : post.stats.comments,
+                        }}
                         category={post.category}
                         subcategory={post.subcategory}
                         thumbnail={resolvedThumbnail}
@@ -737,7 +745,12 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                         title={bookmark.title}
                         excerpt={bookmark.excerpt || ''}
                         tags={bookmark.tags || []}
-                        stats={bookmark.stats}
+                        stats={{
+                          ...bookmark.stats,
+                          comments: bookmark.isQuestion
+                            ? (bookmark.answersCount ?? bookmark.stats.comments)
+                            : bookmark.stats.comments,
+                        }}
                         category={bookmark.category}
                         subcategory={bookmark.subcategory}
                         thumbnail={resolvedThumbnail}

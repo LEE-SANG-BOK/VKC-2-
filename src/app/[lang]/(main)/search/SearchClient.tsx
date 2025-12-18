@@ -423,7 +423,9 @@ export default function SearchClient({
                     tags={post.tags || []}
                     stats={{
                       likes: post.likesCount ?? post.likes ?? 0,
-                      comments: post.commentsCount ?? 0,
+                      comments: post.type === 'question'
+                        ? (post.answersCount ?? post.commentsCount ?? 0)
+                        : (post.commentsCount ?? 0),
                       shares: 0,
                     }}
                     category={post.category}

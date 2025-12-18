@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import Modal from '@/components/atoms/Modal';
 import PostCard from '@/components/molecules/PostCard';
 import { useInfiniteUserBookmarks } from '@/repo/users/query';
+import useProgressiveList from '@/lib/hooks/useProgressiveList';
 
 interface BookmarksModalProps {
   isOpen: boolean;
@@ -68,6 +69,16 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
         if (activeFilter === 'post') return !bookmark.isQuestion && bookmark.type !== 'answer';
         return true;
       });
+
+  const visibleCount = useProgressiveList({
+    enabled: isOpen && !isLoading,
+    total: filteredBookmarks.length,
+    initial: 6,
+    step: 6,
+    resetKey: activeFilter,
+  });
+
+  const visibleBookmarks = filteredBookmarks.slice(0, visibleCount);
 
   const getFilterCount = (filter: FilterType) => {
     if (filter === 'all') return bookmarks.length;
@@ -156,7 +167,7 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
             </div>
           ) : (
             <div className="space-y-4 max-h-[500px] overflow-y-auto">
-              {filteredBookmarks.map((bookmark) => (
+              {visibleBookmarks.map((bookmark) => (
                 <PostCard
                   key={bookmark.id}
                   id={bookmark.id}
@@ -164,7 +175,12 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
                   title={bookmark.title}
                   excerpt={bookmark.excerpt}
                   tags={bookmark.tags || []}
-                  stats={bookmark.stats}
+                  stats={{
+                    ...bookmark.stats,
+                    comments: bookmark.isQuestion
+                      ? (bookmark.answersCount ?? bookmark.stats?.comments ?? 0)
+                      : (bookmark.stats?.comments ?? 0),
+                  }}
                   thumbnail={bookmark.thumbnail}
                   publishedAt={formatDate(bookmark.publishedAt)}
                   isQuestion={bookmark.isQuestion}
@@ -176,6 +192,21 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
                   translations={translations}
                 />
               ))}
+
+              {visibleCount < filteredBookmarks.length ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 2 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 animate-pulse"
+                    >
+                      <div className="h-4 w-2/3 rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className="mt-3 h-3 w-full rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className="mt-2 h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               {hasNextPage && (
                 <div ref={observerRef} className="py-4 text-center">

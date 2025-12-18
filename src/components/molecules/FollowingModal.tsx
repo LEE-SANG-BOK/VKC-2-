@@ -55,6 +55,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   const feedObserverRef = useRef<HTMLDivElement>(null);
   const followerLabel = tCommon.followers || (locale === 'vi' ? 'Người theo dõi' : locale === 'en' ? 'Followers' : '팔로워');
   const postsLabel = tCommon.posts || (locale === 'vi' ? 'Bài viết' : locale === 'en' ? 'Posts' : '게시글');
+  const followingLabel = tCommon.following || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로잉');
   const loadingLabel = (t as any).loading || (locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...');
   const noRecommendationsLabel = (t as any).noRecommendations || (locale === 'vi' ? 'Chưa có gợi ý người dùng.' : locale === 'en' ? 'No recommendations yet.' : '추천할 사용자가 없습니다.');
   const noFollowingLabel = (t as any).noFollowing || (locale === 'vi' ? 'Chưa theo dõi ai.' : locale === 'en' ? 'You are not following anyone yet.' : '아직 팔로잉하는 사용자가 없습니다.');
@@ -247,9 +248,8 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                   {userItem.bio}
                 </p>
               )}
-              <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                <span>{userItem.stats?.followers || 0} {followerLabel}</span>
-                <span>{userItem.stats?.posts || 0} {postsLabel}</span>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                #1: {userItem.stats?.followers || 0} {followerLabel}, #2: {userItem.stats?.posts || 0} {postsLabel}, #3: {userItem.stats?.following || 0} {followingLabel}
               </div>
             </button>
           </div>
@@ -325,9 +325,24 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
           {activeTab === 'recommend' && (
             <div className="space-y-4">
               {recommendedLoading ? (
-                <div className="flex justify-center py-12">
-                  <div className="h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                </div>
+                Array.from({ length: 3 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="flex items-start gap-4 animate-pulse">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700" />
+                        <div className="h-8 w-20 rounded-md bg-gray-200 dark:bg-gray-700" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="h-4 w-40 rounded bg-gray-200 dark:bg-gray-700" />
+                        <div className="mt-2 h-3 w-24 rounded bg-gray-200 dark:bg-gray-700" />
+                        <div className="mt-3 h-3 w-full max-w-[260px] rounded bg-gray-200 dark:bg-gray-700" />
+                      </div>
+                    </div>
+                  </div>
+                ))
               ) : recommendations.length === 0 ? (
                 <div className="text-center py-12">
                   <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -404,7 +419,9 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                       tags={post.tags || []}
                       stats={{
                         likes: post.likesCount ?? post.likes ?? 0,
-                        comments: post.commentsCount ?? 0,
+                        comments: post.type === 'question'
+                          ? (post.answersCount ?? post.commentsCount ?? 0)
+                          : (post.commentsCount ?? 0),
                         shares: 0,
                       }}
                       thumbnail={post.thumbnail}

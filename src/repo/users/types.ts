@@ -68,6 +68,9 @@ export interface PostCardData {
   tags: string[];
   views: number;
   likes: number;
+  answersCount?: number;
+  postCommentsCount?: number;
+  commentsCount?: number;
   isResolved?: boolean;
   createdAt: string;
   publishedAt: string;

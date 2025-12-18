@@ -8,6 +8,8 @@
 - [FE] 사이드바 폭 정렬: 데스크톱 CategorySidebar 폭을 우측 레일과 동일한 320px로 맞춤
 - [FE] Desktop “바깥 여백만” 회색 분리: MainLayout에서 데스크톱 배경을 회색으로, 콘텐츠 영역은 기존 배경 유지
 - [FE] PostCard 작성자 라인: 이름 옆에 `· Follow` / `· Following` 텍스트 CTA 표시 + 카드 클릭과 분리(클릭 stopPropagation)
+- [FE] PostCard 답변 CTA 정합성: 질문은 `answersCount` 기준으로 “답변 N개” 표시(ko는 `개` 표기) + 클릭 시 `#answers/#comments`로 이동
+- [FE] 팔로잉 추천 카드 UI: 추천 유저 카드에 `#1/#2/#3` 3개 고정 표기(팔로워/게시글/팔로잉) + 로딩 스켈레톤, 추천 API에 postsCount 실데이터 반영
 - [BE] 팔로우 상태 응답 보강: 피드/프로필 리스트/북마크/팔로워/팔로잉/유저검색에 `isFollowing` 제공(배치 조회) + 리스트 기본 `content` 제외, `excerpt/thumbnails/imageCount` 제공
 - 로고 교체: `public/brand-logo.png` 적용 + `Logo`를 이미지 기반(`next/image`)으로 전환, 헤더 브랜드 툴팁 표어 ko/en/vi 업데이트
 - 리팩토링 심화: PostCard/PostDetail 중복 유틸(dateTime/safeText) 통합 + 카테고리 허용 slug 단일화 + 미사용 `components/ui` 파일 정리

@@ -78,7 +78,13 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     translations: tTrust,
   });
 
-  const answerLabel = `${isQuestion ? tCommon.answer || '답변' : tCommon.comment || '댓글'} ${stats.comments}`;
+  const responseCount = Math.max(0, Number(stats.comments ?? 0));
+  const responseLabel = isQuestion ? (tCommon.answer || '답변') : (tCommon.comment || '댓글');
+  const answerLabel = locale === 'en'
+    ? `${responseCount} ${responseCount === 1 ? responseLabel : `${responseLabel}s`}`
+    : locale === 'vi'
+      ? `${responseCount} ${responseLabel}`
+      : `${responseLabel} ${responseCount}개`;
 
   const certifiedCount = Math.max(0, certifiedResponderCount ?? 0);
   const otherCount = Math.max(0, otherResponderCount ?? 0);
