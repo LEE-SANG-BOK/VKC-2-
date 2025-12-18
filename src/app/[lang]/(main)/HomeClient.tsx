@@ -73,6 +73,7 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
       selectedCategory={resolvedCategory}
       onCategoryChange={handleCategoryChange}
       rightRail={<AdminPostRail translations={dict} lang={lang} />}
+      centerVariant="canvas"
       translations={dict}
     >
       <div className="flex flex-col gap-1 pb-4">

@@ -171,11 +171,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     }));
 
-    return paginatedResponse(formattedAnswers, page, limit, total, {
+    const response = paginatedResponse(formattedAnswers, page, limit, total, {
       nextCursor,
       hasMore: rawHasMore,
       paginationMode: useCursorPagination ? 'cursor' : 'offset',
     });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/users/[id]/answers error:', error);
     return serverErrorResponse();

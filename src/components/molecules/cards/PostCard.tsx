@@ -14,9 +14,11 @@ import { useCategories } from '@/repo/categories/query';
 import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
 import { useToggleFollow } from '@/repo/users/mutation';
 import { ALLOWED_CATEGORY_SLUGS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
+import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 import { formatDateTime } from '@/utils/dateTime';
+import { normalizeKey } from '@/utils/normalizeKey';
 import { safeDisplayName, safeShortLabel } from '@/utils/safeText';
 
 interface PostCardProps {
@@ -61,7 +63,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
-  const locale = (params?.lang as string) || 'ko';
+  const locale = (params?.lang as 'ko' | 'en' | 'vi') || 'ko';
   const t = (translations?.tooltips || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tPost = (translations?.post || {}) as Record<string, string>;
@@ -77,6 +79,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     },
     translations: tTrust,
   });
+
+  const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
+  const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
 
   const responseCount = Math.max(0, Number(stats.comments ?? 0));
   const responseLabel = isQuestion ? (tCommon.answer || '답변') : (tCommon.comment || '댓글');
@@ -179,92 +184,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       return getCategoryName(legacy, locale);
     }
 
-    const mapEn: Record<string, string> = {
-      '비자': 'Visa',
-      '연장': 'Extension',
-      '체류': 'Stay',
-      '추천': 'Recommend',
-      '취업': 'Jobs',
-      '채용': 'Hiring',
-      '면접': 'Interview',
-      '인턴': 'Internship',
-      '공모전': 'Contest',
-      '포트폴리오': 'Portfolio',
-      '장학금': 'Scholarship',
-      '학업': 'Study',
-      '수업': 'Classes',
-      '생활': 'Life',
-      '주거': 'Housing',
-      '교통': 'Transport',
-      '금융': 'Finance',
-      '계좌개설': 'Bank account',
-      '송금': 'Remittance',
-      '의료': 'Healthcare',
-      '보험': 'Insurance',
-      '병원': 'Hospital',
-      '법률': 'Legal',
-      '계약': 'Contract',
-      '신고': 'Report',
-      '비즈니스': 'Business',
-      '창업': 'Startup',
-      '서류': 'Documents',
-      '개발': 'Development',
-      '프로젝트': 'Project',
-      '게임': 'Game',
-      '커뮤니티': 'Community',
-      '리뷰': 'Review',
-      '한국어': 'Korean',
-      '토픽': 'TOPIK',
-      '정보': 'Info',
-      '가이드': 'Guide',
-      '생활정보': 'Life tips'
-    };
-    const mapVi: Record<string, string> = {
-      '비자': 'Visa',
-      '연장': 'Gia hạn',
-      '체류': 'Lưu trú',
-      '추천': 'Gợi ý',
-      '취업': 'Việc làm',
-      '채용': 'Tuyển dụng',
-      '면접': 'Phỏng vấn',
-      '인턴': 'Thực tập',
-      '공모전': 'Cuộc thi',
-      '포트폴리오': 'Hồ sơ',
-      '장학금': 'Học bổng',
-      '학업': 'Học tập',
-      '수업': 'Lớp học',
-      '생활': 'Sinh hoạt',
-      '주거': 'Nhà ở',
-      '교통': 'Giao thông',
-      '금융': 'Tài chính',
-      '계좌개설': 'Mở tài khoản',
-      '송금': 'Chuyển tiền',
-      '의료': 'Y tế',
-      '보험': 'Bảo hiểm',
-      '병원': 'Bệnh viện',
-      '법률': 'Pháp lý',
-      '계약': 'Hợp đồng',
-      '신고': 'Khai báo',
-      '비즈니스': 'Kinh doanh',
-      '창업': 'Khởi nghiệp',
-      '서류': 'Hồ sơ',
-      '개발': 'Phát triển',
-      '프로젝트': 'Dự án',
-      '게임': 'Game',
-      '커뮤니티': 'Cộng đồng',
-      '리뷰': 'Đánh giá',
-      '한국어': 'Tiếng Hàn',
-      '토픽': 'TOPIK',
-      '정보': 'Thông tin',
-      '가이드': 'Hướng dẫn',
-      '생활정보': 'Mẹo sinh hoạt'
-    };
-    if (locale === 'en' && mapEn[raw.toLowerCase()]) return mapEn[raw.toLowerCase()];
-    if (locale === 'vi' && mapVi[raw.toLowerCase()]) return mapVi[raw.toLowerCase()];
-    return raw;
+    return localizeCommonTagLabel(raw, locale);
   };
-
-  const normalizeKey = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 
   const displayTags = useMemo(() => {
     const seen = new Set<string>();
@@ -562,11 +483,11 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   {!isSelf && authorId ? (
                     <button
                       type="button"
-                      className={`shrink-0 text-[13px] font-semibold transition-colors ${followTextClassName}`}
+                      className={`shrink-0 text-[13px] font-medium transition-colors ${followTextClassName} ${toggleFollowMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
                       onClick={handleFollowClick}
                       aria-pressed={localIsFollowing}
                       aria-label={followText}
-                      disabled={toggleFollowMutation.isPending}
+                      aria-disabled={toggleFollowMutation.isPending}
                     >
                       <span className="mr-1 text-gray-400 dark:text-gray-500">·</span>
                       {followText}
@@ -577,7 +498,22 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   <span>{formatDateTime(publishedAt, locale)}</span>
                   {trustBadgePresentation.show ? (
                     <>
-                      <Tooltip content={trustBadgePresentation.tooltip} position="top">
+                      <Tooltip
+                        content={
+                          <div className="space-y-1">
+                            <div>{trustBadgePresentation.tooltip}</div>
+                            <button
+                              type="button"
+                              onClick={() => router.push(trustBadgeGuideHref)}
+                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              {learnMoreLabel}
+                            </button>
+                          </div>
+                        }
+                        position="top"
+                        touchBehavior="longPress"
+                      >
                         <span className="inline-flex items-center gap-1">
                           <TrustBadge
                             level={trustBadgePresentation.level}
@@ -647,7 +583,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:flex-nowrap sm:overflow-x-auto sm:scrollbar-hide sm:pr-2">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 md:flex-nowrap md:overflow-x-auto md:scrollbar-hide md:pr-2">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -676,10 +612,10 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             <button
               type="button"
               onClick={handleAnswerCountClick}
-              className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0"
+              className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0 overflow-hidden"
             >
               <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap">{answerLabel}</span>
+              <span className="truncate">{answerLabel}</span>
             </button>
             {certifiedSummaryLabel ? (
               <>

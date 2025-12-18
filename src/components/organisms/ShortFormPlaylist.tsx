@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import ShareButton from '@/components/molecules/ShareButton';
+import ShareButton from '@/components/molecules/actions/ShareButton';
 import { useParams } from 'next/navigation';
 import { useNews } from '@/repo/news/query';
 

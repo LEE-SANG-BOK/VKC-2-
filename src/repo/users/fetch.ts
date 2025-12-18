@@ -13,10 +13,15 @@ import type {
 } from './types';
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-export async function fetchMyProfile(): Promise<ApiResponse<User>> {
+type FetchOptions = {
+  signal?: AbortSignal;
+};
+
+export async function fetchMyProfile(options?: FetchOptions): Promise<ApiResponse<User>> {
   const res = await fetch(`${API_BASE}/api/users/me`, {
     cache: 'no-store',
     credentials: 'include',
+    signal: options?.signal,
   });
 
   if (!res.ok) {
@@ -26,10 +31,11 @@ export async function fetchMyProfile(): Promise<ApiResponse<User>> {
   return res.json();
 }
 
-export async function fetchUserProfile(userId: string): Promise<UserProfile> {
+export async function fetchUserProfile(userId: string, options?: FetchOptions): Promise<UserProfile> {
   const res = await fetch(`${API_BASE}/api/users/${userId}`, {
     cache: 'no-store',
     credentials: 'include',
+    signal: options?.signal,
   });
 
   if (!res.ok) {
@@ -41,7 +47,8 @@ export async function fetchUserProfile(userId: string): Promise<UserProfile> {
 
 export async function fetchUserPosts(
   userId: string,
-  filters: UserFilters = {}
+  filters: UserFilters = {},
+  options?: FetchOptions
 ): Promise<PaginatedResponse<UserPost>> {
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
@@ -52,6 +59,7 @@ export async function fetchUserPosts(
   const fetchOptions: RequestInit = {
     cache: 'no-store',
     credentials: 'include',
+    signal: options?.signal,
   };
 
   if (typeof window === 'undefined') {
@@ -76,7 +84,8 @@ export async function fetchUserPosts(
 
 export async function fetchUserAnswers(
   userId: string,
-  filters: AnswerFilters = {}
+  filters: AnswerFilters = {},
+  options?: FetchOptions
 ): Promise<PaginatedResponse<UserAnswer>> {
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
@@ -87,6 +96,7 @@ export async function fetchUserAnswers(
   const fetchOptions: RequestInit = {
     cache: 'no-store',
     credentials: 'include',
+    signal: options?.signal,
   };
 
   if (typeof window === 'undefined') {
@@ -111,7 +121,8 @@ export async function fetchUserAnswers(
 
 export async function fetchUserComments(
   userId: string,
-  filters: Omit<UserFilters, 'type'> = {}
+  filters: Omit<UserFilters, 'type'> = {},
+  options?: FetchOptions
 ): Promise<PaginatedResponse<UserComment>> {
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
@@ -121,6 +132,7 @@ export async function fetchUserComments(
   const fetchOptions: RequestInit = {
     cache: 'no-store',
     credentials: 'include',
+    signal: options?.signal,
   };
 
   if (typeof window === 'undefined') {
@@ -145,7 +157,8 @@ export async function fetchUserComments(
 
 export async function fetchUserBookmarks(
   userId: string,
-  filters: Omit<UserFilters, 'type'> = {}
+  filters: Omit<UserFilters, 'type'> = {},
+  options?: FetchOptions
 ): Promise<PaginatedResponse<UserBookmark>> {
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
@@ -155,6 +168,7 @@ export async function fetchUserBookmarks(
   const fetchOptions: RequestInit = {
     cache: 'no-store',
     credentials: 'include',
+    signal: options?.signal,
   };
 
   if (typeof window === 'undefined') {
@@ -179,7 +193,8 @@ export async function fetchUserBookmarks(
 
 export async function fetchFollowers(
   userId: string,
-  filters: Omit<UserFilters, 'type'> = {}
+  filters: Omit<UserFilters, 'type'> = {},
+  options?: FetchOptions
 ): Promise<PaginatedResponse<User>> {
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
@@ -188,6 +203,7 @@ export async function fetchFollowers(
 
   const res = await fetch(`${API_BASE}/api/users/${userId}/followers?${params.toString()}`, {
     cache: 'no-store',
+    signal: options?.signal,
   });
 
   if (!res.ok) {
@@ -199,7 +215,8 @@ export async function fetchFollowers(
 
 export async function fetchFollowing(
   userId: string,
-  filters: Omit<UserFilters, 'type'> = {}
+  filters: Omit<UserFilters, 'type'> = {},
+  options?: FetchOptions
 ): Promise<PaginatedResponse<User>> {
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
@@ -208,6 +225,7 @@ export async function fetchFollowing(
 
   const res = await fetch(`${API_BASE}/api/users/${userId}/following?${params.toString()}`, {
     cache: 'no-store',
+    signal: options?.signal,
   });
 
   if (!res.ok) {
@@ -218,7 +236,8 @@ export async function fetchFollowing(
 }
 
 export async function updateMyProfile(
-  data: UpdateProfileRequest
+  data: UpdateProfileRequest,
+  options?: FetchOptions
 ): Promise<ApiResponse<User>> {
   const res = await fetch(`${API_BASE}/api/users/me`, {
     method: 'PUT',
@@ -226,6 +245,7 @@ export async function updateMyProfile(
       'Content-Type': 'application/json',
     },
     credentials: 'include',
+    signal: options?.signal,
     body: JSON.stringify(data),
   });
 
@@ -239,13 +259,15 @@ export async function updateMyProfile(
 
 export async function updateProfile(
   userId: string,
-  data: UpdateProfileRequest
+  data: UpdateProfileRequest,
+  options?: FetchOptions
 ): Promise<ApiResponse<User>> {
   const res = await fetch(`${API_BASE}/api/users/${userId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
+    signal: options?.signal,
     body: JSON.stringify(data),
   });
 
@@ -258,11 +280,13 @@ export async function updateProfile(
 }
 
 export async function toggleFollow(
-  userId: string
+  userId: string,
+  options?: FetchOptions
 ): Promise<ApiResponse<{ isFollowing: boolean }>> {
   const res = await fetch(`${API_BASE}/api/users/${userId}/follow`, {
     method: 'POST',
     credentials: 'include',
+    signal: options?.signal,
   });
 
   if (!res.ok) {
@@ -274,10 +298,13 @@ export async function toggleFollow(
 }
 
 export async function checkFollowStatus(
-  userId: string
+  userId: string,
+  options?: FetchOptions
 ): Promise<{ isFollowing: boolean }> {
   const res = await fetch(`${API_BASE}/api/users/${userId}/follow/status`, {
+    cache: 'no-store',
     credentials: 'include',
+    signal: options?.signal,
   });
 
   if (!res.ok) {
@@ -289,7 +316,8 @@ export async function checkFollowStatus(
 }
 
 export async function fetchRecommendedUsers(
-  filters: UserFilters = {}
+  filters: UserFilters = {},
+  options?: FetchOptions
 ): Promise<PaginatedResponse<User>> {
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
@@ -298,6 +326,7 @@ export async function fetchRecommendedUsers(
   const res = await fetch(`${API_BASE}/api/users/recommended?${params}`, {
     cache: 'no-store',
     credentials: 'include',
+    signal: options?.signal,
   });
 
   if (!res.ok) {

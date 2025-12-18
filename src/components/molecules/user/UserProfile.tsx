@@ -1,17 +1,90 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, createContext, useContext } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { User, FileText, Users, Bookmark, Settings, LogOut } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import Avatar from '@/components/atoms/Avatar';
 
-const ProfileModal = dynamic(() => import('@/components/molecules/modals/ProfileModal'), { ssr: false });
-const MyPostsModal = dynamic(() => import('@/components/molecules/modals/MyPostsModal'), { ssr: false });
-const FollowingModal = dynamic(() => import('@/components/molecules/modals/FollowingModal'), { ssr: false });
-const BookmarksModal = dynamic(() => import('@/components/molecules/modals/BookmarksModal'), { ssr: false });
-const SettingsModal = dynamic(() => import('@/components/molecules/modals/SettingsModal'), { ssr: false });
+const ModalLoadingContext = createContext<(() => void) | null>(null);
+
+function ModalLoadingFallback({ maxWidth }: { maxWidth: string }) {
+  const params = useParams();
+  const locale = params.lang as string || 'ko';
+  const onClose = useContext(ModalLoadingContext);
+  const title = locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...';
+
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose?.();
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [onClose]);
+
+  const handleBackdropClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      onClose?.();
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 h-screen w-screen"
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div
+        className={`relative w-full ${maxWidth} max-h-[90vh] bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col`}
+      >
+        <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
+          <button
+            type="button"
+            onClick={() => onClose?.()}
+            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            <span className="text-lg leading-none">×</span>
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center py-10">
+          <div className="h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const ProfileModal = dynamic(() => import('@/components/molecules/modals/ProfileModal'), {
+  ssr: false,
+  loading: () => <ModalLoadingFallback maxWidth="max-w-[500px]" />,
+});
+const MyPostsModal = dynamic(() => import('@/components/molecules/modals/MyPostsModal'), {
+  ssr: false,
+  loading: () => <ModalLoadingFallback maxWidth="max-w-2xl" />,
+});
+const FollowingModal = dynamic(() => import('@/components/molecules/modals/FollowingModal'), {
+  ssr: false,
+  loading: () => <ModalLoadingFallback maxWidth="max-w-2xl" />,
+});
+const BookmarksModal = dynamic(() => import('@/components/molecules/modals/BookmarksModal'), {
+  ssr: false,
+  loading: () => <ModalLoadingFallback maxWidth="max-w-[500px]" />,
+});
+const SettingsModal = dynamic(() => import('@/components/molecules/modals/SettingsModal'), {
+  ssr: false,
+  loading: () => <ModalLoadingFallback maxWidth="max-w-[500px]" />,
+});
 
 interface UserProfileProps {
   name: string;
@@ -26,6 +99,7 @@ type ModalType = 'profile' | 'myPosts' | 'following' | 'bookmarks' | 'settings' 
 
 export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout, translations = {} }: UserProfileProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useParams();
   const locale = params.lang as string || 'ko';
   const [isOpen, setIsOpen] = useState(false);
@@ -143,6 +217,7 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
             <button
               onClick={() => {
                 setIsOpen(false);
+                queryClient.clear();
                 onLogout();
               }}
               className="w-full flex items-center gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
@@ -158,19 +233,29 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
 
       {/* Modals */}
       {activeModal === 'profile' ? (
-        <ProfileModal isOpen onClose={closeModal} translations={t} />
+        <ModalLoadingContext.Provider value={closeModal}>
+          <ProfileModal isOpen onClose={closeModal} translations={t} />
+        </ModalLoadingContext.Provider>
       ) : null}
       {activeModal === 'myPosts' ? (
-        <MyPostsModal isOpen onClose={closeModal} translations={t} />
+        <ModalLoadingContext.Provider value={closeModal}>
+          <MyPostsModal isOpen onClose={closeModal} translations={t} />
+        </ModalLoadingContext.Provider>
       ) : null}
       {activeModal === 'following' ? (
-        <FollowingModal isOpen onClose={closeModal} translations={t} />
+        <ModalLoadingContext.Provider value={closeModal}>
+          <FollowingModal isOpen onClose={closeModal} translations={t} />
+        </ModalLoadingContext.Provider>
       ) : null}
       {activeModal === 'bookmarks' ? (
-        <BookmarksModal isOpen onClose={closeModal} translations={t} />
+        <ModalLoadingContext.Provider value={closeModal}>
+          <BookmarksModal isOpen onClose={closeModal} translations={t} />
+        </ModalLoadingContext.Provider>
       ) : null}
       {activeModal === 'settings' ? (
-        <SettingsModal isOpen onClose={closeModal} translations={t} />
+        <ModalLoadingContext.Provider value={closeModal}>
+          <SettingsModal isOpen onClose={closeModal} translations={t} />
+        </ModalLoadingContext.Provider>
       ) : null}
     </div>
   );

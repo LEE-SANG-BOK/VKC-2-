@@ -19,12 +19,17 @@ import { sql, or, ilike, desc } from 'drizzle-orm';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
+    const query = (searchParams.get('q') || '').trim();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
+    const limitCandidate = parseInt(searchParams.get('limit') || '20', 10);
+    const limit = Math.min(50, Math.max(1, Number.isNaN(limitCandidate) ? 20 : limitCandidate));
 
     if (!query) {
       return errorResponse('검색어를 입력해주세요.', 'SEARCH_QUERY_REQUIRED');
+    }
+
+    if (query.length > 80) {
+      return errorResponse('검색어가 너무 깁니다.', 'SEARCH_QUERY_TOO_LONG');
     }
 
     const currentUser = await getSession(request);
@@ -64,7 +69,9 @@ export async function GET(request: NextRequest) {
       isFollowing: currentUser ? followingIdSet.has(user.id) : false,
     }));
 
-    return paginatedResponse(decoratedUsers, page, limit, total);
+    const response = paginatedResponse(decoratedUsers, page, limit, total);
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/search/users error:', error);
     return serverErrorResponse();

@@ -279,7 +279,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         id: bookmark.id,
         type: bookmark.type,
         title: bookmark.title || '',
-        content: includeContent ? content : '',
+        ...(includeContent ? { content } : {}),
         excerpt,
         category: bookmark.category || '',
         subcategory: bookmark.subcategory,
@@ -320,11 +320,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
       };
     });
 
-    return paginatedResponse(formattedBookmarks, page, limit, total, {
+    const response = paginatedResponse(formattedBookmarks, page, limit, total, {
       nextCursor,
       hasMore: rawHasMore,
       paginationMode: useCursorPagination ? 'cursor' : 'offset',
     });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/users/[id]/bookmarks error:', error);
     return serverErrorResponse();

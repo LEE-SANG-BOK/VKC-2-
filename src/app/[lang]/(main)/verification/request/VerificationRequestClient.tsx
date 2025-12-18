@@ -23,7 +23,11 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
   const router = useRouter();
   const { status } = useSession();
   const t = (translations?.verification || {}) as Record<string, string>;
+  const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
+
+  const trustBadgeGuideHref = `/${lang}/guide/trust-badges`;
+  const learnMoreLabel = tCommon.learnMore || (lang === 'vi' ? 'Xem thêm' : lang === 'en' ? 'Learn more' : '자세히');
 
   const [formData, setFormData] = useState({
     verificationType: '' as VerificationType | '',
@@ -609,7 +613,22 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                                 : '승인 후 아래 정보가 프로필에 표시될 수 있어요.')}
                         </p>
                       </div>
-                      <Tooltip content={trustBadgePreview.tooltip} position="top">
+                      <Tooltip
+                        content={
+                          <div className="space-y-1">
+                            <div>{trustBadgePreview.tooltip}</div>
+                            <button
+                              type="button"
+                              onClick={() => router.push(trustBadgeGuideHref)}
+                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              {learnMoreLabel}
+                            </button>
+                          </div>
+                        }
+                        position="top"
+                        touchBehavior="longPress"
+                      >
                         <span className="inline-flex">
                           <TrustBadge level={trustBadgePreview.level} label={trustBadgePreview.label} />
                         </span>

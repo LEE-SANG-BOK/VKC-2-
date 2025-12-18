@@ -53,7 +53,9 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    return successResponse(userWithStats);
+    const response = successResponse(userWithStats);
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/users/me error:', error);
     return serverErrorResponse();

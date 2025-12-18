@@ -11,9 +11,9 @@ import FollowButton from '@/components/atoms/FollowButton';
 import TrustBadge from '@/components/atoms/TrustBadge';
 import Header from '@/components/organisms/Header';
 import Tooltip from '@/components/atoms/Tooltip';
-import PostCard from '@/components/molecules/PostCard';
-import AnswerCard from '@/components/molecules/AnswerCard';
-import CommentCard from '@/components/molecules/CommentCard';
+import PostCard from '@/components/molecules/cards/PostCard';
+import AnswerCard from '@/components/molecules/cards/AnswerCard';
+import CommentCard from '@/components/molecules/cards/CommentCard';
 import { useInfiniteUserPosts, useInfiniteUserAnswers, useInfiniteUserComments, useInfiniteUserBookmarks, useFollowStatus } from '@/repo/users/query';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 
@@ -110,7 +110,11 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
   const user = session?.user;
 
   const t = (translations?.profile || {}) as Record<string, string>;
+  const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
+
+  const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
+  const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -363,7 +367,21 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                   <div className="flex items-center gap-2 mb-1">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.displayName}</h1>
                     {trustBadgePresentation.show ? (
-                      <Tooltip content={trustBadgePresentation.tooltip}>
+                      <Tooltip
+                        content={
+                          <div className="space-y-1">
+                            <div>{trustBadgePresentation.tooltip}</div>
+                            <button
+                              type="button"
+                              onClick={() => router.push(trustBadgeGuideHref)}
+                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              {learnMoreLabel}
+                            </button>
+                          </div>
+                        }
+                        touchBehavior="longPress"
+                      >
                         <span className="inline-flex">
                           <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />
                         </span>

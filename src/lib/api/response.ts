@@ -35,7 +35,7 @@ export function successResponse<T>(data: T, message?: string): NextResponse<ApiR
  * 에러 응답
  */
 export function errorResponse(error: string, code?: string, status = 400): NextResponse<ApiResponse> {
-  return NextResponse.json(
+  const response = NextResponse.json(
     {
       success: false,
       error,
@@ -43,6 +43,9 @@ export function errorResponse(error: string, code?: string, status = 400): NextR
     },
     { status }
   );
+
+  response.headers.set('Cache-Control', 'no-store');
+  return response;
 }
 
 /**

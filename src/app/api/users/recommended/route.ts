@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
       },
     }));
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: formattedUsers,
       pagination: {
@@ -108,6 +108,8 @@ export async function GET(req: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
     });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('Get recommended users error:', error);
     return errorResponse('추천 유저 조회 실패', 'INTERNAL_SERVER_ERROR', 500);

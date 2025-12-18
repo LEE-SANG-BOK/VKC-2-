@@ -31,7 +31,7 @@ export default function CategoryItem({
 }: CategoryItemProps) {
   const hasIcon = Boolean(Icon);
   const baseClasses = `flex items-center ${hasIcon ? 'gap-3' : 'gap-1'} text-sm font-medium transition-all duration-200`;
-  const defaultWidth = className.includes('w-') ? '' : 'w-full';
+  const defaultWidth = className.includes('w-') || className.includes('flex-1') || className.includes('grow') ? '' : 'w-full';
   const defaultPadding = className.includes('px-') || className.includes('!px-') ? '' : 'px-4';
   const defaultVerticalPadding = className.includes('py-') || className.includes('!py-') ? '' : 'py-3';
 

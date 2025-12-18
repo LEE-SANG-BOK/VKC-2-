@@ -28,6 +28,10 @@ export async function GET(request: NextRequest) {
       return errorResponse('검색어를 입력해주세요.', 'SEARCH_QUERY_REQUIRED');
     }
 
+    if (query.length > 80) {
+      return errorResponse('검색어가 너무 깁니다.', 'SEARCH_QUERY_TOO_LONG');
+    }
+
     const tokenizeSearch = (input: string) => {
       const normalized = input
         .toLowerCase()

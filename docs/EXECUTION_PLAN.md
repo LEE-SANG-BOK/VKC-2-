@@ -29,6 +29,7 @@
 - 브랜치: **1개 고정(공유)**, PR도 **1개 고정(지속)**
 - 커밋 메시지 prefix 권장: `[LEAD]`, `[WEB]`, `[FE]`, `[BE]`
 - `git push`/PR 갱신은 **[LEAD]가 수행**(작업 단위로 push)
+- (주의) Codex CLI 환경에서 `.git/index.lock` 생성이 막혀 `git add/commit/push`가 실패할 수 있음 → 이 경우 **로컬 터미널에서 수동으로** 커밋/푸시 진행
 
 ### 0.4 역할/분업(필수, 충돌 최소화)
 - **[LEAD/Codex] (고정)**: 우선순위/플랜 수립 → 분업/소유권 관리 → 품질 게이트(`lint/build`) → 커밋/푸시/PR 관리 → `HANDOVER.md` + `docs/EXECUTION_PLAN.md` 갱신
@@ -95,6 +96,188 @@
   - src/components/molecules/UserProfile.tsx
 - 다음 액션/의존성
   - FE/WEB 에이전트 소유권 경계 재확인(모달 관련 작업은 이 폴더만 수정)
+
+#### (2025-12-18) [LEAD] 리팩토링 심화: 태그 번역/정규화 유틸 공통화 + 모바일 오버플로우 방지 (P0)
+
+- 플랜(체크리스트)
+  - [x] PostCard/NewPostClient 중복 태그 번역 맵 공통화
+  - [x] `normalizeKey` 유틸 공통화(PostCard/PostDetail)
+  - [x] 모바일에서 긴 라벨로 인한 액션 아이콘 클립 방지
+- 현황 분석(코드 기준)
+  - PostCard/NewPostClient에 동일한 태그 번역 맵이 중복 정의되어 유지보수/성능(객체 재생성) 리스크
+  - PostCard/PostDetail에 normalizeKey 로직 중복
+  - locale(특히 vi)에서 하단 라벨이 길어질 때 아이콘 영역이 밀려 클립될 수 있음
+- 변경 내용(why/what)
+  - why: 중복 제거로 유지보수 비용/실수(번역 누락) 감소, 모바일 레이아웃 안정화
+  - what: 공통 상수/유틸로 추출 후 호출부를 교체 + 하단 라벨 overflow 방지
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/lib/constants/tag-translations.ts
+  - src/utils/normalizeKey.ts
+  - src/components/molecules/PostCard.tsx
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+
+#### (2025-12-18) [LEAD] 헤더 검색 컴포넌트 분리 + Dialog 스크롤 기본값 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] Header의 검색 UI/로직을 `HeaderSearch`(molecule)로 분리
+  - [x] Header에서는 dynamic import + skeleton fallback으로 초기 렌더 부담 감소
+  - [x] `Dialog/AlertDialog` 기본 Content에 max-height + overflow scroll 적용(긴 콘텐츠 대응)
+- 현황 분석(코드 기준)
+  - Header에 검색/필터/예시문구 로직이 집중되어 파일 비대화 및 리렌더 비용 증가
+  - Admin/모달 UX에서 긴 콘텐츠가 화면 밖으로 넘어가는 케이스 존재
+- 변경 내용(why/what)
+  - why: 폴더/컴포넌트 책임 분리로 유지보수성과 성능(초기 JS) 개선
+  - what: `HeaderSearch`를 분리하고, Dialog 계열은 `100dvh` 기준 스크롤 가능하도록 기본 클래스를 보강
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/organisms/Header.tsx
+  - src/components/molecules/HeaderSearch.tsx
+  - src/components/ui/dialog.tsx
+  - src/components/ui/alert-dialog.tsx
+
+#### (2025-12-18) [LEAD] 레거시 신고 시스템 정리: admin content-reports API 제거 (P0)
+
+- 플랜(체크리스트)
+  - [x] `/api/admin/content-reports` 레거시 API 제거(참조 0)
+  - [x] `reports` 기반 운영을 기준으로 정리(필요 시 백필 라우트만 유지)
+- 현황 분석(코드 기준)
+  - `content_reports`는 legacy 이중 시스템으로 남아있고, UI/Repo에서 해당 admin endpoint를 호출하지 않음
+  - 운영 데이터가 분산될 위험이 있어, “reports 단일 파이프라인”으로 정리 필요
+- 변경 내용(why/what)
+  - why: 중복 시스템 제거로 운영/개발 혼선 감소, API surface 최소화
+  - what: `src/app/api/admin/content-reports/**` 삭제
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - (deleted) src/app/api/admin/content-reports/route.ts
+  - (deleted) src/app/api/admin/content-reports/[id]/route.ts
+
+#### (2025-12-18) [LEAD] 컴포넌트 폴더 구조 정리: molecules/cards 분리 (P0)
+
+- 플랜(체크리스트)
+  - [x] 카드 성격 컴포넌트를 `molecules` 루트에서 `molecules/cards`로 이동
+  - [x] import 경로 업데이트(프로필/검색/피드/모달)
+- 현황 분석(코드 기준)
+  - `molecules` 루트에 카드/모달/에디터/프로필 등이 혼재되어 탐색 비용 및 충돌 가능성이 증가
+- 변경 내용(why/what)
+  - why: 카드 컴포넌트는 사용처가 많아 구조를 고정해두면 유지보수/분업/충돌 관리가 쉬워짐
+  - what: `PostCard/AnswerCard/CommentCard/NewsCard`를 `src/components/molecules/cards/*`로 이동
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/components/molecules/cards/CommentCard.tsx
+  - src/components/molecules/cards/NewsCard.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/organisms/NewsSection.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/search/SearchClient.tsx
+  - src/components/molecules/modals/BookmarksModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+  - src/components/molecules/modals/MyPostsModal.tsx
+
+#### (2025-12-18) [LEAD] 컴포넌트 폴더 구조 정리: molecules 역할별 하위 폴더 분리 (P0)
+
+- 플랜(체크리스트)
+  - [x] molecules 루트 잔여 컴포넌트들을 역할별 하위 폴더로 이동
+  - [x] import 경로 전수 갱신
+- 현황 분석(코드 기준)
+  - cards/modals 분리 이후에도 molecules 루트에 banner/category/editor/search/user/action 성격의 파일이 혼재
+- 변경 내용(why/what)
+  - why: 탐색성/소유권 경계 명확화로 병렬 작업 충돌을 줄이고 유지보수 비용 감소
+  - what: `banners/categories/editor/search/user/actions` 하위 폴더로 이동
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/banners/AccountStatusBanner.tsx
+  - src/components/molecules/categories/CategoryItem.tsx
+  - src/components/molecules/editor/RichTextEditor.tsx
+  - src/components/molecules/search/HeaderSearch.tsx
+  - src/components/molecules/user/UserChip.tsx
+  - src/components/molecules/user/UserProfile.tsx
+  - src/components/molecules/actions/ShareButton.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/organisms/Header.tsx
+  - src/components/templates/MainLayout.tsx
+  - src/components/organisms/CardNewsShowcase.tsx
+  - src/components/organisms/ShortFormPlaylist.tsx
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/components/molecules/cards/CommentCard.tsx
+
+#### (2025-12-18) [LEAD] 모바일/데스크톱 사이드바·카드 잘림 개선 + 데스크톱 여백 회색 분리 (P0)
+
+- 플랜(체크리스트)
+  - [x] 모바일 CategorySidebar에서 구독 버튼/라벨이 우측에서 잘리는 문제 해결
+  - [x] 데스크톱 사이드바의 메뉴/CTA는 tooltip 대신 동일한 인라인 설명(모바일 스타일)로 통일
+  - [x] PostCard의 태그/액션 아이콘이 `sm~md` 구간에서 잘리는 케이스 보강
+  - [x] MainLayout에서 바깥 여백을 회색으로 분리(Quora 레이아웃 참고)
+- 현황 분석(코드 기준)
+  - CategorySidebar의 구독 행에서 `CategoryItem`이 기본 `w-full`을 강제하여 flex row가 overflow → 우측 버튼이 클립
+  - PostCard는 `sm` 구간(>=640)에서 태그를 가로 스크롤로 전환하고, 액션바 wrap이 `<=640`에서만 적용되어 일부 디바이스 폭에서 아이콘이 클립될 수 있음
+- 변경 내용(why/what)
+  - why: 모바일/태블릿에서 “버튼/태그/아이콘 잘림”은 클릭 실패→이탈로 직결되므로 P0 품질 이슈
+  - what:
+    - CategoryItem 기본폭 규칙을 보강해 `flex-1/grow` 사용 시 `w-full` 강제를 제거
+    - CategorySidebar 구독 버튼을 `shrink-0 whitespace-nowrap`로 고정 + 모바일 스크롤바 커스텀 제거
+    - PostCard 태그 칩의 가로 스크롤 전환 breakpoint를 `md`로 상향
+    - 카드 하단 액션 행 wrap을 `<=768`까지 확장하여 아이콘/라벨 클립 방지
+    - MainLayout 배경을 회색으로 통일하고 container 배경을 제거해 여백 구분 강화
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/categories/CategoryItem.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/globals.css
+  - src/components/templates/MainLayout.tsx
+
+#### (2025-12-18) [LEAD] 레이아웃 벤치마킹(Facebook): 헤더 배치/3컬럼 캔버스/추천 팔로우 인서트 설계 (P0, 계획)
+
+- 플랜(체크리스트)
+  - [x] Header 배치(구성요소 추가/삭제 없이): 3-zone(Left/Center/Right)로 정렬 고정(센터가 흔들리지 않도록 grid 기반)
+  - [x] 캔버스 색 분리: 배경은 gray, 카드/모듈은 white로 집중(페이스북 스타일)
+  - [x] 메인 피드 중앙 집중: wide 화면에서 `leftRail / centerFeed / rightRail` 3컬럼 + center max-width로 시선 집중
+  - [x] 추천 팔로우 인서트: 인기/최신 리스트에서 **초기 5개 카드 이후** “추천 사용자” 섹션 중간 삽입
+  - [x] i18n: 추천 섹션 타이틀/CTA ko/en/vi 키 적용(기존 키 사용)
+  - [x] 검증: npm run lint, npm run build
+- 현황 분석(코드 기준)
+  - Header는 flex 기반이라 좌/우 폭 변화에 따라 센터(검색)가 미세하게 흔들릴 수 있음(페이스북은 좌/중/우 정렬이 고정)
+  - MainLayout은 `container`로 레일이 중앙에 묶여 wide 화면 활용도가 낮고, 레일이 white panel 형태라 메인 피드 집중도가 약해질 수 있음
+  - 추천 사용자 섹션은 `following` 탭 중심으로 존재했으나, 인기/최신 피드에도 5개 뒤 인서트가 필요
+- 작업 분장(충돌 최소화)
+  - [FE] Header/Grid, Canvas 색 분리, 레일 스타일(배경/여백) 및 반응형 검증
+  - [WEB] PostList 인서트 로직(5개 뒤 삽입), recommended query 조건(로그인/카테고리), UX 게이팅
+- [LEAD] 통합 검증(lint/build) + 문서/HANDOVER 갱신 + PR/코드리뷰 관리
+
+#### (2025-12-18) [LEAD] Facebook 레이아웃 배치 핫픽스: Header/MainLayout 폭 정렬 + 홈 피드 캔버스화 (P0)
+
+- 플랜(체크리스트)
+  - [x] Header의 max-width/grid 기준을 MainLayout과 동일하게 정렬(ultrawide에서 헤더-본문 어긋남 방지)
+  - [x] 홈 피드는 “회색 캔버스 + 카드만 흰색”이 되도록 center 영역을 투명(canvas)으로 전환
+  - [x] 검증: npm run lint, npm run build
+- 현황 분석(코드 기준)
+  - Header는 `container`(폭 제한) 기반, MainLayout은 `max-w-[1680px]` 기반이라 ultrawide에서 정렬이 어긋날 수 있음
+  - 메인 피드가 white panel 형태면 “카드 집중”보다 “패널 집중”으로 보일 수 있어, 요청한 Facebook 스타일(캔버스 회색/카드 흰색)과 불일치
+- 변경 내용(why/what)
+  - why: wide 화면에서 배치가 어색해 보이면 신뢰/완성도 체감이 크게 하락
+  - what: Header는 MainLayout과 동일한 3컬럼 grid/max-width를 사용, MainLayout은 `centerVariant` 옵션을 추가하고 Home에서 `canvas`를 사용
+- 변경 파일
+  - src/components/organisms/Header.tsx
+  - src/components/templates/MainLayout.tsx
+  - src/app/[lang]/(main)/HomeClient.tsx
 
 ### 0.6.1 [FE] Design Front Agent
 
@@ -185,6 +368,167 @@
 - 다음 액션/의존성
   - 프로필 상세(모달/탭)에서도 동일 그리드 패턴 재사용 여부 검토
 
+#### (2025-12-18) [FE] 관리자 Dialog 긴 콘텐츠 스크롤 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] Dialog/AlertDialog가 viewport를 넘을 때 내부 스크롤 가능하도록 max-height/overflow 적용
+  - [x] lint(React Compiler preserve memoization) 이슈 수정
+- 현황 분석(코드 기준)
+  - 관리자 인증 검토 Dialog가 긴 경우, 모달이 화면 밖으로 넘어가 하단 버튼 접근이 어려움
+  - `HeaderSearch`의 useMemo deps가 React Compiler 규칙과 불일치하여 lint 실패
+- 변경 내용(why/what)
+  - why: 관리자 업무 플로우(검토/승인/거부)에서 긴 폼/문서 목록이 모바일에서 조작 불가
+  - what: `DialogContent`/`AlertDialogContent`에 `max-h-[calc(100dvh-2rem)] overflow-y-auto` 기본 적용 + `HeaderSearch`의 `getGroupLabel`을 useCallback으로 고정
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/ui/dialog.tsx
+  - src/components/ui/alert-dialog.tsx
+  - src/components/molecules/HeaderSearch.tsx
+
+#### (2025-12-18) [FE] 신뢰 배지 Tooltip 모바일 long-press 적용 (P0)
+
+- 플랜(체크리스트)
+  - [x] TrustBadge 관련 Tooltip은 모바일에서 long-press로만 열리도록 일관화
+  - [x] 카드/프로필/인증 신청 화면에서 동작 확인
+- 현황 분석(코드 기준)
+  - 신뢰 배지 Tooltip이 모바일에서 tap으로 열리면, 스크롤/탭 UX를 방해하거나(오동작 체감) 클릭 동선과 충돌할 수 있음
+- 변경 내용(why/what)
+  - why: 모바일에서 배지 설명은 “읽기” 성격이라 tap보다 long-press가 적합(실수 클릭 감소)
+  - what: TrustBadge Tooltip 사용처에 `touchBehavior="longPress"`를 부여
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/components/molecules/cards/CommentCard.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
+- 다음 액션/의존성
+  - (요청) PostDetail 상세 내부에서 직접 렌더되는 TrustBadge Tooltip도 동일하게 long-press 적용 필요: `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`
+
+#### (2025-12-18) [FE] PostCard Follow CTA / Desktop 여백 회색 미세 조정 (P0)
+
+- 플랜(체크리스트)
+  - [x] Follow/Following CTA는 pending에서도 카드 클릭과 분리(전파 차단 유지)
+  - [x] 데스크톱에서 “바깥 여백만” 회색이 보이도록 container 배경 고정
+- 현황 분석(코드 기준)
+  - Follow CTA가 `disabled` 상태일 때 브라우저별로 카드 `onClick`과 충돌할 여지가 있어, 항상 `stopPropagation`이 실행되도록 처리 필요
+  - MainLayout의 `container`에 배경이 없으면 데스크톱에서 콘텐츠 영역까지 회색으로 보일 수 있음
+- 변경 내용(why/what)
+  - why: Follow CTA 오동작(카드 이동) 방지 + 요구사항(바깥 여백 회색 구분) 시각적 충족
+  - what: PostCard Follow CTA는 `disabled` 대신 `aria-disabled`로 처리해 클릭 전파 차단을 보장, MainLayout은 outer bg와 container bg를 분리
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/templates/MainLayout.tsx
+- i18n
+  - 사용: `translations.common.follow`, `translations.common.following`
+  - 신규 키 요청: 없음
+- 스크린샷
+  - 로컬 확인 필요(현재 작업 세션에서는 스크린샷 생성 미수행)
+
+#### (2025-12-18) [FE] PostDetail TrustBadge Tooltip 모바일 long-press 확대 적용 (P0)
+
+- 플랜(체크리스트)
+  - [ ] PostDetail 상단 작성자 TrustBadge Tooltip에 long-press 적용
+  - [ ] 답변/댓글/대댓글 TrustBadge Tooltip에도 동일 적용
+- 현황 분석(코드 기준)
+  - PostDetail 내부 `Tooltip`에서 `touchBehavior`가 누락되어 모바일에서 tap으로도 열림
+  - 스크롤/탭 동선에서 배지 Tooltip이 의도치 않게 열려 UX 방해 가능
+- 변경 내용(why/what)
+  - why: 모바일에서는 “읽기” 성격의 Tooltip이 tap 동선과 충돌할 수 있어 long-press로 통일 필요
+  - what: PostDetail의 TrustBadge Tooltip 5개 위치에 `touchBehavior="longPress"` 추가
+- 검증(Lead 확인 후 체크)
+  - [ ] npm run lint (로컬 PASS)
+  - [ ] npm run build (로컬 PASS)
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+- 다음 액션/의존성
+  - (선행 필요) “자세히” 링크용 TrustBadge 안내 페이지/동선은 WEB과 범위 합의 필요
+
+#### (2025-12-18) [FE] Header 3-zone Grid: 센터(검색) 흔들림 방지 (P0)
+
+- 플랜(체크리스트)
+  - [ ] Header를 3-zone(Left/Center/Right) 그리드로 고정해 센터가 좌/우 폭 변화에 흔들리지 않게 처리
+  - [ ] 모바일/데스크톱 헤더 레이아웃 기본 동작(뒤로/사이드바/로그인/프로필) 재확인
+- 현황 분석(코드 기준)
+  - Header가 grid를 사용 중이지만 `grid-cols-[auto,1fr,auto]` 구조는 좌/우 폭 변화에 따라 중앙(검색)의 기준점이 이동할 수 있음
+- 변경 내용(why/what)
+  - why: 검색 바가 시각적으로 흔들리면 브랜드/사용성 신뢰가 떨어지고, Facebook 레이아웃 벤치마킹 요구사항에도 불일치
+  - what: `grid-cols-[1fr,minmax(0,56rem),1fr]`로 변경해 좌/우를 동등한 공간으로 만들고, 우측 영역은 `justify-self-end`로 고정
+- 검증(Lead 확인 후 체크)
+  - [ ] npm run lint (로컬 PASS)
+  - [ ] npm run build (로컬 PASS)
+- 변경 파일
+  - src/components/organisms/Header.tsx
+- 다음 액션/의존성
+  - 캔버스 색 분리/레일 톤 조정은 MainLayout/CategorySidebar와 함께 단계적으로 적용 필요
+
+#### (2025-12-18) [FE] Canvas 색 분리 + 2xl 3컬럼 폭 고정 (P0)
+
+- 플랜(체크리스트)
+  - [ ] 메인 피드 컬럼 배경을 white로 고정(카드 집중)
+  - [ ] 레일(좌/우)은 gray 톤으로 후퇴(배경을 강제 white로 만들지 않기)
+  - [ ] 2xl에서 3컬럼 폭을 고정하고 중앙 정렬(시선 집중)
+- 현황 분석(코드 기준)
+  - MainLayout은 캔버스가 gray지만 메인 컬럼 배경이 명시되지 않아(카드 사이 간격 포함) gray로 보일 수 있음
+  - Legacy card 스타일에서 `--bg-primary`가 미정의라, 상위 배경에 따라 카드 배경이 달라질 여지가 있음
+  - wide 화면에서는 3컬럼을 “고정 폭 + 중앙 정렬”로 만들어야 레이아웃이 안정적
+- 변경 내용(why/what)
+  - why: Facebook 벤치마킹 요구사항(센터 고정/레일 후퇴) 충족 + 카드/피드 가독성 개선
+  - what: MainLayout main에 `bg-white/dark:bg-gray-900` 적용 + 2xl에서 grid cols를 `[320px, 720px, 320px]`로 고정/중앙 정렬 + `--bg-primary`를 `--card`로 연결
+- 검증(Lead 확인 후 체크)
+  - [ ] npm run lint (로컬 PASS)
+  - [ ] npm run build (로컬 PASS)
+- 변경 파일
+  - src/components/templates/MainLayout.tsx
+  - src/app/globals.css
+- i18n
+  - 신규 키 요청: 없음
+
+#### (2025-12-18) [FE] TrustBadge “자세히” 동선(Guide) + Tooltip 링크 연결 (P0)
+
+- 플랜(체크리스트)
+  - [ ] `/${lang}/guide/trust-badges` 안내 페이지 추가
+  - [ ] TrustBadge Tooltip에 “자세히/learn more” 링크 제공(모바일 long-press 동작 유지)
+  - [ ] messages는 수정하지 않고 fallback + 키 요청 리스트로 보고
+- 현황 분석(코드 기준)
+  - TrustBadge Tooltip은 설명만 존재하고, “자세히”로 이어지는 안내 페이지/동선이 없어 사용자가 의미를 확장 학습하기 어려움
+  - Tooltip은 ReactNode를 지원하므로 링크를 포함한 컨텐츠로 확장 가능
+- 변경 내용(why/what)
+  - why: 신뢰 배지의 의미/정책을 투명하게 안내해 오해를 줄이고, 신뢰 UX(설명→자세히) 완결
+  - what: `guide/trust-badges` 페이지 추가 + 주요 TrustBadge Tooltip에 “자세히/learn more” 버튼을 삽입(router push)
+- 검증(Lead 확인 후 체크)
+  - [ ] npm run lint (로컬 PASS)
+  - [ ] npm run build (로컬 PASS)
+- 변경 파일
+  - src/app/[lang]/guide/trust-badges/page.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/components/molecules/cards/CommentCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
+- i18n
+  - 신규 키 요청(추가 필요 시):
+    - `common.learnMore` (ko: 자세히, en: Learn more, vi: Xem thêm)
+    - `metadata.trustBadges.title`, `metadata.trustBadges.description`
+
+#### (2025-12-18) [FE] 작업 전 공지 수신: Ultrawide Hot File 잠금(LEAD 소유) (P0)
+
+- 현황/공지 요약
+  - Ultrawide 배치 핫픽스(Header container → MainLayout과 동일 grid/max-width 정렬 + 홈 canvas 전환)는 [LEAD]가 직접 소유/수행
+  - Hot File(`src/components/organisms/Header.tsx`, `src/components/templates/MainLayout.tsx`, `src/app/[lang]/(main)/HomeClient.tsx`)은 스냅샷 고정(커밋/푸시) 전까지 병렬 수정 금지 필요
+  - 코드 수정 자체는 완료 상태이며, 운영상 “끝”의 기준은 로컬에서 커밋/푸시로 스냅샷을 고정하는 순간
+  - Codex CLI 환경은 `.git/index.lock` 이슈로 `git add/commit`이 실패할 수 있어, 커밋/푸시는 로컬 터미널에서만 가능
+- FE 대응
+  - FE는 위 Hot File을 커밋/푸시 완료 전까지 수정하지 않고, 필요 시 LEAD에게 범위/타이밍을 먼저 합의한다
+
 ### 0.6.2 [WEB] Web Feature Agent
 
 #### (2025-12-18) [WEB] 헤더/프로필 모달 성능 최적화 (P0)
@@ -237,6 +581,225 @@
 - 다음 액션/의존성
   - `/verify` 3-step wizard에 history 섹션/딥링크 동선 통합
 
+#### (2025-12-18) [WEB] 헤더 검색/알림 모달 추가 성능 최적화 (P0)
+
+- 플랜(체크리스트)
+  - [x] NotificationModal 알림 목록 쿼리 `staleTime/gcTime` + `refetchOnWindowFocus:false`로 재오픈 refetch 억제
+  - [x] Header 검색 로직을 별도 컴포넌트로 분리 + `next/dynamic({ ssr:false })`로 지연 로드(모바일/검색 숨김 시 미로딩)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/organisms/Header.tsx`가 검색 로직/상수/디바운스를 모두 포함해 초기 번들/실행 비용이 커짐(검색 숨김 페이지에서도 동일)
+  - 재현/리스크: 알림/프로필 동선에서 헤더는 항상 렌더되므로, 불필요한 JS 파싱/효과 실행이 누적되면 체감 렉으로 이어짐
+- 변경 내용(why/what)
+  - why: “항상 렌더되는 헤더”에서 무거운 검색 로직을 분리해 초기 번들/실행 비용을 줄이고, 알림 모달은 재오픈 시 중복 refetch를 줄여 UX/트래픽을 안정화
+  - what: `HeaderSearch`로 검색 UI/로직을 분리하고 헤더는 데스크톱(>=lg)에서만 지연 마운트; NotificationModal은 쿼리 캐시 옵션을 명시
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/organisms/Header.tsx
+  - src/components/molecules/HeaderSearch.tsx
+  - src/repo/notifications/query.ts
+  - src/components/molecules/modals/NotificationModal.tsx
+- 다음 액션/의존성
+  - (선택) 검색 예시 질문을 실데이터 기반으로 전환할 경우: BE의 “인기 질문 예시 API + 캐시 전략” 선행 필요
+
+#### (2025-12-18) [LEAD] 헤더 검색 트래픽 절감: 타이핑 중 라우팅 제한 (P0)
+
+- 플랜(체크리스트)
+  - [x] 일반 페이지: 타이핑 중 자동 라우팅 제거(Enter/버튼으로만 이동)
+  - [x] `/[lang]/search` 페이지: debounced 라우팅 유지(검색 UX 유지)
+- 현황 분석(코드 기준)
+  - 헤더 검색은 모든 페이지에서 렌더되므로, 입력 시 매번 라우팅되면 서버 렌더/DB/네트워크 비용이 빠르게 증가할 수 있음
+- 변경 내용(why/what)
+  - why: 불필요한 라우팅(= 서버 요청)을 줄여 체감 성능/트래픽을 안정화
+  - what: `HeaderSearch`에서 `pathname`으로 `/search` 여부를 판별해, 검색 페이지에서만 debounced 라우팅 실행
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/HeaderSearch.tsx
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P0) - 무한스크롤 observer 보강
+
+- 플랜(체크리스트)
+  - [x] 무한스크롤 observer는 “현재 페이지 렌더 완료(visibleCount >= data length)” 이후에만 attach
+  - [x] sentinel(ref) DOM도 필요 시점에만 렌더(불필요 observer 콜백/연결 억제)
+  - [x] 닫힘 시 탭/필터 state 초기화(재오픈 UX 정합성)
+- 현황 분석(코드 기준)
+  - progressive list로 visibleCount가 짧은 주기로 증가하면서, observer effect가 반복 생성/해제되어(리렌더/cleanup) 모달 오픈 시 불필요한 JS 작업이 발생 가능
+  - sentinel DOM이 항상 렌더되면(visibleCount < length 구간) viewport 조건에 따라 불필요한 observer 콜백이 발생할 수 있음
+- 변경 내용(why/what)
+  - why: 모달 오픈 초기 프레임에서 observer churn을 줄여 체감 렉과 불필요 콜백/연결을 최소화
+  - what: visibleCount가 현재 로드된 데이터 길이에 도달했을 때만 observer attach + sentinel 렌더; 닫힘 시 탭/필터를 초기화
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/BookmarksModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+- 다음 액션/의존성
+  - 없음(클라이언트 최적화 범위)
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P0) - 중복 요청 제거/재요청 억제
+
+- 플랜(체크리스트)
+  - [x] ProfileModal 오픈 시 중복 쿼리 제거(요청 2→1)
+  - [x] 프로필/설정/리스트 모달 쿼리의 `refetchOnWindowFocus/refetchOnReconnect` 비활성화로 재요청 억제
+- 현황 분석(코드 기준)
+  - ProfileModal이 오픈 시 `useUserProfile` + `useMyProfile`를 동시에 실행해(동일 사용자 기준) 중복 네트워크 요청 가능
+  - 모달은 재오픈/탭 전환이 잦고, 포커스 복귀 시 stale 여부에 따라 자동 refetch가 발생할 수 있음
+- 변경 내용(why/what)
+  - why: 모달 오픈은 UI 상 “짧고 반복적인 동선”이라, 중복/자동 refetch는 체감 렉과 트래픽을 함께 악화
+  - what: ProfileModal 데이터 소스는 `useUserProfile(user.id)`로 단일화(오픈 시 요청 1회), 모달 쿼리에 `refetchOnWindowFocus:false`, `refetchOnReconnect:false`를 명시
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/modals/ProfileModal.tsx
+  - src/components/molecules/modals/SettingsModal.tsx
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/BookmarksModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+- 다음 액션/의존성
+  - (선택) 재오픈 UX 정합성 강화를 위해 모달 content scrollTop 초기화(닫힘/재오픈 시 0으로 리셋)
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P0) - 재오픈 스크롤/탭 정합성
+
+- 플랜(체크리스트)
+  - [x] 모달 재오픈 시 스크롤 위치(scrollTop) 상단으로 리셋
+  - [x] 탭/필터 전환 시 스크롤 위치 상단으로 리셋(중간 스크롤 잔존 방지)
+- 현황 분석(코드 기준)
+  - 모달은 반복적으로 열고 닫는 흐름이 많아, 스크롤 위치가 유지되면 “이전 맥락이 섞인 화면”처럼 보이거나 무한 스크롤 sentinel이 즉시 viewport에 들어와 불필요 fetch로 이어질 수 있음
+- 변경 내용(why/what)
+  - why: 재오픈/탭 이동 시 항상 동일한 시작 지점(상단)으로 맞춰 UX 정합성과 불필요 이벤트를 줄임
+  - what: 모달 body(parent scroll) + 내부 scroll 영역에 대해 `scrollTop=0` 처리(오픈/탭·필터 변경 시)
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/BookmarksModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P0) - 로그아웃 시 캐시 정리
+
+- 플랜(체크리스트)
+  - [x] 드롭다운 로그아웃 클릭 시 TanStack Query 캐시 clear
+- 현황 분석(코드 기준)
+  - 로그아웃은 세션만 종료되면 충분하지만, 클라이언트 Query 캐시가 남아 있으면 개인화 데이터가 메모리에 잔존하고(가비지컬렉션까지 대기) 일부 UI에서 “이전 사용자 캐시”가 잠깐 노출될 수 있음
+- 변경 내용(why/what)
+  - why: 로그아웃은 캐시를 유지할 이유가 없으므로 즉시 정리해 메모리/정합성 리스크를 낮춤
+  - what: 로그아웃 버튼 클릭 시 `queryClient.clear()` 후 `onLogout()` 실행
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/user/UserProfile.tsx
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P0) - staleTime/gcTime 합리화(재오픈 트래픽 절감)
+
+- 플랜(체크리스트)
+  - [x] 리스트/무한스크롤 모달의 `staleTime/gcTime` 상향으로 재오픈 refetch 억제
+- 현황 분석(코드 기준)
+  - staleTime이 짧으면(예: 60s) 모달을 몇 분 뒤 재오픈할 때마다 같은 데이터를 재조회해 트래픽/체감 로딩이 누적될 수 있음
+- 변경 내용(why/what)
+  - why: 드롭다운 모달은 “짧게, 자주” 열리는 UX라 재오픈 시 캐시 재사용이 더 중요
+  - what: MyPosts/Bookmarks는 `staleTime:5m, gcTime:15m`, Following(추천/팔로잉)은 `staleTime:5m, gcTime:15m`, Following feed는 `staleTime:2m, gcTime:10m`로 조정
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/BookmarksModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P0) - ProfileModal 번들 경량화
+
+- 플랜(체크리스트)
+  - [x] ProfileModal에서 사용하지 않는 날짜 라이브러리/locale import 제거
+  - [x] 가입일 표시는 `Intl.DateTimeFormat` 기반으로 대체
+- 현황 분석(코드 기준)
+  - ProfileModal은 `dayjs` + 다국어 locale을 import하고 있었지만, 실제 렌더에서 상대시간/locale 기반 포맷을 사용하지 않아 번들만 커지는 상태
+- 변경 내용(why/what)
+  - why: 모달은 “오픈 시에만” 로드되더라도 첫 오픈 체감은 chunk 크기/파싱 비용의 영향을 받음
+  - what: `dayjs`(plugin/locale 포함) 제거 + 가입일 포맷은 locale별 `Intl.DateTimeFormat`로 구현
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/modals/ProfileModal.tsx
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P0) - 리스트 파생값(useMemo) 최적화
+
+- 플랜(체크리스트)
+  - [x] 무한/프로그레시브 렌더 중 반복되는 flatMap/filter/count 계산을 useMemo로 고정
+- 현황 분석(코드 기준)
+  - progressive list는 visibleCount가 증가하는 동안 리렌더가 연속 발생하므로, 매 렌더마다 `pages.flatMap()`/`filter()`가 반복되면 CPU 부담이 커질 수 있음
+- 변경 내용(why/what)
+  - why: 오픈 직후 체감 렉의 대부분은 “짧은 시간에 반복되는 계산/리렌더”에서 발생
+  - what: MyPosts/Bookmarks/Following에서 pages flatten 및 필터별 카운트/필터링 결과를 useMemo로 캐시
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/BookmarksModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P1) - AbortSignal로 in-flight 요청 취소
+
+- 플랜(체크리스트)
+  - [x] users/posts repo fetch 함수에 `signal` 옵션 지원
+  - [x] TanStack Query의 `queryFn({ signal })` → repo fetch로 전달
+- 현황 분석(코드 기준)
+  - 모달을 열었다가 바로 닫는 경우, 네트워크 요청이 끝까지 진행되면 체감과 무관한 트래픽/리소스가 낭비될 수 있음
+- 변경 내용(why/what)
+  - why: 모달은 “짧고 반복” 사용이 많아, 닫힘 시 in-flight 요청은 중단되는 편이 비용/UX 모두에 유리
+  - what: `fetch*`에 `AbortSignal`을 전달할 수 있게 하고, Query hook들이 `signal`을 전달해 모달 unmount 시 자동 abort되도록 정리
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/repo/users/fetch.ts
+  - src/repo/users/query.ts
+  - src/repo/posts/fetch.ts
+  - src/repo/posts/query.ts
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P1) - MyPosts/Following dayjs 제거
+
+- 플랜(체크리스트)
+  - [x] MyPosts/Following 모달에서 `dayjs` 의존성 제거
+  - [x] 날짜 포맷은 경량 커스텀 포맷터(`YYYY.MM.DD HH:mm`)로 대체
+- 현황 분석(코드 기준)
+  - 모달은 dynamic import로 “오픈 시에만” 로드되지만, 첫 오픈 시 chunk 크기/파싱 비용은 그대로 체감에 영향을 줌
+  - 리스트 모달은 PostCard 렌더 비용도 커서, 부가 라이브러리(dayjs/locale 등)는 가능한 줄이는 편이 유리
+- 변경 내용(why/what)
+  - why: 불필요 의존성을 줄여 모달 첫 오픈 latency를 낮추고 번들 파싱 비용을 감소
+  - what: `dayjs` import 제거 + `new Date()` 기반 포맷 함수로 대체
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P1) - dynamic loading fallback(첫 클릭 체감 개선)
+
+- 플랜(체크리스트)
+  - [x] `next/dynamic` 모달들에 `loading` 오버레이 추가
+  - [x] 로딩 상태에서도 backdrop/Escape로 닫기 가능(UX 안전장치)
+- 현황 분석(코드 기준)
+  - 모달 컴포넌트는 lazy-load라 첫 클릭 시 chunk 로딩 동안 아무 UI도 안 보이면 “클릭이 안 된 것처럼” 느껴질 수 있음
+- 변경 내용(why/what)
+  - why: 첫 오픈 체감 latency를 UX적으로 흡수하고, 로딩 중에도 닫기 가능하게 만들어 안전한 동선 유지
+  - what: 공통 로딩 오버레이를 추가하고, Context로 `onClose`를 연결해 로딩 중에도 close 동작 지원
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/user/UserProfile.tsx
+
 ### 0.6.3 [BE] Backend Agent
 
 #### (2025-12-18) [BE] 추천 사용자 API 보강 + 과부하 방지 (P0)
@@ -261,9 +824,9 @@
 
 - 플랜(체크리스트)
   - [ ] `src/components/**` 구조 점검: 폴더별 책임(atomic) 재정의 및 이동 후보 목록화
-  - [ ] 미사용/중복 파일 후보 스캔(정적 import 기준) 및 삭제/통합 우선순위 결정
+  - [x] 미사용/중복 파일 후보 스캔(정적 import 기준) 및 삭제/통합 우선순위 결정
   - [ ] 안전 삭제(빌드 게이트): 1) 제거 2) `npm run lint` 3) `npm run build`
-  - [ ] 중복 유틸/타입 정리(선택): repo/types/utils 중복 최소화
+  - [x] 중복 유틸/타입 정리(선택): repo/types/utils 중복 최소화
   - [ ] 완료 항목은 `HANDOVER.md`에 “완료”로 반영
 
 ---
@@ -575,11 +1138,16 @@
 
 #### 4.2.3 충돌 방지 규칙(필수)
 
-1) `docs/EXECUTION_PLAN.md`, `HANDOVER.md`, `messages/*.json`는 **Agent Lead만 수정** (다른 에이전트는 “변경 요청 리스트”로 전달)  
-2) DB 마이그레이션/스키마(`src/lib/db/**`)은 **Agent BE 단일 소유** (동일 테이블 변경 병렬 금지)  
-3) PostDetail 영역(`src/app/[lang]/(main)/posts/[id]/**`)은 **Agent WEB 단일 소유** (UI 조정은 FE와 사전 합의)  
-4) UI 컴포넌트 운영 모드(B 고정): **User는 `components/atoms|molecules|organisms` 중심**, **Admin은 `components/ui` 중심**(중복 Button/Badge를 혼용하지 않기)  
-5) 작업 시작 전: `docs/EXECUTION_PLAN.md` 체크리스트/담당 확인 → 작업 범위 확정 → 커밋/푸시 → 다시 체크리스트 갱신(Lead)
+1) DB 마이그레이션/스키마(`src/lib/db/**`)은 **Agent BE 단일 소유** (동일 테이블 변경 병렬 금지)  
+2) PostDetail 영역(`src/app/[lang]/(main)/posts/[id]/**`)은 **Agent WEB 단일 소유** (UI 조정은 FE와 사전 합의)  
+3) UI 컴포넌트 운영 모드(B 고정): **User는 `components/atoms|molecules|organisms` 중심**, **Admin은 `components/ui` 중심**(중복 Button/Badge를 혼용하지 않기)  
+4) 작업 시작 전: `docs/EXECUTION_PLAN.md` 체크리스트/담당 확인 → 작업 범위 확정 → 커밋/푸시 → 다시 체크리스트 갱신(Lead)
+5) **공통 레이아웃/헤더/글로벌 CSS는 Hot File**: `Header.tsx`, `MainLayout.tsx`, `PostList.tsx`, `src/app/globals.css`는 동시 수정 금지(작업 중엔 단일 소유로 잠금)
+6) (공지) (2025-12-18) [LEAD] ultrawide 배치 핫픽스 완료(헤더 `container`/grid 기준을 MainLayout과 정렬 + 홈 canvas 전환). **스냅샷 커밋/푸시 완료 전까지** 아래 Hot File은 병렬 수정 금지:
+   - `src/components/organisms/Header.tsx`
+   - `src/components/templates/MainLayout.tsx`
+   - `src/app/[lang]/(main)/HomeClient.tsx`
+   - (메모) Codex CLI 환경에서 `.git/index.lock` 문제로 add/commit/push가 실패할 수 있어, LEAD가 로컬 터미널에서 커밋/푸시로 스냅샷 고정 후 잠금 해제 공지 예정
 
 이 구조로 가면 P0는 서로 거의 파일 충돌 없이 병렬 진행 가능하고, P1은 P0 이후 동일 원칙으로 새 스트림을 추가하면 됩니다.
 
@@ -652,7 +1220,7 @@
 - [x] (2025-12-18) [FE] 로고 이미지 교체(`public/brand-logo.png`) + `Logo` 컴포넌트 이미지 기반 전환
 - [x] (2025-12-18) [FE] CTA 텍스트/카피 개선: “질문하기/공유하기/인증하기” 네이밍 + 상세 설명(ko/en/vi) (메모: Sidebar CTA 3종 라벨 통일 + 모바일에서 보조 설명 노출)
 - [x] (2025-12-18) [FE] 모바일 프로필 정보(가입일/성별/연령대/상태/메일 등) 콤팩트 레이아웃(가로 배치 우선)
-- [ ] (2025-12-18) [FE] 관리자 페이지(웹/모바일) 긴 콘텐츠 스크롤 처리(특히 인증/신고 상세)
+- [x] (2025-12-18) [FE] 관리자 페이지(웹/모바일) 긴 콘텐츠 스크롤 처리(특히 인증/신고 상세)
 - [ ] (2025-12-18) [FE] 신뢰 배지(verified/expert/trusted/outdated) 툴팁/탭 UX 점검(모바일 long-press 포함) + “자세히” 링크/동선 적용 범위 합의 (메모: WEB의 배지 안내 페이지와 연결)
 
 **웹 기능(사용자/관리자 기능)**

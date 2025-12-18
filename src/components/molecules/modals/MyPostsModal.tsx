@@ -1,12 +1,11 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { X, FileText } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import dayjs from 'dayjs';
 import Modal from '@/components/atoms/Modal';
-import PostCard from '@/components/molecules/PostCard';
+import PostCard from '@/components/molecules/cards/PostCard';
 import { useInfiniteUserPosts } from '@/repo/users/query';
 import useProgressiveList from '@/lib/hooks/useProgressiveList';
 
@@ -21,6 +20,8 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
   const locale = params.lang as string || 'ko';
   const { data: session } = useSession();
   const user = session?.user;
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
 
   const t = translations;
@@ -33,12 +34,14 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
     isLoading 
   } = useInfiniteUserPosts(user?.id || '', {
     enabled: !!user?.id && isOpen,
-    staleTime: 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
 
-  const posts = data?.pages?.flatMap(page => page.data) || [];
+  const posts = useMemo(() => data?.pages?.flatMap(page => page.data) || [], [data]);
 
   const visibleCount = useProgressiveList({
     enabled: isOpen && !isLoading,
@@ -49,10 +52,21 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
 
   const visiblePosts = posts.slice(0, visibleCount);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (modalBodyRef.current?.parentElement) {
+      modalBodyRef.current.parentElement.scrollTop = 0;
+    }
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = 0;
+    }
+  }, [isOpen]);
+
 
   // 무한 스크롤 Intersection Observer
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage || !isOpen) return;
+    if (visibleCount < posts.length) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -71,12 +85,15 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, isOpen, posts.length, visibleCount]);
 
   const formatDate = (dateString: string) => {
-    return dayjs(dateString).format('YYYY.MM.DD HH:mm');
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return dateString;
+    const pad = (value: number) => String(value).padStart(2, '0');
+    return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-2xl">
-      <div className="relative max-h-[80vh] flex flex-col">
+      <div ref={modalBodyRef} className="relative max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -91,7 +108,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div ref={scrollAreaRef} className="flex-1 overflow-y-auto p-5">
           {isLoading ? (
             <div className="flex justify-center py-12">
               <div className="h-8 w-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
@@ -169,7 +186,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
               ) : null}
 
               {/* Loading indicator */}
-              {hasNextPage && (
+              {hasNextPage && visibleCount >= posts.length ? (
                 <div ref={observerRef} className="py-4 text-center">
                   {isFetchingNextPage && (
                     <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
@@ -178,7 +195,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
                     </div>
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>

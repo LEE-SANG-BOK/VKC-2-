@@ -31,8 +31,8 @@ export function useMyProfile(
 ) {
   return useQuery({
     queryKey: queryKeys.users.me(),
-    queryFn: async () => {
-      const res = await fetchMyProfile();
+    queryFn: async ({ signal }) => {
+      const res = await fetchMyProfile({ signal });
       return res.data;
     },
     staleTime: 1000 * 60 * 5,
@@ -46,7 +46,7 @@ export function useUserProfile(
 ) {
   return useQuery({
     queryKey: queryKeys.users.detail(userId),
-    queryFn: () => fetchUserProfile(userId),
+    queryFn: ({ signal }) => fetchUserProfile(userId, { signal }),
     enabled: !!userId,
     ...options,
   });
@@ -58,7 +58,7 @@ export function useFollowStatus(
 ) {
   return useQuery({
     queryKey: ['followStatus', userId],
-    queryFn: () => checkFollowStatus(userId),
+    queryFn: ({ signal }) => checkFollowStatus(userId, { signal }),
     enabled: !!userId && enabled,
   });
 }
@@ -70,7 +70,7 @@ export function useUserPosts(
 ) {
   return useQuery({
     queryKey: queryKeys.users.posts(userId, filters),
-    queryFn: () => fetchUserPosts(userId, filters),
+    queryFn: ({ signal }) => fetchUserPosts(userId, filters, { signal }),
     enabled: !!userId,
     ...options,
   });
@@ -83,7 +83,7 @@ export function useUserAnswers(
 ) {
   return useQuery({
     queryKey: queryKeys.users.answers(userId, filters),
-    queryFn: () => fetchUserAnswers(userId, filters),
+    queryFn: ({ signal }) => fetchUserAnswers(userId, filters, { signal }),
     enabled: !!userId,
     ...options,
   });
@@ -96,7 +96,7 @@ export function useUserComments(
 ) {
   return useQuery({
     queryKey: queryKeys.users.comments(userId, filters),
-    queryFn: () => fetchUserComments(userId, filters),
+    queryFn: ({ signal }) => fetchUserComments(userId, filters, { signal }),
     enabled: !!userId,
     ...options,
   });
@@ -109,7 +109,7 @@ export function useUserBookmarks(
 ) {
   return useQuery({
     queryKey: queryKeys.users.bookmarks(userId, filters),
-    queryFn: () => fetchUserBookmarks(userId, filters),
+    queryFn: ({ signal }) => fetchUserBookmarks(userId, filters, { signal }),
     enabled: !!userId,
     ...options,
   });
@@ -124,13 +124,13 @@ export function useInfiniteFollowers(
 
   return useInfiniteQuery({
     queryKey: queryKeys.users.followers(userId, filters),
-    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam, signal }) =>
       fetchFollowers(userId, {
         ...filters,
         page: pageParam.page,
         cursor: pageParam.cursor || undefined,
         limit: 20,
-      }),
+      }, { signal }),
     getNextPageParam: (lastPage: PaginatedResponse<User>) => {
       const nextCursor = lastPage.meta?.nextCursor;
       if (nextCursor) {
@@ -154,13 +154,13 @@ export function useInfiniteFollowing(
 
   return useInfiniteQuery({
     queryKey: queryKeys.users.following(userId, filters),
-    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam, signal }) =>
       fetchFollowing(userId, {
         ...filters,
         page: pageParam.page,
         cursor: pageParam.cursor || undefined,
         limit: 20,
-      }),
+      }, { signal }),
     getNextPageParam: (lastPage: PaginatedResponse<User>) => {
       const nextCursor = lastPage.meta?.nextCursor;
       if (nextCursor) {
@@ -183,12 +183,12 @@ export function useInfiniteUserPosts(
 
   return useInfiniteQuery({
     queryKey: queryKeys.users.posts(userId, {}),
-    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam, signal }) =>
       fetchUserPosts(userId, {
         page: pageParam.page,
         cursor: pageParam.cursor || undefined,
         limit: 20,
-      }),
+      }, { signal }),
     getNextPageParam: (lastPage: PaginatedResponse<UserPost>) => {
       const nextCursor = lastPage.meta?.nextCursor;
       if (nextCursor) {
@@ -211,12 +211,12 @@ export function useInfiniteUserBookmarks(
 
   return useInfiniteQuery({
     queryKey: queryKeys.users.bookmarks(userId, {}),
-    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam, signal }) =>
       fetchUserBookmarks(userId, {
         page: pageParam.page,
         cursor: pageParam.cursor || undefined,
         limit: 20,
-      }),
+      }, { signal }),
     getNextPageParam: (lastPage: PaginatedResponse<UserBookmark>) => {
       const nextCursor = lastPage.meta?.nextCursor;
       if (nextCursor) {
@@ -236,7 +236,7 @@ export function useRecommendedUsers(
 ) {
   return useQuery({
     queryKey: queryKeys.users.recommended(),
-    queryFn: () => fetchRecommendedUsers({ page: 1, limit: 12 }),
+    queryFn: ({ signal }) => fetchRecommendedUsers({ page: 1, limit: 12 }, { signal }),
     staleTime: 1000 * 60 * 5,
     ...options,
   });
@@ -251,13 +251,13 @@ export function useInfiniteUserAnswers(
 
   return useInfiniteQuery({
     queryKey: queryKeys.users.answers(userId, filters),
-    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam, signal }) =>
       fetchUserAnswers(userId, {
         ...filters,
         page: pageParam.page,
         cursor: pageParam.cursor || undefined,
         limit: 20,
-      }),
+      }, { signal }),
     getNextPageParam: (lastPage: PaginatedResponse<UserAnswer>) => {
       const nextCursor = lastPage.meta?.nextCursor;
       if (nextCursor) {
@@ -280,12 +280,12 @@ export function useInfiniteUserComments(
 
   return useInfiniteQuery({
     queryKey: queryKeys.users.comments(userId, {}),
-    queryFn: ({ pageParam = { page: 1 } as PageParam }) =>
+    queryFn: ({ pageParam = { page: 1 } as PageParam, signal }) =>
       fetchUserComments(userId, {
         page: pageParam.page,
         cursor: pageParam.cursor || undefined,
         limit: 20,
-      }),
+      }, { signal }),
     getNextPageParam: (lastPage: PaginatedResponse<UserComment>) => {
       const nextCursor = lastPage.meta?.nextCursor;
       if (nextCursor) {
@@ -305,12 +305,12 @@ export function useInfiniteRecommendedUsers(
 ) {
   return useInfiniteQuery({
     queryKey: queryKeys.users.recommended(),
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam = 1, signal }) => {
       const page = pageParam as number;
       return fetchRecommendedUsers({
         page,
         limit: 6,
-      });
+      }, { signal });
     },
     getNextPageParam: (lastPage) => {
       const pagination = lastPage?.pagination;

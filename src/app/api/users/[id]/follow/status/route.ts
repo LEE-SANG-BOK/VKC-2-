@@ -13,7 +13,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const user = await getSession(request);
     if (!user) {
-      return successResponse({ isFollowing: false });
+      const response = successResponse({ isFollowing: false });
+      response.headers.set('Cache-Control', 'private, no-store');
+      return response;
     }
 
     const { id: targetUserId } = await context.params;
@@ -25,7 +27,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
       ),
     });
 
-    return successResponse({ isFollowing: !!existingFollow });
+    const response = successResponse({ isFollowing: !!existingFollow });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/users/[id]/follow/status error:', error);
     return serverErrorResponse();

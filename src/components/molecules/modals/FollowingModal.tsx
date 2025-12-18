@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { X, Users, BadgeCheck, Sparkles, Rss } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import dayjs from 'dayjs';
 import Modal from '@/components/atoms/Modal';
-import PostCard from '@/components/molecules/PostCard';
+import PostCard from '@/components/molecules/cards/PostCard';
 import Avatar from '@/components/atoms/Avatar';
 import FollowButton from '@/components/atoms/FollowButton';
 import { useInfiniteFollowing, useRecommendedUsers } from '@/repo/users/query';
@@ -51,6 +50,8 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   const t = translations;
   const tCommon = (translations as any)?.common || {};
   const [activeTab, setActiveTab] = useState<TabType>('recommend');
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const followingObserverRef = useRef<HTMLDivElement>(null);
   const feedObserverRef = useRef<HTMLDivElement>(null);
   const followerLabel = tCommon.followers || (locale === 'vi' ? 'Người theo dõi' : locale === 'en' ? 'Followers' : '팔로워');
@@ -72,7 +73,10 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   } = useRecommendedUsers(
     {
       enabled: !!user?.id && isOpen && activeTab === 'recommend',
-      gcTime: 5 * 60 * 1000,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 15 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     }
   );
 
@@ -88,8 +92,10 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
     {},
     {
       enabled: !!user?.id && isOpen && activeTab === 'following',
-      staleTime: 60 * 1000,
-      gcTime: 5 * 60 * 1000,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 15 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     }
   );
 
@@ -104,15 +110,34 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
     { filter: 'following-users' },
     {
       enabled: !!user && isOpen && activeTab === 'feed',
-      staleTime: 60 * 1000,
-      gcTime: 5 * 60 * 1000,
+      staleTime: 2 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     }
   );
 
-  const recommendations = recommendedData?.data || [];
-  const following = followingData?.pages?.flatMap(page => page.data) || [];
-  const feedPosts = feedData?.pages?.flatMap(page => page.data) || [];
+  const recommendations = useMemo(() => recommendedData?.data || [], [recommendedData]);
+  const following = useMemo(() => followingData?.pages?.flatMap(page => page.data) || [], [followingData]);
+  const feedPosts = useMemo(() => feedData?.pages?.flatMap(page => page.data) || [], [feedData]);
   const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!isOpen) {
+      setActiveTab('recommend');
+      setFollowStates({});
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (modalBodyRef.current?.parentElement) {
+      modalBodyRef.current.parentElement.scrollTop = 0;
+    }
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = 0;
+    }
+  }, [activeTab, isOpen]);
 
   const visibleRecommendCount = useProgressiveList({
     enabled: isOpen && activeTab === 'recommend' && !recommendedLoading,
@@ -174,11 +199,19 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
     }
   };
 
+  const formatDateTime = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    const pad = (input: number) => String(input).padStart(2, '0');
+    return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
 
 
   // Intersection Observer for Following
   useEffect(() => {
     if (!hasNextFollowingPage || isFetchingNextFollowingPage || activeTab !== 'following' || !isOpen) return;
+    if (visibleFollowingCount < following.length) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -199,6 +232,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   // Intersection Observer for Feed
   useEffect(() => {
     if (!hasNextFeedPage || isFetchingNextFeedPage || activeTab !== 'feed' || !isOpen) return;
+    if (visibleFeedCount < feedPosts.length) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -295,7 +329,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-2xl">
-      <div className="relative max-h-[80vh] flex flex-col">
+      <div ref={modalBodyRef} className="relative max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -355,7 +389,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div ref={scrollAreaRef} className="flex-1 overflow-y-auto p-5">
           {/* Recommend Tab */}
           {activeTab === 'recommend' && (
             <div className="space-y-4">
@@ -451,7 +485,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                     </div>
                   ) : null}
                   
-                  {hasNextFollowingPage && (
+                  {hasNextFollowingPage && visibleFollowingCount >= following.length ? (
                     <div ref={followingObserverRef} className="py-4 text-center">
                       {isFetchingNextFollowingPage && (
                         <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
@@ -460,7 +494,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                         </div>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </>
               )}
             </div>
@@ -504,7 +538,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                         shares: 0,
                       }}
                       thumbnail={post.thumbnail}
-                      publishedAt={dayjs(post.createdAt).format('YYYY.MM.DD HH:mm')}
+                      publishedAt={formatDateTime(post.createdAt)}
                       isQuestion={post.type === 'question'}
                       isAdopted={post.isResolved}
                       isLiked={post.isLiked}
@@ -530,7 +564,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                     </div>
                   ) : null}
                   
-                  {hasNextFeedPage && (
+                  {hasNextFeedPage && visibleFeedCount >= feedPosts.length ? (
                     <div ref={feedObserverRef} className="py-4 text-center">
                       {isFetchingNextFeedPage && (
                         <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
@@ -539,7 +573,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                         </div>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </>
               )}
             </div>

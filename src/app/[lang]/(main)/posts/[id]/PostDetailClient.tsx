@@ -5,11 +5,11 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, HelpCircle, CheckCircle, ThumbsUp, AlertTriangle, Link as LinkIcon, ShieldAlert } from 'lucide-react';
 import Avatar from '@/components/atoms/Avatar';
-import UserChip from '@/components/molecules/UserChip';
+import UserChip from '@/components/molecules/user/UserChip';
 import Button from '@/components/atoms/Button';
 import Tooltip from '@/components/atoms/Tooltip';
 import Modal from '@/components/atoms/Modal';
-import RichTextEditor from '@/components/molecules/RichTextEditor';
+import RichTextEditor from '@/components/molecules/editor/RichTextEditor';
 import Header from '@/components/organisms/Header';
 import TrustBadge from '@/components/atoms/TrustBadge';
 import FollowButton from '@/components/atoms/FollowButton';
@@ -17,6 +17,7 @@ import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { useSession } from 'next-auth/react';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
 import { formatDateTime, getJustNowLabel } from '@/utils/dateTime';
+import { normalizeKey } from '@/utils/normalizeKey';
 import { safeDisplayName, safeShortLabel } from '@/utils/safeText';
 import { UGC_LIMITS, getPlainTextLength, validateUgcText, UgcValidationErrorCode, UgcValidationResult } from '@/lib/validation/ugc';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
@@ -341,7 +342,20 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     translations: tTrust,
   });
 
-  const normalizeKey = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+  const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
+  const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
+  const renderTrustBadgeTooltip = (tooltip: string) => (
+    <div className="space-y-1">
+      <div>{tooltip}</div>
+      <button
+        type="button"
+        onClick={() => router.push(trustBadgeGuideHref)}
+        className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+      >
+        {learnMoreLabel}
+      </button>
+    </div>
+  );
 
   useEffect(() => {
     if (postQuery?.data) {
@@ -1733,7 +1747,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                 </button>
 
                 {trustBadgePresentation.show ? (
-                  <Tooltip content={trustBadgePresentation.tooltip} position="top">
+                  <Tooltip content={renderTrustBadgeTooltip(trustBadgePresentation.tooltip)} position="top" touchBehavior="longPress">
                     <span className="shrink-0 inline-flex">
                       <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />
                     </span>
@@ -1995,7 +2009,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                     ? '!px-2 !py-0.5 border-amber-200'
                                     : '!px-2 !py-0.5';
                                   return (
-                                    <Tooltip content={badge.tooltip} position="top">
+                                    <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress">
                                       <span className="inline-flex">
                                         <TrustBadge
                                           level={badge.level}
@@ -2212,7 +2226,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                       ? '!px-2 !py-0.5 border-amber-200'
                                       : '!px-2 !py-0.5';
                                     return (
-                                      <Tooltip content={badge.tooltip} position="top">
+                                      <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress">
                                         <span className="inline-flex">
                                           <TrustBadge
                                             level={badge.level}
@@ -2382,7 +2396,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                 ? '!px-2 !py-0.5 border-amber-200'
                                 : '!px-2 !py-0.5';
                               return (
-                                <Tooltip content={badge.tooltip} position="top">
+                                <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress">
                                   <span className="inline-flex">
                                     <TrustBadge
                                       level={badge.level}
@@ -2568,7 +2582,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                             ? '!px-2 !py-0.5 border-amber-200'
                                             : '!px-2 !py-0.5';
                                           return (
-                                            <Tooltip content={badge.tooltip} position="top">
+                                            <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress">
                                               <span className="inline-flex">
                                                 <TrustBadge
                                                   level={badge.level}

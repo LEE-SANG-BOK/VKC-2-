@@ -292,7 +292,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         id: post.id,
         type: post.type,
         title: post.title,
-        content: includeContent ? content : '',
+        ...(includeContent ? { content } : {}),
         excerpt,
         category: post.category,
         subcategory: post.subcategory,
@@ -332,11 +332,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
       };
     });
 
-    return paginatedResponse(formattedPosts, page, limit, total, {
+    const response = paginatedResponse(formattedPosts, page, limit, total, {
       nextCursor,
       hasMore: rawHasMore,
       paginationMode: useCursorPagination ? 'cursor' : 'offset',
     });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/users/[id]/posts error:', error);
     return serverErrorResponse();

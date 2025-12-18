@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const parentCategory = searchParams.get('parentCategory');
     const category = searchParams.get('category');
-    const search = searchParams.get('search');
+    const search = (searchParams.get('search') || '').trim();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
     const type = searchParams.get('type') as 'question' | 'share' | null;
@@ -111,8 +111,12 @@ export async function GET(request: NextRequest) {
       return Array.from(new Set(tokens)).slice(0, 8);
     };
 
-    const searchTokens = search ? tokenizeSearch(search) : [];
-    const hasSearch = Boolean(search && search.trim().length > 0);
+    const hasSearch = search.length > 0;
+    if (hasSearch && search.length > 80) {
+      return errorResponse('검색어가 너무 깁니다.', 'SEARCH_QUERY_TOO_LONG');
+    }
+
+    const searchTokens = hasSearch ? tokenizeSearch(search) : [];
 
     const tokenToLike = (token: string) => `%${token}%`;
 
@@ -727,6 +731,108 @@ export async function POST(request: NextRequest) {
       return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
     }
 
+    const normalizeTag = (raw: unknown) => {
+      if (typeof raw !== 'string') return null;
+      const trimmed = raw.trim().replace(/^#+/, '');
+      if (!trimmed) return null;
+      const normalized = trimmed.replace(/\s+/g, ' ').trim();
+      const cleaned = normalized.replace(/[^\p{L}\p{N} _-]+/gu, '').trim();
+      if (!cleaned) return null;
+      if (/^\d+$/u.test(cleaned)) return null;
+      return cleaned.length > 24 ? cleaned.slice(0, 24) : cleaned;
+    };
+
+    const sanitizeTags = (value: unknown) => {
+      if (!Array.isArray(value)) return [] as string[];
+      const result: string[] = [];
+      const seen = new Set<string>();
+      value.forEach((item) => {
+        const normalized = normalizeTag(item);
+        if (!normalized) return;
+        if (hasProhibitedContent(normalized)) return;
+        const key = normalized.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        result.push(normalized);
+      });
+      return result;
+    };
+
+    const autoTagsByCategory: Record<string, readonly string[]> = {
+      visa: ['비자', '연장', '체류'],
+      'visa-process': ['비자', '서류', '가이드'],
+      'status-change': ['비자', '체류', '서류'],
+      'visa-checklist': ['비자', '서류', '가이드'],
+      students: ['학업', '장학금', '수업'],
+      scholarship: ['학업', '장학금', '정보'],
+      'university-ranking': ['학업', '정보', '가이드'],
+      'korean-language': ['한국어', '토픽', '수업'],
+      career: ['취업', '채용', '면접'],
+      business: ['비즈니스', '창업', '서류'],
+      'wage-info': ['취업', '정보', '가이드'],
+      legal: ['법률', '계약', '신고'],
+      living: ['생활', '주거', '교통'],
+      housing: ['생활', '주거', '정보'],
+      'cost-of-living': ['생활', '금융', '정보'],
+      healthcare: ['의료', '보험', '병원'],
+    };
+
+    const resolveAutoTags = () => {
+      const sub = normalizedSubcategory || '';
+      const base = autoTagsByCategory[sub] || autoTagsByCategory[normalizedCategory] || ['정보', '가이드', '추천'];
+      const picked = base.map((tag) => normalizeTag(tag)).filter(Boolean) as string[];
+      return picked.length > 0 ? picked : ['정보', '가이드', '추천'];
+    };
+
+    const userTags = sanitizeTags(tags);
+    const autoTags = resolveAutoTags();
+
+    const keywordHints: string[] = [];
+    const tagHintText = `${normalizedTitle} ${normalizedContent}`.toLowerCase();
+    if (/\b(d|e|f)-\d/iu.test(tagHintText) || tagHintText.includes('비자')) {
+      keywordHints.push('비자');
+    }
+    if (tagHintText.includes('topik') || tagHintText.includes('토픽')) {
+      keywordHints.push('토픽');
+    }
+    if (tagHintText.includes('korean') || tagHintText.includes('한국어')) {
+      keywordHints.push('한국어');
+    }
+    if (tagHintText.includes('interview') || tagHintText.includes('면접')) {
+      keywordHints.push('면접');
+    }
+    if (tagHintText.includes('contract') || tagHintText.includes('계약')) {
+      keywordHints.push('계약');
+    }
+    if (tagHintText.includes('insurance') || tagHintText.includes('보험')) {
+      keywordHints.push('보험');
+    }
+    if (tagHintText.includes('hospital') || tagHintText.includes('병원')) {
+      keywordHints.push('병원');
+    }
+    if (tagHintText.includes('housing') || tagHintText.includes('월세') || tagHintText.includes('전세') || tagHintText.includes('주거')) {
+      keywordHints.push('주거');
+    }
+    if (tagHintText.includes('remittance') || tagHintText.includes('송금') || tagHintText.includes('transfer')) {
+      keywordHints.push('송금');
+    }
+    const merged: string[] = [];
+    const pushUnique = (tag: string) => {
+      const normalized = normalizeTag(tag);
+      if (!normalized) return;
+      if (hasProhibitedContent(normalized)) return;
+      const key = normalized.toLowerCase();
+      if (merged.some((t) => t.toLowerCase() === key)) return;
+      merged.push(normalized);
+    };
+
+    userTags.forEach(pushUnique);
+    keywordHints.forEach(pushUnique);
+    autoTags.forEach(pushUnique);
+    ['정보', '가이드', '추천'].forEach(pushUnique);
+
+    const finalTags = merged.slice(0, 3);
+
     // 게시글 작성
     const [newPost] = await db.insert(posts).values({
       authorId: user.id,
@@ -735,7 +841,7 @@ export async function POST(request: NextRequest) {
       content: normalizedContent,
       category: normalizedCategory,
       subcategory: childrenForCategory.length > 0 ? normalizedSubcategory : null,
-      tags: tags || [],
+      tags: finalTags,
     }).returning();
 
     // 작성자 정보 포함하여 반환

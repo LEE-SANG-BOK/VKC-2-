@@ -16,10 +16,14 @@ import type {
 import { ApiError, AccountRestrictedError } from '@/lib/api/errors';
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
+type FetchOptions = {
+  signal?: AbortSignal;
+};
+
 /**
  * 게시글 목록 조회
  */
-export async function fetchPosts(filters: PostFilters = {}): Promise<PaginatedResponse<PostListItem>> {
+export async function fetchPosts(filters: PostFilters = {}, options?: FetchOptions): Promise<PaginatedResponse<PostListItem>> {
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
@@ -38,12 +42,14 @@ export async function fetchPosts(filters: PostFilters = {}): Promise<PaginatedRe
     ? {
         cache: 'no-store',
         credentials: 'include',
+        signal: options?.signal,
       }
     : isServer
       ? {
           next: { revalidate: 60 },
+          signal: options?.signal,
         }
-      : {};
+      : { signal: options?.signal };
 
   if (isServer) {
     const { cookies } = await import('next/headers');
@@ -80,10 +86,11 @@ export async function fetchPosts(filters: PostFilters = {}): Promise<PaginatedRe
 /**
  * 게시글 상세 조회
  */
-export async function fetchPost(id: string): Promise<ApiResponse<Post>> {
+export async function fetchPost(id: string, options?: FetchOptions): Promise<ApiResponse<Post>> {
   const fetchOptions: RequestInit = {
     cache: 'no-store',
     credentials: 'include',
+    signal: options?.signal,
   };
 
   if (typeof window === 'undefined') {
@@ -114,7 +121,7 @@ export async function fetchPost(id: string): Promise<ApiResponse<Post>> {
   return res.json();
 }
 
-export async function fetchMyPostInteractions(postIds: string[]): Promise<ApiResponse<PostInteractions>> {
+export async function fetchMyPostInteractions(postIds: string[], options?: FetchOptions): Promise<ApiResponse<PostInteractions>> {
   const normalizedPostIds = Array.from(
     new Set(postIds.filter((value): value is string => typeof value === 'string').map((value) => value.trim()).filter(Boolean))
   ).slice(0, 100);
@@ -135,6 +142,7 @@ export async function fetchMyPostInteractions(postIds: string[]): Promise<ApiRes
     method: 'POST',
     cache: 'no-store',
     credentials: 'include',
+    signal: options?.signal,
     headers: {
       'Content-Type': 'application/json',
     },
@@ -166,21 +174,49 @@ export async function fetchMyPostInteractions(postIds: string[]): Promise<ApiRes
  */
 export async function fetchTrendingPosts(
   period: 'day' | 'week' | 'month' = 'week',
-  limit: number = 10
-): Promise<ApiResponse<Post[]>> {
+  limit: number = 10,
+  options?: FetchOptions
+): Promise<ApiResponse<PostListItem[]>> {
   const params = new URLSearchParams({
     period,
     limit: limit.toString(),
   });
 
-  const url = typeof window === 'undefined'
+  const isServer = typeof window === 'undefined';
+
+  const fetchOptions: RequestInit = isServer
+    ? {
+        next: { revalidate: 300 },
+        credentials: 'omit',
+        signal: options?.signal,
+      }
+    : {
+        credentials: 'include',
+        signal: options?.signal,
+      };
+
+  if (isServer) {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.toString();
+    if (cookieHeader) {
+      fetchOptions.cache = 'no-store';
+      fetchOptions.credentials = 'include';
+      fetchOptions.headers = {
+        ...(fetchOptions.headers || {}),
+        Cookie: cookieHeader,
+      };
+      if ('next' in fetchOptions) {
+        delete (fetchOptions as any).next;
+      }
+    }
+  }
+
+  const url = isServer
     ? `${API_BASE}/api/posts/trending?${params.toString()}`
     : `/api/posts/trending?${params.toString()}`;
 
-  const res = await fetch(url, {
-    next: { revalidate: 300 },
-    credentials: 'omit',
-  });
+  const res = await fetch(url, fetchOptions);
 
   if (!res.ok) {
     throw new Error('Failed to fetch trending posts');

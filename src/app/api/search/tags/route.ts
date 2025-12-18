@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { successResponse, serverErrorResponse } from '@/lib/api/response';
+import { successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { sql } from 'drizzle-orm';
 
 /**
@@ -14,22 +14,26 @@ import { sql } from 'drizzle-orm';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const query = searchParams.get('q')?.trim() || '';
+    const limit = Math.min(20, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
 
     if (!query) {
-      return serverErrorResponse('검색어를 입력해주세요.');
+      return errorResponse('검색어를 입력해주세요.', 'SEARCH_QUERY_REQUIRED');
     }
 
-    // 태그 검색 (JSONB 배열에서 검색)
-    // PostgreSQL의 jsonb_array_elements_text를 사용하여 태그 배열을 평면화하고 검색
+    if (query.length > 80) {
+      return errorResponse('검색어가 너무 깁니다.', 'SEARCH_QUERY_TOO_LONG');
+    }
+
+    // 태그 검색 (text[] 배열에서 검색)
+    // PostgreSQL의 unnest를 사용하여 태그 배열을 평면화하고 검색
     const tagsResult = await db.execute(sql`
       SELECT
         tag,
-        COUNT(*) as count
+        COUNT(*)::int as count
       FROM
         posts,
-        jsonb_array_elements_text(tags) as tag
+        unnest(posts.tags) as tag
       WHERE
         tag ILIKE ${`%${query}%`}
       GROUP BY
@@ -46,10 +50,12 @@ export async function GET(request: NextRequest) {
       count: parseInt(row.count),
     }));
 
-    return successResponse({
+    const response = successResponse({
       tags,
       total: tags.length,
     });
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    return response;
   } catch (error) {
     console.error('GET /api/search/tags error:', error);
     return serverErrorResponse();

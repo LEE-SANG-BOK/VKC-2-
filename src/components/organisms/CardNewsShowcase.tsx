@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import ShareButton from '@/components/molecules/ShareButton';
+import ShareButton from '@/components/molecules/actions/ShareButton';
 import Image from 'next/image';
 import { useState } from 'react';
 import { ExternalLink } from 'lucide-react';

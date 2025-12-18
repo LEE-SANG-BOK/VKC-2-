@@ -9,6 +9,8 @@ import SearchClient from './SearchClient';
 
 export const dynamic = 'force-dynamic';
 
+const MIN_SEARCH_QUERY_LENGTH = 2;
+
 interface PageProps {
   params: Promise<{
     lang: Locale;
@@ -84,11 +86,13 @@ export default async function SearchPage({ params, searchParams }: PageProps) {
   const { q: query, c: parentCategory, sc: childCategory, page } = await searchParams;
   const dict = await getDictionary(lang);
   const currentPage = parseInt(page || '1');
+  const normalizedQuery = (query || '').trim();
+  const shouldPrefetchPosts = normalizedQuery.length >= MIN_SEARCH_QUERY_LENGTH;
 
   const queryClient = new QueryClient();
 
   const filters = {
-    search: query || undefined,
+    search: normalizedQuery || undefined,
     parentCategory: parentCategory !== 'all' ? parentCategory : undefined,
     category: childCategory || undefined,
     page: currentPage,
@@ -96,7 +100,7 @@ export default async function SearchPage({ params, searchParams }: PageProps) {
   };
 
   await Promise.all([
-    query
+    shouldPrefetchPosts
       ? queryClient.prefetchQuery({
           queryKey: queryKeys.posts.list(filters),
           queryFn: () => fetchPosts(filters),
@@ -113,7 +117,7 @@ export default async function SearchPage({ params, searchParams }: PageProps) {
       <SearchClient 
         translations={dict} 
         lang={lang}
-        initialQuery={query || ''}
+        initialQuery={normalizedQuery}
         initialParentCategory={parentCategory || 'all'}
         initialChildCategory={childCategory || ''}
         initialPage={currentPage}

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'nextjs-toploader/app';
 import { useSession } from 'next-auth/react';
 import { ThumbsUp, ExternalLink } from 'lucide-react';
-import UserChip from '@/components/molecules/UserChip';
+import UserChip from '@/components/molecules/user/UserChip';
 import TrustBadge from '@/components/atoms/TrustBadge';
 import Tooltip from '@/components/atoms/Tooltip';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
@@ -57,6 +57,9 @@ export default function CommentCard({
     author,
     translations: tTrust,
   });
+
+  const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
+  const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
   
   const [localIsLiked, setLocalIsLiked] = useState(isLiked);
   const [localLikes, setLocalLikes] = useState(likes);
@@ -120,7 +123,22 @@ export default function CommentCard({
                 className="hover:opacity-90 transition-all"
               />
               {trustBadgePresentation.show ? (
-                <Tooltip content={trustBadgePresentation.tooltip} position="top">
+                <Tooltip
+                  content={
+                    <div className="space-y-1">
+                      <div>{trustBadgePresentation.tooltip}</div>
+                      <button
+                        type="button"
+                        onClick={() => router.push(trustBadgeGuideHref)}
+                        className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {learnMoreLabel}
+                      </button>
+                    </div>
+                  }
+                  position="top"
+                  touchBehavior="longPress"
+                >
                   <span className="inline-flex">
                     <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />
                   </span>

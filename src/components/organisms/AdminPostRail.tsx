@@ -28,7 +28,7 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
 
   if (isLoading) {
     return (
-      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3">
+      <section className="rounded-xl bg-transparent p-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
           <span className="text-xs text-gray-400">{moreLabel}</span>
@@ -46,7 +46,7 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
 
   return (
     <>
-      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3">
+      <section className="rounded-xl bg-transparent p-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
           <Link

@@ -6,11 +6,13 @@ import Link from 'next/link';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import MainLayout from '@/components/templates/MainLayout';
-import PostCard from '@/components/molecules/PostCard';
+import PostCard from '@/components/molecules/cards/PostCard';
 import { usePosts } from '@/repo/posts/query';
 import type { PostListItem } from '@/repo/posts/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
+
+const MIN_SEARCH_QUERY_LENGTH = 2;
 
 interface SearchClientProps {
   translations: Record<string, unknown>;
@@ -86,6 +88,11 @@ export default function SearchClient({
   const [parentCategory, setParentCategory] = useState(resolvedInitial.parent);
   const [childCategory, setChildCategory] = useState(resolvedInitial.child);
   const [examplePlaceholder, setExamplePlaceholder] = useState('');
+  const activeQuery = initialQuery;
+  const activeQueryTrimmed = activeQuery.trim();
+  const activeParentCategory = initialParentCategory;
+  const activeChildCategory = initialChildCategory;
+  const isActiveQueryValid = activeQueryTrimmed.length >= MIN_SEARCH_QUERY_LENGTH;
 
   // 카테고리/소분류별 예시 키 풀을 구성
   const resolveExamplePool = useCallback(() => {
@@ -136,15 +143,15 @@ export default function SearchClient({
   }, [initialQuery, resolvedInitial]);
 
   const filters = useMemo(() => ({
-    search: query || undefined,
-    parentCategory: parentCategory !== 'all' && !childCategory ? parentCategory : undefined,
-    category: childCategory || undefined,
+    search: activeQueryTrimmed || undefined,
+    parentCategory: activeParentCategory !== 'all' ? activeParentCategory : undefined,
+    category: activeChildCategory || undefined,
     page: initialPage,
     limit: 20,
-  }), [childCategory, initialPage, parentCategory, query]);
+  }), [activeChildCategory, activeParentCategory, activeQueryTrimmed, initialPage]);
 
   const { data: postsData, isLoading, isError, error } = usePosts(filters, {
-    enabled: !!query,
+    enabled: isActiveQueryValid,
   });
   useEffect(() => {
     if (isError) {
@@ -209,12 +216,18 @@ export default function SearchClient({
   const childCategories = selectedParent?.children || [];
 
   const handleSearch = () => {
-    if (!query.trim()) {
-      toast.error(t.enterKeyword || '검색어를 입력하세요');
+    const trimmedQuery = query.trim();
+    if (trimmedQuery.length < MIN_SEARCH_QUERY_LENGTH) {
+      const fallbackMessage = lang === 'vi'
+        ? `Vui lòng nhập ít nhất ${MIN_SEARCH_QUERY_LENGTH} ký tự.`
+        : lang === 'en'
+          ? `Please enter at least ${MIN_SEARCH_QUERY_LENGTH} characters.`
+          : `검색어를 ${MIN_SEARCH_QUERY_LENGTH}자 이상 입력하세요.`;
+      toast.error(t.enterKeyword || fallbackMessage);
       return;
     }
     const params = new URLSearchParams();
-    if (query.trim()) params.set('q', query.trim());
+    params.set('q', trimmedQuery);
     if (parentCategory && parentCategory !== 'all') params.set('c', parentCategory);
     if (childCategory) params.set('sc', childCategory);
     router.push(`/${lang}/search?${params.toString()}`);
@@ -222,9 +235,9 @@ export default function SearchClient({
 
   const buildPageUrl = (page: number) => {
     const params = new URLSearchParams();
-    if (query.trim()) params.set('q', query.trim());
-    if (parentCategory && parentCategory !== 'all') params.set('c', parentCategory);
-    if (childCategory) params.set('sc', childCategory);
+    if (activeQueryTrimmed) params.set('q', activeQueryTrimmed);
+    if (activeParentCategory && activeParentCategory !== 'all') params.set('c', activeParentCategory);
+    if (activeChildCategory) params.set('sc', activeChildCategory);
     if (page > 1) params.set('page', page.toString());
     return `/${lang}/search?${params.toString()}`;
   };
@@ -371,13 +384,24 @@ export default function SearchClient({
 
         {/* Search Results */}
         {initialQuery ? (
-          <div className="space-y-4">
-            {isLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : posts.length > 0 ? (
-              <>
+          !isActiveQueryValid ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 dark:text-gray-400">
+                {lang === 'vi'
+                  ? `Vui lòng nhập ít nhất ${MIN_SEARCH_QUERY_LENGTH} ký tự để tìm kiếm.`
+                  : lang === 'en'
+                    ? `Please enter at least ${MIN_SEARCH_QUERY_LENGTH} characters to search.`
+                    : `검색어를 ${MIN_SEARCH_QUERY_LENGTH}자 이상 입력해주세요.`}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : posts.length > 0 ? (
+                <>
                 {isFallback && (
                   <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/20 px-4 py-3 space-y-2 text-sm text-amber-900 dark:text-amber-100">
                     <p className="font-semibold">
@@ -480,7 +504,8 @@ export default function SearchClient({
                 </p>
               </div>
             )}
-          </div>
+            </div>
+          )
         ) : (
           <div className="text-center py-16">
             <div className="text-gray-400 dark:text-gray-600 mb-4">

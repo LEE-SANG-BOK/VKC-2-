@@ -5,7 +5,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake } from 'lucide-react';
 import { LEGACY_CATEGORIES, getCategoryName, CATEGORY_GROUPS } from '@/lib/constants/categories';
-import CategoryItem from '@/components/molecules/CategoryItem';
+import CategoryItem from '@/components/molecules/categories/CategoryItem';
 import { useSession } from 'next-auth/react';
 import { useCategories, useMySubscriptions } from '@/repo/categories/query';
 import { useToggleSubscription } from '@/repo/categories/mutation';
@@ -39,7 +39,6 @@ export default function CategorySidebar({
   const params = useParams();
   const router = useRouter();
   const locale = params.lang as string || 'ko';
-  const actionTooltipPosition = variant === 'mobile' ? 'below' : 'right';
   const { data: session } = useSession();
   const user = session?.user;
   const { data: apiCategories } = useCategories();
@@ -51,20 +50,6 @@ export default function CategorySidebar({
   useEffect(() => onHomeReset(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
   }), []);
-
-  const tooltipLines = (value?: string) => {
-    const trimmed = value?.trim();
-    if (!trimmed) return undefined;
-    const parts = trimmed.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-    if (parts.length <= 1) return trimmed;
-    return (
-      <div className="space-y-1 text-left">
-        {parts.map((line, idx) => (
-          <div key={`${idx}-${line}`}>{line}</div>
-        ))}
-      </div>
-    );
-  };
 
   const tooltipSummary = (value?: string) => {
     const trimmed = value?.trim();
@@ -215,19 +200,18 @@ export default function CategorySidebar({
   };
 
   const isMobileVariant = variant === 'mobile';
-  const tooltipTouchBehavior = isMobileVariant ? 'longPress' : 'tap';
+  const showInlineDescriptions = variant === 'desktop';
 
   const containerClass = isMobileVariant
     ? `
         h-full w-full flex flex-col
         bg-white dark:bg-gray-900
-        overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300
-        scrollbar-track-transparent hover:scrollbar-thumb-gray-400
+        overflow-y-auto overflow-x-hidden
         pt-0
       `
     : `
         w-[320px] flex flex-col
-        bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
+        bg-transparent
         overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300
         scrollbar-track-transparent hover:scrollbar-thumb-gray-400
         transition-transform duration-300 z-40
@@ -274,13 +258,12 @@ export default function CategorySidebar({
               key={category.id}
               id={category.id}
               name={t[category.id] || category.id}
+              description={showInlineDescriptions ? tooltipSummary(menuTooltips[category.id]) : undefined}
               icon={category.icon}
               count={category.count}
               isActive={selectedCategory === category.id}
               onClick={handleCategoryClick}
-              tooltip={isMobileVariant ? undefined : tooltipLines(menuTooltips[category.id])}
-              tooltipPosition={actionTooltipPosition}
-              tooltipTouchBehavior={tooltipTouchBehavior}
+              tooltip={undefined}
             />
           ))}
         </div>
@@ -313,9 +296,9 @@ export default function CategorySidebar({
                   ? 'Apply to get a verified badge\nBoost trust and visibility\nSubmit a request and wait for review'
                   : '인증을 받으면 프로필에 인증 마크가 표시돼요\n신뢰도/노출 가중치가 올라갑니다\n신청 후 검토를 기다려주세요');
 
-            const askQuestionDescription = isMobileVariant ? tooltipSummary(askQuestionTooltipText) : undefined;
-            const sharePostDescription = isMobileVariant ? tooltipSummary(sharePostTooltipText) : undefined;
-            const verificationDescription = isMobileVariant ? tooltipSummary(verificationTooltipText) : undefined;
+            const askQuestionDescription = isMobileVariant || showInlineDescriptions ? tooltipSummary(askQuestionTooltipText) : undefined;
+            const sharePostDescription = isMobileVariant || showInlineDescriptions ? tooltipSummary(sharePostTooltipText) : undefined;
+            const verificationDescription = isMobileVariant || showInlineDescriptions ? tooltipSummary(verificationTooltipText) : undefined;
 
             return (
               <>
@@ -327,15 +310,7 @@ export default function CategorySidebar({
             count={0}
             isActive={false}
             onClick={handleCategoryClick}
-            tooltip={
-              isMobileVariant
-                ? undefined
-                : tooltipLines(
-                    askQuestionTooltipText
-                  )
-            }
-            tooltipPosition={actionTooltipPosition}
-            tooltipTouchBehavior={tooltipTouchBehavior}
+            tooltip={undefined}
             className="border-l-4 border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
           <CategoryItem
@@ -346,15 +321,7 @@ export default function CategorySidebar({
             count={0}
             isActive={false}
             onClick={handleCategoryClick}
-            tooltip={
-              isMobileVariant
-                ? undefined
-                : tooltipLines(
-                    sharePostTooltipText
-                  )
-            }
-            tooltipPosition={actionTooltipPosition}
-            tooltipTouchBehavior={tooltipTouchBehavior}
+            tooltip={undefined}
             className="border-l-4 border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
           <CategoryItem
@@ -365,15 +332,7 @@ export default function CategorySidebar({
             count={0}
             isActive={selectedCategory === 'verification-request'}
             onClick={handleCategoryClick}
-            tooltip={
-              isMobileVariant
-                ? undefined
-                : tooltipLines(
-                    verificationTooltipText
-                  )
-            }
-            tooltipPosition={actionTooltipPosition}
-            tooltipTouchBehavior={tooltipTouchBehavior}
+            tooltip={undefined}
             className="border-l-4 border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-semibold hover:scale-[1.02] transition-all duration-200 w-full"
           />
               </>
@@ -387,8 +346,8 @@ export default function CategorySidebar({
           </h3>
           <div className="space-y-1">
             {groupOptions.map((group) => (
-              <div key={group.slug} className="space-y-1">
-                <div className="flex items-center justify-between pr-2 py-1 gap-2">
+                <div key={group.slug} className="space-y-1">
+                <div className="flex items-center gap-2 pr-3 py-1 min-w-0">
                   <CategoryItem
                     id={group.slug}
                     name={group.label}
@@ -405,7 +364,7 @@ export default function CategorySidebar({
                       const apiChild = apiBySlug.get(child.slug);
                       const subscribed = apiChild ? subscribedIds.has(apiChild.id) : false;
                       return (
-                        <div key={child.slug} className="flex items-center justify-between pr-2 py-1 gap-2">
+                        <div key={child.slug} className="flex items-center gap-2 pr-3 py-1 min-w-0">
                           <CategoryItem
                             id={child.slug}
                             name={getCategoryName(child, locale)}
@@ -418,7 +377,7 @@ export default function CategorySidebar({
                           {apiChild ? (
                             <button
                               onClick={() => handleSubscribe(apiChild.id)}
-                              className={`text-[11px] min-w-[84px] px-3 py-1.5 rounded-full transition-colors ${
+                              className={`shrink-0 whitespace-nowrap text-[11px] min-w-[84px] px-3 py-1.5 rounded-full transition-colors ${
                                 subscribed
                                   ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
                                   : 'border border-transparent bg-blue-600 text-white shadow-sm hover:bg-blue-700'
@@ -446,7 +405,7 @@ export default function CategorySidebar({
           {topicSubscriptions.length > 0 ? (
             <div className="space-y-1">
               {topicSubscriptions.map((cat) => (
-                <div key={cat.id} className="flex items-center justify-between pr-2 pl-0 py-1.5 gap-2">
+                <div key={cat.id} className="flex items-center gap-2 pr-3 pl-0 py-1.5 min-w-0">
                   <CategoryItem
                     id={cat.slug}
                     name={getTranslatedCategoryName(cat)}
@@ -458,7 +417,7 @@ export default function CategorySidebar({
                   />
                   <button
                     onClick={() => handleSubscribe(cat.id)}
-                    className="text-[11px] min-w-[84px] px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="shrink-0 whitespace-nowrap text-[11px] min-w-[84px] px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
                     {t.subscribedLabel || t.subscribed || '구독 중'}
                   </button>

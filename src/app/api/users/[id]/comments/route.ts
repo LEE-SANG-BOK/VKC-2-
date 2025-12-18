@@ -164,11 +164,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     }));
 
-    return paginatedResponse(formattedComments, page, limit, total, {
+    const response = paginatedResponse(formattedComments, page, limit, total, {
       nextCursor,
       hasMore: rawHasMore,
       paginationMode: useCursorPagination ? 'cursor' : 'offset',
     });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/users/[id]/comments error:', error);
     return serverErrorResponse();

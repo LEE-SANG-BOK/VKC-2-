@@ -13,16 +13,18 @@ import SimilarQuestionPrompt from '@/components/organisms/SimilarQuestionPrompt'
 import Modal from '@/components/atoms/Modal';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
+import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
+import type { Locale } from '@/i18n/config';
 import { UGC_LIMITS, getPlainTextLength, isLowQualityText } from '@/lib/validation/ugc';
 
-const RichTextEditor = dynamic(() => import('@/components/molecules/RichTextEditor'), {
+const RichTextEditor = dynamic(() => import('@/components/molecules/editor/RichTextEditor'), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse" />,
 });
 
 interface NewPostClientProps {
   translations: Record<string, unknown>;
-  lang: string;
+  lang: Locale;
 }
 
 function NewPostForm({ translations, lang }: NewPostClientProps) {
@@ -247,90 +249,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   };
 
   const localizeTag = (tag: string) => {
-    const key = tag.trim().toLowerCase();
-    const mapEn: Record<string, string> = {
-      '비자': 'Visa',
-      '연장': 'Extension',
-      '체류': 'Stay',
-      '추천': 'Recommend',
-      '취업': 'Jobs',
-      '채용': 'Hiring',
-      '면접': 'Interview',
-      '인턴': 'Internship',
-      '공모전': 'Contest',
-      '포트폴리오': 'Portfolio',
-      '장학금': 'Scholarship',
-      '학업': 'Study',
-      '수업': 'Classes',
-      '생활': 'Life',
-      '주거': 'Housing',
-      '교통': 'Transport',
-      '금융': 'Finance',
-      '계좌개설': 'Bank account',
-      '송금': 'Remittance',
-      '의료': 'Healthcare',
-      '보험': 'Insurance',
-      '병원': 'Hospital',
-      '법률': 'Legal',
-      '계약': 'Contract',
-      '신고': 'Report',
-      '비즈니스': 'Business',
-      '창업': 'Startup',
-      '서류': 'Documents',
-      '개발': 'Development',
-      '프로젝트': 'Project',
-      '게임': 'Game',
-      '커뮤니티': 'Community',
-      '리뷰': 'Review',
-      '한국어': 'Korean',
-      '토픽': 'TOPIK',
-      '정보': 'Info',
-      '가이드': 'Guide',
-      '생활정보': 'Life tips'
-    };
-    const mapVi: Record<string, string> = {
-      '비자': 'Visa',
-      '연장': 'Gia hạn',
-      '체류': 'Lưu trú',
-      '추천': 'Gợi ý',
-      '취업': 'Việc làm',
-      '채용': 'Tuyển dụng',
-      '면접': 'Phỏng vấn',
-      '인턴': 'Thực tập',
-      '공모전': 'Cuộc thi',
-      '포트폴리오': 'Hồ sơ',
-      '장학금': 'Học bổng',
-      '학업': 'Học tập',
-      '수업': 'Lớp học',
-      '생활': 'Sinh hoạt',
-      '주거': 'Nhà ở',
-      '교통': 'Giao thông',
-      '금융': 'Tài chính',
-      '계좌개설': 'Mở tài khoản',
-      '송금': 'Chuyển tiền',
-      '의료': 'Y tế',
-      '보험': 'Bảo hiểm',
-      '병원': 'Bệnh viện',
-      '법률': 'Pháp lý',
-      '계약': 'Hợp đồng',
-      '신고': 'Khai báo',
-      '비즈니스': 'Kinh doanh',
-      '창업': 'Khởi nghiệp',
-      '서류': 'Hồ sơ',
-      '개발': 'Phát triển',
-      '프로젝트': 'Dự án',
-      '게임': 'Game',
-      '커뮤니티': 'Cộng đồng',
-      '리뷰': 'Đánh giá',
-      '한국어': 'Tiếng Hàn',
-      '토픽': 'TOPIK',
-      '정보': 'Thông tin',
-      '가이드': 'Hướng dẫn',
-      '생활정보': 'Mẹo sinh hoạt'
-    };
-    if (lang === 'en' && mapEn[key]) return mapEn[key];
-    if (lang === 'vi' && mapVi[key]) return mapVi[key];
-    return tag;
+    return localizeCommonTagLabel(tag, lang);
   };
 
   const resolveLocalizedLabel = (slug?: string) => {

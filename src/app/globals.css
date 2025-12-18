@@ -388,6 +388,7 @@
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
+  --bg-primary: var(--card);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
@@ -860,6 +861,20 @@
   .question-card-thumb__inner img {
     max-height: 156px !important;
   }
+  .question-card-footer-fixed {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .question-card-actions-row {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
   .question-card-footer-fixed {
     flex-wrap: wrap;
     row-gap: 8px;

@@ -139,7 +139,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
       isAdopted: post.isResolved || false,
     };
 
-    return successResponse(postDetail);
+    const response = successResponse(postDetail);
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/posts/[id] error:', error);
     // 커넥션 고갈 등 DB 에러 시 503으로 안내

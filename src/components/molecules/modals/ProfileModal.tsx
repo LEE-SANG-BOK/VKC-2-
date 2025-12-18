@@ -5,16 +5,9 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { X, ShieldCheck, Edit, Info } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/ko';
-import 'dayjs/locale/en';
-import 'dayjs/locale/vi';
 import Modal from '@/components/atoms/Modal';
 import Tooltip from '@/components/atoms/Tooltip';
-import { useUserProfile, useMyProfile } from '@/repo/users/query';
-
-dayjs.extend(relativeTime);
+import { useUserProfile } from '@/repo/users/query';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -33,24 +26,15 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
 
   const t = translations;
 
-  dayjs.locale(locale);
-
-  const { data: profileData, isLoading, isError, refetch, error } = useUserProfile(user?.id || '', {
+  const { data: profile, isLoading, isError, refetch, error } = useUserProfile(user?.id || '', {
     enabled: !!user?.id && isOpen,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: 2,
     retryDelay: (attempt) => Math.min(2000, 1000 * 2 ** attempt),
   });
-  const { data: selfProfile, isError: myProfileError, refetch: refetchMyProfile } = useMyProfile({
-    enabled: !!user && isOpen,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    retry: 2,
-    retryDelay: (attempt) => Math.min(2000, 1000 * 2 ** attempt),
-  });
-
-  const profile = profileData || selfProfile;
 
   const handleEditProfile = () => {
     onClose();
@@ -60,6 +44,33 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
   const handleVerification = () => {
     onClose();
     router.push(`/${locale}/verification/request`);
+  };
+
+  const formatJoinDate = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    if (locale === 'vi') {
+      return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(date);
+    }
+
+    if (locale === 'en') {
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+      }).format(date);
+    }
+
+    return new Intl.DateTimeFormat('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(date);
   };
 
   const getGenderLabel = (gender: string) => {
@@ -232,7 +243,7 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
                         <span className="text-gray-400">{t.joinDate || '가입일'}</span>
                         <br />
                         <span className="text-gray-700 dark:text-gray-300">
-                          {dayjs(profile.joinedAt).format(locale === 'ko' ? 'YYYY년 MM월 DD일' : locale === 'vi' ? 'DD/MM/YYYY' : 'MMM DD, YYYY')}
+                          {formatJoinDate(profile.joinedAt)}
                         </span>
                       </div>
                     </div>
@@ -309,7 +320,7 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
                 )}
               </div>
             </>
-          ) : isError || myProfileError ? (
+          ) : isError ? (
             <div className="text-center py-8 space-y-3">
               <div className="text-gray-500">
                 {t.profileLoadError || '프로필을 불러오지 못했습니다. 다시 시도해주세요.'}
@@ -321,7 +332,6 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
                 <button
                   onClick={() => {
                     refetch();
-                    refetchMyProfile();
                   }}
                   className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
                 >

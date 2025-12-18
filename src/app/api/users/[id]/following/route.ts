@@ -130,11 +130,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
       followedAt: row.followedAt,
     }));
 
-    return paginatedResponse(following, page, limit, total, {
+    const response = paginatedResponse(following, page, limit, total, {
       nextCursor,
       hasMore: rawHasMore,
       paginationMode: useCursorPagination ? 'cursor' : 'offset',
     });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/users/[id]/following error:', error);
     return serverErrorResponse();

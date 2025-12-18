@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { Fragment, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useRouter } from 'nextjs-toploader/app';
 import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
-import PostCard from '@/components/molecules/PostCard';
+import PostCard from '@/components/molecules/cards/PostCard';
 import { useInfinitePosts, useMyPostInteractions } from '@/repo/posts/query';
 import { useRecommendedUsers } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
@@ -30,7 +30,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const router = useRouter();
   const locale = (params?.lang as string) || 'ko';
   const { data: session } = useSession();
-  const { data: recommended, isLoading: recommendedLoading } = useRecommendedUsers({ enabled: selectedCategory === 'following' });
   const { data: mySubs } = useMySubscriptions(selectedCategory === 'subscribed' && !!session?.user);
   const topicSlugs = useMemo(() => {
     return new Set(Object.values(CATEGORY_GROUPS).flatMap((group) => group.slugs as readonly string[]));
@@ -162,6 +161,14 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   // 모든 페이지의 게시글을 평탄화
   const allPosts =
     data?.pages.flatMap((page: PaginatedResponse<PostListItem>) => page.data) || [];
+
+  const shouldInsertRecommended = Boolean(session?.user) && !isSearchMode && (selectedCategory === 'popular' || selectedCategory === 'latest') && allPosts.length >= 5;
+  const shouldFetchRecommended = Boolean(session?.user) && (selectedCategory === 'following' || shouldInsertRecommended);
+  const { data: recommended, isLoading: recommendedLoading } = useRecommendedUsers({ enabled: shouldFetchRecommended });
+  const sortedRecommendations = useMemo(() => {
+    const list = recommended?.data ?? [];
+    return [...list].sort((a, b) => (b.stats?.followers ?? 0) - (a.stats?.followers ?? 0));
+  }, [recommended?.data]);
 
   const shouldFetchInteractions = Boolean(session?.user) && !filterForQueryResolved && allPosts.length > 0;
   const interactionPostIds = useMemo(() => allPosts.map((post) => post.id), [allPosts]);
@@ -307,47 +314,121 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
       {!isLoading && (
         <div className="flex flex-col gap-2">
           {allPosts.length > 0 ? (
-            allPosts.map((post: PostListItem) => (
-              <div key={post.id} className="flex flex-col">
-                <PostCard
-                  id={post.id}
-                  author={{
-                    id: post.author?.id,
-                    name: post.author?.displayName || post.author?.name || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음'),
-                    avatar: (post.author as any)?.image || (post.author as any)?.avatar || '/default-avatar.jpg',
-                    followers: (post.author as any)?.followers ?? 0,
-                    isFollowing: (post.author as any)?.isFollowing ?? false,
-                    isVerified: post.author?.isVerified || false,
-                    isExpert: post.author?.isExpert || false,
-                    badgeType: post.author?.badgeType || null,
-                  }}
-                  title={post.title}
-                  excerpt={post.excerpt || (post.content || '').replace(/<img[^>]*>/gi, '').replace(/<[^>]*>/g, '').trim().substring(0, 200)}
-                  tags={post.tags}
-                  stats={{
-                    likes: (post as any).likesCount ?? post.likes ?? 0,
-                    comments: post.type === 'question'
-                      ? (post.answersCount ?? post.commentsCount ?? 0)
-                      : (post.commentsCount ?? 0),
-                    shares: 0,
-                  }}
-                  category={(post as any).category}
-                  subcategory={(post as any).subcategory}
-                  thumbnail={(post as any).thumbnail}
-                  thumbnails={(post as any).thumbnails}
-                  publishedAt={dayjs(post.createdAt).format('YYYY.MM.DD HH:mm')}
-                  isQuestion={post.type === 'question'}
-                  isAdopted={post.isResolved}
-                  isLiked={shouldFetchInteractions ? likedPostIdSet.has(post.id) : post.isLiked}
-                  isBookmarked={shouldFetchInteractions ? bookmarkedPostIdSet.has(post.id) : post.isBookmarked}
-                  imageCount={(post as any).imageCount}
-                  certifiedResponderCount={(post as any).certifiedResponderCount}
-                  otherResponderCount={(post as any).otherResponderCount}
-                  trustBadge={(post as any).trustBadge}
-                  trustWeight={(post as any).trustWeight}
-                  translations={translations}
-                />
-              </div>
+            allPosts.map((post: PostListItem, idx) => (
+              <Fragment key={post.id}>
+                <div className="flex flex-col">
+                  <PostCard
+                    id={post.id}
+                    author={{
+                      id: post.author?.id,
+                      name: post.author?.displayName || post.author?.name || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음'),
+                      avatar: (post.author as any)?.image || (post.author as any)?.avatar || '/default-avatar.jpg',
+                      followers: (post.author as any)?.followers ?? 0,
+                      isFollowing: (post.author as any)?.isFollowing ?? false,
+                      isVerified: post.author?.isVerified || false,
+                      isExpert: post.author?.isExpert || false,
+                      badgeType: post.author?.badgeType || null,
+                    }}
+                    title={post.title}
+                    excerpt={post.excerpt || (post.content || '').replace(/<img[^>]*>/gi, '').replace(/<[^>]*>/g, '').trim().substring(0, 200)}
+                    tags={post.tags}
+                    stats={{
+                      likes: (post as any).likesCount ?? post.likes ?? 0,
+                      comments: post.type === 'question'
+                        ? (post.answersCount ?? post.commentsCount ?? 0)
+                        : (post.commentsCount ?? 0),
+                      shares: 0,
+                    }}
+                    category={(post as any).category}
+                    subcategory={(post as any).subcategory}
+                    thumbnail={(post as any).thumbnail}
+                    thumbnails={(post as any).thumbnails}
+                    publishedAt={dayjs(post.createdAt).format('YYYY.MM.DD HH:mm')}
+                    isQuestion={post.type === 'question'}
+                    isAdopted={post.isResolved}
+                    isLiked={shouldFetchInteractions ? likedPostIdSet.has(post.id) : post.isLiked}
+                    isBookmarked={shouldFetchInteractions ? bookmarkedPostIdSet.has(post.id) : post.isBookmarked}
+                    imageCount={(post as any).imageCount}
+                    certifiedResponderCount={(post as any).certifiedResponderCount}
+                    otherResponderCount={(post as any).otherResponderCount}
+                    trustBadge={(post as any).trustBadge}
+                    trustWeight={(post as any).trustWeight}
+                    translations={translations}
+                  />
+                </div>
+                {shouldInsertRecommended && idx === 4 && (recommendedLoading || sortedRecommendations.length > 0) ? (
+                  <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 mt-1">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {recommendedUsersLabel}
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {recommendedLoading
+                        ? Array.from({ length: 4 }).map((_, sIdx) => (
+                          <div
+                            key={sIdx}
+                            className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-3"
+                          >
+                            <div className="flex items-center gap-3 w-full animate-pulse">
+                              <div className="flex flex-col items-center gap-2">
+                                <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-800" />
+                                <div className="h-8 w-20 rounded-md bg-gray-200 dark:bg-gray-800" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="h-4 w-36 rounded bg-gray-200 dark:bg-gray-800" />
+                                <div className="mt-2 h-3 w-48 rounded bg-gray-200 dark:bg-gray-800" />
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                        : sortedRecommendations.map((user) => (
+                          <div
+                            key={user.id}
+                            className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-3"
+                          >
+                            <div className="flex items-center gap-3 w-full">
+                              <div className="flex flex-col items-center gap-2">
+                                <Avatar
+                                  name={user.displayName || user.email || 'U'}
+                                  imageUrl={(user as any)?.image}
+                                  size="lg"
+                                  hoverHighlight
+                                />
+                                <FollowButton
+                                  userId={String(user.id)}
+                                  userName={user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음')}
+                                  isFollowing={followStates[user.id] ?? (user as any)?.isFollowing ?? false}
+                                  size="sm"
+                                  onToggle={(next) =>
+                                    setFollowStates((prev) => ({
+                                      ...prev,
+                                      [user.id]: next,
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => router.push(`/${locale}/profile/${user.id}`)}
+                                  className="text-left"
+                                >
+                                  <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                                    {user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음')}
+                                  </div>
+                                  <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                                    #1: {user.stats?.followers ?? 0} {followerLabel}, #2: {user.stats?.posts ?? 0} {postsLabel}, #3: {user.stats?.following ?? 0} {followingLabel}
+                                  </div>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ) : null}
+              </Fragment>
             ))
           ) : (
             <div className="flex flex-col gap-6 py-10">
@@ -387,7 +468,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                       </div>
                     </div>
                   ))
-                  : [...recommended!.data].sort((a, b) => (b.stats?.followers ?? 0) - (a.stats?.followers ?? 0)).map((user) => (
+                  : sortedRecommendations.map((user) => (
                     <div
                       key={user.id}
                       className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3"

@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import Header from "@/components/organisms/Header";
 import CategorySidebar from "@/components/organisms/CategorySidebar";
-import AccountStatusBanner from "@/components/molecules/AccountStatusBanner";
+import AccountStatusBanner from "@/components/molecules/banners/AccountStatusBanner";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { onHomeReset } from "@/utils/homeReset";
 
@@ -14,11 +14,22 @@ interface MainLayoutProps {
   hideSidebar?: boolean;
   hideSearch?: boolean;
   rightRail?: ReactNode;
+  centerVariant?: 'panel' | 'canvas';
   translations: Record<string, unknown>;
 }
 
-export default function MainLayout({ children, selectedCategory = 'all', onCategoryChange, hideSidebar = false, hideSearch = false, rightRail, translations }: MainLayoutProps) {
+export default function MainLayout({ children, selectedCategory = 'all', onCategoryChange, hideSidebar = false, hideSearch = false, rightRail, centerVariant = 'panel', translations }: MainLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const hasLeftRail = !hideSidebar;
+  const hasRightRail = Boolean(rightRail);
+  const gridColumns = hasLeftRail && hasRightRail
+    ? 'lg:grid-cols-[320px,minmax(0,1fr),320px] 2xl:grid-cols-[320px,minmax(0,720px),320px] 2xl:justify-center'
+    : hasLeftRail
+      ? 'lg:grid-cols-[320px,minmax(0,1fr)] 2xl:grid-cols-[320px,minmax(0,720px)] 2xl:justify-center'
+      : hasRightRail
+        ? 'lg:grid-cols-[minmax(0,1fr),320px] 2xl:grid-cols-[minmax(0,720px),320px] 2xl:justify-center'
+        : 'lg:grid-cols-1';
 
   useEffect(() => onHomeReset(() => {
     setIsMobileMenuOpen(false);
@@ -26,7 +37,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
   }), []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 lg:bg-gray-100 lg:dark:bg-gray-950 relative transition-colors duration-300">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 relative transition-colors duration-300">
       {/* Account Status Banner */}
       <AccountStatusBanner />
 
@@ -39,10 +50,10 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
         />
       </Suspense>
 
-      <div className="container mx-auto px-2 sm:px-3 lg:px-5 relative z-10 bg-gray-50 dark:bg-gray-900">
+      <div className="relative z-10 w-full px-2 sm:px-3 lg:px-4">
         <div className="absolute inset-x-0 top-0 h-[300px] bg-gradient-to-b from-blue-500/5 dark:from-blue-500/10 to-transparent pointer-events-none z-0" />
-        <div className="relative z-10 flex gap-4 lg:gap-6">
-          {!hideSidebar && (
+        <div className={`relative z-10 mx-auto max-w-[1680px] grid grid-cols-1 items-start ${gridColumns} gap-4 lg:gap-6`}>
+          {hasLeftRail ? (
             <>
               <div className="hidden lg:block">
                 <CategorySidebar
@@ -65,11 +76,15 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
                 </SheetContent>
               </Sheet>
             </>
-          )}
-          <main className="flex-1 min-w-0">
+          ) : null}
+          <main
+            className={`min-w-0 w-full ${
+              centerVariant === 'canvas' ? 'bg-transparent' : 'bg-white dark:bg-gray-900'
+            } ${hasLeftRail && hasRightRail ? 'lg:max-w-[720px] lg:justify-self-center' : ''}`}
+          >
             {children}
           </main>
-          {rightRail ? (
+          {hasRightRail ? (
             <aside className="hidden lg:block w-[320px] shrink-0">
               <div className="sticky top-[var(--vk-header-height)]">
                 {rightRail}

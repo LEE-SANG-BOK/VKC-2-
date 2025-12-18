@@ -1,23 +1,36 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'nextjs-toploader/app';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Bell, Menu, X } from 'lucide-react';
-import debounce from 'lodash/debounce';
 import Logo from '@/components/atoms/Logo';
 import Button from '@/components/atoms/Button';
 import Tooltip from '@/components/atoms/Tooltip';
-import UserProfile from '@/components/molecules/UserProfile';
+import UserProfile from '@/components/molecules/user/UserProfile';
 import LanguageSwitcher from '@/components/atoms/LanguageSwitcher';
 import { useSession, signOut } from 'next-auth/react';
 import { useUnreadNotificationCount } from '@/repo/notifications/query';
-import { pickExampleQuestion } from '@/lib/constants/search-examples';
-import { LEGACY_CATEGORIES } from '@/lib/constants/categories';
-import { CATEGORY_GROUPS } from '@/lib/constants/categories';
+import type { Locale } from '@/i18n/config';
 
 const NotificationModal = dynamic(() => import('@/components/molecules/modals/NotificationModal'), { ssr: false });
+
+function HeaderSearchFallback() {
+  return (
+    <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 max-w-4xl w-full shadow-sm animate-pulse">
+      <div className="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700" />
+      <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
+      <div className="h-4 flex-1 rounded bg-gray-200 dark:bg-gray-700" />
+      <div className="h-8 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
+    </div>
+  );
+}
+
+const HeaderSearch = dynamic(() => import('@/components/molecules/search/HeaderSearch'), {
+  ssr: false,
+  loading: () => <HeaderSearchFallback />,
+});
 
 interface HeaderProps {
   isMobileMenuOpen: boolean;
@@ -34,92 +47,20 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
   const tSearch = translations?.search || {};
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const locale = params.lang as string || 'ko';
+  const locale = (params.lang as Locale) || 'ko';
   const { data: session, status } = useSession();
   const user = session?.user;
   const logout = () => signOut();
   const [isScrolled, setIsScrolled] = useState(false);
   const { data: unreadCountData } = useUnreadNotificationCount(!!user);
-  const [exampleText, setExampleText] = useState('');
-  const getCategoryLabel = (cat: any) => {
-    const base = LEGACY_CATEGORIES.find((c) => c.slug === cat?.slug);
-    if (base) {
-      if (locale === 'vi' && base.name_vi) return base.name_vi;
-      if (locale === 'en' && base.name_en) return base.name_en;
-      return base.name;
-    }
-    if (!cat) return '';
-    if (locale === 'vi' && cat.name_vi) return cat.name_vi;
-    if (locale === 'en' && cat.name_en) return cat.name_en;
-    return cat.name || '';
-  };
-  const getGroupLabel = (group: (typeof CATEGORY_GROUPS)[keyof typeof CATEGORY_GROUPS]) => {
-    if (locale === 'vi' && group.label_vi) return group.label_vi;
-    if (locale === 'en' && group.label_en) return group.label_en;
-    return group.label;
-  };
-  const parentOptions = useMemo(() => {
-    return Object.entries(CATEGORY_GROUPS).map(([slug, group]) => {
-      const slugs = Array.from(group.slugs) as Array<(typeof LEGACY_CATEGORIES)[number]['slug']>;
-      const groupLabel = `${group.emoji} ${getGroupLabel(group)}`;
-      const children = LEGACY_CATEGORIES.filter((cat) => slugs.includes(cat.slug));
-      return {
-        id: slug,
-        slug,
-        label: groupLabel,
-        children,
-      };
-    });
-  }, [locale]);
-
-  // 검색어 상태 관리 - URL 파라미터로 초기화
-  const [searchKeyword, setSearchKeyword] = useState(searchParams.get('q') || searchParams.get('s') || '');
-  const [parentCategory, setParentCategory] = useState('all');
-  const [childCategory, setChildCategory] = useState('');
+  const unreadCount = unreadCountData?.data?.count ?? 0;
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [shouldRenderSearch, setShouldRenderSearch] = useState(false);
   const brandIntroFallback = useMemo(() => {
     if (locale === 'en') return 'Ask about Korea, get trustworthy answers.';
     if (locale === 'vi') return 'Hỏi về Hàn Quốc, trả lời đáng tin.';
     return '한국을 묻고, 믿을 수 있게 답하다.';
   }, [locale]);
-
-  const examplePool = useMemo(() => {
-    const pool = [
-      tSearch.exampleLiving,
-      tSearch.exampleWork,
-      tSearch.exampleStudy,
-      tSearch.exampleStudentLife,
-      tSearch.popularExample1,
-      tSearch.popularExample2,
-      tSearch.popularExample3,
-    ].filter(Boolean) as string[];
-    return pool.length > 0 ? pool : null;
-  }, [
-    tSearch.exampleLiving,
-    tSearch.exampleWork,
-    tSearch.exampleStudy,
-    tSearch.exampleStudentLife,
-    tSearch.popularExample1,
-    tSearch.popularExample2,
-    tSearch.popularExample3,
-  ]);
-  const getRandomExample = useCallback(() => {
-    if (examplePool && examplePool.length > 0) {
-      return examplePool[Math.floor(Math.random() * examplePool.length)];
-    }
-    return tSearch.searchPlaceholder || '검색어를 입력하세요';
-  }, [examplePool, tSearch.searchPlaceholder]);
-
-  const unreadCount = unreadCountData?.data?.count ?? 0;
-
-  // URL 파라미터 변경 시 검색어 동기화 (필요한 경우에만)
-  useEffect(() => {
-    const urlKeyword = searchParams.get('q') || searchParams.get('s');
-    if (urlKeyword !== null && urlKeyword !== searchKeyword) {
-      setSearchKeyword(urlKeyword);
-    }
-  }, [searchParams, searchKeyword]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -130,178 +71,15 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 대분류 변경 시 자식 카테고리 초기화
-  const handleParentCategoryChange = (category: string) => {
-    setParentCategory(category);
-    setChildCategory(''); // 핸들러에서 직접 초기화
-  };
-
-  // 선택된 대분류의 자식 카테고리 가져오기
-  const selectedParent = parentOptions.find((opt) => opt.id === parentCategory);
-  const childCategories = selectedParent?.children || [];
-
-  // 검색 실행 함수
-  const executeSearch = useCallback(() => {
-    const params = new URLSearchParams();
-
-    if (searchKeyword.trim()) {
-      params.set('q', searchKeyword.trim());
-    }
-
-    const selectedCat = childCategory || (parentCategory !== 'all' ? parentCategory : '');
-    if (selectedCat) {
-      params.set('c', selectedCat);
-    }
-
-    // 검색 페이지로 이동
-    router.push(`/${locale}/search?${params.toString()}`);
-  }, [searchKeyword, parentCategory, childCategory, locale, router]);
-
-  // Debounced 검색 함수 (500ms 지연)
-  const debouncedSearch = useMemo(
-    () =>
-      debounce((keyword: string) => {
-        const params = new URLSearchParams();
-
-        if (keyword.trim()) {
-          params.set('q', keyword.trim());
-        }
-
-        const selectedCat = childCategory || (parentCategory !== 'all' ? parentCategory : '');
-        if (selectedCat) {
-          params.set('c', selectedCat);
-        }
-
-        // 검색 페이지로 이동
-        router.push(`/${locale}/search?${params.toString()}`);
-      }, 500),
-    [parentCategory, childCategory, locale, router]
-  );
-
-  // 검색어 변경 핸들러
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchKeyword(value);
-    debouncedSearch(value);
-  };
-
-  // Enter 키 입력 시 즉시 검색
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      debouncedSearch.cancel(); // debounce 취소
-      executeSearch();
-    }
-  };
-
-  // 컴포넌트 언마운트 시 debounce 정리
   useEffect(() => {
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [debouncedSearch]);
+    if (hideSearch) return;
 
-  const [isExampleActive, setIsExampleActive] = useState(false);
-  const [exampleCategory, setExampleCategory] = useState<string>('');
-  const [hasSearchFocused, setHasSearchFocused] = useState(false);
-  const groupDefaultSlug: Record<string, string> = useMemo(() => ({
-    visa: 'visa-process',
-    living: 'cost-of-living',
-    career: 'business',
-    students: 'scholarship',
-  }), []);
-
-  // Example Question Logic
-  useEffect(() => {
-    const pickFallbackExample = () => getRandomExample() || '';
-    // Find the selected category object to get the slug
-    const resolveSlug = () => {
-      if (childCategory) {
-        return childCategory;
-      }
-      if (parentCategory && parentCategory !== 'all') {
-        const mapped = groupDefaultSlug[parentCategory];
-        if (mapped) return mapped;
-      }
-      return '';
-    };
-
-    const categorySlug = resolveSlug();
-
-    if (!categorySlug) {
-      const fallback = pickFallbackExample();
-      if (!hasSearchFocused && fallback) {
-        setSearchKeyword(fallback);
-        setIsExampleActive(true);
-        setExampleText(fallback);
-      }
-      if (exampleCategory) setExampleCategory('');
-      return;
-    }
-
-    const example = pickExampleQuestion(categorySlug, locale) || pickFallbackExample();
-    const isNewCategory = exampleCategory !== categorySlug;
-
-    if (isNewCategory) {
-      setHasSearchFocused(false);
-      setExampleText(example || '');
-    }
-
-    if (!example) {
-      if (isExampleActive) {
-        setIsExampleActive(false);
-      }
-      if (isNewCategory) {
-        setExampleCategory(categorySlug);
-      }
-      return;
-    }
-
-    // If user has typed something (and it's not the example) or focused, don't override
-    if (!isNewCategory && (!isExampleActive || hasSearchFocused) && searchKeyword.trim().length > 0) {
-      return;
-    }
-
-    if (!hasSearchFocused && searchKeyword !== example) {
-      setSearchKeyword(example);
-      setIsExampleActive(true);
-      setExampleText(example || '');
-    }
-    if (exampleCategory !== categorySlug) {
-      setExampleCategory(categorySlug);
-    }
-  }, [parentCategory, childCategory, searchKeyword, isExampleActive, exampleCategory, hasSearchFocused]);
-  useEffect(() => {
-    if (!searchKeyword && !hasSearchFocused) {
-      const fallback = getRandomExample();
-      if (fallback) {
-        setSearchKeyword(fallback);
-        setIsExampleActive(true);
-        setExampleText(fallback);
-      }
-    }
-  }, [getRandomExample, hasSearchFocused, searchKeyword]);
-
-  const handleSearchFocus = () => {
-    setHasSearchFocused(true);
-    if (isExampleActive || (exampleText && searchKeyword === exampleText)) {
-      setSearchKeyword('');
-      setIsExampleActive(false);
-      setExampleText('');
-    }
-  };
-  const handleSearchActivate = () => {
-    handleSearchFocus();
-  };
-  const handleSearchBlur = () => {
-    if (searchKeyword.trim().length === 0) {
-      const fallback = getRandomExample();
-      setSearchKeyword(fallback);
-      setExampleText(fallback);
-      setIsExampleActive(true);
-      setHasSearchFocused(false);
-    }
-  };
+    const media = window.matchMedia('(min-width: 1024px)');
+    const handleChange = () => setShouldRenderSearch(media.matches);
+    handleChange();
+    media.addEventListener('change', handleChange);
+    return () => media.removeEventListener('change', handleChange);
+  }, [hideSearch]);
 
   return (
     <header
@@ -312,10 +90,8 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
         }
         text-gray-900 dark:text-white`}
     >
-      {/* Top Row: Logo and Actions */}
-      <div className="container mx-auto flex h-[var(--vk-header-height)] items-center justify-between px-2 sm:px-3 lg:px-5">
-        {/* Logo / Back Button */}
-        <div className="flex items-center space-x-1.5 sm:space-x-3">
+      <div className="mx-auto grid w-full max-w-[1680px] h-[var(--vk-header-height)] grid-cols-[auto,minmax(0,1fr),auto] lg:grid-cols-[320px,minmax(0,1fr),320px] 2xl:grid-cols-[320px,minmax(0,720px),320px] items-center gap-2 px-2 sm:px-3 lg:px-4">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 justify-self-start">
           {showBackButton && (
             <button
               onClick={() => router.back()}
@@ -325,7 +101,6 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
               <span className="text-lg sm:text-base">←</span> {tSearch.goBack || '뒤로'}
             </button>
           )}
-          {/* Mobile Menu Button */}
           {!showBackButton && (
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -348,88 +123,19 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
           </div>
         </div>
 
-        {/* Search Bar - Large Desktop Only (Inline) */}
         {!hideSearch && (
-          <div className="flex-1 hidden lg:flex justify-center items-center mx-3">
-            <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 max-w-4xl w-full shadow-sm">
-              {/* Main Category Dropdown */}
-              <div className="relative flex-shrink-0">
-                <select
-                  value={parentCategory}
-                  onChange={(e) => handleParentCategoryChange(e.target.value)}
-                  className="appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
-                >
-                  <option value="all">{tSearch.categoryLabel || '분류'}</option>
-                  {parentOptions.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.label}</option>
-                  ))}
-                </select>
-                <svg className="absolute right-0.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-
-              <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
-
-              {/* Sub Category Dropdown */}
-              {parentCategory !== 'all' && childCategories.length > 0 && (
-                <>
-                  <div className="relative flex-shrink-0">
-                    <select
-                      value={childCategory}
-                      onChange={(e) => setChildCategory(e.target.value)}
-                      className="appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
-                    >
-                      <option value="">{tSearch.subCategoryLabel || '하위 카테고리'}</option>
-                      {childCategories.map((child) => (
-                        <option key={child.slug} value={child.slug}>{getCategoryLabel(child)}</option>
-                      ))}
-                    </select>
-                    <svg className="absolute right-0.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                  <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
-                </>
-              )}
-
-              {/* Search Input */}
-              <div className="flex-1 flex items-center gap-2 min-w-0">
-                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                value={searchKeyword}
-                onChange={handleSearchChange}
-                onKeyDown={handleSearchKeyDown}
-                onFocus={handleSearchActivate}
-                onBlur={handleSearchBlur}
-                onClick={handleSearchActivate}
-                onMouseDown={handleSearchActivate}
-                placeholder={tSearch.searchPlaceholder || '검색어를 입력하세요'}
-                className={`flex-1 bg-transparent text-sm outline-none min-w-0 placeholder-gray-400 dark:placeholder-gray-500 ${
-                  isExampleActive && !hasSearchFocused ? 'text-gray-400 dark:text-gray-400' : 'text-gray-900 dark:text-white'
-                }`}
-              />
-              </div>
-
-              {/* Search Button */}
-              <button
-                onClick={executeSearch}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-full transition-colors flex-shrink-0"
-              >
-                {tSearch.searchButton || '검색'}
-              </button>
-            </div>
+          <div className="hidden lg:flex justify-center items-center justify-self-center w-full max-w-4xl">
+            {shouldRenderSearch ? (
+              <HeaderSearch locale={locale} translations={translations} />
+            ) : (
+              <HeaderSearchFallback />
+            )}
           </div>
         )}
 
-        {/* Right Side: Custom Actions or Notifications & Login/Profile */}
-        <div className="flex items-center space-x-1 sm:space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2 justify-self-end">
           {rightActions || (
             <>
-              {/* Notifications - Only show when logged in */}
               {user && (
                 <div className="relative">
                   <button
@@ -454,11 +160,8 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
                 </div>
               )}
 
-              {/* Interest Management CTA */}
-              {/* Language Switcher */}
               <LanguageSwitcher />
 
-              {/* Login/Profile */}
               {status === 'loading' ? (
                 <div className="flex items-center space-x-1 sm:space-x-1.5">
                   <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
@@ -498,7 +201,6 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
           )}
         </div>
       </div>
-
     </header>
   );
 }

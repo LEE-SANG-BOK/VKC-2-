@@ -7,6 +7,10 @@
 - [FE] 모바일 헤더/사이드바 툴팁 정리: 모바일 메뉴 버튼 테두리 강조, 헤더는 브랜드 툴팁만 유지, 사이드바 아이콘 툴팁은 모바일에서 비활성화
 - [FE] 사이드바 폭 정렬: 데스크톱 CategorySidebar 폭을 우측 레일과 동일한 320px로 맞춤
 - [FE] Desktop “바깥 여백만” 회색 분리: MainLayout에서 데스크톱 배경을 회색으로, 콘텐츠 영역은 기존 배경 유지
+- [LEAD] Facebook 스타일 캔버스: Header를 3-zone grid로 고정 정렬(센터 흔들림 방지) + MainLayout을 full-width 3컬럼으로 확장(회색 배경/카드 흰색 집중)
+- [LEAD] Facebook 레이아웃 핫픽스: Header max-width/grid를 MainLayout과 정렬해 ultrawide에서 헤더/본문 배치 어긋남 방지 + 홈 피드는 center 영역을 투명(canvas)으로 전환해 “카드만 흰색” 집중 강화
+- [LEAD] 피드 중간 추천: 인기/최신 피드에서 게시글 5개 이후 “추천 사용자” 섹션을 인서트(로그인 시만 fetch)
+- [LEAD] 모바일/태블릿 잘림 보강: CategorySidebar 구독 버튼 클립 방지(카테고리 행 width 규칙 수정) + PostCard 태그/액션이 `sm~md` 구간에서도 wrap/표시되도록 breakpoint 조정
 - [FE] PostCard 작성자 라인: 이름 옆에 `· Follow` / `· Following` 텍스트 CTA 표시 + 카드 클릭과 분리(클릭 stopPropagation)
 - [FE] PostCard 답변 CTA 정합성: 질문은 `answersCount` 기준으로 “답변 N개” 표시(ko는 `개` 표기) + 클릭 시 `#answers/#comments`로 이동
 - [FE] 팔로잉 추천 카드 UI: 추천 유저 카드에 `#1/#2/#3` 3개 고정 표기(팔로워/게시글/팔로잉) + 로딩 스켈레톤, 추천 API에 postsCount 실데이터 반영
@@ -16,6 +20,13 @@
 - [FE] `/verification/history` 실데이터 연동: TanStack Query로 이력 로딩 + “더 보기” 페이지네이션 지원
 - [FE] 모바일 PostCard 하단 잘림 보강: 액션 아이콘 행 wrap 처리로 “해결됨/미해결됨” 및 긴 라벨/태그가 클립되지 않도록 안정화
 - [LEAD] 폴더 구조 정리: `src/components/molecules/modals/*`로 모달 컴포넌트 경로 일원화(탐색/소유권/성능 작업 관리)
+- [LEAD] 리팩토링 심화(중복 제거): 태그 번역 맵 공통화(`src/lib/constants/tag-translations.ts`) + `normalizeKey` 유틸 공통화(`src/utils/normalizeKey.ts`)로 PostCard/NewPostClient/PostDetail 중복 제거
+- [LEAD] 헤더 검색 분리: `Header`에서 검색 로직을 `src/components/molecules/search/HeaderSearch.tsx`로 분리 + dynamic import(skeleton)로 초기 렌더 비용 완화
+- [LEAD] Dialog/AlertDialog 스크롤 기본값 보강: 긴 콘텐츠 모달이 화면을 넘지 않도록 max-height + overflow-y-auto 적용
+- [LEAD] 레거시 admin 신고 API 정리: 사용처가 없는 `/api/admin/content-reports/**` 제거(신고는 `reports` 파이프라인 단일화 기준)
+- [LEAD] 컴포넌트 구조 정리: 카드 컴포넌트(`PostCard/AnswerCard/CommentCard/NewsCard`)를 `src/components/molecules/cards/*`로 이동
+- [LEAD] 헤더 검색 트래픽 절감: 일반 페이지에서 타이핑 중 자동 라우팅을 제거하고(`/search`에서만 debounced 유지) 불필요한 서버 요청을 감소
+- [LEAD] molecules 구조 심화: banner/category/editor/search/user/action을 `src/components/molecules/*` 하위 폴더로 분리(충돌/탐색성 개선)
 - [LEAD] public 정리: 사용되지 않는 기본 SVG/원본 로고 파일 제거(레포 용량/혼선 감소)
 - [BE] 추천 사용자 API 과부하 방지: 기본 `limit` 축소 + 상한 clamp(default 8, max 12)
 - [BE] 팔로우 상태 응답 보강: 피드/프로필 리스트/북마크/팔로워/팔로잉/유저검색에 `isFollowing` 제공(배치 조회) + 리스트 기본 `content` 제외, `excerpt/thumbnails/imageCount` 제공

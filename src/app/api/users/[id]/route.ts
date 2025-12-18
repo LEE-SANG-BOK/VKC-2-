@@ -79,7 +79,7 @@ export async function GET(
     const username = sanitizeDisplayName(user.displayName || user.name, `user-${user.id.slice(0, 8)}`);
     const displayName = user.displayName || user.name || username || 'User';
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       id: user.id,
       username,
       displayName,
@@ -118,6 +118,8 @@ export async function GET(
         bookmarks: bookmarksResult[0]?.count || 0,
       },
     });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json(

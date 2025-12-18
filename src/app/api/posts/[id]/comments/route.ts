@@ -191,14 +191,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }));
 
     if (!wantsPagination) {
-      return successResponse(formatted);
+      const response = successResponse(formatted);
+      response.headers.set('Cache-Control', 'private, no-store');
+      return response;
     }
 
-    return paginatedResponse(formatted, page, limit, total, {
+    const response = paginatedResponse(formatted, page, limit, total, {
       nextCursor,
       hasMore: rawHasMore,
       paginationMode: useCursorPagination ? 'cursor' : 'offset',
     });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('GET /api/posts/[id]/comments error:', error);
     return serverErrorResponse();

@@ -32,7 +32,7 @@ export function useMyPostInteractions(
 
   return useQuery({
     queryKey: queryKeys.posts.interactions(normalizedPostIds),
-    queryFn: () => fetchMyPostInteractions(normalizedPostIds),
+    queryFn: ({ signal }) => fetchMyPostInteractions(normalizedPostIds, { signal }),
     enabled,
     staleTime: 1000 * 10,
     ...options,
@@ -65,13 +65,13 @@ export function useInfinitePosts(
     PageParam
   >({
     queryKey: queryKeys.posts.infinite(filters, resolvedInitialPage),
-    queryFn: ({ pageParam = { page: resolvedInitialPage } as PageParam }) =>
+    queryFn: ({ pageParam = { page: resolvedInitialPage } as PageParam, signal }) =>
       fetchPosts({
         ...filters,
         page: pageParam.page,
         cursor: pageParam.cursor || undefined,
         limit: 20,
-      }),
+      }, { signal }),
     getNextPageParam: (lastPage) => {
       const nextCursor = lastPage.meta?.nextCursor;
       if (nextCursor) {
@@ -94,7 +94,7 @@ export function usePosts(
 ) {
   return useQuery({
     queryKey: queryKeys.posts.list(filters),
-    queryFn: () => fetchPosts(filters),
+    queryFn: ({ signal }) => fetchPosts(filters, { signal }),
     ...options,
   });
 }
@@ -108,7 +108,7 @@ export function usePost(
 ) {
   return useQuery({
     queryKey: queryKeys.posts.detail(id),
-    queryFn: () => fetchPost(id),
+    queryFn: ({ signal }) => fetchPost(id, { signal }),
     enabled: !!id,
     ...options,
   });
@@ -122,11 +122,11 @@ export function usePost(
 export function useTrendingPosts(
   period: 'day' | 'week' | 'month' = 'week',
   limit: number = 10,
-  options?: Omit<UseQueryOptions<ApiResponse<Post[]>>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<ApiResponse<PostListItem[]>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: queryKeys.posts.trending(period),
-    queryFn: () => fetchTrendingPosts(period, limit),
+    queryFn: ({ signal }) => fetchTrendingPosts(period, limit, { signal }),
     ...options,
   });
 }

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, Mailbox } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/atoms/Modal';
-import PostCard from '@/components/molecules/PostCard';
+import PostCard from '@/components/molecules/cards/PostCard';
 import { useInfiniteUserBookmarks } from '@/repo/users/query';
 import useProgressiveList from '@/lib/hooks/useProgressiveList';
 
@@ -22,7 +22,25 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
 
   const t = translations;
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setActiveFilter('all');
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (modalBodyRef.current?.parentElement) {
+      modalBodyRef.current.parentElement.scrollTop = 0;
+    }
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = 0;
+    }
+  }, [activeFilter, isOpen]);
 
   const {
     data: bookmarksData,
@@ -34,21 +52,45 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
     user?.id || '',
     {
       enabled: !!user?.id && isOpen,
-      staleTime: 60 * 1000,
-      gcTime: 5 * 60 * 1000,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 15 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     }
   );
 
-  const bookmarks = bookmarksData?.pages.flatMap(page => page.data) || [];
+  const bookmarks = useMemo(() => bookmarksData?.pages.flatMap(page => page.data) || [], [bookmarksData]);
 
-  const filteredBookmarks = activeFilter === 'all'
-    ? bookmarks
-    : bookmarks.filter((bookmark) => {
-        if (activeFilter === 'question') return bookmark.isQuestion;
-        if (activeFilter === 'answer') return !bookmark.isQuestion && bookmark.type === 'answer';
-        if (activeFilter === 'post') return !bookmark.isQuestion && bookmark.type !== 'answer';
-        return true;
-      });
+  const filterCounts = useMemo(() => {
+    const counts: Record<FilterType, number> = {
+      all: bookmarks.length,
+      question: 0,
+      answer: 0,
+      post: 0,
+    };
+
+    for (const bookmark of bookmarks) {
+      if (bookmark.isQuestion) {
+        counts.question += 1;
+      } else if (bookmark.type === 'answer') {
+        counts.answer += 1;
+      } else {
+        counts.post += 1;
+      }
+    }
+
+    return counts;
+  }, [bookmarks]);
+
+  const filteredBookmarks = useMemo(() => {
+    if (activeFilter === 'all') return bookmarks;
+    return bookmarks.filter((bookmark) => {
+      if (activeFilter === 'question') return bookmark.isQuestion;
+      if (activeFilter === 'answer') return !bookmark.isQuestion && bookmark.type === 'answer';
+      if (activeFilter === 'post') return !bookmark.isQuestion && bookmark.type !== 'answer';
+      return true;
+    });
+  }, [activeFilter, bookmarks]);
 
   const visibleCount = useProgressiveList({
     enabled: isOpen && !isLoading,
@@ -58,10 +100,11 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
     resetKey: activeFilter,
   });
 
-  const visibleBookmarks = filteredBookmarks.slice(0, visibleCount);
+  const visibleBookmarks = useMemo(() => filteredBookmarks.slice(0, visibleCount), [filteredBookmarks, visibleCount]);
 
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage || !isOpen) return;
+    if (visibleCount < filteredBookmarks.length) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -78,14 +121,6 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
 
     return () => observer.disconnect();
   }, [fetchNextPage, filteredBookmarks.length, hasNextPage, isFetchingNextPage, isOpen, visibleCount]);
-
-  const getFilterCount = (filter: FilterType) => {
-    if (filter === 'all') return bookmarks.length;
-    if (filter === 'question') return bookmarks.filter(b => b.isQuestion).length;
-    if (filter === 'answer') return bookmarks.filter(b => !b.isQuestion && b.type === 'answer').length;
-    if (filter === 'post') return bookmarks.filter(b => !b.isQuestion && b.type !== 'answer').length;
-    return 0;
-  };
 
   const formatDate = (dateString: string) => {
     if (!dateString || dateString === '방금 전') return dateString;
@@ -109,7 +144,7 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-[500px]">
-      <div className="relative">
+      <div ref={modalBodyRef} className="relative">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -142,7 +177,7 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
-                {filter.label} ({getFilterCount(filter.key)})
+                {filter.label} ({filterCounts[filter.key] || 0})
               </button>
             ))}
           </div>
@@ -165,7 +200,7 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
               </p>
             </div>
           ) : (
-            <div className="space-y-4 max-h-[500px] overflow-y-auto">
+            <div ref={scrollAreaRef} className="space-y-4 max-h-[500px] overflow-y-auto">
               {visibleBookmarks.map((bookmark) => (
                 <PostCard
                   key={bookmark.id}
@@ -207,7 +242,7 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
                 </div>
               ) : null}
 
-              {hasNextPage && (
+              {hasNextPage && visibleCount >= filteredBookmarks.length ? (
                 <div ref={observerRef} className="py-4 text-center">
                   {isFetchingNextPage && (
                     <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
@@ -216,7 +251,7 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
                     </div>
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>
