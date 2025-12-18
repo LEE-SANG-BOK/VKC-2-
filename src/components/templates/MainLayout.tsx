@@ -26,12 +26,9 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
   }), []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 lg:bg-gray-100 lg:dark:bg-gray-950 relative transition-colors duration-300">
       {/* Account Status Banner */}
       <AccountStatusBanner />
-      
-      {/* Background gradient */}
-      <div className="fixed top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-blue-500/5 dark:from-blue-500/10 to-transparent pointer-events-none z-0"></div>
 
       <Suspense fallback={<div className="h-[56px] w-full" />}>
         <Header
@@ -42,8 +39,9 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
         />
       </Suspense>
 
-      <div className="container mx-auto px-2 sm:px-3 lg:px-5 relative z-10">
-        <div className="flex gap-4 lg:gap-6">
+      <div className="container mx-auto px-2 sm:px-3 lg:px-5 relative z-10 bg-gray-50 dark:bg-gray-900">
+        <div className="absolute inset-x-0 top-0 h-[300px] bg-gradient-to-b from-blue-500/5 dark:from-blue-500/10 to-transparent pointer-events-none z-0" />
+        <div className="relative z-10 flex gap-4 lg:gap-6">
           {!hideSidebar && (
             <>
               <div className="hidden lg:block">

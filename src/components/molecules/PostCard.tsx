@@ -9,10 +9,10 @@ import { Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2,
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
 import TrustBadge from '@/components/atoms/TrustBadge';
-import FollowButton from '@/components/atoms/FollowButton';
 import Avatar from '@/components/atoms/Avatar';
 import { useCategories } from '@/repo/categories/query';
 import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
+import { useToggleFollow } from '@/repo/users/mutation';
 import { ALLOWED_CATEGORY_SLUGS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
@@ -354,6 +354,22 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
   const toggleLikeMutation = useTogglePostLike();
   const toggleBookmarkMutation = useTogglePostBookmark();
+  const toggleFollowMutation = useToggleFollow();
+
+  const authorId = author?.id ? String(author.id) : '';
+  const isSelf = authorId && session?.user?.id ? authorId === String(session.user.id) : false;
+
+  const [localIsFollowing, setLocalIsFollowing] = useState(!!author.isFollowing);
+  useEffect(() => {
+    setLocalIsFollowing(!!author.isFollowing);
+  }, [author.isFollowing]);
+
+  const followLabel = tCommon.follow || (locale === 'vi' ? 'Theo dõi' : locale === 'en' ? 'Follow' : '팔로우');
+  const followingLabel = tCommon.following || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로잉');
+  const followText = localIsFollowing ? followingLabel : followLabel;
+  const followTextClassName = localIsFollowing
+    ? 'text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400'
+    : 'text-blue-600 dark:text-blue-400 hover:underline';
 
   const handleClick = () => {
     router.push(`/${locale}/posts/${id}`);
@@ -366,8 +382,35 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
   const handleAuthorClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const authorId = author.id || author.name;
-    router.push(`/${locale}/profile/${authorId}`);
+    const authorTargetId = author.id || author.name;
+    router.push(`/${locale}/profile/${authorTargetId}`);
+  };
+
+  const handleFollowClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+
+    if (!authorId || isSelf) return;
+
+    if (!session?.user) {
+      router.push(`/${locale}/login`);
+      return;
+    }
+
+    if (toggleFollowMutation.isPending) return;
+
+    const prev = localIsFollowing;
+    const next = !prev;
+    setLocalIsFollowing(next);
+
+    try {
+      const result = await toggleFollowMutation.mutateAsync(authorId);
+      const resolved = result?.data?.isFollowing;
+      if (typeof resolved === 'boolean') {
+        setLocalIsFollowing(resolved);
+      }
+    } catch {
+      setLocalIsFollowing(prev);
+    }
   };
 
   const handleLikeClick = async (e: React.MouseEvent) => {
@@ -474,7 +517,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
   const extraCount = Math.max(totalImages - 1, 0);
   const mediaGridClass = `question-card-media-grid question-card-media-grid--row question-card-media-grid--single`;
-  const isSelf = author?.id && session?.user?.id ? String(author.id) === String(session.user.id) : false;
 
   return (
     <article
@@ -511,14 +553,18 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                       {safeName(author.name)}
                     </span>
                   </button>
-                  {!isSelf && author.id ? (
-                    <FollowButton
-                      userId={String(author.id)}
-                      userName={safeName(author.name)}
-                      isFollowing={author.isFollowing}
-                      size="xs"
-                      className="shrink-0"
-                    />
+                  {!isSelf && authorId ? (
+                    <button
+                      type="button"
+                      className={`shrink-0 text-[13px] font-semibold transition-colors ${followTextClassName}`}
+                      onClick={handleFollowClick}
+                      aria-pressed={localIsFollowing}
+                      aria-label={followText}
+                      disabled={toggleFollowMutation.isPending}
+                    >
+                      <span className="mr-1 text-gray-400 dark:text-gray-500">·</span>
+                      {followText}
+                    </button>
                   ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
@@ -595,7 +641,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:flex-nowrap sm:overflow-x-auto sm:scrollbar-hide sm:pr-2">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -608,7 +654,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             return (
               <span
                 key={tag}
-                className={`shrink-0 px-2 py-0.5 text-xs rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${pillClass}`}
+                title={`#${tag}`}
+                className={`min-w-0 max-w-full truncate px-2 py-0.5 text-xs rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${pillClass}`}
               >
                 #{tag}
               </span>

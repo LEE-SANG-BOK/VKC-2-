@@ -1,21 +1,23 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Bell, Menu, X } from 'lucide-react';
-import { debounce } from 'lodash';
+import debounce from 'lodash/debounce';
 import Logo from '@/components/atoms/Logo';
 import Button from '@/components/atoms/Button';
 import Tooltip from '@/components/atoms/Tooltip';
 import UserProfile from '@/components/molecules/UserProfile';
 import LanguageSwitcher from '@/components/atoms/LanguageSwitcher';
-import NotificationModal from '@/components/molecules/NotificationModal';
 import { useSession, signOut } from 'next-auth/react';
 import { useUnreadNotificationCount } from '@/repo/notifications/query';
 import { pickExampleQuestion } from '@/lib/constants/search-examples';
 import { LEGACY_CATEGORIES } from '@/lib/constants/categories';
 import { CATEGORY_GROUPS } from '@/lib/constants/categories';
+
+const NotificationModal = dynamic(() => import('@/components/molecules/NotificationModal'), { ssr: false });
 
 interface HeaderProps {
   isMobileMenuOpen: boolean;
@@ -81,13 +83,6 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
     if (locale === 'vi') return 'Hỏi về Hàn Quốc, trả lời đáng tin.';
     return '한국을 묻고, 믿을 수 있게 답하다.';
   }, [locale]);
-  const sidebarToggleTooltip =
-    tTooltip.sidebarToggleHint ||
-    (locale === 'vi'
-      ? 'Mở sidebar: danh mục, đăng ký, theo dõi'
-      : locale === 'en'
-        ? 'Open sidebar: categories, subscriptions, following'
-        : '사이드바: 카테고리·구독·팔로우 기능');
 
   const examplePool = useMemo(() => {
     const pool = [
@@ -332,19 +327,17 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
           )}
           {/* Mobile Menu Button */}
           {!showBackButton && (
-            <Tooltip content={sidebarToggleTooltip} position="below">
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-1.5 sm:p-1.5 rounded-xl border border-blue-200/80 dark:border-blue-900/40 bg-white/70 dark:bg-gray-900/40 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 group"
-                aria-label={tTooltip.sidebarToggle || 'Toggle sidebar'}
-              >
-                {isMobileMenuOpen ? (
-                  <X className="h-5 w-5 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
-                ) : (
-                  <Menu className="h-5 w-5 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
-                )}
-              </button>
-            </Tooltip>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-1.5 sm:p-1.5 rounded-xl border-2 border-blue-300/90 dark:border-blue-900/60 bg-white/70 dark:bg-gray-900/40 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 group"
+              aria-label={tTooltip.sidebarToggle || 'Toggle sidebar'}
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-5 w-5 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
+              ) : (
+                <Menu className="h-5 w-5 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
+              )}
+            </button>
           )}
           <div className="scale-90 sm:scale-100 origin-left">
             <Tooltip content={tTooltip.brandIntro || brandIntroFallback} position="below" className="vk-tooltip-brand">
@@ -439,24 +432,25 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
               {/* Notifications - Only show when logged in */}
               {user && (
                 <div className="relative">
-                  <Tooltip content={tTooltip.notifications || '알림'} position="below">
-                    <button
-                      onClick={() => setIsNotificationModalOpen(!isNotificationModalOpen)}
-                      className="relative p-1 sm:p-1 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
-                    >
-                      <Bell className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-amber-400 transition-colors" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-gradient-to-br from-red-500 to-amber-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-lg">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </button>
-                  </Tooltip>
-                  <NotificationModal
-                    isOpen={isNotificationModalOpen}
-                    onClose={() => setIsNotificationModalOpen(false)}
-                    translations={translations?.notifications as Record<string, string>}
-                  />
+                  <button
+                    onClick={() => setIsNotificationModalOpen(!isNotificationModalOpen)}
+                    className="relative p-1 sm:p-1 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
+                    aria-label={tTooltip.notifications || '알림'}
+                  >
+                    <Bell className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-amber-400 transition-colors" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-gradient-to-br from-red-500 to-amber-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-lg">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  {isNotificationModalOpen ? (
+                    <NotificationModal
+                      isOpen
+                      onClose={() => setIsNotificationModalOpen(false)}
+                      translations={translations?.notifications as Record<string, string>}
+                    />
+                  ) : null}
                 </div>
               )}
 

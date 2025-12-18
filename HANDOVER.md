@@ -4,6 +4,11 @@
 
 ## 최근 주요 변경 사항
 
+- [FE] 모바일 헤더/사이드바 툴팁 정리: 모바일 메뉴 버튼 테두리 강조, 헤더는 브랜드 툴팁만 유지, 사이드바 아이콘 툴팁은 모바일에서 비활성화
+- [FE] 사이드바 폭 정렬: 데스크톱 CategorySidebar 폭을 우측 레일과 동일한 320px로 맞춤
+- [FE] Desktop “바깥 여백만” 회색 분리: MainLayout에서 데스크톱 배경을 회색으로, 콘텐츠 영역은 기존 배경 유지
+- [FE] PostCard 작성자 라인: 이름 옆에 `· Follow` / `· Following` 텍스트 CTA 표시 + 카드 클릭과 분리(클릭 stopPropagation)
+- [BE] 팔로우 상태 응답 보강: 피드/프로필 리스트/북마크/팔로워/팔로잉/유저검색에 `isFollowing` 제공(배치 조회) + 리스트 기본 `content` 제외, `excerpt/thumbnails/imageCount` 제공
 - 로고 교체: `public/brand-logo.png` 적용 + `Logo`를 이미지 기반(`next/image`)으로 전환, 헤더 브랜드 툴팁 표어 ko/en/vi 업데이트
 - 리팩토링 심화: PostCard/PostDetail 중복 유틸(dateTime/safeText) 통합 + 카테고리 허용 slug 단일화 + 미사용 `components/ui` 파일 정리
 - 모바일 PostCard(vi) 잘림 개선: 하단 액션바/해시태그가 overflow로 클립되지 않도록 레이아웃 조정 + 태그 스크롤 여백 추가

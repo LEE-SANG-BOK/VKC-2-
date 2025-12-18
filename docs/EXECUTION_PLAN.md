@@ -383,6 +383,12 @@
 - [x] (2025-12-17) `docs/EXECUTION_PLAN.md`에 에이전트 역할/소유권/충돌 방지 규칙 확정 (병렬 작업 준비)
 - [x] (2025-12-17) 알림 API 과호출 방지 (unread-count 전용 API 추가 + polling 완화 + Notifications 페이지 enabled 게이팅)
 - [x] (2025-12-17) 검증: `npm run lint`, `npm run build` 통과 (릴리즈 품질)
+- [x] (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화: 모달 `dynamic({ ssr:false })` + 오픈 시에만 mount, 쿼리 `enabled:isOpen` 유지/강화 + `staleTime/gcTime`로 재오픈 refetch 억제, 무한스크롤 observer는 닫힐 때 disconnect
+- [x] (2025-12-18) [WEB] 헤더 알림 모달 성능 최적화: NotificationModal `dynamic({ ssr:false })` + 오픈 시에만 mount, 알림 목록 쿼리 `staleTime/gcTime`로 재오픈 refetch 억제
+- [x] (2025-12-18) [WEB] 헤더 번들 경량화: `lodash` named import → `lodash/debounce`로 교체(트리셰이킹/번들 크기 개선)
+- [x] (2025-12-18) [FE] 모바일 사이드바 작성 CTA 툴팁 비활성화(가독성/가림 방지)
+- [x] (2025-12-18) [BE] 팔로우 상태 응답 보강: 피드/프로필 리스트/북마크/팔로워/팔로잉/유저검색에 `isFollowing` 제공(배치 조회) + 리스트 기본 `content` 제외, `excerpt/thumbnails/imageCount` 제공
+- [x] (2025-12-18) (검증) `npm run lint`, `npm run build` 통과
 
 ### 6.2 다음
 - [x] (2025-12-18) PR‑S1 `repo-structure-cleanup-phase1` (컴포넌트/스크립트/임시파일 정리로 중복 증가 방지)
@@ -401,11 +407,11 @@
 
 **UI/UX(Design Front)**
 - [x] (2025-12-17) [FE] Home 버튼 클릭 시 “초기 상태”로 복귀(메인 스크롤/사이드바 스크롤 Top + 모바일 메뉴 닫기) (메모: 선택/필터 reset 기준은 별도 정의)
-- [ ] (2025-12-18) [FE] 모바일 헤더: 사이드바 버튼 테두리 강조 + 사이드바 아이콘 툴팁 제거(홈 헤더 툴팁 1개만 유지)
-- [ ] (2025-12-18) [FE] 페이지 여백(Desktop) 배경을 회색으로 구분(스크린샷 참고: “바깥 여백만” 회색, 콘텐츠 영역 UI는 변경하지 않음) (메모: 메인/상세/프로필/인증/로그인/관리자 공통 토큰화)
-- [ ] (2025-12-18) [FE] 사이드바 가로폭을 우측 추천 콘텐츠 레일 폭과 동일하게 정렬
+- [x] (2025-12-18) [FE] 모바일 헤더: 사이드바 버튼 테두리 강조 + 사이드바 아이콘 툴팁 제거(홈 헤더 툴팁 1개만 유지) (Header/CategorySidebar)
+- [x] (2025-12-18) [FE] 페이지 여백(Desktop) 배경을 회색으로 구분(스크린샷 참고: “바깥 여백만” 회색, 콘텐츠 영역 UI는 변경하지 않음) (MainLayout) (메모: 메인/상세/프로필/인증/로그인/관리자 공통 토큰화)
+- [x] (2025-12-18) [FE] 사이드바 가로폭을 우측 추천 콘텐츠 레일 폭과 동일하게 정렬 (CategorySidebar)
 - [x] (2025-12-17) [FE] 모바일 PostCard 하단 액션/해시태그 잘림 방지(vi 텍스트 길이 대응)
-- [ ] (2025-12-18) [FE] 피드/카드 작성자 라인에 `· Following` 상태 표시 + 미팔로우 시 `Follow` CTA(스크린샷의 “Following” 표현만 참고) (메모: `common.follow/following` 사용, 클릭 시 토글)
+- [x] (2025-12-18) [FE] 피드/카드 작성자 라인에 `· Following` 상태 표시 + 미팔로우 시 `Follow` CTA(스크린샷의 “Following” 표현만 참고) (PostCard) (메모: `common.follow/following` 사용, 클릭 시 토글)
 - [ ] (2025-12-18) [FE] PostCard: “인증 사용자 N명…” 라벨 좌측에 “답변 N개” CTA 추가(클릭 시 답변/댓글 영역 이동)
 - [ ] (2025-12-18) [FE] 팔로잉 추천 카드 UI: `#(1): 값, #(2): 값, #(3): 값` 3개 고정 표기(실데이터 매핑) + step-by-step 로딩 UI
 - [ ] (2025-12-18) [FE] 프로필 모달(북마크/팔로잉/내게시글)도 step-by-step 로딩(과부하 방지)
