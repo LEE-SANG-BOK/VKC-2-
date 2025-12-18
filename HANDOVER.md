@@ -9,6 +9,7 @@
 - [FE] Desktop “바깥 여백만” 회색 분리: MainLayout에서 데스크톱 배경을 회색으로, 콘텐츠 영역은 기존 배경 유지
 - [LEAD] Facebook 스타일 캔버스: Header를 3-zone grid로 고정 정렬(센터 흔들림 방지) + MainLayout을 full-width 3컬럼으로 확장(회색 배경/카드 흰색 집중)
 - [LEAD] Facebook 레이아웃 핫픽스: Header max-width/grid를 MainLayout과 정렬해 ultrawide에서 헤더/본문 배치 어긋남 방지 + 홈 피드는 center 영역을 투명(canvas)으로 전환해 “카드만 흰색” 집중 강화
+- [LEAD] Ultrawide 레이아웃 버그 수정: Tailwind `grid-cols-[...]` 임의값에서 컬럼 구분자에 콤마(,)를 사용해 grid가 무효화되던 문제를 `_` 구분자로 교체해 데스크톱 3컬럼 그리드가 정상 적용되도록 수정
 - [LEAD] 피드 중간 추천: 인기/최신 피드에서 게시글 5개 이후 “추천 사용자” 섹션을 인서트(로그인 시만 fetch)
 - [LEAD] 모바일/태블릿 잘림 보강: CategorySidebar 구독 버튼 클립 방지(카테고리 행 width 규칙 수정) + PostCard 태그/액션이 `sm~md` 구간에서도 wrap/표시되도록 breakpoint 조정
 - [FE] PostCard 작성자 라인: 이름 옆에 `· Follow` / `· Following` 텍스트 CTA 표시 + 카드 클릭과 분리(클릭 stopPropagation)

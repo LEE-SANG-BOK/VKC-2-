@@ -24,11 +24,11 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
   const hasLeftRail = !hideSidebar;
   const hasRightRail = Boolean(rightRail);
   const gridColumns = hasLeftRail && hasRightRail
-    ? 'lg:grid-cols-[320px,minmax(0,1fr),320px] 2xl:grid-cols-[320px,minmax(0,720px),320px] 2xl:justify-center'
+    ? 'lg:grid-cols-[320px_minmax(0,1fr)_320px] 2xl:grid-cols-[320px_minmax(0,720px)_320px] 2xl:justify-center'
     : hasLeftRail
-      ? 'lg:grid-cols-[320px,minmax(0,1fr)] 2xl:grid-cols-[320px,minmax(0,720px)] 2xl:justify-center'
+      ? 'lg:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[320px_minmax(0,720px)] 2xl:justify-center'
       : hasRightRail
-        ? 'lg:grid-cols-[minmax(0,1fr),320px] 2xl:grid-cols-[minmax(0,720px),320px] 2xl:justify-center'
+        ? 'lg:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,720px)_320px] 2xl:justify-center'
         : 'lg:grid-cols-1';
 
   useEffect(() => onHomeReset(() => {

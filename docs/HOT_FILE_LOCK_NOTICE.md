@@ -16,10 +16,9 @@
 - 아래 파일들은 LEAD가 스냅샷(커밋/푸시) 고정 전까지 **병렬 수정 금지**
   - `src/components/organisms/Header.tsx`
   - `src/components/templates/MainLayout.tsx`
-  - `src/app/[lang]/(main)/home/HomeClient.tsx`
+  - `src/app/[lang]/(main)/HomeClient.tsx`
 
 ## 에이전트 운영 규칙
 
 - Hot File이 필요한 작업은 LEAD 스냅샷 고정 이후 진행
 - 불가피하게 변경이 필요한 경우: LEAD와 선합의 후 진행(작업 이유/변경 범위/검증 결과 공유)
-

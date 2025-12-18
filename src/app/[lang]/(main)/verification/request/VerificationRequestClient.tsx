@@ -619,7 +619,10 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                             <div>{trustBadgePreview.tooltip}</div>
                             <button
                               type="button"
-                              onClick={() => router.push(trustBadgeGuideHref)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                router.push(trustBadgeGuideHref);
+                              }}
                               className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                             >
                               {learnMoreLabel}
