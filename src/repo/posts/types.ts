@@ -81,6 +81,7 @@ export interface PostListItem {
     isVerified: boolean;
     isExpert?: boolean;
     badgeType?: string | null;
+    isFollowing?: boolean;
   } | null;
 }
 

@@ -11,6 +11,7 @@ import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { getChildrenForParent, isGroupChildSlug, isGroupParentSlug } from '@/lib/constants/category-groups';
 import { isExpertBadgeType } from '@/lib/constants/badges';
+import { getFollowingIdSet } from '@/lib/api/follow';
 
 const resolveTrust = (author: any, createdAt: Date | string) => {
   const months = dayjs().diff(createdAt, 'month', true);
@@ -426,6 +427,13 @@ export async function GET(request: NextRequest) {
         if (row.postId) bookmarkedPostIds.add(row.postId);
       });
 
+      const followingIdSet = user
+        ? await getFollowingIdSet(
+            user.id,
+            list.map((post) => post.authorId)
+          )
+        : new Set<string>();
+
       return list.map((post) => {
         const content = typeof post.content === 'string' ? post.content : '';
         const { thumbnail, thumbnails, imageCount } = extractImages(content, 4);
@@ -457,6 +465,7 @@ export async function GET(request: NextRequest) {
             ? {
                 ...post.author,
                 isExpert: post.author.isExpert || false,
+                isFollowing: user ? followingIdSet.has(post.authorId) : false,
               }
             : post.author,
           trustBadge: trust.badge,

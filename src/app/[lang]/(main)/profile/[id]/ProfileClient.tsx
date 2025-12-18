@@ -50,7 +50,7 @@ export interface ProfileData {
 
 interface PostItem {
   id: string;
-  author: { id?: string; name: string; avatar: string; followers: number; isVerified?: boolean; isExpert?: boolean; badgeType?: string | null };
+  author: { id?: string; name: string; avatar: string; followers: number; isFollowing?: boolean; isVerified?: boolean; isExpert?: boolean; badgeType?: string | null };
   title: string;
   content: string;
   excerpt: string;
@@ -58,7 +58,9 @@ interface PostItem {
   stats: { likes: number; comments: number; shares: number };
   category: string;
   subcategory?: string;
-  thumbnail?: string;
+  thumbnail?: string | null;
+  thumbnails?: string[];
+  imageCount?: number;
   publishedAt: string;
   isQuestion?: boolean;
   isAdopted?: boolean;
@@ -316,37 +318,6 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
     const date = dayjs(dateString);
     if (!date.isValid()) return dateString;
     return date.format('YYYY.MM.DD HH:mm');
-  };
-
-  const extractMedia = (html?: string | null) => {
-    const sources: string[] = [];
-    if (html) {
-      const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-      let match: RegExpExecArray | null;
-      while ((match = imgRegex.exec(html)) !== null) {
-        const src = match[1];
-        if (src) sources.push(src);
-      }
-    }
-
-    const unique = Array.from(new Set(sources));
-    const thumbnails = unique.slice(0, 4);
-
-    return {
-      thumbnails: thumbnails.length ? thumbnails : undefined,
-      imageCount: unique.length,
-      thumbnail: thumbnails[0],
-    };
-  };
-
-  const buildExcerpt = (html?: string | null) => {
-    if (!html) return '';
-    return html
-      .replace(/<img[^>]*>/gi, '')
-      .replace(/<[^>]*>/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .substring(0, 200);
   };
 
   return (
@@ -625,22 +596,22 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                   </div>
                 ) : (
                   userPosts.map((post: PostItem) => {
-                    const media = extractMedia(post.content);
-                    const resolvedThumbnail = post.thumbnail || media.thumbnail;
+                    const resolvedThumbnail = post.thumbnail || post.thumbnails?.[0];
+                    const thumbnails = post.thumbnails?.length ? post.thumbnails : undefined;
                     return (
                       <PostCard
                         key={post.id}
                         id={post.id}
                         author={post.author}
                         title={post.title}
-                        excerpt={buildExcerpt(post.content)}
+                        excerpt={post.excerpt || ''}
                         tags={post.tags || []}
                         stats={post.stats}
                         category={post.category}
                         subcategory={post.subcategory}
                         thumbnail={resolvedThumbnail}
-                        thumbnails={media.thumbnails}
-                        imageCount={media.imageCount}
+                        thumbnails={thumbnails}
+                        imageCount={post.imageCount}
                         certifiedResponderCount={post.certifiedResponderCount}
                         otherResponderCount={post.otherResponderCount}
                         publishedAt={formatDate(post.publishedAt)}
@@ -756,22 +727,22 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                   </div>
                 ) : (
                   userBookmarks.map((bookmark: PostItem) => {
-                    const media = extractMedia(bookmark.content);
-                    const resolvedThumbnail = bookmark.thumbnail || media.thumbnail;
+                    const resolvedThumbnail = bookmark.thumbnail || bookmark.thumbnails?.[0];
+                    const thumbnails = bookmark.thumbnails?.length ? bookmark.thumbnails : undefined;
                     return (
                       <PostCard
                         key={bookmark.id}
                         id={bookmark.id}
                         author={bookmark.author}
                         title={bookmark.title}
-                        excerpt={buildExcerpt(bookmark.content)}
+                        excerpt={bookmark.excerpt || ''}
                         tags={bookmark.tags || []}
                         stats={bookmark.stats}
                         category={bookmark.category}
                         subcategory={bookmark.subcategory}
                         thumbnail={resolvedThumbnail}
-                        thumbnails={media.thumbnails}
-                        imageCount={media.imageCount}
+                        thumbnails={thumbnails}
+                        imageCount={bookmark.imageCount}
                         certifiedResponderCount={bookmark.certifiedResponderCount}
                         otherResponderCount={bookmark.otherResponderCount}
                         publishedAt={formatDate(bookmark.publishedAt)}

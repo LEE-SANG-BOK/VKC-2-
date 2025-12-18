@@ -72,6 +72,8 @@ export interface PostCardData {
   createdAt: string;
   publishedAt: string;
   thumbnail?: string;
+  thumbnails?: string[];
+  imageCount?: number;
   author: {
     id: string;
     name: string;
@@ -80,6 +82,7 @@ export interface PostCardData {
     isExpert?: boolean;
     badgeType?: string | null;
     followers: number;
+    isFollowing?: boolean;
   };
   stats: {
     likes: number;

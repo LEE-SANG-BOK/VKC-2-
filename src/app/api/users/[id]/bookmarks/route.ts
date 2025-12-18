@@ -3,11 +3,34 @@ import { db } from '@/lib/db';
 import { bookmarks, users, answers, comments, likes, posts } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse, unauthorizedResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
+import { getFollowingIdSet } from '@/lib/api/follow';
 import { eq, desc, sql, inArray, and, isNotNull, isNull, or, lt, type SQL } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
+
+const stripHtmlToText = (html: string) =>
+  html
+    .replace(/<img[^>]*>/gi, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
+
+const extractImages = (html: string, maxThumbs = 4) => {
+  if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
+  const regex = /<img[^>]+src=["']([^"']+)["']/gi;
+  const thumbnails: string[] = [];
+  let match: RegExpExecArray | null;
+  let imageCount = 0;
+  while ((match = regex.exec(html))) {
+    imageCount += 1;
+    if (thumbnails.length < maxThumbs) thumbnails.push(match[1]);
+  }
+  return { thumbnails, thumbnail: thumbnails[0] ?? null, imageCount };
+};
 
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
@@ -16,6 +39,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
     const cursorParam = searchParams.get('cursor');
+    const include = (searchParams.get('include') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const includeContent = include.includes('content');
 
     const currentUser = await getSession(request);
     if (!currentUser || currentUser.id !== id) {
@@ -77,15 +105,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const totalPages = Math.ceil(total / limit);
     const queryLimit = useCursorPagination ? limit + 1 : limit;
 
-    const contentPreviewLimit = 8000;
+    const contentPreviewLimit = 4000;
     const bookmarkRows = await db
       .select({
         bookmarkId: bookmarks.id,
         bookmarkCreatedAt: bookmarks.createdAt,
         id: posts.id,
+        authorId: posts.authorId,
         type: posts.type,
         title: posts.title,
-        content: sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
+        content: includeContent
+          ? posts.content
+          : sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
         category: posts.category,
         subcategory: posts.subcategory,
         tags: posts.tags,
@@ -179,6 +210,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
       if (row.postId) likedPostIds.add(row.postId);
     });
 
+    const followingIdSet = currentUser
+      ? await getFollowingIdSet(
+          currentUser.id,
+          pageList.map((bookmark) => bookmark.authorId)
+        )
+      : new Set<string>();
+
     const responderIds = new Set<string>();
     answerResponders.forEach((row: { authorId: string | null }) => {
       if (row.authorId) responderIds.add(row.authorId);
@@ -228,8 +266,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     });
 
     const formattedBookmarks = pageList.map(bookmark => {
-      const imgMatch = bookmark.content?.match(/<img[^>]+src=["']([^"']+)["']/i);
-      const thumbnail = imgMatch ? imgMatch[1] : null;
+      const content = typeof bookmark.content === 'string' ? bookmark.content : '';
+      const { thumbnail, thumbnails, imageCount } = extractImages(content, 4);
+      const excerpt = buildExcerpt(content);
 
       const postId = bookmark.id;
       const answersCount = postId ? (answerCountMap.get(postId) ?? 0) : 0;
@@ -240,8 +279,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         id: bookmark.id,
         type: bookmark.type,
         title: bookmark.title || '',
-        content: bookmark.content || '',
-        excerpt: bookmark.content?.replace(/<img[^>]*>/gi, '(사진)').replace(/<[^>]*>/g, '').substring(0, 200) || '',
+        content: includeContent ? content : '',
+        excerpt,
         category: bookmark.category || '',
         subcategory: bookmark.subcategory,
         tags: bookmark.tags || [],
@@ -251,6 +290,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         createdAt: bookmark.createdAt?.toISOString(),
         publishedAt: bookmark.createdAt?.toISOString(),
         thumbnail,
+        thumbnails,
+        imageCount,
         author: {
           id: bookmark.author?.id,
           name: bookmark.author?.displayName || bookmark.author?.name || 'User',
@@ -259,6 +300,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
           isExpert: bookmark.author?.isExpert || false,
           badgeType: bookmark.author?.badgeType || null,
           followers: 0,
+          isFollowing: currentUser ? followingIdSet.has(bookmark.authorId) : false,
         },
         stats: {
           likes: bookmark.likes || 0,

@@ -3,11 +3,34 @@ import { db } from '@/lib/db';
 import { posts, users, answers, comments, likes, bookmarks } from '@/lib/db/schema';
 import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
+import { getFollowingIdSet } from '@/lib/api/follow';
 import { eq, desc, sql, and, inArray, isNotNull, isNull, or, lt, type SQL } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
+
+const stripHtmlToText = (html: string) =>
+  html
+    .replace(/<img[^>]*>/gi, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
+
+const extractImages = (html: string, maxThumbs = 4) => {
+  if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
+  const regex = /<img[^>]+src=["']([^"']+)["']/gi;
+  const thumbnails: string[] = [];
+  let match: RegExpExecArray | null;
+  let imageCount = 0;
+  while ((match = regex.exec(html))) {
+    imageCount += 1;
+    if (thumbnails.length < maxThumbs) thumbnails.push(match[1]);
+  }
+  return { thumbnails, thumbnail: thumbnails[0] ?? null, imageCount };
+};
 
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
@@ -84,7 +107,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const totalPages = Math.ceil(total / limit);
     const queryLimit = useCursorPagination ? limit + 1 : limit;
 
-    const contentPreviewLimit = 8000;
+    const contentPreviewLimit = 4000;
     const userPosts = await db
       .select({
         id: posts.id,
@@ -201,6 +224,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
       if (row.postId) bookmarkedPostIds.add(row.postId);
     });
 
+    const followingIdSet = currentUser
+      ? await getFollowingIdSet(
+          currentUser.id,
+          pageList.map((post) => post.authorId)
+        )
+      : new Set<string>();
+
     const responderIds = new Set<string>();
     answerResponders.forEach((row: { authorId: string | null }) => {
       if (row.authorId) responderIds.add(row.authorId);
@@ -250,8 +280,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     });
 
     const formattedPosts = pageList.map(post => {
-      const imgMatch = post.content?.match(/<img[^>]+src=["']([^"']+)["']/i);
-      const thumbnail = imgMatch ? imgMatch[1] : null;
+      const content = typeof post.content === 'string' ? post.content : '';
+      const { thumbnail, thumbnails, imageCount } = extractImages(content, 4);
+      const excerpt = buildExcerpt(content);
 
       const answersCount = answerCountMap.get(post.id) ?? 0;
       const postCommentsCount = commentCountMap.get(post.id) ?? 0;
@@ -261,8 +292,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         id: post.id,
         type: post.type,
         title: post.title,
-        content: post.content,
-        excerpt: post.content?.replace(/<img[^>]*>/gi, '(사진)').replace(/<[^>]*>/g, '').substring(0, 200) || '',
+        content: includeContent ? content : '',
+        excerpt,
         category: post.category,
         subcategory: post.subcategory,
         tags: post.tags || [],
@@ -272,6 +303,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         createdAt: post.createdAt?.toISOString(),
         publishedAt: post.createdAt?.toISOString(),
         thumbnail,
+        thumbnails,
+        imageCount,
         author: {
           id: post.author?.id,
           name: post.author?.displayName || post.author?.name || 'User',
@@ -280,6 +313,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
           isExpert: post.author?.isExpert || false,
           badgeType: post.author?.badgeType || null,
           followers: 0,
+          isFollowing: currentUser ? followingIdSet.has(post.authorId) : false,
         },
         stats: {
           likes: post.likes || 0,

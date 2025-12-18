@@ -62,37 +62,6 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
     return dayjs(dateString).format('YYYY.MM.DD HH:mm');
   };
 
-  const extractMedia = (html?: string | null) => {
-    const sources: string[] = [];
-    if (html) {
-      const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-      let match: RegExpExecArray | null;
-      while ((match = imgRegex.exec(html)) !== null) {
-        const src = match[1];
-        if (src) sources.push(src);
-      }
-    }
-
-    const unique = Array.from(new Set(sources));
-    const thumbnails = unique.slice(0, 4);
-
-    return {
-      thumbnails: thumbnails.length ? thumbnails : undefined,
-      imageCount: unique.length,
-      thumbnail: thumbnails[0],
-    };
-  };
-
-  const buildExcerpt = (html?: string | null) => {
-    if (!html) return '';
-    return html
-      .replace(/<img[^>]*>/gi, '')
-      .replace(/<[^>]*>/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .substring(0, 200);
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-2xl">
       <div className="relative max-h-[80vh] flex flex-col">
@@ -123,8 +92,8 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
           ) : (
             <div className="space-y-4">
               {posts.map((post: any) => {
-                const media = extractMedia(post.content);
-                const resolvedThumbnail = post.thumbnail || media.thumbnail;
+                const thumbnails = Array.isArray(post.thumbnails) && post.thumbnails.length ? post.thumbnails : undefined;
+                const resolvedThumbnail = post.thumbnail || post.thumbnails?.[0];
                 return (
                   <PostCard
                     key={post.id}
@@ -144,7 +113,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
                       badgeType: post.author?.badgeType || null,
                     }}
                     title={post.title}
-                    excerpt={buildExcerpt(post.content) || post.excerpt || ''}
+                    excerpt={post.excerpt || ''}
                     tags={post.tags || []}
                     stats={{
                       likes: post.likesCount ?? post.stats?.likes ?? post.likes ?? 0,
@@ -154,8 +123,8 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
                     category={post.category}
                     subcategory={post.subcategory}
                     thumbnail={resolvedThumbnail}
-                    thumbnails={media.thumbnails}
-                    imageCount={media.imageCount}
+                    thumbnails={thumbnails}
+                    imageCount={post.imageCount}
                     certifiedResponderCount={(post as any).certifiedResponderCount}
                     otherResponderCount={(post as any).otherResponderCount}
                     publishedAt={formatDate(post.publishedAt || post.createdAt)}

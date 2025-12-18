@@ -43,18 +43,24 @@ export async function fetchPosts(filters: PostFilters = {}): Promise<PaginatedRe
       ? {
           next: { revalidate: 60 },
         }
-      : {
-          credentials: 'omit',
-        };
+      : {};
 
-  if (needsAuth && isServer) {
+  if (isServer) {
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.toString();
     if (cookieHeader) {
       fetchOptions.headers = {
+        ...(fetchOptions.headers || {}),
         Cookie: cookieHeader,
       };
+
+      if (!needsAuth) {
+        fetchOptions.cache = 'no-store';
+        if ('next' in fetchOptions) {
+          delete (fetchOptions as any).next;
+        }
+      }
     }
   }
 
