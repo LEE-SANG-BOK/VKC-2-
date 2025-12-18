@@ -37,7 +37,10 @@ export default function LoginPrompt({ onClose, variant = 'inline', translations 
   const title = loginTexts.title || (locale === 'vi' ? 'Cần đăng nhập' : locale === 'en' ? 'Login required' : '로그인이 필요합니다');
   const desc = loginTexts.desc || (locale === 'vi' ? 'Vui lòng đăng nhập để dùng tính năng này.' : locale === 'en' ? 'Please log in to use this feature.' : '로그인 후 사용가능한 서비스입니다.');
   const loginButton = loginTexts.login || commonTexts.login || (locale === 'vi' ? 'Đăng nhập' : locale === 'en' ? 'Log in' : '로그인');
-  const signupButton = loginTexts.signup || commonTexts.signup || (locale === 'vi' ? 'Đăng ký' : locale === 'en' ? 'Sign up' : '회원가입');
+  const signupFallback = locale === 'vi' ? 'Bắt đầu' : locale === 'en' ? 'Get started' : '시작하기';
+  const rawSignup = (loginTexts.signup || commonTexts.signup || '').trim();
+  const shouldOverrideSignup = !rawSignup || ['회원가입', 'Sign up', 'Sign Up', 'Đăng ký'].includes(rawSignup);
+  const signupButton = shouldOverrideSignup ? signupFallback : rawSignup;
   const cancelButton = loginTexts.cancel || commonTexts.cancel || (locale === 'vi' ? 'Hủy' : locale === 'en' ? 'Cancel' : '취소');
 
   const containerClassName =

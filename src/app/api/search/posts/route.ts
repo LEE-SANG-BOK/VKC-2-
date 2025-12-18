@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { posts } from '@/lib/db/schema';
 import { paginatedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
-import { sql, eq, desc, and, SQL } from 'drizzle-orm';
+import { sql, eq, desc, and, inArray, SQL } from 'drizzle-orm';
+import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
 
 /**
  * GET /api/search/posts
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
             .reduce((acc, condition) => sql`(${acc} OR ${condition})`, tokenConditions[0])
         : fallbackSearchClause;
 
-    const conditions: SQL[] = [searchClause];
+    const conditions: SQL[] = [searchClause, inArray(posts.category, ACTIVE_GROUP_PARENT_SLUGS) as SQL];
 
     if (type) {
       conditions.push(eq(posts.type, type));

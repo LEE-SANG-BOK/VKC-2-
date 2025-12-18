@@ -9,7 +9,7 @@ import { desc, eq, and, or, sql, inArray, SQL, lt, isNull } from 'drizzle-orm';
 import dayjs from 'dayjs';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
-import { getChildrenForParent, isGroupChildSlug, isGroupParentSlug } from '@/lib/constants/category-groups';
+import { ACTIVE_GROUP_PARENT_SLUGS, DEPRECATED_GROUP_PARENT_SLUGS, getChildrenForParent, isGroupChildSlug, isGroupParentSlug } from '@/lib/constants/category-groups';
 import { isExpertBadgeType } from '@/lib/constants/badges';
 import { getFollowingIdSet } from '@/lib/api/follow';
 
@@ -55,6 +55,10 @@ export async function GET(request: NextRequest) {
     const user = await getSession(request);
 
     const conditions: SQL[] = [];
+
+    if (ACTIVE_GROUP_PARENT_SLUGS.length > 0) {
+      conditions.push(inArray(posts.category, ACTIVE_GROUP_PARENT_SLUGS) as SQL);
+    }
 
     if (category && category !== 'all') {
       if (isGroupParentSlug(category)) {
@@ -692,6 +696,10 @@ export async function POST(request: NextRequest) {
     const normalizedSubcategory = typeof subcategory === 'string' ? subcategory.trim() : '';
 
     if (!isGroupParentSlug(normalizedCategory)) {
+      return errorResponse('카테고리를 다시 선택해주세요.', 'POST_INVALID_CATEGORY');
+    }
+
+    if (DEPRECATED_GROUP_PARENT_SLUGS.has(normalizedCategory)) {
       return errorResponse('카테고리를 다시 선택해주세요.', 'POST_INVALID_CATEGORY');
     }
 

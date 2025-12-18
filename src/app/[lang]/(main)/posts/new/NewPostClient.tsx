@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -57,6 +57,17 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const [manualTagEdit, setManualTagEdit] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const openLoginPrompt = () => setIsLoginPromptOpen(true);
+
+  const scrollComposerIntoView = useCallback((element: HTMLElement) => {
+    element.style.scrollMarginBottom = 'calc(var(--vk-bottom-safe-offset, 72px) + env(safe-area-inset-bottom, 0px) + 24px)';
+    requestAnimationFrame(() => {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }, []);
+
+  const handleEditorFocus = useCallback((event: React.FocusEvent<HTMLDivElement>) => {
+    scrollComposerIntoView(event.currentTarget);
+  }, [scrollComposerIntoView]);
 
   const titleLength = title.trim().length;
   const contentLength = getPlainTextLength(content);
@@ -587,6 +598,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                       onChange={setContent}
                       placeholder={postType === 'question' ? (t.contentPlaceholderQuestion || '질문 내용을 작성하세요...') : (t.contentPlaceholderShare || '공유할 내용을 작성하세요...')}
                       translations={translations}
+                      onFocus={handleEditorFocus}
                     />
                   </div>
                 </div>

@@ -26,6 +26,8 @@
     "post": "Bài viết",
     "follow": "Theo dõi",
     "following": "Đang theo dõi",
+    "adoptionRate": "Tỷ lệ được chấp nhận",
+    "interestMatchRate": "Tỷ lệ khớp sở thích",
     "question": "Câu hỏi",
     "verifiedUser": "Người dùng đã xác minh",
     "guidelineTooltip": "Tôn trọng, không lăng mạ/hận thù; bài có quảng cáo/liên hệ/liên kết có thể bị hạn chế; vi phạm có thể bị giới hạn/xử lý"
@@ -164,7 +166,7 @@
   "header": {
     "search": "Tìm kiếm...",
     "login": "Đăng nhập",
-    "signup": "Đăng ký",
+    "signup": "Bắt đầu",
     "user": "Người dùng",
     "allCategories": "Tất cả danh mục",
     "tech": "Công nghệ",

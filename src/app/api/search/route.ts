@@ -5,7 +5,8 @@ import { posts, users } from '@/lib/db/schema';
 import { successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { getFollowingIdSet } from '@/lib/api/follow';
-import { or, ilike, desc, eq, sql } from 'drizzle-orm';
+import { and, or, ilike, desc, eq, sql, inArray } from 'drizzle-orm';
+import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
 
 const stripHtmlToText = (html: string) =>
   html
@@ -87,7 +88,12 @@ export async function GET(request: NextRequest) {
           })
           .from(posts)
           .leftJoin(users, eq(posts.authorId, users.id))
-          .where(or(ilike(posts.title, `%${query}%`), ilike(posts.content, `%${query}%`)))
+          .where(
+            and(
+              inArray(posts.category, ACTIVE_GROUP_PARENT_SLUGS),
+              or(ilike(posts.title, `%${query}%`), ilike(posts.content, `%${query}%`))
+            )
+          )
           .orderBy(desc(posts.createdAt), desc(posts.id))
           .limit(postsLimit)
       : [];

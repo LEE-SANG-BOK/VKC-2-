@@ -24,6 +24,10 @@ export interface User {
   onboardingCompleted?: boolean | null;
   isProfileComplete?: boolean | null;
   isFollowing?: boolean;
+  recommendationMeta?: Array<{
+    key: 'badge' | 'adoptionRate' | 'interestMatchRate' | string;
+    value: string | number;
+  }>;
   stats: {
     followers: number;
     following: number;
@@ -52,9 +56,10 @@ export interface UpdateProfileRequest {
   notifyAdoptions?: boolean;
   notifyFollows?: boolean;
   userType?: string;
-  visaType?: string;
+  visaType?: string | null;
   interests?: string[];
   preferredLanguage?: string;
+  koreanLevel?: string | null;
 }
 
 export interface PostCardData {

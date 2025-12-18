@@ -5,6 +5,7 @@ import { paginatedResponse, notFoundResponse, serverErrorResponse, unauthorizedR
 import { getSession } from '@/lib/api/auth';
 import { getFollowingIdSet } from '@/lib/api/follow';
 import { eq, desc, sql, inArray, and, isNotNull, isNull, or, lt, type SQL } from 'drizzle-orm';
+import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -81,7 +82,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const hasValidCursor = Boolean(decodedCursor && cursorCreatedAt && !Number.isNaN(cursorCreatedAt.getTime()));
     const useCursorPagination = Boolean(cursorParam && hasValidCursor);
 
-    const conditions = [eq(bookmarks.userId, id)];
+    const conditions = [
+      eq(bookmarks.userId, id),
+      inArray(posts.category, ACTIVE_GROUP_PARENT_SLUGS) as SQL,
+    ];
     if (useCursorPagination) {
       conditions.push(
         or(

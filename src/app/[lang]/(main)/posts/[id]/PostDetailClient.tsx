@@ -360,6 +360,31 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     </div>
   );
 
+  const resizeTextarea = useCallback((target: HTMLTextAreaElement) => {
+    target.style.height = 'auto';
+    target.style.height = `${target.scrollHeight}px`;
+  }, []);
+
+  const scrollComposerIntoView = useCallback((element: HTMLElement) => {
+    element.style.scrollMarginBottom = 'calc(var(--vk-bottom-safe-offset, 72px) + env(safe-area-inset-bottom, 0px) + 24px)';
+    requestAnimationFrame(() => {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }, []);
+
+  const handleTextareaInput = useCallback((event: React.FormEvent<HTMLTextAreaElement>) => {
+    resizeTextarea(event.currentTarget);
+  }, [resizeTextarea]);
+
+  const handleTextareaFocus = useCallback((event: React.FocusEvent<HTMLTextAreaElement>) => {
+    resizeTextarea(event.currentTarget);
+    scrollComposerIntoView(event.currentTarget);
+  }, [resizeTextarea, scrollComposerIntoView]);
+
+  const handleEditorFocus = useCallback((event: React.FocusEvent<HTMLDivElement>) => {
+    scrollComposerIntoView(event.currentTarget);
+  }, [scrollComposerIntoView]);
+
   useEffect(() => {
     if (postQuery?.data) {
       setPost((prev) => ({
@@ -1691,6 +1716,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     placeholder={tPostDetail.editPlaceholder || "내용을 입력하세요..."}
                     translations={translations || {}}
                     tooltipPosition="below"
+                    onFocus={handleEditorFocus}
                   />
                 </div>
                 <div className="flex gap-2 justify-end">
@@ -1750,7 +1776,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                 </button>
 
                 {trustBadgePresentation.show ? (
-                  <Tooltip content={renderTrustBadgeTooltip(trustBadgePresentation.tooltip)} position="top" touchBehavior="longPress">
+                  <Tooltip content={renderTrustBadgeTooltip(trustBadgePresentation.tooltip)} position="top" touchBehavior="longPress" interactive>
                     <span className="shrink-0 inline-flex">
                       <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />
                     </span>
@@ -1919,6 +1945,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                       translations={translations || {}}
                       variant="basic"
                       tooltipPosition="below"
+                      onFocus={handleEditorFocus}
                     />
                   </div>
                 </div>
@@ -2012,7 +2039,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                     ? '!px-2 !py-0.5 border-amber-200'
                                     : '!px-2 !py-0.5';
                                   return (
-                                    <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress">
+                                    <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress" interactive>
                                       <span className="inline-flex">
                                         <TrustBadge
                                           level={badge.level}
@@ -2080,6 +2107,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                 placeholder={tPostDetail.editAnswerPlaceholder || "답변을 수정해주세요..."}
                                 translations={translations || {}}
                                 tooltipPosition="below"
+                                onFocus={handleEditorFocus}
                               />
                               <div className="flex justify-end gap-2 mt-3">
                                 <Button
@@ -2157,8 +2185,10 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                               <textarea
                                 value={answerReplyContent}
                                 onChange={(e) => setAnswerReplyContent(e.target.value)}
+                                onInput={handleTextareaInput}
+                                onFocus={handleTextareaFocus}
                                 placeholder={tPostDetail.replyPlaceholder || "답글을 작성해주세요..."}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                                 rows={2}
                                 autoFocus
                               />
@@ -2229,7 +2259,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                       ? '!px-2 !py-0.5 border-amber-200'
                                       : '!px-2 !py-0.5';
                                     return (
-                                      <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress">
+                                      <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress" interactive>
                                         <span className="inline-flex">
                                           <TrustBadge
                                             level={badge.level}
@@ -2288,7 +2318,9 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                         <textarea
                                           value={editContent}
                                           onChange={(e) => setEditContent(e.target.value)}
-                                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                          onInput={handleTextareaInput}
+                                          onFocus={handleTextareaFocus}
+                                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                                           rows={2}
                                           autoFocus
                                         />
@@ -2399,7 +2431,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                 ? '!px-2 !py-0.5 border-amber-200'
                                 : '!px-2 !py-0.5';
                               return (
-                                <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress">
+                                <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress" interactive>
                                   <span className="inline-flex">
                                     <TrustBadge
                                       level={badge.level}
@@ -2456,7 +2488,9 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                               <textarea
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                onInput={handleTextareaInput}
+                                onFocus={handleTextareaFocus}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                                 rows={3}
                                 autoFocus
                               />
@@ -2522,8 +2556,10 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                 <textarea
                                   value={replyContent}
                                   onChange={(e) => setReplyContent(e.target.value)}
+                                  onInput={handleTextareaInput}
+                                  onFocus={handleTextareaFocus}
                                   placeholder={tPostDetail.replyPlaceholder || "답글을 작성해주세요..."}
-                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                                   rows={2}
                                   autoFocus
                                 />
@@ -2585,7 +2621,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                             ? '!px-2 !py-0.5 border-amber-200'
                                             : '!px-2 !py-0.5';
                                           return (
-                                            <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress">
+                                            <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress" interactive>
                                               <span className="inline-flex">
                                                 <TrustBadge
                                                   level={badge.level}
@@ -2644,7 +2680,9 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                         <textarea
                                           value={editContent}
                                           onChange={(e) => setEditContent(e.target.value)}
-                                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                          onInput={handleTextareaInput}
+                                          onFocus={handleTextareaFocus}
+                                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                                           rows={2}
                                           autoFocus
                                         />
@@ -2720,15 +2758,20 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
+                  onInput={handleTextareaInput}
                   placeholder={tPostDetail.commentPlaceholder || "댓글을 작성해주세요..."}
                   readOnly={!user}
-                  onFocus={() => {
-                    if (!user) openLoginPrompt();
+                  onFocus={(event) => {
+                    if (!user) {
+                      openLoginPrompt();
+                      return;
+                    }
+                    handleTextareaFocus(event);
                   }}
                   onClick={() => {
                     if (!user) openLoginPrompt();
                   }}
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden ${!user ? 'opacity-70 cursor-pointer' : ''}`}
                   rows={3}
                 />
                   {showCommentValidationError && (
@@ -2858,8 +2901,10 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   <textarea
                     value={reportReason}
                     onChange={(e) => setReportReason(e.target.value)}
+                    onInput={handleTextareaInput}
+                    onFocus={handleTextareaFocus}
                     placeholder={tPostDetail.reportPlaceholder || "신고 사유를 입력해주세요"}
-                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                     rows={3}
                     autoFocus
                   />

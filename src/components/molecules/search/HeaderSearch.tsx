@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { pickExampleQuestion } from '@/lib/constants/search-examples';
 import { LEGACY_CATEGORIES, CATEGORY_GROUPS } from '@/lib/constants/categories';
+import { useSearchExamples } from '@/repo/search/query';
 import type { Locale } from '@/i18n/config';
 
 interface HeaderSearchProps {
@@ -31,6 +32,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
   const [searchKeyword, setSearchKeyword] = useState(searchParams.get('q') || searchParams.get('s') || '');
   const [parentCategory, setParentCategory] = useState('all');
   const [childCategory, setChildCategory] = useState('');
+  const { data: exampleData } = useSearchExamples({ limit: 8, period: 'week' });
 
   const getCategoryLabel = (cat?: CategoryLike | null) => {
     const base = LEGACY_CATEGORIES.find((c) => c.slug === cat?.slug);
@@ -127,7 +129,13 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
     }
   };
 
+  const dynamicExamples = useMemo(() => {
+    const examples = exampleData?.data?.examples || [];
+    return examples.map((example) => example.title).filter(Boolean);
+  }, [exampleData]);
+
   const examplePool = useMemo(() => {
+    if (dynamicExamples.length > 0) return dynamicExamples;
     const pool = [
       tSearch.exampleLiving,
       tSearch.exampleWork,
@@ -139,6 +147,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
     ].filter(Boolean) as string[];
     return pool.length > 0 ? pool : null;
   }, [
+    dynamicExamples,
     tSearch.exampleLiving,
     tSearch.exampleWork,
     tSearch.exampleStudy,
@@ -267,12 +276,12 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
   };
 
   return (
-    <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 max-w-4xl w-full shadow-sm">
-      <div className="relative flex-shrink-0">
+    <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-2 sm:px-3 py-1.5 w-full shadow-sm">
+      <div className="relative min-w-[72px] max-w-[88px] sm:max-w-[110px] lg:max-w-[140px]">
         <select
           value={parentCategory}
           onChange={(e) => handleParentCategoryChange(e.target.value)}
-          className="appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
+          className="w-full truncate appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
         >
           <option value="all">{tSearch.categoryLabel || '분류'}</option>
           {parentOptions.map((cat) => (
@@ -288,11 +297,11 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
 
       {parentCategory !== 'all' && childCategories.length > 0 && (
         <>
-          <div className="relative flex-shrink-0">
+          <div className="relative min-w-[88px] max-w-[120px] sm:max-w-[150px] lg:max-w-[200px]">
             <select
               value={childCategory}
               onChange={(e) => setChildCategory(e.target.value)}
-              className="appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
+              className="w-full truncate appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
             >
               <option value="">{tSearch.subCategoryLabel || '하위 카테고리'}</option>
               {childCategories.map((child) => (

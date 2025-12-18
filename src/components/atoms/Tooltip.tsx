@@ -14,6 +14,7 @@ interface TooltipProps {
   className?: string;
   touchBehavior?: TooltipTouchBehavior;
   longPressDelayMs?: number;
+  interactive?: boolean;
 }
 
 export default function Tooltip({
@@ -23,13 +24,17 @@ export default function Tooltip({
   className = '',
   touchBehavior = 'tap',
   longPressDelayMs = 450,
+  interactive = false,
 }: TooltipProps) {
   const tooltipId = useId();
   const targetRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const longPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
   const suppressNextClickRef = useRef(false);
+  const hoverTargetRef = useRef(false);
+  const hoverTooltipRef = useRef(false);
   const pathname = usePathname();
 
   const [mounted, setMounted] = useState(false);
@@ -58,15 +63,36 @@ export default function Tooltip({
     longPressStartRef.current = null;
   }, []);
 
+  const clearCloseTimeout = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleClose = useCallback(() => {
+    clearCloseTimeout();
+    closeTimeoutRef.current = setTimeout(() => {
+      if (hoverTargetRef.current) return;
+      if (hoverTooltipRef.current) return;
+      setOpen(false);
+      setCoords(null);
+    }, 200);
+  }, [clearCloseTimeout]);
+
   useEffect(() => {
-    return () => clearLongPress();
-  }, [clearLongPress]);
+    return () => {
+      clearLongPress();
+      clearCloseTimeout();
+    };
+  }, [clearLongPress, clearCloseTimeout]);
 
   const close = useCallback(() => {
+    clearCloseTimeout();
     clearLongPress();
     setOpen(false);
     setCoords(null);
-  }, [clearLongPress]);
+  }, [clearLongPress, clearCloseTimeout]);
 
   useEffect(() => {
     close();
@@ -84,9 +110,10 @@ export default function Tooltip({
   }, [close]);
 
   const openTooltip = useCallback(() => {
+    clearCloseTimeout();
     setOpen(true);
     setCoords((prev) => prev ?? { x: 0, y: 0, placement: position });
-  }, [position]);
+  }, [clearCloseTimeout, position]);
 
   const computePosition = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -295,19 +322,39 @@ export default function Tooltip({
         }}
         onMouseEnter={() => {
           if (touchMode) return;
+          if (interactive) {
+            hoverTargetRef.current = true;
+            clearCloseTimeout();
+          }
           openTooltip();
         }}
         onMouseLeave={() => {
           if (touchMode) return;
-          close();
+          if (!interactive) {
+            close();
+            return;
+          }
+
+          hoverTargetRef.current = false;
+          scheduleClose();
         }}
         onFocus={() => {
           if (touchMode) return;
+          if (interactive) {
+            hoverTargetRef.current = true;
+            clearCloseTimeout();
+          }
           openTooltip();
         }}
         onBlur={() => {
           if (touchMode) return;
-          close();
+          if (!interactive) {
+            close();
+            return;
+          }
+
+          hoverTargetRef.current = false;
+          scheduleClose();
         }}
         onClickCapture={(event) => {
           if (!touchMode) return;
@@ -342,8 +389,30 @@ export default function Tooltip({
               id={tooltipId}
               role="tooltip"
               className={className.includes('vk-tooltip-brand') ? 'vk-tooltip-portal vk-tooltip-portal--brand' : 'vk-tooltip-portal'}
-              data-interactive={touchMode ? 'true' : 'false'}
+              data-interactive={interactive || touchMode ? 'true' : 'false'}
               data-position={coords.placement}
+              onMouseEnter={() => {
+                if (touchMode) return;
+                if (!interactive) return;
+                hoverTooltipRef.current = true;
+                clearCloseTimeout();
+              }}
+              onMouseLeave={() => {
+                if (touchMode) return;
+                if (!interactive) return;
+                hoverTooltipRef.current = false;
+                scheduleClose();
+              }}
+              onFocusCapture={() => {
+                if (!interactive) return;
+                hoverTooltipRef.current = true;
+                clearCloseTimeout();
+              }}
+              onBlurCapture={() => {
+                if (!interactive) return;
+                hoverTooltipRef.current = false;
+                scheduleClose();
+              }}
               style={
                 {
                   '--vk-tooltip-x': `${coords.x}px`,

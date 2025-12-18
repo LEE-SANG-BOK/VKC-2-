@@ -143,6 +143,7 @@ export default function AnswerCard({
                   }
                   position="top"
                   touchBehavior="longPress"
+                  interactive
                 >
                   <span className="inline-flex">
                     <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />

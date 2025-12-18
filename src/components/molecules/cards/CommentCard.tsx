@@ -141,6 +141,7 @@ export default function CommentCard({
                   }
                   position="top"
                   touchBehavior="longPress"
+                  interactive
                 >
                   <span className="inline-flex">
                     <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />

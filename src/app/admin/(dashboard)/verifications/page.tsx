@@ -132,6 +132,7 @@ export default function AdminVerificationsPage() {
   const [verifiedProfileSummary, setVerifiedProfileSummary] = useState('');
   const [verifiedProfileKeywordsInput, setVerifiedProfileKeywordsInput] = useState('');
   const [badgeType, setBadgeType] = useState<BadgeType>('verified_user');
+  const [validationError, setValidationError] = useState('');
 
   const { data, isLoading } = useAdminVerifications({
     page,
@@ -161,10 +162,12 @@ export default function AdminVerificationsPage() {
       setVerifiedProfileSummary('');
       setVerifiedProfileKeywordsInput('');
       setBadgeType('verified_user');
+      setValidationError('');
       return;
     }
 
     setReason('');
+    setValidationError('');
     const suggestion = buildSuggestedVerifiedProfile(selectedVerification);
     const suggestedBadgeType = suggestBadgeType({
       verificationType: selectedVerification.type,
@@ -184,12 +187,24 @@ export default function AdminVerificationsPage() {
     if (!selectedVerification) return;
     try {
       const normalizedSummary = verifiedProfileSummary.trim();
+      const normalizedReason = reason.trim();
+
+      if (status === 'rejected' && !normalizedReason) {
+        setValidationError('거부 사유를 입력해주세요.');
+        return;
+      }
+
+      if (status === 'approved' && !normalizedSummary && parsedKeywords.length === 0) {
+        setValidationError('승인 전 요약 또는 키워드를 입력해주세요.');
+        return;
+      }
+      setValidationError('');
 
       await updateStatusMutation.mutateAsync({
         id: selectedVerification.id,
         data: {
           status,
-          reason: status === 'rejected' ? reason : undefined,
+          reason: status === 'rejected' ? normalizedReason : undefined,
           badgeType: status === 'approved' ? badgeType : undefined,
           verifiedProfileSummary: status === 'approved' ? (normalizedSummary ? normalizedSummary : null) : undefined,
           verifiedProfileKeywords: status === 'approved' ? (parsedKeywords.length ? parsedKeywords : null) : undefined,
@@ -482,7 +497,10 @@ export default function AdminVerificationsPage() {
                     <Textarea
                       id="verifiedProfileSummary"
                       value={verifiedProfileSummary}
-                      onChange={(e) => setVerifiedProfileSummary(e.target.value)}
+                      onChange={(e) => {
+                        setVerifiedProfileSummary(e.target.value);
+                        if (validationError) setValidationError('');
+                      }}
                       className="mt-1"
                       placeholder="예: D-2 유학생 · 연세대학교 재학"
                     />
@@ -493,7 +511,10 @@ export default function AdminVerificationsPage() {
                     <Input
                       id="verifiedProfileKeywords"
                       value={verifiedProfileKeywordsInput}
-                      onChange={(e) => setVerifiedProfileKeywordsInput(e.target.value)}
+                      onChange={(e) => {
+                        setVerifiedProfileKeywordsInput(e.target.value);
+                        if (validationError) setValidationError('');
+                      }}
                       className="mt-1"
                       placeholder="#학생 #D-2 #연세대"
                     />
@@ -509,12 +530,15 @@ export default function AdminVerificationsPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="reason">거부 사유 (선택)</Label>
+                    <Label htmlFor="reason">거부 사유</Label>
                     <Textarea
                       id="reason"
                       placeholder="거부 시 사유를 입력하세요..."
                       value={reason}
-                      onChange={(e) => setReason(e.target.value)}
+                      onChange={(e) => {
+                        setReason(e.target.value);
+                        if (validationError) setValidationError('');
+                      }}
                       className="mt-1"
                     />
                   </div>
@@ -531,6 +555,9 @@ export default function AdminVerificationsPage() {
               )}
             </div>
           )}
+          {validationError ? (
+            <p className="text-sm text-red-600">{validationError}</p>
+          ) : null}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setSelectedVerification(null)}>
               취소

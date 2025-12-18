@@ -61,7 +61,7 @@
   - what:
 - 검증
   - [x] npm run lint
-  - [x] npm run build
+  - [ ] npm run build (실패: ProfileEditClient.tsx useMemo import 누락)
 - 변경 파일
   - path1
   - path2
@@ -317,6 +317,42 @@
   - [WEB] (P0) HeaderSearch 예시 질문 실데이터 연결: `/api/search/examples`를 사용해 검색 인풋 placeholder/추천 리스트를 locale별로 노출
   - [WEB] (P0) 알림/짧은 주기 API 호출 점검: notifications 관련 query의 enabled/staleTime 조건을 재점검해 불필요 요청 차단
   - [BE] (P1) 추천 사용자/검색 예시 API 캐시/상한 정리: `limit/page` clamp + Cache-Control 정책 확정(anonymous 캐시 가능 범위)
+
+#### (2025-12-19) [LEAD] 리팩토링 심화: 추천 사용자 섹션 분리 + 모바일 캐러셀 + PostCard 카운트 콤팩트화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 추천 사용자 섹션을 공통 컴포넌트로 분리해 PostList(Hot File) 수정 범위를 축소
+  - [x] 모바일에서 추천 사용자 섹션을 2개씩 가로 캐러셀(좌/우 이동)로 노출
+  - [x] PostCard의 “답변 N개/댓글 N개” 텍스트를 아이콘 옆 숫자만 표시로 콤팩트화(aria-label 유지)
+  - [x] 검증: npm run lint, npm run build
+- 변경 파일
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - docs/EXECUTION_PLAN.md
+  - HANDOVER.md
+
+#### (2025-12-19) [LEAD] 추천 사용자 메타/구독 필터 보강 + 헤더/사이드바 카피 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 추천 사용자 카드: recommendationMeta 우선 노출(#1~#3), 인증 사용자 라벨 추가
+  - [x] 구독 피드 상단 가로 카테고리 필터를 데스크톱에도 노출
+  - [x] HeaderSearch select 폭 축소로 예시/placeholder 노출 폭 확대
+  - [x] 사이드바 구독 버튼 폭/폰트 조정으로 vi 줄바꿈/클립 리스크 완화
+  - [x] 헤더 CTA signup 카피를 “Get started/시작하기/Bắt đầu” 톤으로 통일
+  - [x] 팔로잉 모달 추천 탭도 recommendationMeta 기반 #1~#3로 정렬(인증 라벨 포함)
+- 변경 파일
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/molecules/search/HeaderSearch.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+  - messages/ko.json
+  - messages/en.json
+  - messages/vi.json
+  - docs/EXECUTION_PLAN.md
+- 검증
+  - [x] npm run lint
 
 ### 0.6.1 [FE] Design Front Agent
 
@@ -617,6 +653,139 @@
 - 다음 액션/의존성
   - LEAD 검수 후, FE 체크리스트의 “TrustBadge 툴팁/동선 적용 범위” 항목을 close 처리 권장
 
+#### (2025-12-19) [FE] Tooltip 인터랙티브 지원(Desktop hover) + TrustBadge “자세히” 버튼 클릭 가능화 (P0)
+
+- 플랜(체크리스트)
+  - [x] Desktop(hover)에서도 Tooltip 내부 CTA가 클릭 가능하도록 `interactive` 옵션 추가
+  - [x] TrustBadge Tooltip(자세히 버튼 포함) 전 구간에 `interactive` 적용
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - Tooltip은 기본적으로 desktop에서 `pointer-events: none`이라(hover tooltip), Tooltip 내부 버튼/링크 클릭이 불가능
+  - TrustBadge Tooltip에 “자세히” 버튼을 추가한 이후 desktop에서도 동일 동선이 필요
+- 변경 내용(why/what)
+  - why: tooltip CTA가 모바일에서만 동작하면 데스크톱 사용자 동선이 끊김(guide 페이지 진입 어려움)
+  - what: `Tooltip`에 `interactive` prop 추가(hover 시 close 딜레이/tooltip hover 유지) + TrustBadge tooltip에 `interactive` 활성화
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/atoms/Tooltip.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/components/molecules/cards/CommentCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
+  - docs/EXECUTION_PLAN.md
+
+#### (2025-12-19) [FE] Auth CTA 카피(“회원가입” 최소화) + HeaderSearch 예시 텍스트 노출 + Sidebar 구독 버튼 폭 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 로그인 프롬프트 CTA: Sign up → Get started(시작하기) 카피로 완화
+  - [x] `/signup` 페이지 카피/에러 문구: “회원가입” 대신 “시작하기/프로필 설정” 중심으로 정리 + ko/en/vi 동기화
+  - [x] HeaderSearch: 카테고리 select 폭을 max-width + truncate로 제한(입력/예시 텍스트 노출 확보)
+  - [x] CategorySidebar: 구독 버튼 min-width를 모바일에서 축소(카테고리 라벨/버튼 클립 리스크 완화)
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - `/signup`은 실질적으로 “계정 생성”이 아니라 로그인 후 프로필 온보딩 단계라 “회원가입” 카피가 부담/혼동을 줄 수 있음
+  - HeaderSearch는 대/소분류 select가 긴 라벨(emoji 포함)일 때 입력 영역이 급격히 좁아져 예시 텍스트가 잘릴 수 있음
+  - CategorySidebar(특히 vi/모바일)에서 구독 버튼의 고정 min-width가 라벨 영역을 과도하게 압박할 수 있음
+- 변경 내용(why/what)
+  - why: 로그인/온보딩 전환률 개선 + 헤더 검색 UX(예시/placeholder 노출) 개선 + 사이드바 구독 CTA 안정화
+  - what:
+    - LoginPrompt: signup CTA fallback을 `Get started/시작하기/Bắt đầu`로 변경(route는 `/signup` 유지)
+    - SignupPage: ko/en/vi 문자열을 페이지 내부 translations로 정리 + 안내/버튼/에러 문구를 “시작하기/프로필 설정” 기준으로 변경
+    - HeaderSearch: parent/child select에 max-width + truncate 적용, 컴포넌트 자체 max-width 제한 제거
+    - CategorySidebar: 구독 버튼 min-width를 `min-w-[72px] sm:min-w-[84px]`로 조정
+    - (빌드 안정화) FollowingModal: 추천/팔로잉/피드 데이터가 infinite/offset 형태 모두 처리되도록 리스트 정규화
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/organisms/LoginPrompt.tsx
+  - src/app/[lang]/(auth)/signup/page.tsx
+  - src/components/molecules/search/HeaderSearch.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - Header의 `t.signup` 버튼 라벨도 동일 톤으로 맞추려면(“시작하기”) Hot File(`Header.tsx`)이라 LEAD가 타이밍 합의 후 처리 권장
+
+#### (2025-12-19) [FE] HeaderSearch 셀렉트 폭 최적화 + Sidebar 구독 버튼 줄바꿈 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] HeaderSearch select 폭 축소로 입력/예시 텍스트 노출 확대
+  - [x] Sidebar 구독 버튼 줄바꿈/높이 보강(vi 클립 방지)
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 헤더 검색바의 카테고리 select 폭이 커지면 입력/예시 텍스트가 잘릴 수 있음
+  - 카테고리 구독 버튼은 vi에서 라벨 길이로 인해 버튼 내부가 잘릴 여지가 있음
+- 변경 내용(why/what)
+  - why: 검색 예시 텍스트 가독성 확보 + 구독 CTA 클릭 영역 안정화
+  - what: HeaderSearch select max-width 축소 + Sidebar 구독 버튼에 `whitespace-normal`/`leading-tight`/min-height 적용
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/search/HeaderSearch.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - docs/EXECUTION_PLAN.md
+
+#### (2025-12-19) [FE] PostCard 답변/댓글 표기 콤팩트화 확인 (P0)
+
+- 플랜(체크리스트)
+  - [x] PostCard 응답 CTA가 아이콘+숫자만 노출되는지 확인
+  - [x] 접근성용 `aria-label` 유지 여부 확인
+- 현황 분석(코드 기준)
+  - PostCard 응답 CTA는 숫자만 표기되며, 설명 텍스트는 `aria-label`로 제공 중
+- 변경 내용(why/what)
+  - why: “답변 N개” 텍스트 노출 없이도 의미를 전달하도록 확인
+  - what: 기존 구현이 요구사항을 충족해 코드 변경 없이 상태 확인
+- 검증
+  - [x] UI 로직 확인 (코드 기준)
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+
+#### (2025-12-19) [FE] LoginPrompt 회원가입 카피 최소화 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] legacy 번역값이 “회원가입/Sign up/Đăng ký”일 때 CTA를 “시작하기/Get started/Bắt đầu”로 오버라이드
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - `common.signup` 키가 기존 번역값을 제공해도 LoginPrompt CTA를 완화된 카피로 노출해야 함
+- 변경 내용(why/what)
+  - why: 가입 문구 거부감 최소화(로그인→프로필 설정 흐름 강조)
+  - what: LoginPrompt에서 `common.signup` 값이 기존 카피일 경우 fallback “시작하기”로 대체
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/organisms/LoginPrompt.tsx
+  - docs/EXECUTION_PLAN.md
+
+#### (2025-12-19) [FE] 모바일 글/답변 폼 키보드 safe-area + autosize 적용 (P0)
+
+- 플랜(체크리스트)
+  - [ ] PostDetail 답글/댓글 textarea autosize + 포커스 스크롤 처리
+  - [ ] 글/답변 RichTextEditor 포커스 시 safe-area 스크롤 보강
+  - [ ] lint/build 재검증
+- 현황 분석(코드 기준)
+  - PostDetail 답글/댓글/신고 textarea가 고정 높이라 모바일에서 키보드 가림/수동 리사이즈 필요
+  - 글/답변 RichTextEditor는 포커스 시 뷰포트 하단에 가려질 수 있음
+- 변경 내용(why/what)
+  - why: 모바일에서 키보드가 열릴 때 작성 폼이 가려지는 현상 최소화
+  - what: textarea autosize + 포커스 scrollIntoView/safe-area margin 적용, RichTextEditor onFocus 전달
+- 검증
+  - [ ] npm run lint (pass)
+  - [ ] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - src/components/molecules/editor/RichTextEditor.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
 ### 0.6.2 [WEB] Web Feature Agent
 
 #### (2025-12-18) [WEB] 헤더/프로필 모달 성능 최적화 (P0)
@@ -906,6 +1075,113 @@
 - 변경 파일
   - (none)
 
+#### (2025-12-19) [WEB] 팔로잉 추천 탭 페이지네이션/무한스크롤 전환 (P0)
+
+- 플랜(체크리스트)
+  - [x] 추천 탭을 infinite query로 전환하고 page/limit 기반으로 로드
+  - [x] 추천 탭 sentinel/로딩 인디케이터 추가 + progressive list와 연동
+  - [x] 추천 쿼리 키 분리로 추천 리스트 캐시 충돌 방지
+- 현황 분석(코드 기준)
+  - FollowingModal 추천 탭이 단일 페이지 데이터만 표시해 전체 노출/재오픈 UX가 단절됨
+  - 동일 queryKey를 infinite/일반 쿼리에서 공유하면 데이터 구조 충돌 위험이 있음
+- 변경 내용(why/what)
+  - why: 1회 전체 노출을 제한하고 점진 로딩으로 체감/트래픽을 안정화
+  - what: 추천 탭을 무한스크롤로 전환하고, `recommendedInfinite` 키로 쿼리 캐시를 분리
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/modals/FollowingModal.tsx
+  - src/repo/users/query.ts
+  - src/repo/keys.ts
+- 다음 액션/의존성
+  - 추천 기준/제외 규칙/노출 우선순위는 BE 규칙 정의 후 가중치 반영 필요
+
+#### (2025-12-19) [WEB] 헤더 검색 예시 질문 동적 반영 (P0)
+
+- 플랜(체크리스트)
+  - [x] `/api/search/examples` 연동용 repo(fetch/query/types) 추가
+  - [x] HeaderSearch 예시 풀을 API 기반으로 전환하고 정적 예시 fallback 유지
+  - [x] 캐시 정책(staleTime/gcTime)으로 재호출 최소화
+- 현황 분석(코드 기준)
+  - HeaderSearch는 정적 예시만 사용해 실시간 인기 질문이 반영되지 않음
+  - 예시 데이터는 공용이므로 user cache와 분리된 전용 queryKey 필요
+- 변경 내용(why/what)
+  - why: 인기 질문 기반 예시를 노출해 검색 전환율과 최신성 개선
+  - what: search examples query 추가 후 HeaderSearch 예시 풀을 동적 데이터 우선으로 구성
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/search/HeaderSearch.tsx
+  - src/repo/search/fetch.ts
+  - src/repo/search/query.ts
+  - src/repo/search/types.ts
+  - src/repo/keys.ts
+- 다음 액션/의존성
+  - locale별 예시 구분이 필요하면 API에 `lang` 필터 확장 필요
+
+#### (2025-12-19) [WEB] 관리자 인증 심사 UI 검증 강화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 승인/거부 입력값 검증(요약/키워드, 거부 사유) 추가
+  - [x] 검증 오류 상태를 UI에 명시하고 입력 변경 시 해제
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 관리자 인증 심사에서 승인/거부 시 필수 입력값 검증이 없어 공란 승인/거부가 발생할 수 있음
+- 변경 내용(why/what)
+  - why: 승인 시 프로필 요약/키워드, 거부 시 사유가 누락되면 사용자 노출 정보의 신뢰/설명력이 약해짐
+  - what: 승인/거부 조건에 맞는 입력값 체크를 추가하고, 오류 메시지를 다이얼로그에 표시
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/admin/(dashboard)/verifications/page.tsx
+- 다음 액션/의존성
+  - 관리자 인증 플로우의 기본값/가이드 문구 다국어화가 필요하면 i18n 키 요청 필요
+
+#### (2025-12-19) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 - 현행 점검 (P0)
+
+- 플랜(체크리스트)
+  - [x] UserProfile 모달 dynamic import + 오픈 시 mount 구조 재확인
+  - [x] Profile/MyPosts/Following/Bookmarks/Settings 쿼리 옵션(enabled/isOpen, staleTime/gcTime) 재점검
+  - [x] 무한스크롤 observer cleanup + 재오픈 시 스크롤/탭 초기화 동작 확인
+- 현황 분석(코드 기준)
+  - `UserProfile`에서 모달을 `next/dynamic({ ssr:false })`로 분리하고 `activeModal`에서만 렌더하여 초기 번들/요청을 지연
+  - 모달 쿼리는 `enabled: isOpen`과 `staleTime/gcTime`로 재오픈 시 불필요 refetch를 억제
+  - 무한스크롤 observer는 닫힘/탭 전환 시 cleanup되며, 재오픈 시 스크롤 상단으로 복구됨
+- 변경 내용(why/what)
+  - why: 병렬 작업 중에도 요구사항이 유지되는지 확인 필요
+  - what: 코드 변경 없이 현행 구현이 요구사항을 충족하는지 재확인
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - (none)
+
+#### (2025-12-19) [WEB] 빌드 오류 정리 + 재검증 (P0)
+
+- 플랜(체크리스트)
+  - [x] ProfileEditClient `useMemo` import 누락 + `profile.name` 타입 오류 정리
+  - [x] UpdateProfileRequest에 `koreanLevel/visaType` null 허용 추가
+  - [x] RecommendedUsersSection metaLabelMap 타입 명시로 빌드 오류 제거
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 병렬 변경으로 인해 ProfileEditClient/RecommendedUsersSection 타입 오류가 발생해 build가 실패
+- 변경 내용(why/what)
+  - why: 빌드 실패를 해소하고 WEB 작업 검증을 완료하기 위해 타입 정합성 복원 필요
+  - what: useMemo import 추가, User 타입에 맞춘 name 초기화, UpdateProfileRequest null 허용, metaLabelMap 타입 명시
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx
+  - src/repo/users/types.ts
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
 ### 0.6.3 [BE] Backend Agent
 
 #### (2025-12-18) [BE] 추천 사용자 API 보강 + 과부하 방지 (P0)
@@ -934,6 +1210,74 @@
   - [ ] 안전 삭제(빌드 게이트): 1) 제거 2) `npm run lint` 3) `npm run build`
   - [x] 중복 유틸/타입 정리(선택): repo/types/utils 중복 최소화
   - [ ] 완료 항목은 `HANDOVER.md`에 “완료”로 반영
+
+#### (2025-12-19) [BE] “한국생활정보” 카테고리 비노출 + 레거시 숨김 정책 적용 (P0)
+
+- 플랜(체크리스트)
+  - [x] deprecated parent slug 정의 + 리스트 API 필터 반영
+  - [x] 게시글 작성에서 deprecated 카테고리 차단
+  - [x] 카테고리 목록에서 deprecated 그룹 제거
+- 현황 분석(코드 기준)
+  - 기존 목록 API는 category slug 전체를 그대로 노출하여 “living/legacy” 카테고리가 피드·검색·북마크에 노출
+  - 게시글 작성은 parent slug만 검사하여 deprecated 카테고리도 새 글 작성 가능
+- 변경 내용(why/what)
+  - why: 폐기 대상 카테고리를 노출/작성에서 제거해 콘텐츠 분류 정책을 고정
+  - what: 활성 parent slug 기준 필터 + deprecated slug 차단, 카테고리 API에서 deprecated 그룹 숨김
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/lib/constants/category-groups.ts
+  - src/app/api/categories/route.ts
+  - src/app/api/posts/route.ts
+  - src/app/api/posts/trending/route.ts
+  - src/app/api/search/route.ts
+  - src/app/api/search/posts/route.ts
+  - src/app/api/users/[id]/posts/route.ts
+  - src/app/api/users/[id]/bookmarks/route.ts
+- 다음 액션/의존성
+  - living 카테고리 DB 비활성화는 마이그레이션 검토 필요
+
+#### (2025-12-19) [BE] 관리자 리스트 API 경량화 + 페이지네이션 clamp (P0)
+
+- 플랜(체크리스트)
+  - [x] admin posts/comments/users 리스트 payload 경량화
+  - [x] user detail posts/comments N+1 제거 + count 집계
+  - [x] page/limit clamp로 과호출 방지
+- 현황 분석(코드 기준)
+  - admin list API가 `likes/comments` 관계 전체를 로딩해 응답이 과대해지고, 리스트 UI 요구 필드와 응답 스키마가 불일치
+- 변경 내용(why/what)
+  - why: 관리자 리스트 렌더링을 경량화하고 카운트 값을 정확히 제공
+  - what: select + 집계 쿼리로 교체, `_count/likes` 필드 정합화, page/limit 상한 적용
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/api/admin/posts/route.ts
+  - src/app/api/admin/comments/route.ts
+  - src/app/api/admin/users/route.ts
+  - src/app/api/admin/users/[id]/posts/route.ts
+  - src/app/api/admin/users/[id]/comments/route.ts
+- 다음 액션/의존성
+  - likes.comment_id 집계 성능용 인덱스는 마이그레이션 검토 필요
+
+#### (2025-12-19) [BE] 관리자 “추천 게시글 작성” 기능 현황 파악 (P0)
+
+- 플랜(체크리스트)
+  - [x] admin UI/API에서 추천/featured 게시글 관리 기능 여부 확인
+  - [x] 홈/미디어 영역에서 추천 게시글 사용 여부 확인
+- 현황 분석(코드 기준)
+  - admin 라우트/API에 추천 게시글 CRUD가 없고, 홈/미디어는 고정 섹션만 존재
+- 변경 내용(why/what)
+  - why: 운영/홈 노출 정책 결정 전에 현황 확인 필요
+  - what: admin 화면/`/api/admin` 엔드포인트 및 `/media` 노출 경로 점검(코드 변경 없음)
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 추천 게시글 기능은 신규 API/DB 설계 필요
 
 ---
 
@@ -1328,14 +1672,29 @@
 - [x] (2025-12-18) [FE] 모바일 프로필 정보(가입일/성별/연령대/상태/메일 등) 콤팩트 레이아웃(가로 배치 우선)
 - [x] (2025-12-18) [FE] 관리자 페이지(웹/모바일) 긴 콘텐츠 스크롤 처리(특히 인증/신고 상세)
 - [ ] (2025-12-18) [FE] 신뢰 배지(verified/expert/trusted/outdated) 툴팁/탭 UX 점검(모바일 long-press 포함) + “자세히” 링크/동선 적용 범위 합의 (메모: WEB의 배지 안내 페이지와 연결)
+- [ ] (2025-12-19) [FE] Auth CTA 카피 개선: “회원가입” 표기 최소화 → “로그인/시작하기/바로 시작” 중심으로 통일(거부감↓) (메모: signup route는 유지, i18n ko/en/vi 동기화)
+- [x] (2025-12-19) [FE] HeaderSearch 예시 질문 잘림 개선: 카테고리(대/소) 선택 UI 폭을 반응형으로 확장해 placeholder/예시 텍스트 더 노출 (메모: lg 이상 센터 영역 가변 폭 활용)
+- [x] (2025-12-19) [FE] PostCard 답변/댓글 표기 콤팩트화: “답변 N개” → 아이콘 옆 숫자만 표시(아라비아) (메모: aria-label은 유지)
+- [ ] (2025-12-19) [FE] Auth CTA 카피 개선: “회원가입” 텍스트를 “로그인/바로 시작하기” 중심으로 통일(거부감↓) (메모: signup route는 유지, ko/en/vi 동기화)
+- [ ] (2025-12-19) [FE] HeaderSearch 예시 질문 잘림 개선: 카테고리/세부 카테고리 선택 영역 폭을 반응형으로 확장해 placeholder/예시 텍스트가 더 노출되도록 조정
+- [ ] (2025-12-19) [FE] CategorySidebar(vi) 구독 버튼 클립 방지 재점검: 텍스트 줄바꿈 지점/폭 규칙을 조정해 버튼이 항상 노출되도록 보강
+- [x] (2025-12-19) [FE] 피드 5개 뒤 추천 사용자 섹션(모바일): 세로 나열 → 가로 캐러셀(2명씩 한 줄, 좌/우 이동)로 개선 (메모: PostList Hot File, LEAD와 타이밍 합의)
+- [x] (2025-12-19) [FE] 추천 사용자 카드 메타 표시 개선: follower/posts/following 단순 지표 → 프로필/온보딩 기반 핵심 3요소(예: 인증/채택률/관심사 일치)로 교체 + 인증 사용자는 닉네임 상단에 표시 (메모: BE API 필드 선행)
+- [ ] (2025-12-19) [FE] 모바일 글/답변 폼 키보드 safe-area + autosize 적용(작성 중 화면 밀림/가림 방지)
+- [ ] (2025-12-19) [FE] i18n 하드코딩/누락 정리: 화면 텍스트/툴팁/배지/카테고리 라벨 전수 점검(ko/en/vi)
 
 **웹 기능(사용자/관리자 기능)**
-- [ ] (2025-12-18) [WEB] 팔로잉 “추천 팔로잉” 현황 분석 + 개선안 제시(추천 기준/제외 규칙/노출 우선순위)
-- [ ] (2025-12-18) [WEB] 추천 팔로잉: 1회 전체 노출 금지 → 페이지네이션/무한스크롤 도입(서버/클라 키 정리)
-- [ ] (2025-12-18) [WEB] 헤더 검색 예시 질문: 실제 인기 질문 데이터 기반으로 동적 반영(API/캐시/locale 처리)
+- [x] (2025-12-18) [WEB] 팔로잉 “추천 팔로잉” 현황 분석 + 개선안 제시(추천 기준/제외 규칙/노출 우선순위)
+- [x] (2025-12-18) [WEB] 추천 팔로잉: 1회 전체 노출 금지 → 페이지네이션/무한스크롤 도입(서버/클라 키 정리)
+- [x] (2025-12-18) [WEB] 헤더 검색 예시 질문: 실제 인기 질문 데이터 기반으로 동적 반영(API/캐시/locale 처리)
+- [ ] (2025-12-19) [WEB] 토픽/구독 피드 상단 필터 바: 사용자 구독 카테고리를 가로 스크롤 버튼으로 제공(헤더 아래, 콤팩트) + 클릭 시 해당 카테고리 글로 필터 (메모: 기본 정렬은 인기 규칙 유지)
+- [ ] (2025-12-19) [WEB] 피드 추천 사용자 인서트 UX 개선: 모바일 캐러셀 UI와 연동해 서버/클라 페이지네이션 규칙 확정(초기 1페이지, 추가 로드) (메모: FE 캐러셀과 맞춤)
+- [ ] (2025-12-19) [WEB] 인증(/verification) 3-step wizard 완료: 상태/히스토리 실데이터 연결 및 진행 단계 동선 확정
+- [ ] (2025-12-19) [WEB] 공지/배너 CRUD + 홈 SSR 슬롯: 관리자 작성/노출 제어 + 홈 상단 슬롯 SSR 렌더
+- [ ] (2025-12-19) [WEB] 글 상세 하단 추천 섹션: 관련글/같은 카테고리 인기글 SSR + HydrationBoundary 적용
 - [ ] (2025-12-18) [WEB] 게시글 작성: 대표 이미지 선택 UI(다중 이미지 중 thumbnail 지정) + 저장/표시 연동
 - [ ] (2025-12-18) [WEB] 인증 신청: 기존 신청 후 “추가 신청/수정하기” 플로우 지원(상태/권한/히스토리 포함)
-- [ ] (2025-12-18) [WEB] 관리자 인증 심사 UI: 입력 항목/검증/기본값 적절성 현황 분석 + 개선안
+- [x] (2025-12-18) [WEB] 관리자 인증 심사 UI: 입력 항목/검증/기본값 적절성 현황 분석 + 개선안
 - [ ] (2025-12-18) [WEB] 관리자 페이지 기능/정보구조 적절성 현황 분석 + 개선 플랜(성능/UX 포함)
 - [ ] (2025-12-18) [WEB] 프로필 설정: 온보딩 값 자동 반영 여부 점검 + 닉네임 자동 부여 규칙 적절성 점검/개선
 - [ ] (2025-12-18) [WEB] 배지 안내(가이드) 페이지 추가: 뱃지 타입/의미/획득 방법/신뢰 신호 설명(ko/en/vi) + PostCard/프로필에서 진입 동선 연결 (메모: SEO/SSR 여부 결정)
@@ -1343,15 +1702,43 @@
 - [ ] (2025-12-18) [WEB] 구독/알림 설정 UX 확장: 구독 관리 화면(카테고리/토픽) + 알림 수신/빈도 UI (메모: P1‑6 Stream‑E 연결)
 
 **백엔드 기반(성능/규칙/데이터)**
-- [ ] (2025-12-18) [BE] 인기글(trending) 규칙 현황 분석 + 개선안(점수/기간/캐시/부하) 제시
-- [ ] (2025-12-18) [BE] 추천 팔로잉용 사용자 메타 3개 산출 규칙 정의(예: 인증/채택률/관심사 일치율) + API 응답 확장
+- [x] (2025-12-18) [BE] 인기글(trending) 규칙 현황 분석 + 개선안(점수/기간/캐시/부하) 제시
+- [x] (2025-12-18) [BE] 추천 팔로잉용 사용자 메타 3개 산출 규칙 정의(예: 인증/채택률/관심사 일치율) + API 응답 확장 (메모: FE에서 “핵심 3요소”로 노출)
 - [x] (2025-12-18) [BE] 추천 사용자 API 보강: postsCount 실데이터 + limit clamp(default 8, max 12)
-- [ ] (2025-12-18) [BE] 헤더 검색 예시 질문 API 지원(실데이터 기반, 캐시 전략 포함)
-- [ ] (2025-12-18) [BE] 자동 해시태그 3개 생성 규칙 정의/구현(키워드+대/소분류 기반, 고정 3개)
+- [x] (2025-12-18) [BE] 헤더 검색 예시 질문 API 지원(실데이터 기반, 캐시 전략 포함)
+- [ ] (2025-12-19) [BE] 추천 사용자 메타 “핵심 3요소” 필드 확정: 인증/채택률/관심사 일치율 등 계산 + 응답 확장
+- [x] (2025-12-18) [BE] 자동 해시태그 3개 생성 규칙 정의/구현(키워드+대/소분류 기반, 고정 3개)
 - [x] (2025-12-17) [BE] UGC 최소 글자수 완화: 댓글/답변 10→5, 글 제목/본문 최소치 재조정 + ko/en/vi 메시지 동기화
-- [ ] (2025-12-18) [BE] “한국생활정보” 카테고리 폐기(노출 제거/비활성화/마이그레이션 방안) + 미지정/레거시 카테고리 글 숨김 정책
-- [ ] (2025-12-18) [BE] 관리자 페이지 성능 점검(응답 payload/쿼리/페이지네이션) + step-by-step 로딩에 맞는 API 최적화
-- [ ] (2025-12-18) [BE] 관리자 페이지 “추천 게시글 작성” 기능 제공 여부/홈 적용 여부 현황 파악
+- [x] (2025-12-18) [BE] “한국생활정보” 카테고리 폐기(노출 제거/비활성화/마이그레이션 방안) + 미지정/레거시 카테고리 글 숨김 정책
+- [x] (2025-12-18) [BE] 관리자 페이지 성능 점검(응답 payload/쿼리/페이지네이션) + step-by-step 로딩에 맞는 API 최적화
+- [x] (2025-12-18) [BE] 관리자 페이지 “추천 게시글 작성” 기능 제공 여부/홈 적용 여부 현황 파악
+- [ ] (2025-12-19) [BE] 공지/배너 CRUD API + 캐시 정책: 노출 기간/우선순위/SSR 슬롯 대응
+- [ ] (2025-12-19) [BE] 신고 큐 액션 확장: 경고/숨김/블라인드 등 관리자 액션 + 상태 전이 규칙 정리
 - [ ] (2025-12-18) [BE] 포인트/레벨/신뢰점수(온도) 산정 규칙 정의 + 조회 API 설계(프로필/리더보드 공용) (메모: DB 컬럼/집계 방식 검증 필요)
 - [ ] (2025-12-18) [BE] 구독/알림(P1‑6) 설정 저장 모델 확정(빈도/채널/토픽) + API 추가 (메모: 마이그레이션 가능성)
 - [ ] (2025-12-18) [BE] 모더레이션 고도화 로드맵: 룰 기반(금칙어/연락처/저품질) → “신뢰 낮음” 라벨링 → (선택) AI 자동 분류/큐잉 (메모: 외부 AI 연동은 P2로)
+
+**베타(T0) MVP 요구사항 정렬**
+- [ ] (2025-12-19) [WEB] 비로그인 읽기/로그인 쓰기 게이팅 QA: 질문/답변/댓글/신고/북마크 전 흐름 점검 + 에러 대신 모달 유도
+- [ ] (2025-12-19) [BE] 베타 답변 권한 정책(관리자/전문가/인증 사용자 제한) + API 가드/에러 코드 정리
+- [ ] (2025-12-19) [BE] 공식 답변/검수 상태 필드 추가 + 리스트/상세 응답 반영(아이콘/라벨용 플래그)
+- [ ] (2025-12-19) [FE] 공식/검수 답변 UI 표시(✔/배지) + 상세/피드/프로필 노출
+- [ ] (2025-12-19) [WEB] 피드백/버그 제보 폼(설문/간단 텍스트) + 제출 확인 UX
+- [ ] (2025-12-19) [BE] 피드백 수집 API/스토리지(기존 reports 확장 또는 별도 테이블) + rate limit
+- [ ] (2025-12-19) [LEAD] 베타 핵심 지표 이벤트 정의(DAU/답변율/채택율/신고율) + 로깅 항목 정리
+
+**T+1 개선(참여/리텐션)**
+- [ ] (2025-12-19) [WEB] 온보딩 도움말/FAQ/툴팁: 첫 질문/첫 답변/카테고리 탐색 가이드
+- [ ] (2025-12-19) [BE] 포인트/레벨/랭킹 산정 규칙 확정 + 조회 API 설계
+- [ ] (2025-12-19) [FE] 프로필/피드에 포인트·랭킹·칭호 UI
+- [ ] (2025-12-19) [WEB] 검색 자동완성/추천 키워드 UX 설계(오타/혼용 대응은 BE와 동시)
+- [ ] (2025-12-19) [BE] 검색 자동완성/추천 키워드 API + 캐시 정책
+- [ ] (2025-12-19) [LEAD] 콘텐츠 확장/AI 작성 지원 프로세스(내부 작성용) 정의 + CMS/운영 플로우 정리
+- [ ] (2025-12-19) [WEB] 소셜 공유 CTA 확장 + 소셜 로그인(Facebook/Google) 도입 범위 확정
+
+### 6.4 상용화 체크리스트(운영/보안)
+
+- [ ] (2025-12-19) NEXT_PUBLIC_SITE_URL/NEXT_PUBLIC_APP_URL 기준 URL 일관화(캐노니컬/OG/링크 생성) 점검
+- [ ] (2025-12-19) 모니터링/에러 로깅 도입(Sentry/LogRocket 등) + 알림 채널 설정
+- [ ] (2025-12-19) 보안 헤더/레이트리밋/어뷰즈 대응 정책 점검(CSP/Rate limit/봇 차단)
+- [ ] (2025-12-19) 운영 백업/장애 대응 플로우 문서화(DB 백업 주기, 복구 절차)
