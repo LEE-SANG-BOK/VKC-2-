@@ -62,11 +62,13 @@ export const authConfig = {
       }
 
       // 마지막 업데이트로부터 5분이 지났으면 lastLoginAt 갱신
-      const lastUpdate = token.lastLoginUpdate as number || 0;
+      const lastUpdate = (token.lastLoginUpdate as number) || 0;
       const fiveMinutes = 5 * 60 * 1000;
       if (token.sub && Date.now() - lastUpdate > fiveMinutes) {
-        await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, token.sub));
-        token.lastLoginUpdate = Date.now();
+        try {
+          await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, token.sub));
+          token.lastLoginUpdate = Date.now();
+        } catch {}
       }
 
       if (account) {

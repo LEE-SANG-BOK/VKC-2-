@@ -786,6 +786,228 @@
 - 다음 액션/의존성
   - 없음
 
+#### (2025-12-19) [FE] 공식/검수 답변 배지 노출 + i18n 툴팁 정합화 + PostCard vi 잘림 보강 (P0)
+
+- 플랜(체크리스트)
+  - [ ] PostCard 인증 응답 요약에 ✔/배지 아이콘 추가
+  - [ ] 상세 답변 영역에서 검수(verified/expert) 배지 라벨 노출
+  - [ ] 툴팁/배지 문자열 locale fallback 정합화
+  - [ ] lint/build 재검증
+- 현황 분석(코드 기준)
+  - PostCard의 인증 응답 요약은 텍스트만 노출되어 “검수/공식 답변” 강조가 약함
+  - 상세 답변은 TrustBadge 아이콘만 보여 공식/검수 배지 식별이 약함
+  - 일부 툴팁 fallback이 한국어 고정이라 en/vi 혼용 가능
+- 변경 내용(why/what)
+  - why: 공식/검수 답변 인지성 강화 + i18n 혼용 최소화
+  - what: PostCard 인증 요약에 체크 아이콘 포함, 답변 TrustBadge에 verified/expert 라벨 노출, 툴팁/배지 locale fallback 정리
+- 검증
+  - [ ] npm run lint (pass)
+  - [ ] npm run build (fail: `src/app/api/feedback/route.ts` NextRequest.ip 타입 오류)
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - build 실패 원인: `src/app/api/feedback/route.ts` 타입 오류 확인 필요
+- 추가 메모
+  - CommentCard 원글/삭제/제목 없음 locale fallback 적용
+  - PostDetail guideline tooltip locale fallback 적용
+  - npm run lint/build 재실행 완료(빌드 오류 해소: `.next/types` 재생성)
+
+#### (2025-12-19) [FE] i18n 툴팁/카테고리 점검 + PostCard vi 라인랩 보강 (P0)
+
+- 플랜(체크리스트)
+  - [ ] PostCard 작성자 라인(팔로우/배지) wrap 확인
+  - [ ] 카드/상세 툴팁 locale fallback 재점검
+  - [ ] lint/build 재검증
+- 현황 분석(코드 기준)
+  - vi에서 팔로우 텍스트가 길면 작성자 라인 오버플로 가능
+  - 일부 툴팁이 locale fallback을 보강할 여지 존재
+- 변경 내용(why/what)
+  - why: vi 길이 이슈로 인한 모바일 카드 깨짐 방지
+  - what: 작성자 라인 flex-wrap 허용 + tooltip fallback 재점검
+- 검증
+  - [ ] npm run lint (pass)
+  - [ ] npm run build (pass; `.next/types` 재생성 포함)
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] RichTextEditor 툴팁 locale fallback 보강 + 상세 편집 툴팁 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [ ] RichTextEditor 툴팁 fallback을 locale 기준으로 정리
+  - [ ] 상세 페이지 edit/delete 툴팁 fallback locale 보강
+  - [ ] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 에디터 툴팁 기본값이 한국어 고정이라 en/vi에서 혼용될 여지가 있음
+  - 상세 편집 툴팁의 fallback도 한국어 고정
+- 변경 내용(why/what)
+  - why: 툴팁/배지 관련 i18n 혼용 최소화
+  - what: RichTextEditor에 locale prop 추가 후 툴팁 fallback 다국어 적용, PostDetail edit/delete tooltip fallback 정리
+- 검증
+  - [ ] npm run lint (pass)
+  - [ ] npm run build (pass)
+- 변경 파일
+  - src/components/molecules/editor/RichTextEditor.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] RichTextEditor locale 타입 보강 + 빌드 안정화 (P0)
+
+- 플랜(체크리스트)
+  - [ ] PostDetail locale 타입 정규화
+  - [ ] lint/build 재검증
+- 현황 분석(코드 기준)
+  - RichTextEditor locale prop 추가 후 PostDetail에서 string 타입 오류 발생
+- 변경 내용(why/what)
+  - why: 타입 오류로 빌드 중단 방지
+  - what: locale 값을 `ko/en/vi`로 정규화해 RichTextEditor prop에 전달
+- 검증
+  - [ ] npm run lint (pass)
+  - [ ] npm run build (pass; `.next/types` 재생성 포함)
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] Header/Profile i18n fallback 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] Header/프로필 툴팁·라벨 fallback locale 정리
+  - [x] 프로필 메타/탭/빈 상태 문구 locale fallback 보강
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - Header/프로필의 일부 fallback 문구가 한국어/영어 고정이라 vi/en에서 혼용 가능
+  - 프로필 상단 팔로워 라인과 탭/빈 상태에서 locale 누락 위험 존재
+- 변경 내용(why/what)
+  - why: i18n 혼용 최소화 및 툴팁/라벨 정합성 유지
+  - what: Header/프로필 fallback 사전 추가, 프로필 라벨·툴팁·탭 텍스트를 locale 기반으로 보강
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/organisms/Header.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] User menu/Search 카테고리 fallback 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] UserProfile 메뉴/로그아웃 라벨 locale fallback 보강
+  - [x] HeaderSearch 카테고리/placeholder/버튼 fallback 정리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - UserProfile 메뉴 fallback이 한국어 고정이라 en/vi 혼용 위험
+  - HeaderSearch 카테고리/placeholder 기본값이 한국어 고정
+- 변경 내용(why/what)
+  - why: 툴팁/카테고리/메뉴 라벨의 i18n 혼용 최소화
+  - what: locale 기반 fallback 사전 추가, 메뉴/검색 라벨에 적용
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/molecules/user/UserProfile.tsx
+  - src/components/molecules/search/HeaderSearch.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] ProfileModal i18n fallback 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] ProfileModal 라벨/툴팁 fallback locale 정리
+  - [x] 프로필 태그/통계/오류 상태 문구 fallback 정합화
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - ProfileModal 다수 라벨/툴팁이 한국어 고정 fallback
+  - 프로필 태그/오류 상태에서 locale 혼용 가능
+- 변경 내용(why/what)
+  - why: 프로필 모달 i18n 혼용 최소화
+  - what: locale 기반 fallback 사전 추가, 라벨/툴팁/오류 메시지에 적용
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/molecules/modals/ProfileModal.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] User 모달(MyPosts/Bookmarks/Settings) i18n fallback 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] MyPosts/Bookmarks/Settings 모달 라벨 fallback locale 보강
+  - [x] 북마크 날짜/빈 상태/로딩 문구 locale 정합화
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 유저 모달 다수 라벨이 한국어/영어 고정 fallback이라 en/vi 혼용 가능
+  - 북마크 모달은 ko-KR 고정 날짜 포맷 사용
+- 변경 내용(why/what)
+  - why: 모달 기반 UX에서 언어 혼용 최소화
+  - what: locale 기반 fallback 사전 추가, 북마크 날짜 포맷을 locale에 맞게 적용
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/BookmarksModal.tsx
+  - src/components/molecules/modals/SettingsModal.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] FollowingModal i18n fallback 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 팔로잉 모달 라벨/탭/빈 상태 locale fallback 정리
+  - [x] 추천 사용자 메타 라벨/배지 fallback 보강
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - FollowingModal 내 라벨/탭/상태 문구가 한국어 고정 fallback이라 en/vi 혼용 가능
+  - 추천 유저 메타 라벨이 일부 키(채택률/관심사)에서 locale fallback 부족
+- 변경 내용(why/what)
+  - why: 팔로잉 모달 i18n 혼용 최소화
+  - what: locale 기반 fallback 사전 추가, 라벨/탭/배지/빈 상태 문구 적용
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/molecules/modals/FollowingModal.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] NotificationModal i18n fallback 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 알림 모달 라벨/에러/빈 상태 locale fallback 정리
+  - [x] 시간 단위 문자열 fallback 보강
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 알림 모달의 라벨/버튼/에러/빈 상태가 한국어 고정 fallback이라 en/vi 혼용 위험
+  - 상대 시간 단위가 translations 누락 시 한국어로 고정될 수 있음
+- 변경 내용(why/what)
+  - why: 알림 모달 i18n 혼용 최소화
+  - what: locale 기반 fallback 사전 추가, 라벨/에러/빈 상태/시간 단위에 적용
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/molecules/modals/NotificationModal.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
 ### 0.6.2 [WEB] Web Feature Agent
 
 #### (2025-12-18) [WEB] 헤더/프로필 모달 성능 최적화 (P0)
@@ -1182,6 +1404,362 @@
 - 다음 액션/의존성
   - 없음
 
+#### (2025-12-19) [WEB] 비로그인 읽기/로그인 쓰기 게이팅 QA (P0)
+
+- 플랜(체크리스트)
+  - [x] 카드/리스트 액션(좋아요/북마크/팔로우)에서 비로그인 시 로그인 모달 유도
+  - [x] 질문/답변/댓글/신고/북마크 전 흐름 확인(에러 대신 모달)
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - PostCard/AnswerCard/CommentCard가 비로그인 시 `/login`으로 라우팅되어 UX 단절 발생
+  - PostDetail 내 신고/댓글/답변은 로그인 모달 사용 중
+- 변경 내용(why/what)
+  - why: 쓰기 액션은 로그인 모달 유도로 전환해 흐름 유지
+  - what: 카드 액션에서 `useLoginPrompt`로 모달 유도
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/components/molecules/cards/CommentCard.tsx
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 피드백/버그 제보 폼 UX + 제출 확인 (P0)
+
+- 플랜(체크리스트)
+  - [x] 피드백/버그 제보 폼 UI 구성 + 제출 확인 화면
+  - [x] API 연동용 repo/mutation 추가
+  - [x] 메뉴 진입 동선 추가
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 전용 피드백 폼/제출 확인 동선이 없어 제보 루프가 끊김
+- 변경 내용(why/what)
+  - why: 베타에서 빠른 개선 루프 확보
+  - what: `/[lang]/feedback` 페이지 + 제출 확인 UI + `/api/feedback` 엔드포인트 추가
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/feedback/page.tsx
+  - src/app/[lang]/(main)/feedback/FeedbackClient.tsx
+  - src/app/api/feedback/route.ts
+  - src/repo/feedback/fetch.ts
+  - src/repo/feedback/mutation.ts
+  - src/repo/feedback/query.ts
+  - src/repo/feedback/types.ts
+  - src/repo/keys.ts
+  - src/components/organisms/CategorySidebar.tsx
+- 다음 액션/의존성
+  - BE 저장소/레이트리밋 도입 시 API 구현 교체 필요
+
+#### (2025-12-19) [WEB] 질문 템플릿 UI + 작성 폼 연결 (P0)
+
+- 플랜(체크리스트)
+  - [x] 조건/목표/배경 입력 UI 추가
+  - [x] 입력 내용이 본문 상단에 합쳐져 제출되도록 연결
+  - [x] 검증/금칙어/스팸 감지에 템플릿 포함
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 질문 작성 시 상황/목표/조건이 빠져 답변 품질 저하
+- 변경 내용(why/what)
+  - why: 질문 품질을 구조적으로 끌어올려 답변 정확도 개선
+  - what: 템플릿 입력값을 본문 상단에 합성하고 유효성/경고에 포함
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 - 재검증/빌드 안정화 (P0)
+
+- 플랜(체크리스트)
+  - [x] UserProfile 모달 dynamic loading/오픈 시 mount 상태 재확인
+  - [x] 모달 쿼리 옵션(enabled/isOpen, staleTime/gcTime) 재확인
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 모달 성능 최적화가 이미 반영되어 있어 코드 변경 없이 현행 검증만 필요
+  - 빌드가 `.next/lock` 잔존 시 실패 가능(병렬 빌드/중단 시)
+- 변경 내용(why/what)
+  - why: 병렬 작업 중에도 성능 최적화 상태가 유지되는지 확인
+  - what: lint/build 재실행, `.next/lock` 정리 후 build 성공 확인
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass; `.next/lock` 정리 후)
+- 변경 파일
+  - (none)
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 글 상세 하단 추천 섹션 SSR + HydrationBoundary (P0)
+
+- 플랜(체크리스트)
+  - [x] 관련글/카테고리 인기글 필터 정의 + 쿼리 키 일치
+  - [x] PostDetail SSR prefetch + HydrationBoundary 연동
+  - [x] 하단 추천 섹션 UI(관련/카테고리) 렌더
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 글 상세 하단에 추천 섹션이 없어 관련글 탐색 흐름이 끊김
+  - SSR/하이드레이션 연동이 없으면 상세 진입 시 추가 요청/렌더 지연이 발생
+- 변경 내용(why/what)
+  - why: 상세 페이지 체류/탐색 흐름 개선 + 서버 렌더로 초기 응답 품질 확보
+  - what: 추천 필터/쿼리 헬퍼 추가, 상세 페이지에서 추천 쿼리 prefetch, 클라이언트에서 관련/카테고리 인기글 섹션 렌더
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/utils/postRecommendationFilters.ts
+  - src/app/[lang]/(main)/posts/[id]/page.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+- 다음 액션/의존성
+  - (선택) 추천 기준(태그 우선/조회수 가중) 확정 시 필터 로직 조정
+
+#### (2025-12-19) [WEB] 토픽/구독 피드 상단 필터 바 정렬 규칙 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 구독 피드 상단 필터 바 동작 확인(구독 카테고리 버튼)
+  - [x] 구독 필터 적용 시 기본 정렬을 인기 규칙으로 유지
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 구독 피드 상단 필터 바는 이미 존재하나, 구독 피드 정렬이 최신으로 고정되어 요구사항(인기 기준 유지)과 불일치
+- 변경 내용(why/what)
+  - why: 구독 카테고리 필터 적용 시에도 기본 정렬 규칙을 유지해 피드 일관성 확보
+  - what: 구독 피드(`selectedCategory === 'subscribed'`) 정렬을 `popular`로 고정
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/organisms/PostList.tsx
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 공지/배너 CRUD + 홈 SSR 슬롯 (P0)
+
+- 플랜(체크리스트)
+  - [x] 관리자 공지/배너 폼에 노출 시작/종료 입력 추가
+  - [x] 홈 상단 공지 배너 슬롯(공지 카테고리) 렌더
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 관리자 뉴스 CRUD는 존재하지만 노출 기간 설정 UI가 없어 일정 기반 제어가 어려움
+  - 홈 상단에 공지/배너 전용 슬롯이 없어 노출 우선순위를 관리하기 어려움
+- 변경 내용(why/what)
+  - why: 공지/배너 노출 제어와 홈 상단 노출 지점을 확보해 운영 효율을 높임
+  - what: 관리자 폼에 start/end 입력 추가, 홈 상단에 공지 배너 슬롯 추가(공지 카테고리 필터)
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/organisms/NoticeBanner.tsx
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - src/app/admin/(dashboard)/news/page.tsx
+  - src/repo/admin/types.ts
+  - src/repo/admin/fetch.ts
+  - src/repo/admin/mutation.ts
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 빌드 오류 정리: 검색 키워드 API 타입 캐스팅 (P0)
+
+- 플랜(체크리스트)
+  - [x] search keywords API 결과 타입 캐스팅 정리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - `db.execute` 결과 타입이 `ResultQueryMeta`와 교차되어 빌드 타입 오류 발생
+- 변경 내용(why/what)
+  - why: 빌드 실패를 해소하고 검증을 완료하기 위해 타입 캐스팅 정합성 보강
+  - what: `normalizeRows` 호출부에서 unknown 경유 캐스팅으로 타입 오류 제거
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/api/search/keywords/route.ts
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 피드 추천 사용자 인서트 UX 개선 (P0)
+
+- 플랜(체크리스트)
+  - [x] 추천 사용자 infinite query로 전환(초기 1페이지)
+  - [x] 모바일 캐러셀 스크롤 끝에서 추가 로드
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 피드 추천 사용자는 1페이지 고정으로 로드되어 캐러셀에서 추가 탐색이 끊김
+  - 서버/클라 페이지네이션 규칙이 모달/피드 간 상이해 확장이 어려움
+- 변경 내용(why/what)
+  - why: 캐러셀 UX에서 추가 로드 동선을 확보해 추천 탐색성을 높임
+  - what: `useInfiniteRecommendedUsers`로 전환 + 캐러셀 sentinel로 추가 로드, 중복 제거 후 팔로워 순 정렬 유지
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/organisms/PostList.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 인증(/verification) 3-step wizard 완료 (P0)
+
+- 플랜(체크리스트)
+  - [x] 3-step 스텝퍼(정보 입력/서류 업로드/상태 확인) 동선 구성
+  - [x] 신청 완료 시 상태 단계 전환 + 히스토리 refetch
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 인증 신청이 단일 폼/접힘 내역 구조라 단계 진행/상태 확인 동선이 분산
+  - 상태 확인은 별도 페이지 또는 접힘 UI에 의존해 흐름 이탈이 발생
+- 변경 내용(why/what)
+  - why: 신청/업로드/상태 확인을 명확한 단계 흐름으로 통합해 이탈을 줄임
+  - what: 스텝퍼 추가, 상태 단계에서 히스토리 실데이터 표시, 제출 후 상태 단계로 이동
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 인증 신청 “추가 신청/수정하기” 플로우 지원 (P0)
+
+- 플랜(체크리스트)
+  - [x] 거절된 신청에서 재신청 CTA 제공
+  - [x] 이전 신청 데이터로 폼 프리필(문서 재업로드 안내 포함)
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 기존 신청이 반려된 경우 재신청 동선이 명확하지 않고 반복 입력이 필요
+- 변경 내용(why/what)
+  - why: 재신청 시 입력 부담을 줄이고 상태/히스토리 흐름을 이어줌
+  - what: 거절 카드에 “수정해서 다시 신청” 버튼 추가, 마지막 데이터 프리필 후 1단계로 이동
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 프로필 설정 온보딩 반영/닉네임 자동 생성 규칙 개선 (P0)
+
+- 플랜(체크리스트)
+  - [x] 온보딩 값(유형/비자/한국어) 반영 경로 점검
+  - [x] 닉네임 자동 생성 규칙 개선(결정적 suffix)
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 온보딩은 `/api/users/me`로 userType/visaType/koreanLevel 저장
+  - 프로필 수정 화면은 `useMyProfile` 값으로 자동 채움
+- 변경 내용(why/what)
+  - why: 자동 닉네임이 세션마다 달라지는 문제를 제거해 일관성을 확보
+  - what: `generateDisplayNameFromEmail`에서 랜덤값 대신 해시 기반 suffix 사용
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/lib/utils/profile.ts
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 게시글 대표 이미지 선택 UI + 저장/표시 연동 (P0)
+
+- 플랜(체크리스트)
+  - [x] 대표 이미지 선택 UI 구성(본문 이미지 기반)
+  - [x] 선택 이미지 마커 저장(`data-thumbnail`)
+  - [x] 썸네일 추출 로직에 선택 마커 반영
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 게시글 썸네일은 본문 첫 이미지로 고정되어 선택 변경 불가
+  - 리스트/검색/프로필/북마크 등에서 동일 규칙으로 썸네일이 고정 노출
+- 변경 내용(why/what)
+  - why: 다중 이미지 글의 대표 이미지를 명시적으로 지정해 노출 품질을 개선
+  - what: 작성 폼에 대표 이미지 선택 UI 추가, 저장 시 선택 이미지를 `data-thumbnail`로 마킹, API 썸네일 추출에서 해당 이미지를 우선 사용
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - src/components/molecules/editor/RichTextEditor.tsx
+  - src/app/api/posts/route.ts
+  - src/app/api/posts/trending/route.ts
+  - src/app/api/search/route.ts
+  - src/app/api/users/[id]/posts/route.ts
+  - src/app/api/users/[id]/bookmarks/route.ts
+  - src/app/api/posts/[id]/route.ts
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 관리자 페이지 기능/정보구조 분석 + 개선 플랜 (P0)
+
+- 플랜(체크리스트)
+  - [x] 관리자 IA/기능 현황 점검(유저/게시글/댓글/신고/인증/뉴스)
+  - [x] 성능/UX 개선안 정리(필터/탐색/캐시)
+- 현황 분석(코드 기준)
+  - 리스트 페이지 필터/페이지 상태가 URL과 분리되어 재진입/공유가 어려움
+  - 리스트 쿼리의 `staleTime`/`keepPreviousData`가 없어 페이지 전환 시 깜빡임 발생
+  - 신고/인증 상세는 별도 페이지 이동에 의존해 맥락 전환 비용이 큼
+- 개선 플랜(요약)
+  - 필터/페이지 상태 URL 동기화 + 기본 필터 프리셋 제공
+  - 리스트 쿼리에 `staleTime`/`keepPreviousData` 적용, 다음 페이지 prefetch
+  - 신고/인증 상세를 Drawer/SidePanel로 제공해 맥락 유지
+  - 상단 KPI/상태 카운트 카드로 우선순위 triage 강화
+- 변경 파일
+  - 없음(분석/플랜 기록)
+- 다음 액션/의존성
+  - FE/BE: list API에 status count/summary 응답 추가 필요
+
+#### (2025-12-19) [WEB] 배지 안내(가이드) 진입 동선 연결 (P0)
+
+- 플랜(체크리스트)
+  - [x] PostCard/프로필 배지에서 가이드 링크 동선 보강
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 배지 정보는 툴팁 중심으로 제공되어 직접 진입 동선이 약함
+- 변경 내용(why/what)
+  - why: 배지 의미/획득 조건 안내 페이지로 즉시 이동할 수 있게 접근성을 강화
+  - what: 배지 자체 클릭 시 가이드 페이지로 이동하도록 연결
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 빌드 오류 정리: 구독 설정 타입 정합성 (P0)
+
+- 현황 분석(코드 기준)
+  - 구독 설정 update payload가 `string`으로 추론되어 DB enum 타입과 불일치
+- 변경 내용(why/what)
+  - why: 빌드 타입 오류를 제거하고 설정 업데이트를 정상화
+  - what: notificationChannel/notificationFrequency 타입을 리터럴 유니온으로 명시
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/api/users/me/subscriptions/settings/route.ts
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 랭킹/칭호(리더보드) UI/IA 설계 (P0)
+
+- 플랜(체크리스트)
+  - [x] 리더보드 라우트 + SSR HydrationBoundary 구성
+  - [x] Top3 강조 카드 + 전체 랭킹 리스트/페이지네이션
+  - [x] 신뢰/레벨/온도 지표 시각화 구성
+- 현황 분석(코드 기준)
+  - `api/users/leaderboard`는 존재하나 사용자 UI/IA가 부재
+- 변경 내용(why/what)
+  - why: 커뮤니티 신뢰 지표를 시각화해 참여 동기와 정보 구조를 강화
+  - what: `/[lang]/leaderboard` SSR 페이지 + 리더보드 클라이언트 UI 추가, prefetch + HydrationBoundary로 초기 렌더
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/leaderboard/page.tsx
+  - src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx
+- 다음 액션/의존성
+  - 없음
+
 ### 0.6.3 [BE] Backend Agent
 
 #### (2025-12-18) [BE] 추천 사용자 API 보강 + 과부하 방지 (P0)
@@ -1205,11 +1783,19 @@
 #### (2025-12-18) [LEAD] 리팩토링 심화 트랙(폴더/중복/미사용 정리) — 실행 플랜 (P0)
 
 - 플랜(체크리스트)
-  - [ ] `src/components/**` 구조 점검: 폴더별 책임(atomic) 재정의 및 이동 후보 목록화
+  - [x] `src/components/**` 구조 점검: 폴더별 책임(atomic) 재정의 및 이동 후보 목록화
   - [x] 미사용/중복 파일 후보 스캔(정적 import 기준) 및 삭제/통합 우선순위 결정
-  - [ ] 안전 삭제(빌드 게이트): 1) 제거 2) `npm run lint` 3) `npm run build`
+  - [x] 안전 삭제(빌드 게이트): 1) 제거 2) `npm run lint` 3) `npm run build`
   - [x] 중복 유틸/타입 정리(선택): repo/types/utils 중복 최소화
-  - [ ] 완료 항목은 `HANDOVER.md`에 “완료”로 반영
+  - [x] 완료 항목은 `HANDOVER.md`에 “완료”로 반영
+
+- 점검 결과
+  - atoms/ui 중복 후보: `Button/Badge/Avatar`는 Phase‑2에서 `ui` 프리미티브 wrapper로 통합 검토
+  - 정적 import 스캔 기준 미사용 컴포넌트 없음(삭제 대상 없음)
+
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
 
 #### (2025-12-19) [BE] “한국생활정보” 카테고리 비노출 + 레거시 숨김 정책 적용 (P0)
 
@@ -1278,6 +1864,309 @@
   - docs/EXECUTION_PLAN.md
 - 다음 액션/의존성
   - 추천 게시글 기능은 신규 API/DB 설계 필요
+
+#### (2025-12-19) [BE] 베타 답변 권한/검수 + 피드백/UGC allowlist (P0)
+
+- 플랜(체크리스트)
+  - [x] 답변 권한 가드(관리자/전문가/인증) + 공식/검수 플래그 반영
+  - [x] 피드백 API/스토리지 + rate limit 추가
+  - [x] UGC 외부 링크 allowlist 적용(글/답변/댓글 작성·수정)
+  - [x] 답변 검수/피드백 마이그레이션 추가
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: 답변 작성/수정 및 댓글 작성/수정에서 외부 링크 도메인 검증이 없어 정책 우회 가능
+  - 재현/리스크: 인증되지 않은 계정도 답변 작성 가능, 비공식 외부 링크 삽입 가능
+- 변경 내용(why/what)
+  - why: 베타 신뢰도 확보(답변 권한) + 피드백 수집/운영 대응 + UGC 링크 정책 적용
+  - what: answers에 공식/검수 상태 추가, 피드백 테이블/API 신설, UGC allowlist 유틸과 각 write API 가드 적용
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+  - [ ] API 수동 호출(실패: next dev listen EPERM 127.0.0.1:3010)
+- 변경 파일
+  - src/lib/db/schema.ts
+  - src/lib/db/migrations/0029_answer_review_feedback.sql
+  - src/lib/db/migrations/meta/_journal.json
+  - src/lib/validation/ugc-links.ts
+  - src/app/api/feedback/route.ts
+  - src/app/api/posts/route.ts
+  - src/app/api/posts/[id]/route.ts
+  - src/app/api/posts/[id]/answers/route.ts
+  - src/app/api/answers/[id]/route.ts
+  - src/app/api/posts/[id]/comments/route.ts
+  - src/app/api/answers/[id]/comments/route.ts
+  - src/app/api/comments/[id]/route.ts
+  - src/app/api/users/[id]/answers/route.ts
+  - src/repo/answers/types.ts
+  - src/repo/users/types.ts
+- 다음 액션/의존성
+  - DB 마이그레이션 적용 필요(0029_answer_review_feedback.sql)
+  - 로컬 dev 서버 바인딩 권한/포트 정책 확인 후 API 수동 호출 재시도
+
+#### (2025-12-19) [BE] 공지/배너 노출 기간 + 캐시 정책 (P0)
+
+- 플랜(체크리스트)
+  - [x] 공지/배너 노출 기간 필드(start/end) 추가
+  - [x] news 공개 API 노출 기간 필터 + 캐시 헤더 설정
+  - [x] admin news CRUD에 기간 필드 반영
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `/api/news`는 isActive만 필터링하여 기간 만료 콘텐츠도 노출 가능
+  - 재현/리스크: 운영자가 기간을 관리할 수 없어 배너/공지 노출 제어 어려움
+- 변경 내용(why/what)
+  - why: 공지/배너 노출 기간 제어 및 캐시 정책 확립
+  - what: news에 startAt/endAt 컬럼 추가 + 공개 API 기간 필터링 + admin API 기간 저장 지원
+- 검증
+  - [x] npm run lint
+  - [ ] npm run build (실패: src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx 타입 불일치)
+- 변경 파일
+  - src/lib/db/schema.ts
+  - src/lib/db/migrations/0030_news_schedule.sql
+  - src/lib/db/migrations/meta/_journal.json
+  - src/app/api/news/route.ts
+  - src/app/api/admin/news/route.ts
+  - src/app/api/admin/news/[id]/route.ts
+- 다음 액션/의존성
+  - DB 마이그레이션 적용 필요(0030_news_schedule.sql)
+  - build 실패 원인(POST detail locale 타입) 해결 후 재검증
+
+#### (2025-12-19) [BE] 신고 큐 액션 확장 + 상태 전이 가드 (P0)
+
+- 플랜(체크리스트)
+  - [x] 신고 action enum/컬럼 추가 및 마이그레이션
+  - [x] admin report PATCH에 상태 전이 규칙 + 액션 처리
+  - [x] reports 리스트/상세/유저 리포트 응답에 action 포함
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: 신고 처리 API가 삭제/단순 상태만 지원, 경고/숨김/블라인드 액션 기록 없음
+  - 재현/리스크: 운영자가 조치 유형을 구분하지 못하고 상태 전이 규칙도 느슨함
+- 변경 내용(why/what)
+  - why: 신고 큐 운영에서 조치 유형과 처리 규칙을 명확히 하기 위함
+  - what: report_action enum 추가, PATCH에서 상태 전이 검증 및 hide/blind/delete 처리, 응답 필드 확장
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/lib/db/schema.ts
+  - src/lib/db/migrations/0031_report_actions.sql
+  - src/lib/db/migrations/meta/_journal.json
+  - src/app/api/admin/reports/route.ts
+  - src/app/api/admin/reports/[id]/route.ts
+  - src/app/api/admin/users/[id]/reports-made/route.ts
+  - src/app/api/admin/users/[id]/reports-received/route.ts
+  - src/repo/admin/types.ts
+  - src/repo/admin/fetch.ts
+  - src/repo/admin/mutation.ts
+- 다음 액션/의존성
+  - DB 마이그레이션 적용 필요(0031_report_actions.sql)
+  - FE에서 action 선택 UI 추가 필요
+
+#### (2025-12-19) [BE] 피드/프로필 리스트 응답 경량화 (P0)
+
+- 플랜(체크리스트)
+  - [x] `api/posts`, `api/users/[id]/posts`, `api/users/[id]/bookmarks` 기본 응답에서 `content` 제거
+  - [x] excerpt/thumbnail/thumbnails/imageCount 유지
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 리스트 응답에 `include=content` 옵션이 있어 카드 렌더 대비 payload가 커짐
+  - 모달/피드 카드 UI는 excerpt/thumbnail만 필요
+- 변경 내용(why/what)
+  - why: 리스트/모달 응답을 최소화해 응답 크기/렌더 비용을 줄이기 위함
+  - what: 리스트 API의 `include` 처리 제거 및 기본 응답에서 content 제외
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+  - [ ] API 수동 호출 (dev 서버 포트 바인딩 권한 오류)
+- 변경 파일
+  - src/app/api/posts/route.ts
+  - src/app/api/users/[id]/posts/route.ts
+  - src/app/api/users/[id]/bookmarks/route.ts
+- 다음 액션/의존성
+  - FE에서 `include` 사용 여부 점검
+
+#### (2025-12-19) [BE] 검색 자동완성/추천 키워드 API + 캐시 정책 (P1)
+
+- 플랜(체크리스트)
+  - [x] tags/category/subcategory 기반 키워드 집계 API 추가
+  - [x] query/limit clamp + 캐시 헤더 정의
+  - [x] search repo 타입/훅/키 추가
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 검색 예시/태그 API는 존재하지만 자동완성 키워드 전용 API는 없음
+  - FE에서 입력 중 추천 키워드 노출을 위한 응답 스펙 필요
+- 변경 내용(why/what)
+  - why: 검색 자동완성/추천 키워드 제공을 위한 서버 집계 엔드포인트 확보
+  - what: `/api/search/keywords` 추가 + repo fetch/query/key 확장
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+  - [ ] API 수동 호출 (dev 서버 포트 바인딩 권한 오류)
+- 변경 파일
+  - src/app/api/search/keywords/route.ts
+  - src/repo/search/types.ts
+  - src/repo/search/fetch.ts
+  - src/repo/search/query.ts
+  - src/repo/keys.ts
+- 다음 액션/의존성
+  - FE에서 검색 입력 autocomplete에 `useSearchKeywords` 연결
+
+#### (2025-12-19) [BE] 포인트/레벨/랭킹 조회 API 베이스라인 (P1)
+
+- 플랜(체크리스트)
+  - [x] 점수/레벨 산정 규칙 정의(trustScore + helpfulAnswers * 5 + adoptionRate)
+  - [x] 프로필 점수 API(`/api/users/[id]/score`) 추가
+  - [x] 리더보드 API(`/api/users/leaderboard`) 추가
+  - [x] repo 타입/훅/쿼리 키 확장
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 포인트/레벨/랭킹 조회 API가 없어서 프로필/리더보드 공용 데이터 제공이 불가
+  - 사용자 테이블에 trustScore/helpfulAnswers/adoptionRate가 이미 존재
+- 변경 내용(why/what)
+  - why: 프로필/리더보드에 공통 점수 지표 제공 및 레벨 계산 기준 확보
+  - what: 점수 계산 공식 정의 + 점수/레벨 응답 API 추가 + repo 연결
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+  - [ ] API 수동 호출 (dev 서버 포트 바인딩 권한 오류)
+- 변경 파일
+  - src/app/api/users/[id]/score/route.ts
+  - src/app/api/users/leaderboard/route.ts
+  - src/repo/users/types.ts
+  - src/repo/users/fetch.ts
+  - src/repo/users/query.ts
+  - src/repo/keys.ts
+- 다음 액션/의존성
+  - FE에서 프로필/리더보드 노출 설계 필요
+  - 대량 데이터 시 trustScore/helpfulAnswers 정렬 인덱스 검토(마이그레이션 필요)
+
+#### (2025-12-19) [BE] 추천 사용자 팔로우 상태 정확화 (P1)
+
+- 플랜(체크리스트)
+  - [x] 추천 사용자 응답에 isFollowing 실제 상태 반영
+  - [x] BE 체크리스트 상태 동기화
+- 현황 분석(코드 기준)
+  - 추천 사용자 응답은 팔로우 목록을 제외하지만, 응답의 isFollowing은 항상 false로 고정됨
+- 변경 내용(why/what)
+  - why: 팔로우 상태가 실제 값과 다르면 CTA/표시가 흔들릴 수 있음
+  - what: 팔로우 ID 셋을 재사용해 isFollowing 값을 응답에 반영
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/api/users/recommended/route.ts
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 추천 사용자 카드에서 Follow/Following 표시 확인
+
+#### (2025-12-19) [BE] 구독/알림 설정 저장 모델 + API (P1)
+
+- 플랜(체크리스트)
+  - [x] topic_subscriptions에 channel/frequency 컬럼 추가
+  - [x] 구독 알림 설정 API 추가(`/api/users/me/subscriptions/settings`)
+  - [x] repo fetch/query/mutation/key 확장
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 카테고리/토픽 구독은 있으나 알림 빈도/채널 설정을 저장할 컬럼과 API가 없음
+- 변경 내용(why/what)
+  - why: 구독 기반 알림/설정 UI를 위해 채널/빈도 저장 구조가 필요
+  - what: topic_subscriptions에 channel/frequency 추가 + 설정 조회/업데이트 API + repo 연결
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+  - [ ] API 수동 호출 (dev 서버 포트 바인딩 권한 오류)
+- 변경 파일
+  - src/lib/db/schema.ts
+  - src/lib/db/migrations/0032_topic_subscription_notifications.sql
+  - src/lib/db/migrations/meta/_journal.json
+  - src/app/api/users/me/subscriptions/settings/route.ts
+  - src/repo/categories/types.ts
+  - src/repo/categories/fetch.ts
+  - src/repo/categories/query.ts
+  - src/repo/categories/mutation.ts
+  - src/repo/keys.ts
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - DB 마이그레이션 적용 필요(0032_topic_subscription_notifications.sql)
+
+#### (2025-12-19) [BE] 피드백 관리자 리스트 + 사용자 정보 노출 (P1)
+
+- 플랜(체크리스트)
+  - [x] 피드백 저장 시 userId 연결 상태 확인
+  - [x] 관리자 피드백 리스트 API 추가(`/api/admin/feedback`)
+  - [x] admin repo 타입/쿼리 확장
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 피드백 저장은 있으나 관리자 페이지에서 사용자 정보와 함께 조회할 API가 없음
+- 변경 내용(why/what)
+  - why: 운영자가 피드백 작성자를 확인하고 대응할 수 있어야 함
+  - what: admin feedback 리스트 API 추가 + 사용자 정보 조인 + repo 연결
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+  - [ ] API 수동 호출 (dev 서버 포트 바인딩 권한 오류)
+- 변경 파일
+  - src/app/api/admin/feedback/route.ts
+  - src/repo/admin/types.ts
+  - src/repo/admin/fetch.ts
+  - src/repo/admin/query.ts
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 관리자 UI에서 feedback 목록 연결 필요
+
+#### (2025-12-19) [BE] 모더레이션 고도화 로드맵 정리 (P2)
+
+- 플랜(체크리스트)
+  - [x] 룰 기반 필터(금칙어/연락처/저품질) 적용 범위 정리
+  - [x] “신뢰 낮음” 라벨링 기준 초안 정의
+  - [x] 선택적 AI 분류/큐잉 단계 정의
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - UGC 검증은 금칙어/외부 링크 정책 중심이며 라벨링/자동 분류 로드맵이 정리되지 않음
+- 변경 내용(why/what)
+  - why: 운영 정책 단계(룰 → 라벨 → 자동 분류)를 명확히 해야 확장 시 혼선을 줄일 수 있음
+  - what: 단계별 적용 범위/조건/로그 기준을 로드맵으로 문서화
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 라벨링 컬럼/운영 로그 필요 시 별도 마이그레이션 설계
+
+#### (2025-12-19) [BE] API 수동 호출 재시도(포트 바인딩 확인) (P1)
+
+- 플랜(체크리스트)
+  - [x] next dev 포트 바인딩 재시도(127.0.0.1/0.0.0.0)
+  - [x] `/api/posts` 기본 응답 확인(리스트 최소 필드/author.isFollowing)
+  - [x] `/api/users/{id}/posts` 응답 확인
+- 현황 분석(코드 기준)
+  - 로컬 dev는 포트 바인딩은 성공했으나 Supabase `last_login_at` 업데이트 쿼리에서 `57014` statement timeout으로 서버가 즉시 종료됨(수동 호출 불가)
+- 변경 내용(why/what)
+  - why: BE 검증 항목 완료를 위해 수동 호출 결과가 필요
+  - what: 로컬 dev 재시도(포트 3000) 실패 → 배포본(Vercel: https://vkc-2.vercel.app)에서 curl로 수동 확인(코드 변경 없음)
+- 검증
+  - [x] dev 포트 3000 재시도: 포트 바인딩 OK → DB statement timeout(57014)로 프로세스 종료
+  - [x] curl https://vkc-2.vercel.app/api/posts?limit=1 → 200 OK, 데이터/페이지네이션/author.isFollowing 포함
+  - [x] curl https://vkc-2.vercel.app/api/users/838c7b90-c135-4993-8214-168c61fff26a/posts?limit=1 → 200 OK, 데이터/페이지네이션 포함
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - Supabase 연결 타임아웃 해결 시 로컬에서도 재확인(선택), 현 시점 BE 체크리스트는 배포본 호출로 충족
+
+#### (2025-12-19) [BE] 리스트 API 응답/페이징 점검 (P1)
+
+- 플랜(체크리스트)
+  - [ ] feed/list 응답 `author.isFollowing` 배치 적용 점검
+  - [ ] cursor pagination/limit clamp 적용 여부 확인
+  - [ ] 인덱스 필요성 검토
+- 현황 분석(코드 기준)
+  - `GET /api/posts`, `GET /api/posts/trending`, `GET /api/users/[id]/posts`, `GET /api/users/[id]/bookmarks`, `GET /api/search`
+- 변경 내용(why/what)
+  - why: FE 카드/모달 렌더 최소 응답 및 follow 상태 정합성 유지 확인
+  - what: 리스트 응답은 `excerpt/thumbnail/thumbnails/imageCount` 기준으로 구성돼 있고 `author.isFollowing` 배치 조회 적용됨(코드 변경 없음)
+- 검증
+  - [ ] 코드 점검 완료(추가 변경 없음)
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 인덱스는 현 시점 필수 아님(필요 시 `posts.author_id/created_at/id` 복합 인덱스 검토)
 
 ---
 
@@ -1687,18 +2576,18 @@
 - [x] (2025-12-18) [WEB] 팔로잉 “추천 팔로잉” 현황 분석 + 개선안 제시(추천 기준/제외 규칙/노출 우선순위)
 - [x] (2025-12-18) [WEB] 추천 팔로잉: 1회 전체 노출 금지 → 페이지네이션/무한스크롤 도입(서버/클라 키 정리)
 - [x] (2025-12-18) [WEB] 헤더 검색 예시 질문: 실제 인기 질문 데이터 기반으로 동적 반영(API/캐시/locale 처리)
-- [ ] (2025-12-19) [WEB] 토픽/구독 피드 상단 필터 바: 사용자 구독 카테고리를 가로 스크롤 버튼으로 제공(헤더 아래, 콤팩트) + 클릭 시 해당 카테고리 글로 필터 (메모: 기본 정렬은 인기 규칙 유지)
-- [ ] (2025-12-19) [WEB] 피드 추천 사용자 인서트 UX 개선: 모바일 캐러셀 UI와 연동해 서버/클라 페이지네이션 규칙 확정(초기 1페이지, 추가 로드) (메모: FE 캐러셀과 맞춤)
-- [ ] (2025-12-19) [WEB] 인증(/verification) 3-step wizard 완료: 상태/히스토리 실데이터 연결 및 진행 단계 동선 확정
-- [ ] (2025-12-19) [WEB] 공지/배너 CRUD + 홈 SSR 슬롯: 관리자 작성/노출 제어 + 홈 상단 슬롯 SSR 렌더
-- [ ] (2025-12-19) [WEB] 글 상세 하단 추천 섹션: 관련글/같은 카테고리 인기글 SSR + HydrationBoundary 적용
-- [ ] (2025-12-18) [WEB] 게시글 작성: 대표 이미지 선택 UI(다중 이미지 중 thumbnail 지정) + 저장/표시 연동
-- [ ] (2025-12-18) [WEB] 인증 신청: 기존 신청 후 “추가 신청/수정하기” 플로우 지원(상태/권한/히스토리 포함)
+- [x] (2025-12-19) [WEB] 토픽/구독 피드 상단 필터 바: 사용자 구독 카테고리를 가로 스크롤 버튼으로 제공(헤더 아래, 콤팩트) + 클릭 시 해당 카테고리 글로 필터 (메모: 기본 정렬은 인기 규칙 유지)
+- [x] (2025-12-19) [WEB] 피드 추천 사용자 인서트 UX 개선: 모바일 캐러셀 UI와 연동해 서버/클라 페이지네이션 규칙 확정(초기 1페이지, 추가 로드) (메모: FE 캐러셀과 맞춤)
+- [x] (2025-12-19) [WEB] 인증(/verification) 3-step wizard 완료: 상태/히스토리 실데이터 연결 및 진행 단계 동선 확정
+- [x] (2025-12-19) [WEB] 공지/배너 CRUD + 홈 SSR 슬롯: 관리자 작성/노출 제어 + 홈 상단 슬롯 SSR 렌더
+- [x] (2025-12-19) [WEB] 글 상세 하단 추천 섹션: 관련글/같은 카테고리 인기글 SSR + HydrationBoundary 적용
+- [x] (2025-12-18) [WEB] 게시글 작성: 대표 이미지 선택 UI(다중 이미지 중 thumbnail 지정) + 저장/표시 연동
+- [x] (2025-12-18) [WEB] 인증 신청: 기존 신청 후 “추가 신청/수정하기” 플로우 지원(상태/권한/히스토리 포함)
 - [x] (2025-12-18) [WEB] 관리자 인증 심사 UI: 입력 항목/검증/기본값 적절성 현황 분석 + 개선안
-- [ ] (2025-12-18) [WEB] 관리자 페이지 기능/정보구조 적절성 현황 분석 + 개선 플랜(성능/UX 포함)
-- [ ] (2025-12-18) [WEB] 프로필 설정: 온보딩 값 자동 반영 여부 점검 + 닉네임 자동 부여 규칙 적절성 점검/개선
-- [ ] (2025-12-18) [WEB] 배지 안내(가이드) 페이지 추가: 뱃지 타입/의미/획득 방법/신뢰 신호 설명(ko/en/vi) + PostCard/프로필에서 진입 동선 연결 (메모: SEO/SSR 여부 결정)
-- [ ] (2025-12-18) [WEB] 랭킹/칭호(리더보드) UI/IA 설계(프로필 “신뢰/레벨/온도” 시각화 포함) (메모: BE 점수 규칙/API 선행)
+- [x] (2025-12-18) [WEB] 관리자 페이지 기능/정보구조 적절성 현황 분석 + 개선 플랜(성능/UX 포함)
+- [x] (2025-12-18) [WEB] 프로필 설정: 온보딩 값 자동 반영 여부 점검 + 닉네임 자동 부여 규칙 적절성 점검/개선
+- [x] (2025-12-18) [WEB] 배지 안내(가이드) 페이지 추가: 뱃지 타입/의미/획득 방법/신뢰 신호 설명(ko/en/vi) + PostCard/프로필에서 진입 동선 연결 (메모: SEO/SSR 여부 결정)
+- [x] (2025-12-18) [WEB] 랭킹/칭호(리더보드) UI/IA 설계(프로필 “신뢰/레벨/온도” 시각화 포함) (메모: BE 점수 규칙/API 선행)
 - [ ] (2025-12-18) [WEB] 구독/알림 설정 UX 확장: 구독 관리 화면(카테고리/토픽) + 알림 수신/빈도 UI (메모: P1‑6 Stream‑E 연결)
 
 **백엔드 기반(성능/규칙/데이터)**
@@ -1706,35 +2595,66 @@
 - [x] (2025-12-18) [BE] 추천 팔로잉용 사용자 메타 3개 산출 규칙 정의(예: 인증/채택률/관심사 일치율) + API 응답 확장 (메모: FE에서 “핵심 3요소”로 노출)
 - [x] (2025-12-18) [BE] 추천 사용자 API 보강: postsCount 실데이터 + limit clamp(default 8, max 12)
 - [x] (2025-12-18) [BE] 헤더 검색 예시 질문 API 지원(실데이터 기반, 캐시 전략 포함)
-- [ ] (2025-12-19) [BE] 추천 사용자 메타 “핵심 3요소” 필드 확정: 인증/채택률/관심사 일치율 등 계산 + 응답 확장
+- [x] (2025-12-19) [BE] 추천 사용자 메타 “핵심 3요소” 필드 확정: 인증/채택률/관심사 일치율 등 계산 + 응답 확장
 - [x] (2025-12-18) [BE] 자동 해시태그 3개 생성 규칙 정의/구현(키워드+대/소분류 기반, 고정 3개)
 - [x] (2025-12-17) [BE] UGC 최소 글자수 완화: 댓글/답변 10→5, 글 제목/본문 최소치 재조정 + ko/en/vi 메시지 동기화
 - [x] (2025-12-18) [BE] “한국생활정보” 카테고리 폐기(노출 제거/비활성화/마이그레이션 방안) + 미지정/레거시 카테고리 글 숨김 정책
 - [x] (2025-12-18) [BE] 관리자 페이지 성능 점검(응답 payload/쿼리/페이지네이션) + step-by-step 로딩에 맞는 API 최적화
 - [x] (2025-12-18) [BE] 관리자 페이지 “추천 게시글 작성” 기능 제공 여부/홈 적용 여부 현황 파악
-- [ ] (2025-12-19) [BE] 공지/배너 CRUD API + 캐시 정책: 노출 기간/우선순위/SSR 슬롯 대응
-- [ ] (2025-12-19) [BE] 신고 큐 액션 확장: 경고/숨김/블라인드 등 관리자 액션 + 상태 전이 규칙 정리
-- [ ] (2025-12-18) [BE] 포인트/레벨/신뢰점수(온도) 산정 규칙 정의 + 조회 API 설계(프로필/리더보드 공용) (메모: DB 컬럼/집계 방식 검증 필요)
-- [ ] (2025-12-18) [BE] 구독/알림(P1‑6) 설정 저장 모델 확정(빈도/채널/토픽) + API 추가 (메모: 마이그레이션 가능성)
-- [ ] (2025-12-18) [BE] 모더레이션 고도화 로드맵: 룰 기반(금칙어/연락처/저품질) → “신뢰 낮음” 라벨링 → (선택) AI 자동 분류/큐잉 (메모: 외부 AI 연동은 P2로)
+- [x] (2025-12-19) [BE] 공지/배너 CRUD API + 캐시 정책: 노출 기간/우선순위/SSR 슬롯 대응
+- [x] (2025-12-19) [BE] 신고 큐 액션 확장: 경고/숨김/블라인드 등 관리자 액션 + 상태 전이 규칙 정리
+- [x] (2025-12-18) [BE] 포인트/레벨/신뢰점수(온도) 산정 규칙 정의 + 조회 API 설계(프로필/리더보드 공용) (메모: DB 컬럼/집계 방식 검증 필요)
+- [x] (2025-12-18) [BE] 구독/알림(P1‑6) 설정 저장 모델 확정(빈도/채널/토픽) + API 추가 (메모: 마이그레이션 가능성)
+- [x] (2025-12-18) [BE] 모더레이션 고도화 로드맵: 룰 기반(금칙어/연락처/저품질) → “신뢰 낮음” 라벨링 → (선택) AI 자동 분류/큐잉 (메모: 외부 AI 연동은 P2로)
 
 **베타(T0) MVP 요구사항 정렬**
-- [ ] (2025-12-19) [WEB] 비로그인 읽기/로그인 쓰기 게이팅 QA: 질문/답변/댓글/신고/북마크 전 흐름 점검 + 에러 대신 모달 유도
-- [ ] (2025-12-19) [BE] 베타 답변 권한 정책(관리자/전문가/인증 사용자 제한) + API 가드/에러 코드 정리
-- [ ] (2025-12-19) [BE] 공식 답변/검수 상태 필드 추가 + 리스트/상세 응답 반영(아이콘/라벨용 플래그)
+- [x] (2025-12-19) [WEB] 비로그인 읽기/로그인 쓰기 게이팅 QA: 질문/답변/댓글/신고/북마크 전 흐름 점검 + 에러 대신 모달 유도
+- [x] (2025-12-19) [BE] 베타 답변 권한 정책(관리자/전문가/인증 사용자 제한) + API 가드/에러 코드 정리
+- [x] (2025-12-19) [BE] 공식 답변/검수 상태 필드 추가 + 리스트/상세 응답 반영(아이콘/라벨용 플래그)
 - [ ] (2025-12-19) [FE] 공식/검수 답변 UI 표시(✔/배지) + 상세/피드/프로필 노출
-- [ ] (2025-12-19) [WEB] 피드백/버그 제보 폼(설문/간단 텍스트) + 제출 확인 UX
-- [ ] (2025-12-19) [BE] 피드백 수집 API/스토리지(기존 reports 확장 또는 별도 테이블) + rate limit
+- [x] (2025-12-19) [WEB] 피드백/버그 제보 폼(설문/간단 텍스트) + 제출 확인 UX
+- [x] (2025-12-19) [BE] 피드백 수집 API/스토리지(기존 reports 확장 또는 별도 테이블) + rate limit
 - [ ] (2025-12-19) [LEAD] 베타 핵심 지표 이벤트 정의(DAU/답변율/채택율/신고율) + 로깅 항목 정리
 
 **T+1 개선(참여/리텐션)**
 - [ ] (2025-12-19) [WEB] 온보딩 도움말/FAQ/툴팁: 첫 질문/첫 답변/카테고리 탐색 가이드
-- [ ] (2025-12-19) [BE] 포인트/레벨/랭킹 산정 규칙 확정 + 조회 API 설계
+- [x] (2025-12-19) [BE] 포인트/레벨/랭킹 산정 규칙 확정 + 조회 API 설계
 - [ ] (2025-12-19) [FE] 프로필/피드에 포인트·랭킹·칭호 UI
 - [ ] (2025-12-19) [WEB] 검색 자동완성/추천 키워드 UX 설계(오타/혼용 대응은 BE와 동시)
-- [ ] (2025-12-19) [BE] 검색 자동완성/추천 키워드 API + 캐시 정책
+- [x] (2025-12-19) [BE] 검색 자동완성/추천 키워드 API + 캐시 정책
 - [ ] (2025-12-19) [LEAD] 콘텐츠 확장/AI 작성 지원 프로세스(내부 작성용) 정의 + CMS/운영 플로우 정리
 - [ ] (2025-12-19) [WEB] 소셜 공유 CTA 확장 + 소셜 로그인(Facebook/Google) 도입 범위 확정
+
+**현재 스프린트 분배(2025-12-19)**
+- [ ] (2025-12-19) [LEAD] 검증 누락 항목 확인: PostDetail TrustBadge long-press / Header 3-zone grid / Canvas 색 분리 / TrustBadge “자세히” 동선
+- [x] (2025-12-19) [LEAD] 추천 사용자 메타 공통 유틸 적용: RecommendedUsersSection/FollowingModal #1~#3 라벨 규칙 통일
+- [x] (2025-12-19) [LEAD] userType 라벨 유틸 통합: ProfileClient/ProfileModal/FollowingModal 중복 제거
+- [x] (2025-12-19) [LEAD] 추천 사용자 섹션 웹 컴팩트화 + 헤더/레이아웃 정렬 보강 + 모바일 홈 필터 반투명
+- [x] (2025-12-19) [LEAD] 추천 사용자 섹션 데스크톱 가로 캐러셀 전환 + 메타 #번호 제거 + 헤더 검색 폭 확장
+- [x] (2025-12-19) [LEAD] 헤더 검색 예시 필터링(저품질/반복 텍스트 제거) + PostCard 모바일 하단 라벨 축약
+- [x] (2025-12-19) [LEAD] HeaderSearch 예시 placeholder 전환(검색창에 예시가 입력되지 않게 처리) + 2xl 헤더 센터폭 1040 확장
+- [x] (2025-12-19) [LEAD] 구독 피드 필터 버튼 크기 확대 + 사이드바 구독 버튼 폭/라인높이 개선(vi 텍스트 잘림 해소)
+- [x] (2025-12-19) [LEAD] 모바일 홈 필터 알약 투명도 추가 조정
+- [x] (2025-12-19) [LEAD] 추천 사용자 메타 문자열 ordinal prefix 제거 유틸 반영
+- [x] (2025-12-19) [LEAD] 추천 사용자 메타를 온보딩 정보 기반(userType/koreanLevel/interest)으로 전환 + 숫자 제거
+- [x] (2025-12-19) [LEAD] 추천 사용자 메타에 비자 타입 포함(숫자 허용) + 표시값 대문자 정규화
+- [x] (2025-12-19) [LEAD] README 최신화: 프로젝트 개요/명령어/구조/SEO 규칙 요약
+- [x] (2025-12-19) [LEAD] MainLayout 2xl 그리드 폭을 Header와 정렬(좌/우 레일 정렬)
+- [ ] (2025-12-19) [FE] 헤더 우측 액션 순서 변경(알림/언어 스위치 위치 조정)
+- [ ] (2025-12-19) [FE] 공유하기 CTA 설명 문구 업데이트: “내 경험과 지식을 모두와 함께 공유해봅시다.”
+- [ ] (2025-12-19) [FE] Sidebar 피드백 라벨 고정: “Feedback” (언어 무관) + 글자 크기 축소/아이콘 들여쓰기
+- [ ] (2025-12-19) [WEB] 피드백 페이지 설문형 UI로 개편(만족도/개선요청) + 요약/이메일 입력 제거
+- [x] (2025-12-19) [BE] 피드백 저장 시 사용자 ID 자동 연결 + 관리자 페이지에서 사용자 정보 함께 노출
+- [ ] (2025-12-19) [FE] 공식/검수 답변 UI 표시(✔/배지) + 상세/피드/프로필 노출
+- [ ] (2025-12-19) [FE] i18n 누락/혼용 전수 점검(툴팁/배지/카테고리 라벨) + PostDetail 잔여 하드코딩 정리
+- [ ] (2025-12-19) [FE] PostCard 모바일 잘림(vi) 재점검 + 해결됨/미해결 아이콘 클립 방지
+- [x] (2025-12-19) [WEB] 비로그인 읽기/로그인 쓰기 게이팅 QA 전구간 점검(질문/답변/댓글/신고/북마크)
+- [x] (2025-12-19) [WEB] 피드백/버그 제보 폼 UX + 제출 확인 플로우
+- [x] (2025-12-19) [WEB] 질문 템플릿 UI(조건/목표/배경) 설계 + 작성 폼 연결(베타 품질)
+- [x] (2025-12-19) [BE] 베타 답변 권한 정책(관리자/전문가/인증 사용자 제한) + API 가드/에러 코드 정리
+- [x] (2025-12-19) [BE] 공식 답변/검수 상태 필드 추가 + 리스트/상세 응답 플래그
+- [x] (2025-12-19) [BE] 피드백 수집 API/스토리지(기존 reports 확장 또는 별도 테이블) + rate limit
+- [x] (2025-12-19) [BE] 공식 출처 URL Allowlist 정책: UGC 외부 링크 검사/차단(도메인 리스트) + 에러 메시지 동기화
 
 ### 6.4 상용화 체크리스트(운영/보안)
 
