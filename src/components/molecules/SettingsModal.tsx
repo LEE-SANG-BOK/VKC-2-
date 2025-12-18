@@ -28,6 +28,8 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
   const user = session?.user;
   const { data: profile, isLoading: profileLoading } = useUserProfile(user?.id || '', {
     enabled: !!user?.id && isOpen,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
   const updateProfile = useUpdateMyProfile();
 

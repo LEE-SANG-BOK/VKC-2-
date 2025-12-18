@@ -33,6 +33,8 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
     isLoading 
   } = useInfiniteUserPosts(user?.id || '', {
     enabled: !!user?.id && isOpen,
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
 
@@ -54,7 +56,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !isFetchingNextPage && hasNextPage) {
+        if (entries[0].isIntersecting && !isFetchingNextPage && hasNextPage && visibleCount >= posts.length) {
           fetchNextPage();
         }
       },
@@ -66,7 +68,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
     }
 
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, isOpen]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isOpen, posts.length, visibleCount]);
 
   const formatDate = (dateString: string) => {
     return dayjs(dateString).format('YYYY.MM.DD HH:mm');

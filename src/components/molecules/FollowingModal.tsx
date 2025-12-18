@@ -10,9 +10,9 @@ import Modal from '@/components/atoms/Modal';
 import PostCard from '@/components/molecules/PostCard';
 import Avatar from '@/components/atoms/Avatar';
 import FollowButton from '@/components/atoms/FollowButton';
-import { useInfiniteFollowers, useInfiniteFollowing, useRecommendedUsers } from '@/repo/users/query';
+import { useInfiniteFollowing, useRecommendedUsers } from '@/repo/users/query';
 import { useInfinitePosts } from '@/repo/posts/query';
-import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
+import useProgressiveList from '@/lib/hooks/useProgressiveList';
 
 interface FollowingModalProps {
   isOpen: boolean;
@@ -69,9 +69,11 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   const { 
     data: recommendedData, 
     isLoading: recommendedLoading,
-    refetch: refetchRecommended,
   } = useRecommendedUsers(
-    { enabled: !!user?.id && isOpen && activeTab === 'recommend' }
+    {
+      enabled: !!user?.id && isOpen && activeTab === 'recommend',
+      gcTime: 5 * 60 * 1000,
+    }
   );
 
   // Following infinite scroll
@@ -84,7 +86,11 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   } = useInfiniteFollowing(
     user?.id || '',
     {},
-    { enabled: !!user?.id && isOpen && activeTab === 'following' }
+    {
+      enabled: !!user?.id && isOpen && activeTab === 'following',
+      staleTime: 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+    }
   );
 
   // Feed (following users' posts) infinite scroll
@@ -96,13 +102,45 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
     isFetchingNextPage: isFetchingNextFeedPage
   } = useInfinitePosts(
     { filter: 'following-users' },
-    { enabled: !!user && isOpen && activeTab === 'feed' }
+    {
+      enabled: !!user && isOpen && activeTab === 'feed',
+      staleTime: 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+    }
   );
 
   const recommendations = recommendedData?.data || [];
   const following = followingData?.pages?.flatMap(page => page.data) || [];
   const feedPosts = feedData?.pages?.flatMap(page => page.data) || [];
   const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
+
+  const visibleRecommendCount = useProgressiveList({
+    enabled: isOpen && activeTab === 'recommend' && !recommendedLoading,
+    total: recommendations.length,
+    initial: 3,
+    step: 3,
+    resetKey: activeTab,
+  });
+
+  const visibleFollowingCount = useProgressiveList({
+    enabled: isOpen && activeTab === 'following' && !followingLoading,
+    total: following.length,
+    initial: 8,
+    step: 8,
+    resetKey: activeTab,
+  });
+
+  const visibleFeedCount = useProgressiveList({
+    enabled: isOpen && activeTab === 'feed' && !feedLoading,
+    total: feedPosts.length,
+    initial: 4,
+    step: 4,
+    resetKey: activeTab,
+  });
+
+  const visibleRecommendations = recommendations.slice(0, visibleRecommendCount);
+  const visibleFollowing = following.slice(0, visibleFollowingCount);
+  const visibleFeedPosts = feedPosts.slice(0, visibleFeedCount);
 
   const handleUserClick = (userId: string) => {
     onClose();
@@ -111,9 +149,6 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
-    if (tab === 'recommend') {
-      refetchRecommended();
-    }
   };
 
   const getUserTypeLabel = (value: string) => {
@@ -147,7 +182,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !isFetchingNextFollowingPage && hasNextFollowingPage) {
+        if (entries[0].isIntersecting && !isFetchingNextFollowingPage && hasNextFollowingPage && visibleFollowingCount >= following.length) {
           fetchNextFollowingPage();
         }
       },
@@ -159,7 +194,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
     }
 
     return () => observer.disconnect();
-  }, [hasNextFollowingPage, isFetchingNextFollowingPage, fetchNextFollowingPage, activeTab, isOpen]);
+  }, [activeTab, fetchNextFollowingPage, following.length, hasNextFollowingPage, isFetchingNextFollowingPage, isOpen, visibleFollowingCount]);
 
   // Intersection Observer for Feed
   useEffect(() => {
@@ -167,7 +202,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !isFetchingNextFeedPage && hasNextFeedPage) {
+        if (entries[0].isIntersecting && !isFetchingNextFeedPage && hasNextFeedPage && visibleFeedCount >= feedPosts.length) {
           fetchNextFeedPage();
         }
       },
@@ -179,7 +214,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
     }
 
     return () => observer.disconnect();
-  }, [hasNextFeedPage, isFetchingNextFeedPage, fetchNextFeedPage, activeTab, isOpen]);
+  }, [activeTab, feedPosts.length, fetchNextFeedPage, hasNextFeedPage, isFetchingNextFeedPage, isOpen, visibleFeedCount]);
 
   const renderUserCard = (userItem: UserItem, isFollowingTab: boolean = false) => {
     const displayName = userItem.displayName || userItem.name || '알 수 없음';
@@ -350,7 +385,29 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                 </div>
               ) : (
                 <>
-                  {recommendations.map((user) => renderUserCard(user as UserItem))}
+                  {visibleRecommendations.map((user) => renderUserCard(user as UserItem))}
+                  {visibleRecommendCount < recommendations.length ? (
+                    <div className="space-y-4">
+                      {Array.from({ length: 2 }).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-start gap-4 animate-pulse">
+                            <div className="flex flex-col items-center gap-2">
+                              <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700" />
+                              <div className="h-8 w-20 rounded-md bg-gray-200 dark:bg-gray-700" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="h-4 w-40 rounded bg-gray-200 dark:bg-gray-700" />
+                              <div className="mt-2 h-3 w-24 rounded bg-gray-200 dark:bg-gray-700" />
+                              <div className="mt-3 h-3 w-full max-w-[260px] rounded bg-gray-200 dark:bg-gray-700" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </>
               )}
             </div>
@@ -370,7 +427,29 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                 </div>
               ) : (
                 <>
-                  {following.map((user) => renderUserCard(user as UserItem, true))}
+                  {visibleFollowing.map((user) => renderUserCard(user as UserItem, true))}
+                  {visibleFollowingCount < following.length ? (
+                    <div className="space-y-4">
+                      {Array.from({ length: 2 }).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-start gap-4 animate-pulse">
+                            <div className="flex flex-col items-center gap-2">
+                              <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700" />
+                              <div className="h-8 w-20 rounded-md bg-gray-200 dark:bg-gray-700" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="h-4 w-40 rounded bg-gray-200 dark:bg-gray-700" />
+                              <div className="mt-2 h-3 w-24 rounded bg-gray-200 dark:bg-gray-700" />
+                              <div className="mt-3 h-3 w-full max-w-[260px] rounded bg-gray-200 dark:bg-gray-700" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   
                   {hasNextFollowingPage && (
                     <div ref={followingObserverRef} className="py-4 text-center">
@@ -401,7 +480,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                 </div>
               ) : (
                 <>
-                  {feedPosts.map((post: any) => (
+                  {visibleFeedPosts.map((post: any) => (
                     <PostCard
                       key={post.id}
                       id={post.id}
@@ -435,6 +514,21 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                       translations={translations}
                     />
                   ))}
+
+                  {visibleFeedCount < feedPosts.length ? (
+                    <div className="space-y-4">
+                      {Array.from({ length: 2 }).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 animate-pulse"
+                        >
+                          <div className="h-4 w-2/3 rounded bg-gray-200 dark:bg-gray-700" />
+                          <div className="mt-3 h-3 w-full rounded bg-gray-200 dark:bg-gray-700" />
+                          <div className="mt-2 h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   
                   {hasNextFeedPage && (
                     <div ref={feedObserverRef} className="py-4 text-center">

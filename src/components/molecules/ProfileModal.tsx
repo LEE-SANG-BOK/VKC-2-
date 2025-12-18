@@ -37,11 +37,15 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
 
   const { data: profileData, isLoading, isError, refetch, error } = useUserProfile(user?.id || '', {
     enabled: !!user?.id && isOpen,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     retry: 2,
     retryDelay: (attempt) => Math.min(2000, 1000 * 2 ** attempt),
   });
   const { data: selfProfile, isError: myProfileError, refetch: refetchMyProfile } = useMyProfile({
     enabled: !!user && isOpen,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     retry: 2,
     retryDelay: (attempt) => Math.min(2000, 1000 * 2 ** attempt),
   });

@@ -384,6 +384,8 @@
 - [x] (2025-12-17) 알림 API 과호출 방지 (unread-count 전용 API 추가 + polling 완화 + Notifications 페이지 enabled 게이팅)
 - [x] (2025-12-17) 검증: `npm run lint`, `npm run build` 통과 (릴리즈 품질)
 - [x] (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화: 모달 `dynamic({ ssr:false })` + 오픈 시에만 mount, 쿼리 `enabled:isOpen` 유지/강화 + `staleTime/gcTime`로 재오픈 refetch 억제, 무한스크롤 observer는 닫힐 때 disconnect
+  - 적용 파일: `src/components/molecules/UserProfile.tsx`, `src/components/molecules/ProfileModal.tsx`, `src/components/molecules/MyPostsModal.tsx`, `src/components/molecules/FollowingModal.tsx`, `src/components/molecules/BookmarksModal.tsx`, `src/components/molecules/SettingsModal.tsx`
+  - 캐시: Profile/Settings `staleTime=5m gcTime=30m`, Lists `staleTime=60s gcTime=5m`
 - [x] (2025-12-18) [WEB] 헤더 알림 모달 성능 최적화: NotificationModal `dynamic({ ssr:false })` + 오픈 시에만 mount, 알림 목록 쿼리 `staleTime/gcTime`로 재오픈 refetch 억제
 - [x] (2025-12-18) [WEB] 헤더 번들 경량화: `lodash` named import → `lodash/debounce`로 교체(트리셰이킹/번들 크기 개선)
 - [x] (2025-12-18) [FE] 모바일 사이드바 작성 CTA 툴팁 비활성화(가독성/가림 방지)
@@ -414,7 +416,7 @@
 - [x] (2025-12-18) [FE] 피드/카드 작성자 라인에 `· Following` 상태 표시 + 미팔로우 시 `Follow` CTA(스크린샷의 “Following” 표현만 참고) (PostCard) (메모: `common.follow/following` 사용, 클릭 시 토글)
 - [x] (2025-12-18) [FE] PostCard: “인증 사용자 N명…” 라벨 좌측에 “답변 N개” CTA 추가(클릭 시 답변/댓글 영역 이동) (메모: 질문은 `answersCount`, ko는 `개` 표기)
 - [x] (2025-12-18) [FE] 팔로잉 추천 카드 UI: `#(1): 값, #(2): 값, #(3): 값` 3개 고정 표기(실데이터 매핑) + step-by-step 로딩 UI (메모: 추천 유저 postsCount 실데이터 + 스켈레톤)
-- [ ] (2025-12-18) [FE] 프로필 모달(북마크/팔로잉/내게시글)도 step-by-step 로딩(과부하 방지)
+- [x] (2025-12-18) [FE] 프로필 모달(북마크/팔로잉/내게시글)도 step-by-step 로딩(과부하 방지) (메모: `useProgressiveList` + 스켈레톤)
 - [x] (2025-12-18) [FE] 홈 로고 근처 툴팁 카피 개선(브랜드 포지셔닝/가치 명확, ko/en/vi)
 - [x] (2025-12-18) [FE] 로고 이미지 교체(`public/brand-logo.png`) + `Logo` 컴포넌트 이미지 기반 전환
 - [ ] (2025-12-18) [FE] CTA 텍스트/카피 개선: “질문하기/공유하기/인증하기” 네이밍 + 상세 설명(ko/en/vi)

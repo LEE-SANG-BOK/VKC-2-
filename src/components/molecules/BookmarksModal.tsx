@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'nextjs-toploader/app';
-import { useParams } from 'next/navigation';
 import { X, Mailbox } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/atoms/Modal';
@@ -19,9 +17,6 @@ interface BookmarksModalProps {
 type FilterType = 'all' | 'question' | 'answer' | 'post';
 
 export default function BookmarksModal({ isOpen, onClose, translations = {} }: BookmarksModalProps) {
-  const router = useRouter();
-  const params = useParams();
-  const locale = params.lang as string || 'ko';
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -37,29 +32,14 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
     isFetchingNextPage,
   } = useInfiniteUserBookmarks(
     user?.id || '',
-    { enabled: !!user?.id && isOpen }
+    {
+      enabled: !!user?.id && isOpen,
+      staleTime: 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+    }
   );
 
   const bookmarks = bookmarksData?.pages.flatMap(page => page.data) || [];
-
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !isFetchingNextPage && hasNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (observerRef.current) {
-      observer.observe(observerRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const filteredBookmarks = activeFilter === 'all'
     ? bookmarks
@@ -79,6 +59,25 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
   });
 
   const visibleBookmarks = filteredBookmarks.slice(0, visibleCount);
+
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage || !isOpen) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isFetchingNextPage && hasNextPage && visibleCount >= filteredBookmarks.length) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, filteredBookmarks.length, hasNextPage, isFetchingNextPage, isOpen, visibleCount]);
 
   const getFilterCount = (filter: FilterType) => {
     if (filter === 'all') return bookmarks.length;

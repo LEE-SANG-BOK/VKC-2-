@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { User, FileText, Users, Bookmark, Settings, LogOut } from 'lucide-react';
 import Avatar from '@/components/atoms/Avatar';
-import FollowButton from '@/components/atoms/FollowButton';
-import ProfileModal from '@/components/molecules/ProfileModal';
-import MyPostsModal from '@/components/molecules/MyPostsModal';
-import FollowingModal from '@/components/molecules/FollowingModal';
-import BookmarksModal from '@/components/molecules/BookmarksModal';
-import SettingsModal from '@/components/molecules/SettingsModal';
+
+const ProfileModal = dynamic(() => import('@/components/molecules/ProfileModal'), { ssr: false });
+const MyPostsModal = dynamic(() => import('@/components/molecules/MyPostsModal'), { ssr: false });
+const FollowingModal = dynamic(() => import('@/components/molecules/FollowingModal'), { ssr: false });
+const BookmarksModal = dynamic(() => import('@/components/molecules/BookmarksModal'), { ssr: false });
+const SettingsModal = dynamic(() => import('@/components/molecules/SettingsModal'), { ssr: false });
 
 interface UserProfileProps {
   name: string;
@@ -156,31 +157,21 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
       )}
 
       {/* Modals */}
-      <ProfileModal
-        isOpen={activeModal === 'profile'}
-        onClose={closeModal}
-        translations={t}
-      />
-      <MyPostsModal
-        isOpen={activeModal === 'myPosts'}
-        onClose={closeModal}
-        translations={t}
-      />
-      <FollowingModal
-        isOpen={activeModal === 'following'}
-        onClose={closeModal}
-        translations={t}
-      />
-      <BookmarksModal
-        isOpen={activeModal === 'bookmarks'}
-        onClose={closeModal}
-        translations={t}
-      />
-      <SettingsModal
-        isOpen={activeModal === 'settings'}
-        onClose={closeModal}
-        translations={t}
-      />
+      {activeModal === 'profile' ? (
+        <ProfileModal isOpen onClose={closeModal} translations={t} />
+      ) : null}
+      {activeModal === 'myPosts' ? (
+        <MyPostsModal isOpen onClose={closeModal} translations={t} />
+      ) : null}
+      {activeModal === 'following' ? (
+        <FollowingModal isOpen onClose={closeModal} translations={t} />
+      ) : null}
+      {activeModal === 'bookmarks' ? (
+        <BookmarksModal isOpen onClose={closeModal} translations={t} />
+      ) : null}
+      {activeModal === 'settings' ? (
+        <SettingsModal isOpen onClose={closeModal} translations={t} />
+      ) : null}
     </div>
   );
 }

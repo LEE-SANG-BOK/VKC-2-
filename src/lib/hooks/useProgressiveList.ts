@@ -5,12 +5,14 @@ interface UseProgressiveListOptions {
   total: number;
   initial?: number;
   step?: number;
+  delayMs?: number;
   resetKey?: unknown;
 }
 
-export default function useProgressiveList({ enabled, total, initial = 6, step = 6, resetKey }: UseProgressiveListOptions) {
+export default function useProgressiveList({ enabled, total, initial = 6, step = 6, delayMs = 16, resetKey }: UseProgressiveListOptions) {
   const safeInitial = useMemo(() => Math.max(0, initial), [initial]);
   const safeStep = useMemo(() => Math.max(1, step), [step]);
+  const safeDelayMs = useMemo(() => Math.max(0, delayMs), [delayMs]);
 
   const [visibleCount, setVisibleCount] = useState(() => Math.min(total, safeInitial));
 
@@ -33,11 +35,10 @@ export default function useProgressiveList({ enabled, total, initial = 6, step =
 
     const timeoutId = window.setTimeout(() => {
       setVisibleCount((prev) => Math.min(total, prev + safeStep));
-    }, 0);
+    }, safeDelayMs);
 
     return () => window.clearTimeout(timeoutId);
-  }, [enabled, safeStep, total, visibleCount]);
+  }, [enabled, safeDelayMs, safeStep, total, visibleCount]);
 
   return visibleCount;
 }
-

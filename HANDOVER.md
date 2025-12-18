@@ -10,6 +10,10 @@
 - [FE] PostCard 작성자 라인: 이름 옆에 `· Follow` / `· Following` 텍스트 CTA 표시 + 카드 클릭과 분리(클릭 stopPropagation)
 - [FE] PostCard 답변 CTA 정합성: 질문은 `answersCount` 기준으로 “답변 N개” 표시(ko는 `개` 표기) + 클릭 시 `#answers/#comments`로 이동
 - [FE] 팔로잉 추천 카드 UI: 추천 유저 카드에 `#1/#2/#3` 3개 고정 표기(팔로워/게시글/팔로잉) + 로딩 스켈레톤, 추천 API에 postsCount 실데이터 반영
+- [FE] 프로필 모달 step-by-step 로딩: 북마크/팔로잉/내게시글 리스트는 `useProgressiveList`로 점진 렌더 + 스켈레톤 표시
+- [FE] 모바일 PostCard 하단 잘림 보강: 액션 아이콘 행 wrap 처리로 “해결됨/미해결됨” 및 긴 라벨/태그가 클립되지 않도록 안정화
+- [LEAD] public 정리: 사용되지 않는 기본 SVG/원본 로고 파일 제거(레포 용량/혼선 감소)
+- [BE] 추천 사용자 API 과부하 방지: 기본 `limit` 축소 + 상한 clamp(default 8, max 12)
 - [BE] 팔로우 상태 응답 보강: 피드/프로필 리스트/북마크/팔로워/팔로잉/유저검색에 `isFollowing` 제공(배치 조회) + 리스트 기본 `content` 제외, `excerpt/thumbnails/imageCount` 제공
 - 로고 교체: `public/brand-logo.png` 적용 + `Logo`를 이미지 기반(`next/image`)으로 전환, 헤더 브랜드 툴팁 표어 ko/en/vi 업데이트
 - 리팩토링 심화: PostCard/PostDetail 중복 유틸(dateTime/safeText) 통합 + 카테고리 허용 slug 단일화 + 미사용 `components/ui` 파일 정리
