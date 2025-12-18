@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { users } from '@/lib/db/schema';
 import { paginatedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { getSession } from '@/lib/api/auth';
+import { getFollowingIdSet } from '@/lib/api/follow';
 import { sql, or, ilike, desc } from 'drizzle-orm';
 
 /**
@@ -18,12 +20,14 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
 
     if (!query) {
       return errorResponse('검색어를 입력해주세요.', 'SEARCH_QUERY_REQUIRED');
     }
+
+    const currentUser = await getSession(request);
 
     // 전체 개수 조회
     const [countResult] = await db
@@ -53,7 +57,14 @@ export async function GET(request: NextRequest) {
       offset: (page - 1) * limit,
     });
 
-    return paginatedResponse(usersResult, page, limit, total);
+    const userIds = usersResult.map((user) => user.id);
+    const followingIdSet = currentUser ? await getFollowingIdSet(currentUser.id, userIds) : new Set<string>();
+    const decoratedUsers = usersResult.map((user) => ({
+      ...user,
+      isFollowing: currentUser ? followingIdSet.has(user.id) : false,
+    }));
+
+    return paginatedResponse(decoratedUsers, page, limit, total);
   } catch (error) {
     console.error('GET /api/search/users error:', error);
     return serverErrorResponse();
