@@ -131,7 +131,10 @@ export default function AnswerCard({
                       <div>{trustBadgePresentation.tooltip}</div>
                       <button
                         type="button"
-                        onClick={() => router.push(trustBadgeGuideHref)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          router.push(trustBadgeGuideHref);
+                        }}
                         className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         {learnMoreLabel}

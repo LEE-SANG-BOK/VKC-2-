@@ -279,6 +279,45 @@
   - src/components/templates/MainLayout.tsx
   - src/app/[lang]/(main)/HomeClient.tsx
 
+#### (2025-12-19) [LEAD] Ultrawide 레이아웃 “빈 화면” 버그 수정: Tailwind grid-cols 임의값 구문 정정 (P0)
+
+- 플랜(체크리스트)
+  - [x] ultrawide에서 피드/레일이 한 컬럼으로 쌓이는 증상 원인 분석
+  - [x] `grid-cols-[...]` 임의값에서 컬럼 구분자를 `_`(공백)로 정정
+  - [x] Header/MainLayout 모두 동일한 구문으로 정렬
+  - [x] 문서 잠금 공지(HOT_FILE) 경로 오타 수정
+  - [x] 검증: npm run lint, npm run build
+- 현황 분석(코드 기준)
+  - 증상: 데스크톱/ultrawide에서 좌측 레일이 상단에 “박스처럼” 렌더되고, 메인 피드가 화면 아래로 밀려 “빈 회색 화면”처럼 보일 수 있음
+  - 원인: Tailwind 임의값 클래스에서 `grid-cols-[320px,minmax(0,1fr),320px]`처럼 **트랙 구분에 콤마(,)** 를 사용해 `grid-template-columns`가 무효 처리됨 → `grid-cols-1`(혹은 기본값)로 떨어져 레일/피드가 세로로 쌓임
+- 변경 내용(why/what)
+  - why: 레이아웃이 깨지면 “콘텐츠가 없는 사이트”처럼 보여 신뢰/체감 완성도에 치명적
+  - what: 트랙 구분을 `_`로 변경해 `grid-template-columns: 320px minmax(0,1fr) 320px`가 정상 적용되도록 수정
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/organisms/Header.tsx
+  - src/components/templates/MainLayout.tsx
+  - docs/HOT_FILE_LOCK_NOTICE.md
+
+#### (2025-12-19) [LEAD] 다음 작업 분배(병렬) + Hot File 소유권 공지 (P0)
+
+- 원칙
+  - Hot File(`Header.tsx`, `MainLayout.tsx`, `PostList.tsx`, `globals.css`)은 **LEAD 스냅샷(커밋/푸시) 고정 이후**에만 병렬 작업 허용
+  - 병렬은 가능하지만, **파일 소유권을 강하게 분리**해야 충돌이 실질적으로 줄어듦
+- 운영 체크리스트(에이전트 공통)
+  - [ ] 최신 스냅샷 커밋 SHA 확인(LEAD 공지 기준)
+  - [ ] 본인 소유 파일만 수정(Hot File/공유 레이아웃은 합의 없이 수정 금지)
+  - [ ] 작업 내용은 본인 섹션(0.6.x)에 append-only로 기록
+  - [ ] npm run lint / npm run build 재검증 후 결과를 LEAD에 보고
+  - [ ] 커밋/푸시는 LEAD가 수행(단일 스냅샷로 고정)
+- 작업 분배(1차)
+  - [FE] (P0) PostCard 모바일 잘림 재점검(vi): 태그/액션/해결됨 아이콘/라벨이 `sm~md` 구간에서도 클립되지 않도록 UI 보강
+  - [WEB] (P0) HeaderSearch 예시 질문 실데이터 연결: `/api/search/examples`를 사용해 검색 인풋 placeholder/추천 리스트를 locale별로 노출
+  - [WEB] (P0) 알림/짧은 주기 API 호출 점검: notifications 관련 query의 enabled/staleTime 조건을 재점검해 불필요 요청 차단
+  - [BE] (P1) 추천 사용자/검색 예시 API 캐시/상한 정리: `limit/page` clamp + Cache-Control 정책 확정(anonymous 캐시 가능 범위)
+
 ### 0.6.1 [FE] Design Front Agent
 
 #### (2025-12-18) [FE] 피드/레이아웃 UX 안정화 (P0)
@@ -528,6 +567,55 @@
   - Codex CLI 환경은 `.git/index.lock` 이슈로 `git add/commit`이 실패할 수 있어, 커밋/푸시는 로컬 터미널에서만 가능
 - FE 대응
   - FE는 위 Hot File을 커밋/푸시 완료 전까지 수정하지 않고, 필요 시 LEAD에게 범위/타이밍을 먼저 합의한다
+
+#### (2025-12-19) [FE] 공지 수신: 스냅샷 고정 완료 + Hot File 병렬/브랜치 운영 업데이트 (P0)
+
+- 플랜(체크리스트)
+  - [x] LEAD 공지(스냅샷/브랜치/Hot File) 문서 반영
+  - [x] 현재 main HEAD 커밋 확인(371de40)
+  - [x] 로컬 lint/build 재검증
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치:
+    - Ultrawide 배치 핫픽스(Header/MainLayout/HomeClient 정렬 + 홈 피드 캔버스 전환)는 main(371de40)에 반영된 상태
+    - 동일 스냅샷으로 `codex-beta-improvement` 브랜치도 생성/푸시된 상태(따라서 지금 PR diff=0일 수 있음)
+  - 재현/리스크:
+    - Hot File(`src/components/organisms/Header.tsx`, `src/components/templates/MainLayout.tsx`, `src/components/organisms/PostList.tsx`, `src/app/globals.css`) 병렬 수정 시 배치 재발 가능 → 단일 소유권 유지 권장
+- 변경 내용(why/what)
+  - why: 병렬 스트림 기준점(커밋)과 Hot File 소유권을 명확히 해 충돌/재발 방지
+  - what: FE 섹션에 LEAD 운영 업데이트(스냅샷 커밋/브랜치 흐름/Hot File 규칙) 기록
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 다음 작업은 LEAD가 지정한 공유 브랜치/PR 흐름을 기준으로 진행(커밋/푸시는 LEAD)
+  - 배포는 Vercel env(`DATABASE_URL` 등) 세팅 선행 필요(운영 작업)
+
+#### (2025-12-19) [FE] TrustBadge Tooltip “자세히” 링크 클릭 전파 방지 (P0)
+
+- 플랜(체크리스트)
+  - [x] Tooltip(portal) 클릭 버블링 리스크 확인
+  - [x] Tooltip 내부 “자세히/Learn more” 버튼 클릭 시 `stopPropagation` 적용
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - Tooltip은 content를 portal(document.body)로 렌더하므로, React 이벤트가 상위(카드 onClick 등)까지 버블링할 수 있음
+  - TrustBadge Tooltip에 “자세히” 버튼을 추가한 이후, 클릭이 상위 카드 네비게이션을 유발할 수 있는 리스크 존재
+- 변경 내용(why/what)
+  - why: PostCard/상세/프로필 등 클릭 가능한 컨테이너에서 Tooltip CTA 클릭 시 의도치 않은 페이지 이동 방지
+  - what: TrustBadge Tooltip의 “자세히/Learn more” 버튼 onClick에 `event.stopPropagation()` 추가 후 guide로 push
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/components/molecules/cards/CommentCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
+- 다음 액션/의존성
+  - LEAD 검수 후, FE 체크리스트의 “TrustBadge 툴팁/동선 적용 범위” 항목을 close 처리 권장
 
 ### 0.6.2 [WEB] Web Feature Agent
 
@@ -799,6 +887,24 @@
   - [x] npm run build
 - 변경 파일
   - src/components/molecules/user/UserProfile.tsx
+
+#### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 - 현행 점검/재검증 (P0)
+
+- 플랜(체크리스트)
+  - [x] `UserProfile` 모달 dynamic import + 오픈 시 mount 구조 확인
+  - [x] Profile/MyPosts/Following/Bookmarks/Settings 모달 쿼리 옵션(enabled/isOpen, staleTime/gcTime) 재점검
+  - [x] 무한스크롤 observer cleanup + 재오픈 시 스크롤/상태 초기화 동작 확인
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/molecules/user/UserProfile.tsx`에서 모달을 `next/dynamic({ ssr:false })`로 분리하고, `activeModal`일 때만 렌더하여 첫 화면 번들/요청을 지연
+  - 재현/리스크: 모달은 짧고 반복적으로 열리는 UX라서, 재오픈 시 매번 refetch/observer 누수 발생하면 체감 렉/트래픽이 급증
+- 변경 내용(why/what)
+  - why: 병렬 작업/스냅샷 이후에도 성능 최적화가 실제로 반영되었는지 검증 필요
+  - what: 코드 변경 없이 현행 구현이 요구사항을 충족하는지 재확인하고 `lint/build`로 재검증
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - (none)
 
 ### 0.6.3 [BE] Backend Agent
 
