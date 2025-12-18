@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users, follows, posts } from '@/lib/db/schema';
+import { isExpertBadgeType } from '@/lib/constants/badges';
 import { eq, ne, notInArray, sql, desc, and } from 'drizzle-orm';
 import { successResponse, errorResponse } from '@/lib/api/response';
 
@@ -18,6 +19,22 @@ export async function GET(req: NextRequest) {
     const limitCandidate = Number.parseInt(searchParams.get('limit') || '8', 10) || 8;
     const limit = Math.min(12, Math.max(1, limitCandidate));
     const offset = (page - 1) * limit;
+
+    const currentUser = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: {
+        interests: true,
+      },
+    });
+
+    const normalizeInterest = (value: string | null | undefined) =>
+      typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+    const currentInterestSet = new Set(
+      (currentUser?.interests || [])
+        .map((interest) => normalizeInterest(interest))
+        .filter(Boolean)
+    );
 
     // Get users that current user is already following
     const followingUsers = await db
@@ -54,8 +71,13 @@ export async function GET(req: NextRequest) {
         avatar: users.image,
         bio: users.bio,
         isVerified: users.isVerified,
+        isExpert: users.isExpert,
+        badgeType: users.badgeType,
         status: users.status,
         userType: users.userType,
+        interests: users.interests,
+        adoptionRate: users.adoptionRate,
+        trustScore: users.trustScore,
         followersCount: sql<number>`(
           SELECT COUNT(*)::int 
           FROM ${follows} 
@@ -80,7 +102,26 @@ export async function GET(req: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    const formattedUsers = recommendedUsers.map(user => ({
+    const resolveBadgeLevel = (user: { isExpert: boolean; isVerified: boolean; badgeType?: string | null }) => {
+      if (user.isExpert || isExpertBadgeType(user.badgeType)) return 'expert';
+      if (user.isVerified || user.badgeType) return 'verified';
+      return 'community';
+    };
+
+    const resolveInterestMatchRate = (interestList?: string[] | null) => {
+      if (!interestList || interestList.length === 0 || currentInterestSet.size === 0) return 0;
+      const matchCount = interestList.reduce((count, interest) => {
+        const normalized = normalizeInterest(interest);
+        return normalized && currentInterestSet.has(normalized) ? count + 1 : count;
+      }, 0);
+      return Math.round((matchCount / currentInterestSet.size) * 100);
+    };
+
+    const formattedUsers = recommendedUsers.map(user => {
+      const adoptionRateValue = Number(user.adoptionRate ?? 0);
+      const adoptionRate = Number.isFinite(adoptionRateValue) ? adoptionRateValue : 0;
+
+      return {
       id: user.id,
       name: user.name,
       displayName: user.displayName,
@@ -91,12 +132,27 @@ export async function GET(req: NextRequest) {
       status: user.status,
       userType: user.userType,
       isFollowing: false,
+      recommendationMeta: [
+        {
+          key: 'badge',
+          value: resolveBadgeLevel(user),
+        },
+        {
+          key: 'adoptionRate',
+          value: adoptionRate,
+        },
+        {
+          key: 'interestMatchRate',
+          value: resolveInterestMatchRate(user.interests),
+        },
+      ],
       stats: {
         followers: user.followersCount,
         following: user.followingCount,
         posts: user.postsCount,
       },
-    }));
+    };
+    });
 
     const response = NextResponse.json({
       success: true,

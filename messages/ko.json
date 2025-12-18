@@ -26,6 +26,8 @@
     "post": "게시글",
     "follow": "팔로우",
     "following": "팔로잉",
+    "adoptionRate": "채택률",
+    "interestMatchRate": "관심사 일치율",
     "question": "질문",
     "verifiedUser": "인증된 사용자",
     "guidelineTooltip": "예의·혐오 금지, 광고/연락처 제한, 위반 시 게시 제한/제재"
@@ -164,7 +166,7 @@
   "header": {
     "search": "검색...",
     "login": "로그인",
-    "signup": "회원가입",
+    "signup": "시작하기",
     "user": "사용자",
     "allCategories": "전체 카테고리",
     "tech": "기술",

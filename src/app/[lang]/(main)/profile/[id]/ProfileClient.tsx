@@ -384,6 +384,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                           </div>
                         }
                         touchBehavior="longPress"
+                        interactive
                       >
                         <span className="inline-flex">
                           <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />

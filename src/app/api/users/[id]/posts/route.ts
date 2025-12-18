@@ -5,6 +5,7 @@ import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/
 import { getSession } from '@/lib/api/auth';
 import { getFollowingIdSet } from '@/lib/api/follow';
 import { eq, desc, sql, and, inArray, isNotNull, isNull, or, lt, type SQL } from 'drizzle-orm';
+import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return notFoundResponse('사용자를 찾을 수 없습니다.');
     }
 
-    const conditions = [eq(posts.authorId, id)];
+    const conditions = [eq(posts.authorId, id), inArray(posts.category, ACTIVE_GROUP_PARENT_SLUGS) as SQL];
     if (type) {
       conditions.push(eq(posts.type, type));
     }

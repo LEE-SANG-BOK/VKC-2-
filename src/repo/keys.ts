@@ -74,6 +74,7 @@ export const queryKeys = {
     following: (userId: string, filters?: { page?: number; limit?: number; cursor?: string }) =>
       [...queryKeys.users.detail(userId), 'following', filters] as const,
     recommended: () => [...queryKeys.users.all, 'recommended'] as const,
+    recommendedInfinite: () => [...queryKeys.users.all, 'recommended', 'infinite'] as const,
   },
 
   // Notifications
@@ -94,6 +95,8 @@ export const queryKeys = {
       [...queryKeys.search.all, 'posts', query, filters] as const,
     users: (query: string) => [...queryKeys.search.all, 'users', query] as const,
     tags: (query: string) => [...queryKeys.search.all, 'tags', query] as const,
+    examples: (filters?: { limit?: number; period?: 'day' | 'week' | 'month' }) =>
+      [...queryKeys.search.all, 'examples', filters] as const,
   },
 
   // Verification

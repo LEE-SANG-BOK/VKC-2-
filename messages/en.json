@@ -26,8 +26,10 @@
     "post": "Post",
     "follow": "Follow",
     "following": "Following",
+    "adoptionRate": "Adoption rate",
+    "interestMatchRate": "Interest match rate",
     "question": "Question",
-    "verifiedUser": "Verified User",
+    "verifiedUser": "Verified user",
     "guidelineTooltip": "Be respectful, no hate; ads/contact links may be restricted; violations can be limited or penalized"
   },
   "postDetail": {
@@ -164,7 +166,7 @@
   "header": {
     "search": "Search...",
     "login": "Login",
-    "signup": "Sign Up",
+    "signup": "Get started",
     "user": "User",
     "allCategories": "All Categories",
     "tech": "Technology",

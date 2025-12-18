@@ -11,6 +11,10 @@
 - [LEAD] Facebook 레이아웃 핫픽스: Header max-width/grid를 MainLayout과 정렬해 ultrawide에서 헤더/본문 배치 어긋남 방지 + 홈 피드는 center 영역을 투명(canvas)으로 전환해 “카드만 흰색” 집중 강화
 - [LEAD] Ultrawide 레이아웃 버그 수정: Tailwind `grid-cols-[...]` 임의값에서 컬럼 구분자에 콤마(,)를 사용해 grid가 무효화되던 문제를 `_` 구분자로 교체해 데스크톱 3컬럼 그리드가 정상 적용되도록 수정
 - [LEAD] 피드 중간 추천: 인기/최신 피드에서 게시글 5개 이후 “추천 사용자” 섹션을 인서트(로그인 시만 fetch)
+- [LEAD] 추천 사용자 섹션 리팩토링: `RecommendedUsersSection`로 분리 + 모바일은 2개씩 가로 캐러셀(좌/우 이동)로 노출
+- [LEAD] 추천 사용자 메타 개선: recommendationMeta 기반 #1~#3 표시 + 인증 사용자는 닉네임 상단 라벨 노출(없으면 팔로워/게시글/팔로잉 fallback)
+- [LEAD] 팔로잉 모달 추천 탭도 recommendationMeta 우선 적용 + 인증 라벨 노출로 추천 UX 일관화
+- [LEAD] 구독 피드 필터/카피 정합화: 구독 카테고리 가로 필터를 데스크톱에도 노출 + HeaderSearch select 폭 조정 + 사이드바 구독 버튼 폭/폰트 축소 + 헤더 signup 카피 “시작하기/ Get started / Bắt đầu” 통일
 - [LEAD] 모바일/태블릿 잘림 보강: CategorySidebar 구독 버튼 클립 방지(카테고리 행 width 규칙 수정) + PostCard 태그/액션이 `sm~md` 구간에서도 wrap/표시되도록 breakpoint 조정
 - [FE] PostCard 작성자 라인: 이름 옆에 `· Follow` / `· Following` 텍스트 CTA 표시 + 카드 클릭과 분리(클릭 stopPropagation)
 - [FE] PostCard 답변 CTA 정합성: 질문은 `answersCount` 기준으로 “답변 N개” 표시(ko는 `개` 표기) + 클릭 시 `#answers/#comments`로 이동
@@ -20,6 +24,8 @@
 - [FE] 모바일 프로필 정보 콤팩트 레이아웃: Joined/Gender/Age/Status는 2열 배치, Email/Phone은 전체 폭으로 안정화
 - [FE] `/verification/history` 실데이터 연동: TanStack Query로 이력 로딩 + “더 보기” 페이지네이션 지원
 - [FE] 모바일 PostCard 하단 잘림 보강: 액션 아이콘 행 wrap 처리로 “해결됨/미해결됨” 및 긴 라벨/태그가 클립되지 않도록 안정화
+- [LEAD] PostCard 콤팩트 카운트: “답변 N개/댓글 N개” 텍스트 대신 아이콘 옆 숫자만 표시(aria-label 유지)
+- [LEAD] Tooltip 개선: 클릭 가능한 툴팁(TrustBadge 등)을 위해 `interactive` 옵션 추가(hover/focus 이동 시 바로 닫히지 않도록)
 - [LEAD] 폴더 구조 정리: `src/components/molecules/modals/*`로 모달 컴포넌트 경로 일원화(탐색/소유권/성능 작업 관리)
 - [LEAD] 리팩토링 심화(중복 제거): 태그 번역 맵 공통화(`src/lib/constants/tag-translations.ts`) + `normalizeKey` 유틸 공통화(`src/utils/normalizeKey.ts`)로 PostCard/NewPostClient/PostDetail 중복 제거
 - [LEAD] 헤더 검색 분리: `Header`에서 검색 로직을 `src/components/molecules/search/HeaderSearch.tsx`로 분리 + dynamic import(skeleton)로 초기 렌더 비용 완화

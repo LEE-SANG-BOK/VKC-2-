@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import Image from 'next/image';
 import { Camera, Save, Bell, ArrowLeft, Info } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUpdateMyProfile } from '@/repo/users/mutation';
-import { useUserProfile } from '@/repo/users/query';
+import { useMyProfile } from '@/repo/users/query';
 import { queryKeys } from '@/repo/keys';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
-import { DISPLAY_NAME_MAX_LENGTH, DISPLAY_NAME_MIN_LENGTH, normalizeDisplayName } from '@/lib/utils/profile';
+import { DISPLAY_NAME_MAX_LENGTH, DISPLAY_NAME_MIN_LENGTH, generateDisplayNameFromEmail, normalizeDisplayName } from '@/lib/utils/profile';
 
 type AvatarSource = ImageBitmap | HTMLImageElement;
 
@@ -98,6 +98,8 @@ interface FormData {
   ageGroup: string;
   userType: string;
   status: string;
+  visaType: string;
+  koreanLevel: string;
 }
 
 interface NotificationSettings {
@@ -114,6 +116,13 @@ interface ProfileEditClientProps {
   translations: Record<string, any>;
 }
 
+const VISA_TYPES = ['D-2', 'D-10', 'E-7-1', 'E-7-2', 'E-7-3', 'F-2-7', 'F-6'];
+const KOREAN_LEVELS = [
+  { value: 'beginner', label: { ko: '기초', vi: 'Sơ cấp', en: 'Beginner' } },
+  { value: 'intermediate', label: { ko: '중급', vi: 'Trung cấp', en: 'Intermediate' } },
+  { value: 'advanced', label: { ko: '고급', vi: 'Cao cấp', en: 'Advanced' } },
+];
+
 export default function ProfileEditClient({ lang, translations }: ProfileEditClientProps) {
   const router = useRouter();
   const { data: session, status: authStatus, update: updateSession } = useSession();
@@ -124,7 +133,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
 
   const t = (translations?.profileEdit || {}) as Record<string, string>;
 
-  const { data: profile, isLoading: profileLoading } = useUserProfile(user?.id || '', {
+  const { data: profile, isLoading: profileLoading } = useMyProfile({
     enabled: !!user?.id,
   });
 
@@ -137,6 +146,8 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
     ageGroup: '',
     userType: '',
     status: '',
+    visaType: '',
+    koreanLevel: '',
   });
 
   const [notifications, setNotifications] = useState<NotificationSettings>({
@@ -151,6 +162,9 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [avatarPreviewOverride, setAvatarPreviewOverride] = useState<string | null>(null);
   const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+  const fallbackDisplayName = useMemo(() => (
+    user?.email ? generateDisplayNameFromEmail(user.email) : ''
+  ), [user?.email]);
 
   useEffect(() => {
     if (profile) {
@@ -168,12 +182,14 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
           : '');
 
       setFormData({
-        name: profile.displayName || '',
+        name: profile.displayName || profile.username || fallbackDisplayName,
         bio: profile.bio || '',
         gender: profile.gender || '',
         ageGroup: profile.ageGroup || '',
         userType: resolvedUserType,
         status: legacyType || '',
+        visaType: profile.visaType || '',
+        koreanLevel: profile.koreanLevel || '',
       });
       const p = profile as { notifyAnswers?: boolean; notifyComments?: boolean; notifyReplies?: boolean; notifyAdoptions?: boolean; notifyFollows?: boolean };
       const answersVal = p.notifyAnswers ?? true;
@@ -190,7 +206,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
         all: answersVal && commentsVal && repliesVal && adoptionsVal && followsVal,
       });
     }
-  }, [profile]);
+  }, [fallbackDisplayName, profile]);
 
   useEffect(() => {
     if (authStatus === 'unauthenticated') {
@@ -255,6 +271,8 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
         gender: formData.gender,
         ageGroup: formData.ageGroup,
         userType: formData.userType || undefined,
+        visaType: formData.visaType || null,
+        koreanLevel: formData.koreanLevel || null,
         status: formData.status || undefined,
         notifyAnswers: notifications.answers,
         notifyComments: notifications.comments,
@@ -287,7 +305,8 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
     );
   }
 
-  const avatarPreview = avatarPreviewOverride || profile?.avatar || user?.image || '/avatar-default.jpg';
+  const profileImage = (profile as { image?: string | null } | null)?.image;
+  const avatarPreview = avatarPreviewOverride || profile?.avatar || profileImage || user?.image || '/avatar-default.jpg';
   const avatarUnoptimized = avatarPreview.startsWith('blob:') || avatarPreview.startsWith('data:');
 
   const handleAvatarPick = () => {

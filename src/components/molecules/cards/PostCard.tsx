@@ -516,6 +516,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                         }
                         position="top"
                         touchBehavior="longPress"
+                        interactive
                       >
                         <span className="inline-flex items-center gap-1">
                           <TrustBadge
@@ -615,10 +616,11 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             <button
               type="button"
               onClick={handleAnswerCountClick}
+              aria-label={answerLabel}
               className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0 overflow-hidden"
             >
               <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span className="truncate">{answerLabel}</span>
+              <span className="truncate tabular-nums">{responseCount}</span>
             </button>
             {certifiedSummaryLabel ? (
               <>

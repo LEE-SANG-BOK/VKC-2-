@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
-import { eq, isNull, asc } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
+import { DEPRECATED_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
 
 /**
  * GET /api/categories
@@ -15,8 +16,20 @@ export async function GET(request: NextRequest) {
       orderBy: [asc(categories.order)],
     });
 
+    const deprecatedParentIds = new Set(
+      allCategories
+        .filter((cat) => DEPRECATED_GROUP_PARENT_SLUGS.has(cat.slug))
+        .map((cat) => cat.id)
+    );
+
+    const visibleCategories = allCategories.filter((cat) => {
+      if (DEPRECATED_GROUP_PARENT_SLUGS.has(cat.slug)) return false;
+      if (cat.parentId && deprecatedParentIds.has(cat.parentId)) return false;
+      return true;
+    });
+
     // 대분류 (parentId가 null)
-    const parentCategories = allCategories.filter(cat => !cat.parentId);
+    const parentCategories = visibleCategories.filter(cat => !cat.parentId);
 
     // 결과 구조화
     const result = parentCategories.map(parent => ({
@@ -24,7 +37,7 @@ export async function GET(request: NextRequest) {
       name: parent.name,
       slug: parent.slug,
       order: parent.order,
-      children: allCategories
+      children: visibleCategories
         .filter(cat => cat.parentId === parent.id)
         .map(child => ({
           id: child.id,

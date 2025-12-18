@@ -3,15 +3,13 @@
 import { Fragment, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
-import { useRouter } from 'nextjs-toploader/app';
 import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
 import PostCard from '@/components/molecules/cards/PostCard';
 import { useInfinitePosts, useMyPostInteractions } from '@/repo/posts/query';
 import { useRecommendedUsers } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
-import Avatar from '@/components/atoms/Avatar';
-import FollowButton from '@/components/atoms/FollowButton';
+import RecommendedUsersSection from '@/components/organisms/RecommendedUsersSection';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import type { PaginatedResponse, PostListItem } from '@/repo/posts/types';
 
@@ -25,9 +23,9 @@ interface PostListProps {
 export default function PostList({ selectedCategory = 'all', isSearchMode = false, searchQuery = '', translations }: PostListProps) {
   const t = (translations?.post || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
   const params = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const locale = (params?.lang as string) || 'ko';
   const { data: session } = useSession();
   const { data: mySubs } = useMySubscriptions(selectedCategory === 'subscribed' && !!session?.user);
@@ -39,7 +37,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   }, [mySubs, topicSlugs]);
   const [selectedChildCategory, setSelectedChildCategory] = useState('all');
   const [selectedSubscribedCategory, setSelectedSubscribedCategory] = useState('all');
-  const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
   const observerRef = useRef<HTMLDivElement>(null);
   const recommendedRef = useRef<HTMLDivElement>(null);
 
@@ -205,6 +202,19 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const followerLabel = tCommon.followers || (locale === 'vi' ? 'Người theo dõi' : locale === 'en' ? 'Followers' : '팔로워');
   const postsLabel = tCommon.posts || (locale === 'vi' ? 'Bài viết' : locale === 'en' ? 'Posts' : '게시글');
   const followingLabel = tCommon.following || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로잉');
+  const adoptionRateLabel = tCommon.adoptionRate || (locale === 'vi' ? 'Tỷ lệ được chấp nhận' : locale === 'en' ? 'Adoption rate' : '채택률');
+  const interestMatchRateLabel = tCommon.interestMatchRate || (locale === 'vi' ? 'Tỷ lệ khớp sở thích' : locale === 'en' ? 'Interest match rate' : '관심사 일치율');
+  const verifiedLabel = tCommon.verifiedUser || (locale === 'vi' ? 'Đã xác minh' : locale === 'en' ? 'Verified' : '인증됨');
+  const badgeLabels = {
+    expert: tTrust.expertLabel || (locale === 'vi' ? 'Chuyên gia' : locale === 'en' ? 'Expert' : '전문가'),
+    community: tTrust.communityLabel || (locale === 'vi' ? 'Cộng đồng' : locale === 'en' ? 'Community' : '커뮤니티'),
+    verified: tTrust.verifiedUserLabel || verifiedLabel,
+  };
+  const metaLabels = {
+    adoptionRate: adoptionRateLabel,
+    interestMatchRate: interestMatchRateLabel,
+    badge: verifiedLabel,
+  };
   const recommendedUsersLabel = t.recommendedUsersTitle || t.recommendedUsers || (locale === 'vi' ? 'Người dùng đề xuất' : locale === 'en' ? 'Recommended users' : '추천 사용자');
   const recommendedCtaLabel = t.recommendedUsersCta || (locale === 'vi' ? 'Xem người dùng đề xuất' : locale === 'en' ? 'View recommended users' : '추천 사용자 보기');
   const allSubscriptionsLabel = t.allSubscriptions || (locale === 'vi' ? 'Tất cả' : locale === 'en' ? 'All' : '전체');
@@ -233,7 +243,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   return (
     <div className="pt-0 pb-4">
       {selectedCategory === 'subscribed' && topicSubscriptions.length > 0 ? (
-        <div className="lg:hidden mb-2">
+        <div className="mb-3">
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
             <button
               type="button"
@@ -357,75 +367,21 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                   />
                 </div>
                 {shouldInsertRecommended && idx === 4 && (recommendedLoading || sortedRecommendations.length > 0) ? (
-                  <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 mt-1">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {recommendedUsersLabel}
-                      </h3>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {recommendedLoading
-                        ? Array.from({ length: 4 }).map((_, sIdx) => (
-                          <div
-                            key={sIdx}
-                            className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-3"
-                          >
-                            <div className="flex items-center gap-3 w-full animate-pulse">
-                              <div className="flex flex-col items-center gap-2">
-                                <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-800" />
-                                <div className="h-8 w-20 rounded-md bg-gray-200 dark:bg-gray-800" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="h-4 w-36 rounded bg-gray-200 dark:bg-gray-800" />
-                                <div className="mt-2 h-3 w-48 rounded bg-gray-200 dark:bg-gray-800" />
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                        : sortedRecommendations.map((user) => (
-                          <div
-                            key={user.id}
-                            className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-3"
-                          >
-                            <div className="flex items-center gap-3 w-full">
-                              <div className="flex flex-col items-center gap-2">
-                                <Avatar
-                                  name={user.displayName || user.email || 'U'}
-                                  imageUrl={(user as any)?.image}
-                                  size="lg"
-                                  hoverHighlight
-                                />
-                                <FollowButton
-                                  userId={String(user.id)}
-                                  userName={user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음')}
-                                  isFollowing={followStates[user.id] ?? (user as any)?.isFollowing ?? false}
-                                  size="sm"
-                                  onToggle={(next) =>
-                                    setFollowStates((prev) => ({
-                                      ...prev,
-                                      [user.id]: next,
-                                    }))
-                                  }
-                                />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <button
-                                  type="button"
-                                  onClick={() => router.push(`/${locale}/profile/${user.id}`)}
-                                  className="text-left"
-                                >
-                                  <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                                    {user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음')}
-                                  </div>
-                                  <div className="text-[11px] text-gray-500 dark:text-gray-400">
-                                    #1: {user.stats?.followers ?? 0} {followerLabel}, #2: {user.stats?.posts ?? 0} {postsLabel}, #3: {user.stats?.following ?? 0} {followingLabel}
-                                  </div>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
+                  <div className="mt-1">
+                    <RecommendedUsersSection
+                      title={recommendedUsersLabel}
+                      locale={locale}
+                      users={sortedRecommendations as any}
+                      isLoading={recommendedLoading}
+                      followerLabel={followerLabel}
+                      postsLabel={postsLabel}
+                      followingLabel={followingLabel}
+                      metaLabels={metaLabels}
+                      verifiedLabel={verifiedLabel}
+                      badgeLabels={badgeLabels}
+                      previousLabel={previousLabel}
+                      nextLabel={nextLabel}
+                    />
                   </div>
                 ) : null}
               </Fragment>
@@ -443,75 +399,21 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
           )}
 
           {selectedCategory === 'following' && (recommendedLoading || recommended?.data?.length) ? (
-            <div ref={recommendedRef} className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 mt-3">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {recommendedUsersLabel}
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {recommendedLoading
-                  ? Array.from({ length: 4 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3"
-                    >
-                      <div className="flex items-center gap-3 w-full animate-pulse">
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700" />
-                          <div className="h-8 w-20 rounded-md bg-gray-200 dark:bg-gray-700" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="h-4 w-36 rounded bg-gray-200 dark:bg-gray-700" />
-                          <div className="mt-2 h-3 w-48 rounded bg-gray-200 dark:bg-gray-700" />
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                  : sortedRecommendations.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3"
-                    >
-                      <div className="flex items-center gap-3 w-full">
-                        <div className="flex flex-col items-center gap-2">
-                          <Avatar
-                            name={user.displayName || user.email || 'U'}
-                            imageUrl={(user as any)?.image}
-                            size="lg"
-                            hoverHighlight
-                          />
-                          <FollowButton
-                            userId={String(user.id)}
-                            userName={user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음')}
-                            isFollowing={followStates[user.id] ?? (user as any)?.isFollowing ?? false}
-                            size="sm"
-                            onToggle={(next) =>
-                              setFollowStates((prev) => ({
-                                ...prev,
-                                [user.id]: next,
-                              }))
-                            }
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => router.push(`/${locale}/profile/${user.id}`)}
-                            className="text-left"
-                          >
-                            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                              {user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음')}
-                            </div>
-                            <div className="text-[11px] text-gray-500 dark:text-gray-400">
-                              #1: {user.stats?.followers ?? 0} {followerLabel}, #2: {user.stats?.posts ?? 0} {postsLabel}, #3: {user.stats?.following ?? 0} {followingLabel}
-                            </div>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
+            <div ref={recommendedRef} className="mt-3">
+              <RecommendedUsersSection
+                title={recommendedUsersLabel}
+                locale={locale}
+                users={sortedRecommendations as any}
+                isLoading={recommendedLoading}
+                followerLabel={followerLabel}
+                postsLabel={postsLabel}
+                followingLabel={followingLabel}
+                metaLabels={metaLabels}
+                verifiedLabel={verifiedLabel}
+                badgeLabels={badgeLabels}
+                previousLabel={previousLabel}
+                nextLabel={nextLabel}
+              />
             </div>
           ) : null}
         </div>

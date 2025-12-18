@@ -1,12 +1,13 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { posts, users } from '@/lib/db/schema';
+import { posts, users, answers, comments } from '@/lib/db/schema';
 import { successResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { getFollowingIdSet } from '@/lib/api/follow';
-import { desc, eq, gte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, sql, type SQL } from 'drizzle-orm';
 import dayjs from 'dayjs';
 import { isExpertBadgeType } from '@/lib/constants/badges';
+import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
 
 const resolveTrust = (author: any, createdAt: Date | string) => {
   const months = dayjs().diff(createdAt, 'month', true);
@@ -66,41 +67,83 @@ export async function GET(request: NextRequest) {
     const fetchLimit = Math.min(90, limit * 3);
     const contentPreviewLimit = 4000;
 
-    const trendingPosts = await db
-      .select({
-        id: posts.id,
-        authorId: posts.authorId,
-        type: posts.type,
-        title: posts.title,
-        content: sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
-        category: posts.category,
-        subcategory: posts.subcategory,
-        tags: posts.tags,
-        views: posts.views,
-        likes: posts.likes,
-        isResolved: posts.isResolved,
-        adoptedAnswerId: posts.adoptedAnswerId,
-        createdAt: posts.createdAt,
-        updatedAt: posts.updatedAt,
-        author: {
-          id: users.id,
-          name: users.name,
-          displayName: users.displayName,
-          image: users.image,
-          isVerified: users.isVerified,
-          isExpert: users.isExpert,
-          badgeType: users.badgeType,
-        },
-      })
-      .from(posts)
-      .leftJoin(users, eq(posts.authorId, users.id))
-      .where(gte(posts.createdAt, dateFrom))
-      .orderBy(
-        desc(sql`${posts.likes} * 2 + ${posts.views}`),
-        desc(posts.createdAt),
-        desc(posts.id)
-      )
-      .limit(fetchLimit);
+    const selectTrendingRows = (from?: Date) => {
+      const baseConditions: SQL[] = [inArray(posts.category, ACTIVE_GROUP_PARENT_SLUGS) as SQL];
+      if (from) {
+        baseConditions.push(gte(posts.createdAt, from));
+      }
+      const whereClause = baseConditions.length > 1 ? and(...baseConditions) : baseConditions[0];
+
+      return db
+        .select({
+          id: posts.id,
+          authorId: posts.authorId,
+          type: posts.type,
+          title: posts.title,
+          content: sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
+          category: posts.category,
+          subcategory: posts.subcategory,
+          tags: posts.tags,
+          views: posts.views,
+          likes: posts.likes,
+          isResolved: posts.isResolved,
+          adoptedAnswerId: posts.adoptedAnswerId,
+          createdAt: posts.createdAt,
+          updatedAt: posts.updatedAt,
+          author: {
+            id: users.id,
+            name: users.name,
+            displayName: users.displayName,
+            image: users.image,
+            isVerified: users.isVerified,
+            isExpert: users.isExpert,
+            badgeType: users.badgeType,
+          },
+        })
+        .from(posts)
+        .leftJoin(users, eq(posts.authorId, users.id))
+        .where(whereClause)
+        .orderBy(
+          desc(sql`${posts.likes} * 2 + ${posts.views}`),
+          desc(posts.createdAt),
+          desc(posts.id)
+        )
+        .limit(fetchLimit);
+    };
+
+    const baseRows = await selectTrendingRows(dateFrom);
+    const needsFallback = baseRows.length < limit;
+    const fallbackRows = needsFallback ? await selectTrendingRows() : [];
+    const seenIds = new Set(baseRows.map((row) => row.id));
+    const trendingPosts = needsFallback
+      ? [...baseRows, ...fallbackRows.filter((row) => !seenIds.has(row.id))].slice(0, fetchLimit)
+      : baseRows;
+
+    const postIds = trendingPosts.map((post) => post.id).filter(Boolean) as string[];
+    const [answerCounts, commentCounts] = postIds.length
+      ? await Promise.all([
+          db
+            .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
+            .from(answers)
+            .where(inArray(answers.postId, postIds))
+            .groupBy(answers.postId),
+          db
+            .select({ postId: comments.postId, count: sql<number>`count(*)::int` })
+            .from(comments)
+            .where(and(inArray(comments.postId, postIds), isNull(comments.parentId)))
+            .groupBy(comments.postId),
+        ])
+      : [[], []];
+
+    const answerCountMap = new Map<string, number>();
+    answerCounts.forEach((row) => {
+      if (row.postId) answerCountMap.set(row.postId, row.count);
+    });
+
+    const commentCountMap = new Map<string, number>();
+    commentCounts.forEach((row) => {
+      if (row.postId) commentCountMap.set(row.postId, row.count);
+    });
 
     const followingIdSet = currentUser
       ? await getFollowingIdSet(
@@ -114,6 +157,12 @@ export async function GET(request: NextRequest) {
       const { thumbnail, thumbnails, imageCount } = extractImages(content, 4);
       const trust = resolveTrust(post.author, post.createdAt);
       const baseScore = (post.likes ?? 0) * 2 + (post.views ?? 0);
+      const answersCount = answerCountMap.get(post.id) ?? 0;
+      const postCommentsCount = commentCountMap.get(post.id) ?? 0;
+      const commentsCount = answersCount + postCommentsCount;
+      const ageDays = dayjs().diff(post.createdAt, 'day', true);
+      const recencyWeight = Math.max(0.6, 1 - ageDays / (daysAgo * 1.5));
+      const engagementScore = answersCount * 3 + postCommentsCount;
       const excerpt = buildExcerpt(content);
 
       return {
@@ -127,6 +176,9 @@ export async function GET(request: NextRequest) {
         tags: Array.isArray(post.tags) ? post.tags : [],
         views: post.views ?? 0,
         likes: post.likes ?? 0,
+        answersCount,
+        postCommentsCount,
+        commentsCount,
         isResolved: post.isResolved ?? false,
         adoptedAnswerId: post.adoptedAnswerId ?? null,
         createdAt: post.createdAt,
@@ -143,7 +195,7 @@ export async function GET(request: NextRequest) {
         thumbnail,
         thumbnails,
         imageCount,
-        score: baseScore * trust.weight,
+        score: (baseScore + engagementScore) * trust.weight * recencyWeight,
       };
     });
 

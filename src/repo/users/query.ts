@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useInfiniteQuery, type UseQueryOptions, type UseInfiniteQueryOptions } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, type UseQueryOptions } from '@tanstack/react-query';
 import { queryKeys } from '../keys';
 import {
   fetchMyProfile,
@@ -301,10 +301,10 @@ export function useInfiniteUserComments(
 }
 
 export function useInfiniteRecommendedUsers(
-  options?: Omit<UseInfiniteQueryOptions<PaginatedResponse<User>>, 'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam'>
+  options?: Record<string, unknown>
 ) {
   return useInfiniteQuery({
-    queryKey: queryKeys.users.recommended(),
+    queryKey: queryKeys.users.recommendedInfinite(),
     queryFn: async ({ pageParam = 1, signal }) => {
       const page = pageParam as number;
       return fetchRecommendedUsers({
@@ -319,8 +319,8 @@ export function useInfiniteRecommendedUsers(
       return page < totalPages ? page + 1 : undefined;
     },
     initialPageParam: 1,
-    staleTime: 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     retry: 1,
     ...options,
   });

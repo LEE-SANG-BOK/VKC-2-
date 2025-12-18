@@ -17,9 +17,18 @@ interface RichTextEditorProps {
   translations: any;
   variant?: 'full' | 'basic';
   tooltipPosition?: 'top' | 'below' | 'right' | 'bottom-right';
+  onFocus?: (event: React.FocusEvent<HTMLDivElement>) => void;
 }
 
-export default function RichTextEditor({ content, onChange, placeholder = '내용을 입력하세요...', translations, variant = 'full', tooltipPosition = 'below' }: RichTextEditorProps) {
+export default function RichTextEditor({
+  content,
+  onChange,
+  placeholder = '내용을 입력하세요...',
+  translations,
+  variant = 'full',
+  tooltipPosition = 'below',
+  onFocus,
+}: RichTextEditorProps) {
   const t = translations?.tooltips || {};
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showLinkInput, setShowLinkInput] = useState(false);
@@ -324,7 +333,7 @@ export default function RichTextEditor({ content, onChange, placeholder = '내�
       </div>
 
       {/* Editor Content */}
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} onFocus={onFocus} />
 
       {/* Hidden File Input */}
       <input

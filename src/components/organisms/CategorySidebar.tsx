@@ -375,18 +375,20 @@ export default function CategorySidebar({
                             className="!px-2 !py-2 flex-1 text-sm"
                           />
                           {apiChild ? (
-                            <button
-                              onClick={() => handleSubscribe(apiChild.id)}
-                              className={`shrink-0 whitespace-nowrap text-[11px] min-w-[84px] px-3 py-1.5 rounded-full transition-colors ${
-                                subscribed
-                                  ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
-                                  : 'border border-transparent bg-blue-600 text-white shadow-sm hover:bg-blue-700'
-                              }`}
-                            >
+                          <button
+                            onClick={() => handleSubscribe(apiChild.id)}
+                            className={`shrink-0 whitespace-normal break-keep text-[10px] sm:text-[11px] min-h-[28px] min-w-[56px] sm:min-w-[72px] px-2 sm:px-2.5 py-1 rounded-full transition-colors ${
+                              subscribed
+                                ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
+                                : 'border border-transparent bg-blue-600 text-white shadow-sm hover:bg-blue-700'
+                            }`}
+                          >
+                            <span className="block leading-tight">
                               {subscribed
                                 ? (t.subscribedLabel || t.subscribed || '구독 중')
                                 : (t.subscribe || '구독')}
-                            </button>
+                            </span>
+                          </button>
                           ) : null}
                         </div>
                       );
@@ -417,9 +419,11 @@ export default function CategorySidebar({
                   />
                   <button
                     onClick={() => handleSubscribe(cat.id)}
-                    className="shrink-0 whitespace-nowrap text-[11px] min-w-[84px] px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="shrink-0 whitespace-normal break-keep text-[10px] sm:text-[11px] min-h-[28px] min-w-[56px] sm:min-w-[72px] px-2 sm:px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
-                    {t.subscribedLabel || t.subscribed || '구독 중'}
+                    <span className="block leading-tight">
+                      {t.subscribedLabel || t.subscribed || '구독 중'}
+                    </span>
                   </button>
                 </div>
               ))}

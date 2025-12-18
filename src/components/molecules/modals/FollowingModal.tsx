@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
-import { X, Users, BadgeCheck, Sparkles, Rss } from 'lucide-react';
+import { X, Users, Sparkles, Rss } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/atoms/Modal';
 import PostCard from '@/components/molecules/cards/PostCard';
 import Avatar from '@/components/atoms/Avatar';
 import FollowButton from '@/components/atoms/FollowButton';
-import { useInfiniteFollowing, useRecommendedUsers } from '@/repo/users/query';
+import { useInfiniteFollowing, useInfiniteRecommendedUsers } from '@/repo/users/query';
 import { useInfinitePosts } from '@/repo/posts/query';
 import useProgressiveList from '@/lib/hooks/useProgressiveList';
 
@@ -30,9 +30,11 @@ interface UserItem {
   image?: string;
   bio?: string;
   isVerified?: boolean;
+  badgeType?: string | null;
   isFollowing?: boolean;
   status?: string;
   userType?: string | null;
+  recommendationMeta?: Array<{ key: string; value: string | number }>;
   stats?: {
     followers?: number;
     following?: number;
@@ -49,14 +51,26 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   
   const t = translations;
   const tCommon = (translations as any)?.common || {};
+  const tTrust = (translations as any)?.trustBadges || {};
   const [activeTab, setActiveTab] = useState<TabType>('recommend');
   const modalBodyRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const recommendedObserverRef = useRef<HTMLDivElement>(null);
   const followingObserverRef = useRef<HTMLDivElement>(null);
   const feedObserverRef = useRef<HTMLDivElement>(null);
-  const followerLabel = tCommon.followers || (locale === 'vi' ? 'Người theo dõi' : locale === 'en' ? 'Followers' : '팔로워');
-  const postsLabel = tCommon.posts || (locale === 'vi' ? 'Bài viết' : locale === 'en' ? 'Posts' : '게시글');
-  const followingLabel = tCommon.following || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로잉');
+  const adoptionRateLabel = tCommon.adoptionRate || (locale === 'vi' ? 'Tỷ lệ được chấp nhận' : locale === 'en' ? 'Adoption rate' : '채택률');
+  const interestMatchRateLabel = tCommon.interestMatchRate || (locale === 'vi' ? 'Tỷ lệ khớp sở thích' : locale === 'en' ? 'Interest match rate' : '관심사 일치율');
+  const verifiedLabelText = tCommon.verifiedUser || (locale === 'vi' ? 'Đã xác minh' : locale === 'en' ? 'Verified' : '인증됨');
+  const metaLabels = {
+    adoptionRate: adoptionRateLabel,
+    interestMatchRate: interestMatchRateLabel,
+    badge: verifiedLabelText,
+  };
+  const badgeLabels = {
+    expert: tTrust.expertLabel || (locale === 'vi' ? 'Chuyên gia' : locale === 'en' ? 'Expert' : '전문가'),
+    community: tTrust.communityLabel || (locale === 'vi' ? 'Cộng đồng' : locale === 'en' ? 'Community' : '커뮤니티'),
+    verified: tTrust.verifiedUserLabel || verifiedLabelText,
+  };
   const loadingLabel = (t as any).loading || (locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...');
   const noRecommendationsLabel = (t as any).noRecommendations || (locale === 'vi' ? 'Chưa có gợi ý người dùng.' : locale === 'en' ? 'No recommendations yet.' : '추천할 사용자가 없습니다.');
   const noFollowingLabel = (t as any).noFollowing || (locale === 'vi' ? 'Chưa theo dõi ai.' : locale === 'en' ? 'You are not following anyone yet.' : '아직 팔로잉하는 사용자가 없습니다.');
@@ -66,19 +80,31 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   const followingTabLabel = (t as any).following || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로잉');
   const feedLabel = (t as any).feed || (locale === 'vi' ? 'Bảng tin' : locale === 'en' ? 'Feed' : '피드');
 
-  // Recommend (Recommended Users) - fixed 3 users
-  const { 
-    data: recommendedData, 
-    isLoading: recommendedLoading,
-  } = useRecommendedUsers(
-    {
-      enabled: !!user?.id && isOpen && activeTab === 'recommend',
-      staleTime: 5 * 60 * 1000,
-      gcTime: 15 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
+  const formatMetaValue = useCallback((item: { key: string; value: string | number }) => {
+    if (item.value === null || item.value === undefined || item.value === '') return '';
+    if (item.key === 'badge' && typeof item.value === 'string') {
+      const normalized = item.value.toLowerCase();
+      return badgeLabels[normalized as keyof typeof badgeLabels] || item.value;
     }
-  );
+    if (typeof item.value === 'string') return item.value;
+    const label = metaLabels[item.key as keyof typeof metaLabels] || item.key;
+    const suffix = item.key.toLowerCase().includes('rate') ? '%' : '';
+    return `${label} ${item.value}${suffix}`.trim();
+  }, [badgeLabels, metaLabels]);
+
+  const {
+    data: recommendedData,
+    isLoading: recommendedLoading,
+    fetchNextPage: fetchNextRecommendedPage,
+    hasNextPage: hasNextRecommendedPage,
+    isFetchingNextPage: isFetchingNextRecommendedPage,
+  } = useInfiniteRecommendedUsers({
+    enabled: !!user?.id && isOpen && activeTab === 'recommend',
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 
   // Following infinite scroll
   const { 
@@ -117,9 +143,19 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
     }
   );
 
-  const recommendations = useMemo(() => recommendedData?.data || [], [recommendedData]);
-  const following = useMemo(() => followingData?.pages?.flatMap(page => page.data) || [], [followingData]);
-  const feedPosts = useMemo(() => feedData?.pages?.flatMap(page => page.data) || [], [feedData]);
+  const normalizeQueryList = <T,>(value: unknown): T[] => {
+    if (!value) return [];
+    const maybe = value as any;
+    if (Array.isArray(maybe.pages)) {
+      return maybe.pages.flatMap((page: any) => page?.data || []);
+    }
+    if (Array.isArray(maybe.data)) return maybe.data;
+    return [];
+  };
+
+  const recommendations = useMemo(() => normalizeQueryList<UserItem>(recommendedData), [recommendedData]);
+  const following = useMemo(() => normalizeQueryList<UserItem>(followingData), [followingData]);
+  const feedPosts = useMemo(() => normalizeQueryList<any>(feedData), [feedData]);
   const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -208,6 +244,34 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
 
 
 
+  useEffect(() => {
+    if (!hasNextRecommendedPage || isFetchingNextRecommendedPage || activeTab !== 'recommend' || !isOpen) return;
+    if (visibleRecommendCount < recommendations.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isFetchingNextRecommendedPage && hasNextRecommendedPage && visibleRecommendCount >= recommendations.length) {
+          fetchNextRecommendedPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (recommendedObserverRef.current) {
+      observer.observe(recommendedObserverRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [
+    activeTab,
+    fetchNextRecommendedPage,
+    hasNextRecommendedPage,
+    isFetchingNextRecommendedPage,
+    isOpen,
+    recommendations.length,
+    visibleRecommendCount,
+  ]);
+
   // Intersection Observer for Following
   useEffect(() => {
     if (!hasNextFollowingPage || isFetchingNextFollowingPage || activeTab !== 'following' || !isOpen) return;
@@ -287,13 +351,15 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
               onClick={() => handleUserClick(userItem.id)}
               className="w-full text-left"
             >
+              {userItem.isVerified || userItem.badgeType ? (
+                <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-300">
+                  {verifiedLabelText}
+                </div>
+              ) : null}
               <div className="flex items-center gap-1.5 mb-1">
                 <h4 className="font-semibold text-gray-900 dark:text-white truncate">
                   {displayName}
                 </h4>
-                {userItem.isVerified && (
-                  <BadgeCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                )}
               </div>
               {userItem.username && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
@@ -317,8 +383,26 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                   {userItem.bio}
                 </p>
               )}
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                #1: {userItem.stats?.followers || 0} {followerLabel}, #2: {userItem.stats?.posts || 0} {postsLabel}, #3: {userItem.stats?.following || 0} {followingLabel}
+              <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-1">
+                {(userItem.recommendationMeta && userItem.recommendationMeta.length > 0
+                  ? userItem.recommendationMeta
+                  : [
+                      { key: 'followers', value: userItem.stats?.followers || 0 },
+                      { key: 'posts', value: userItem.stats?.posts || 0 },
+                      { key: 'following', value: userItem.stats?.following || 0 },
+                    ]
+                )
+                  .filter((item) => item.value !== undefined && item.value !== null && item.value !== '')
+                  .slice(0, 3)
+                  .map((item, index) => {
+                    const text = formatMetaValue(item);
+                    if (!text) return null;
+                    return (
+                      <span key={`${userItem.id}-${item.key}-${index}`} className="inline-flex">
+                        #{index + 1}: {text}
+                      </span>
+                    );
+                  })}
               </div>
             </button>
           </div>
@@ -440,6 +524,16 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                           </div>
                         </div>
                       ))}
+                    </div>
+                  ) : null}
+                  {hasNextRecommendedPage && visibleRecommendCount >= recommendations.length ? (
+                    <div ref={recommendedObserverRef} className="py-4 text-center">
+                      {isFetchingNextRecommendedPage && (
+                        <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                          <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-sm">{loadingLabel}</span>
+                        </div>
+                      )}
                     </div>
                   ) : null}
                 </>

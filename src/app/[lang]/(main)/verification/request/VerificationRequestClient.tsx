@@ -631,6 +631,7 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                         }
                         position="top"
                         touchBehavior="longPress"
+                        interactive
                       >
                         <span className="inline-flex">
                           <TrustBadge level={trustBadgePreview.level} label={trustBadgePreview.label} />
