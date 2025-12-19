@@ -332,7 +332,16 @@ export async function GET(request: NextRequest) {
       const shouldComputeResponderCounts = !useCursorPagination;
       const emptyResponderRows: Array<{ postId: string | null; authorId: string | null }> = [];
 
-      const [answerCounts, commentCounts, answerResponders, commentResponders, likedRows, bookmarkedRows] = await Promise.all([
+      const [
+        answerCounts,
+        commentCounts,
+        officialAnswerCounts,
+        reviewedAnswerCounts,
+        answerResponders,
+        commentResponders,
+        likedRows,
+        bookmarkedRows,
+      ] = await Promise.all([
         db
           .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
           .from(answers)
@@ -343,6 +352,22 @@ export async function GET(request: NextRequest) {
           .from(comments)
           .where(and(inArray(comments.postId, postIds), isNull(comments.parentId)))
           .groupBy(comments.postId),
+        db
+          .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
+          .from(answers)
+          .where(and(inArray(answers.postId, postIds), eq(answers.isOfficial, true)))
+          .groupBy(answers.postId),
+        db
+          .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
+          .from(answers)
+          .where(
+            and(
+              inArray(answers.postId, postIds),
+              eq(answers.reviewStatus, 'approved'),
+              eq(answers.isOfficial, false)
+            )
+          )
+          .groupBy(answers.postId),
         shouldComputeResponderCounts
           ? db
               .select({ postId: answers.postId, authorId: answers.authorId })
@@ -428,6 +453,16 @@ export async function GET(request: NextRequest) {
         if (row.postId) commentCountMap.set(row.postId, row.count);
       });
 
+      const officialAnswerCountMap = new Map<string, number>();
+      officialAnswerCounts.forEach((row) => {
+        if (row.postId) officialAnswerCountMap.set(row.postId, row.count);
+      });
+
+      const reviewedAnswerCountMap = new Map<string, number>();
+      reviewedAnswerCounts.forEach((row) => {
+        if (row.postId) reviewedAnswerCountMap.set(row.postId, row.count);
+      });
+
       const likedPostIds = new Set<string>();
       likedRows.forEach((row) => {
         if (row.postId) likedPostIds.add(row.postId);
@@ -455,6 +490,8 @@ export async function GET(request: NextRequest) {
         const postCommentsCount = commentCountMap.get(post.id) ?? 0;
         const certifiedResponderCount = certifiedRespondersByPostId.get(post.id)?.size ?? 0;
         const otherResponderCount = otherRespondersByPostId.get(post.id)?.size ?? 0;
+        const officialAnswerCount = officialAnswerCountMap.get(post.id) ?? 0;
+        const reviewedAnswerCount = reviewedAnswerCountMap.get(post.id) ?? 0;
 
         return {
           id: post.id,
@@ -491,6 +528,8 @@ export async function GET(request: NextRequest) {
           commentsCount: answersCount + postCommentsCount,
           certifiedResponderCount,
           otherResponderCount,
+          officialAnswerCount,
+          reviewedAnswerCount,
         };
       });
     };

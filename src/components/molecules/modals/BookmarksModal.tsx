@@ -215,6 +215,10 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
                       ? (bookmark.answersCount ?? bookmark.stats?.comments ?? 0)
                       : (bookmark.stats?.comments ?? 0),
                   }}
+                  certifiedResponderCount={bookmark.certifiedResponderCount}
+                  otherResponderCount={bookmark.otherResponderCount}
+                  officialAnswerCount={bookmark.officialAnswerCount}
+                  reviewedAnswerCount={bookmark.reviewedAnswerCount}
                   thumbnail={bookmark.thumbnail}
                   publishedAt={formatDate(bookmark.publishedAt)}
                   isQuestion={bookmark.isQuestion}

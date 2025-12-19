@@ -112,6 +112,10 @@ export interface PostCardData {
   answersCount?: number;
   postCommentsCount?: number;
   commentsCount?: number;
+  certifiedResponderCount?: number;
+  otherResponderCount?: number;
+  officialAnswerCount?: number;
+  reviewedAnswerCount?: number;
   isResolved?: boolean;
   createdAt: string;
   publishedAt: string;
