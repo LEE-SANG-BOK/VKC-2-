@@ -9,7 +9,6 @@ import NewsSection from '@/components/organisms/NewsSection';
 import AdminPostRail from '@/components/organisms/AdminPostRail';
 import PostList from '@/components/organisms/PostList';
 import NoticeBanner from '@/components/organisms/NoticeBanner';
-import LeaderboardPreview from '@/components/organisms/LeaderboardPreview';
 import type { Locale } from '@/i18n/config';
 import { useMyProfile } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
@@ -148,7 +147,6 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
             </div>
           </div>
         )}
-        <LeaderboardPreview locale={lang} translations={dict} />
         <div className="space-y-1">
           <div className="lg:hidden">
             <NewsSection translations={dict} lang={lang} />

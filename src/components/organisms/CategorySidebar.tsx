@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
-import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Bug } from 'lucide-react';
+import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Bug, Trophy } from 'lucide-react';
 import { LEGACY_CATEGORIES, getCategoryName, CATEGORY_GROUPS } from '@/lib/constants/categories';
 import CategoryItem from '@/components/molecules/categories/CategoryItem';
 import { useSession } from 'next-auth/react';
@@ -87,6 +87,13 @@ export default function CategorySidebar({
         : locale === 'en'
           ? 'See posts from categories you follow.'
           : '구독한 카테고리 글만 모아볼 수 있어요.'),
+    leaderboard:
+      t.leaderboardTooltip ||
+      (locale === 'vi'
+        ? 'Xem top người đóng góp dựa trên độ tin cậy và câu trả lời hữu ích.'
+        : locale === 'en'
+          ? 'See top contributors based on trust and helpful answers.'
+          : '신뢰/도움 점수 기준 상위 기여자를 확인하세요.'),
     feedback:
       t.feedbackTooltip ||
       (locale === 'vi'
@@ -96,6 +103,13 @@ export default function CategorySidebar({
           : '피드백이나 버그를 제보할 수 있어요.'),
   };
 
+  const leaderboardLabel =
+    t.leaderboard ||
+    (locale === 'vi'
+      ? 'Top người đóng góp'
+      : locale === 'en'
+        ? 'Top Contributors'
+        : '상위 기여자');
   const feedbackLabel = 'Feedback';
 
   const menuCategories = [
@@ -103,6 +117,7 @@ export default function CategorySidebar({
     { id: 'latest', icon: Sparkles, count: 0 },
     { id: 'following', icon: Users, count: 0 },
     { id: 'subscribed', icon: HeartHandshake, count: 0 },
+    { id: 'leaderboard', icon: Trophy, count: 0, label: leaderboardLabel },
     { id: 'feedback', icon: Bug, count: 0, label: feedbackLabel, className: 'px-5 text-xs gap-2' },
     // { id: 'media', icon: Film, count: 0 }, // 미디어 전용 페이지 (숨김 상태)
   ];
@@ -204,6 +219,12 @@ export default function CategorySidebar({
 
     if (categoryId === 'feedback') {
       router.push(`/${locale}/feedback`);
+      setIsMobileMenuOpen(false);
+      return;
+    }
+
+    if (categoryId === 'leaderboard') {
+      router.push(`/${locale}/leaderboard`);
       setIsMobileMenuOpen(false);
       return;
     }
