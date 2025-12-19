@@ -105,12 +105,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const responseNoun = isQuestion
     ? (locale === 'en' ? 'answers' : tCommon.answer || '답변')
     : (locale === 'en' ? 'comments' : tCommon.comment || '댓글');
-  const responseNounCompact = locale === 'vi'
-    ? (isQuestion ? 'trả lời' : 'bình luận')
-    : responseNoun;
-  const certifiedCompactLabel = certifiedCount > 0
-    ? `+${certifiedCount} ${responseNounCompact}`
-    : '';
+  const certifiedCompactLabel = certifiedCount > 0 ? `+${certifiedCount}` : '';
   const certifiedSummaryLabel = certifiedCount > 0
     ? (otherCount > 0
       ? (tPost.certifiedResponderSummary
@@ -579,7 +574,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 md:flex-nowrap md:overflow-x-auto md:scrollbar-hide md:pr-2">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 max-h-[48px] overflow-hidden sm:max-h-none md:flex-nowrap md:overflow-x-auto md:scrollbar-hide md:pr-2">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;

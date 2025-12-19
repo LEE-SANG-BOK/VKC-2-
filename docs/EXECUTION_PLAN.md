@@ -190,6 +190,43 @@
   - src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx
   - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
 
+#### (2025-12-19) [LEAD] 헤더 브랜드 문구 노출 방식 변경 (P0)
+
+- 플랜(체크리스트)
+  - [x] 브랜드 소개 문구를 Tooltip 대신 로고 옆 텍스트로 고정 노출
+- 현황 분석(코드 기준)
+  - 로고에 Tooltip이 걸려 있어 문구가 접근성/가시성 측면에서 약함
+- 변경 내용(why/what)
+  - why: 브랜드 메시지를 상시 노출해 일관된 정체성 전달
+  - what: Logo 우측에 `brandIntro` 텍스트를 배치하고 Tooltip 제거
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/components/organisms/Header.tsx
+
+#### (2025-12-19) [LEAD] 모바일 헤더/카드 밀도 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 로고 문구를 모바일에서도 노출하되 2줄/폭 제한 적용
+  - [x] 모바일 카드 인증 요약 라벨을 `+N` 숫자만 표시
+  - [x] 태그 칩 2줄 이상은 잘림 처리(모바일 높이 안정화)
+  - [x] 추천 사용자 섹션 타이틀/버튼 높이 고정(헤더 줄바꿈 방지)
+- 현황 분석(코드 기준)
+  - 로고 문구가 모바일에서 숨김 처리되어 브랜드 메시지가 보이지 않음
+  - 인증 응답 라벨에 텍스트가 길게 붙어 카드 하단 높이가 불안정
+  - 태그 칩이 여러 줄로 늘어나 카드 높이가 커짐
+- 변경 내용(why/what)
+  - why: 모바일 헤더/카드 밀도 확보 및 레이아웃 흔들림 제거
+  - what: 로고 문구는 line-clamp 적용, 인증 요약은 숫자만, 태그는 모바일 높이 제한, 추천 섹션 제목/버튼은 고정 높이
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/components/organisms/Header.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+
 #### (2025-12-18) [LEAD] 컴포넌트 폴더 구조 정리: molecules/cards 분리 (P0)
 
 - 플랜(체크리스트)
