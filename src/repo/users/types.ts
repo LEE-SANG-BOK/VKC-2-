@@ -25,7 +25,7 @@ export interface User {
   isProfileComplete?: boolean | null;
   isFollowing?: boolean;
   recommendationMeta?: Array<{
-    key: 'badge' | 'adoptionRate' | 'interestMatchRate' | string;
+    key: 'badge' | 'userType' | 'visaType' | 'koreanLevel' | 'interest' | 'status' | string;
     value: string | number;
   }>;
   stats: {
@@ -61,6 +61,42 @@ export interface UpdateProfileRequest {
   preferredLanguage?: string;
   koreanLevel?: string | null;
 }
+
+export interface UserScore {
+  userId: string;
+  score: number;
+  trustScore: number;
+  helpfulAnswers: number;
+  adoptionRate: number;
+  level: number;
+  levelProgress: number;
+  nextLevelScore: number;
+  badges: {
+    isVerified: boolean;
+    isExpert: boolean;
+    badgeType?: string | null;
+  };
+}
+
+export interface UserLeaderboardEntry {
+  id: string;
+  name?: string | null;
+  displayName?: string | null;
+  avatar?: string | null;
+  image?: string | null;
+  isVerified: boolean;
+  isExpert: boolean;
+  badgeType?: string | null;
+  score: number;
+  trustScore: number;
+  helpfulAnswers: number;
+  adoptionRate: number;
+  level: number;
+  levelProgress: number;
+  rank: number;
+}
+
+export type AnswerReviewStatus = 'pending' | 'approved' | 'rejected';
 
 export interface PostCardData {
   id: string;
@@ -101,6 +137,8 @@ export interface PostCardData {
   isBookmarked: boolean;
   isQuestion: boolean;
   isAdopted: boolean;
+  isOfficial?: boolean;
+  reviewStatus?: AnswerReviewStatus;
   post?: {
     id: string;
     title: string;

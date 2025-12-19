@@ -10,6 +10,8 @@ import type {
   UserComment,
   UserBookmark,
   AnswerFilters,
+  UserScore,
+  UserLeaderboardEntry,
 } from './types';
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -343,6 +345,41 @@ export async function fetchRecommendedUsers(
         totalPages: 1,
       },
     };
+  }
+
+  return res.json();
+}
+
+export async function fetchUserScore(userId: string, options?: FetchOptions): Promise<ApiResponse<UserScore>> {
+  const res = await fetch(`${API_BASE}/api/users/${userId}/score`, {
+    cache: 'no-store',
+    credentials: 'include',
+    signal: options?.signal,
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch user score');
+  }
+
+  return res.json();
+}
+
+export async function fetchUserLeaderboard(
+  filters: { page?: number; limit?: number } = {},
+  options?: FetchOptions
+): Promise<PaginatedResponse<UserLeaderboardEntry>> {
+  const params = new URLSearchParams();
+  if (filters.page) params.append('page', filters.page.toString());
+  if (filters.limit) params.append('limit', filters.limit.toString());
+
+  const res = await fetch(`${API_BASE}/api/users/leaderboard?${params.toString()}`, {
+    cache: 'no-store',
+    credentials: 'include',
+    signal: options?.signal,
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch user leaderboard');
   }
 
   return res.json();

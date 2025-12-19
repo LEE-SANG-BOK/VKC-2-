@@ -13,6 +13,8 @@ import {
   fetchFollowing,
   checkFollowStatus,
   fetchRecommendedUsers,
+  fetchUserScore,
+  fetchUserLeaderboard,
 } from './fetch';
 import type {
   UserProfile,
@@ -24,6 +26,9 @@ import type {
   UserComment,
   UserBookmark,
   User,
+  UserScore,
+  UserLeaderboardEntry,
+  ApiResponse,
 } from './types';
 
 export function useMyProfile(
@@ -47,6 +52,18 @@ export function useUserProfile(
   return useQuery({
     queryKey: queryKeys.users.detail(userId),
     queryFn: ({ signal }) => fetchUserProfile(userId, { signal }),
+    enabled: !!userId,
+    ...options,
+  });
+}
+
+export function useUserScore(
+  userId: string,
+  options?: Omit<UseQueryOptions<ApiResponse<UserScore>>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.users.score(userId),
+    queryFn: ({ signal }) => fetchUserScore(userId, { signal }),
     enabled: !!userId,
     ...options,
   });
@@ -111,6 +128,17 @@ export function useUserBookmarks(
     queryKey: queryKeys.users.bookmarks(userId, filters),
     queryFn: ({ signal }) => fetchUserBookmarks(userId, filters, { signal }),
     enabled: !!userId,
+    ...options,
+  });
+}
+
+export function useUserLeaderboard(
+  filters: { page?: number; limit?: number } = {},
+  options?: Omit<UseQueryOptions<PaginatedResponse<UserLeaderboardEntry>>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.users.leaderboard(filters),
+    queryFn: ({ signal }) => fetchUserLeaderboard(filters, { signal }),
     ...options,
   });
 }

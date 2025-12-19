@@ -8,6 +8,7 @@ import Avatar from '@/components/atoms/Avatar';
 import Tooltip from '@/components/atoms/Tooltip';
 import TrustBadge from '@/components/atoms/TrustBadge';
 import { useUserLeaderboard } from '@/repo/users/query';
+import type { UserLeaderboardEntry } from '@/repo/users/types';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 
 interface LeaderboardClientProps {
@@ -119,13 +120,13 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
     }
   );
 
-  const entries = data?.data || [];
+  const entries = (data?.data || []) as UserLeaderboardEntry[];
   const pagination = data?.pagination;
   const totalPages = pagination?.totalPages || 1;
   const totalCount = pagination?.total || entries.length;
 
   const showTopSection = currentPage === 1 && entries.length > 0;
-  const topRankers = showTopSection ? entries.slice(0, 3) : [];
+  const topRankers: UserLeaderboardEntry[] = showTopSection ? entries.slice(0, 3) : [];
 
   const topConfigs = [
     {
@@ -198,7 +199,7 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
 
       {showTopSection ? (
         <section className="grid gap-4 md:grid-cols-3">
-          {topRankers.map((entry, index) => {
+          {topRankers.map((entry: UserLeaderboardEntry, index: number) => {
             const config = topConfigs[index] || topConfigs[0];
             const Icon = config.icon;
             const displayName = entry.displayName || entry.name || copy.unknownUser;
@@ -286,7 +287,7 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
           <div className="px-4 py-6 text-sm text-gray-500 dark:text-gray-400">{copy.empty}</div>
         ) : (
           <div className="divide-y divide-gray-200/60 dark:divide-gray-800/60">
-            {entries.map((entry) => {
+            {entries.map((entry: UserLeaderboardEntry) => {
               const displayName = entry.displayName || entry.name || copy.unknownUser;
               const avatarSrc = entry.avatar || entry.image || '';
               const levelPercent = Math.round((entry.levelProgress || 0) * 100);
