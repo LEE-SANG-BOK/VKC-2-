@@ -17,6 +17,29 @@ const globalForDb = globalThis as unknown as {
 
 let cached: DbInit | undefined;
 
+const missingDbErrorMessage = 'DATABASE_URL environment variable is not set';
+
+function createMissingDbInit(): DbInit {
+  const missingError = new Error(missingDbErrorMessage);
+  const missingDb = new Proxy({} as PostgresJsDatabase<typeof schema>, {
+    get(_target, prop) {
+      if (prop === 'then') return undefined;
+      throw missingError;
+    },
+  }) as PostgresJsDatabase<typeof schema>;
+  const missingClient = new Proxy((() => {}) as unknown as QueryClient, {
+    apply() {
+      throw missingError;
+    },
+    get(_target, prop) {
+      if (prop === 'then') return undefined;
+      throw missingError;
+    },
+  }) as QueryClient;
+
+  return { db: missingDb, migrationClient: missingClient, queryClient: missingClient };
+}
+
 function getConnectionString() {
   return (
     process.env.POSTGRES_POOL_URL ||
@@ -43,7 +66,16 @@ function initDb(): DbInit {
 
   const connectionString = getConnectionString();
   if (!connectionString) {
-    throw new Error('DATABASE_URL environment variable is not set');
+    const shouldAllowMissingDb =
+      process.env.NEXT_PHASE === 'phase-production-build' ||
+      Boolean(process.env.VERCEL) ||
+      Boolean(process.env.CI);
+    if (shouldAllowMissingDb) {
+      const missingInit = createMissingDbInit();
+      cached = missingInit;
+      return missingInit;
+    }
+    throw new Error(missingDbErrorMessage);
   }
 
   const migrationClient =

@@ -22,6 +22,43 @@ const RichTextEditor = dynamic(() => import('@/components/molecules/editor/RichT
   loading: () => <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse" />,
 });
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const formatTemplateHtml = (value: string) => escapeHtml(value).replace(/\n/g, '<br />');
+
+const extractImageSources = (html: string) => {
+  if (!html) return [];
+  const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  const sources: string[] = [];
+  const seen = new Set<string>();
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(html))) {
+    const src = match[1];
+    if (!src || seen.has(src)) continue;
+    seen.add(src);
+    sources.push(src);
+  }
+  return sources;
+};
+
+const applyThumbnailSelection = (html: string, selected: string) => {
+  if (!html || !selected) return html;
+  const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  return html.replace(regex, (tag, src) => {
+    const cleaned = String(tag).replace(/\sdata-thumbnail(\s*=\s*(['"])?true\2)?/gi, '');
+    if (src === selected) {
+      return cleaned.replace(/<img/i, '<img data-thumbnail="true"');
+    }
+    return cleaned;
+  });
+};
+
 interface NewPostClientProps {
   translations: Record<string, unknown>;
   lang: Locale;
@@ -47,6 +84,10 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const [childCategory, setChildCategory] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [selectedThumbnail, setSelectedThumbnail] = useState('');
+  const [templateCondition, setTemplateCondition] = useState('');
+  const [templateGoal, setTemplateGoal] = useState('');
+  const [templateBackground, setTemplateBackground] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,8 +110,303 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     scrollComposerIntoView(event.currentTarget);
   }, [scrollComposerIntoView]);
 
+  const templateFallbacks = useMemo(() => {
+    if (lang === 'en') {
+      return {
+        title: 'Question template',
+        description: 'Summarize context, goal, and constraints for better answers.',
+        note: 'Your input will be added to the top of the post.',
+        condition: 'Constraints',
+        goal: 'Goal',
+        background: 'Background',
+        conditionPlaceholder: 'e.g., visa type, timeline, budget',
+        goalPlaceholder: 'e.g., what outcome you want',
+        backgroundPlaceholder: 'e.g., your current situation and context',
+      };
+    }
+    if (lang === 'vi') {
+      return {
+        title: 'Mẫu câu hỏi',
+        description: 'Ghi nhanh bối cảnh, mục tiêu và điều kiện để nhận câu trả lời chính xác hơn.',
+        note: 'Nội dung bạn nhập sẽ được thêm vào đầu bài viết.',
+        condition: 'Điều kiện',
+        goal: 'Mục tiêu',
+        background: 'Bối cảnh',
+        conditionPlaceholder: 'VD: loại visa, thời gian, ngân sách',
+        goalPlaceholder: 'VD: kết quả bạn muốn đạt được',
+        backgroundPlaceholder: 'VD: tình huống hiện tại, mô tả bối cảnh',
+      };
+    }
+    return {
+      title: '질문 템플릿',
+      description: '배경/목표/조건을 정리하면 더 정확한 답을 받을 수 있어요.',
+      note: '입력한 내용은 본문 상단에 자동으로 추가됩니다.',
+      condition: '조건',
+      goal: '목표',
+      background: '배경',
+      conditionPlaceholder: '예: 비자 유형, 기간, 예산 등',
+      goalPlaceholder: '예: 원하는 결과를 적어주세요',
+      backgroundPlaceholder: '예: 현재 상황, 배경 설명',
+    };
+  }, [lang]);
+  const templateTitleLabel = t.templateTitle || templateFallbacks.title;
+  const templateDescLabel = t.templateDesc || templateFallbacks.description;
+  const templateNoteLabel = t.templateNote || templateFallbacks.note;
+  const templateConditionLabel = t.templateCondition || templateFallbacks.condition;
+  const templateGoalLabel = t.templateGoal || templateFallbacks.goal;
+  const templateBackgroundLabel = t.templateBackground || templateFallbacks.background;
+  const templateConditionPlaceholder = t.templateConditionPlaceholder || templateFallbacks.conditionPlaceholder;
+  const templateGoalPlaceholder = t.templateGoalPlaceholder || templateFallbacks.goalPlaceholder;
+  const categoryFallbacks = useMemo(() => {
+    if (lang === 'en') {
+      return {
+        parentCategory: 'Category',
+        selectParentCategory: 'Select category',
+        noCategories: 'No categories available',
+        childCategory: 'Subcategory',
+        selectChildCategory: 'Select subcategory',
+        noChildCategories: 'No subcategories available for this category.',
+      };
+    }
+    if (lang === 'vi') {
+      return {
+        parentCategory: 'Danh mục',
+        selectParentCategory: 'Chọn danh mục',
+        noCategories: 'Không có danh mục.',
+        childCategory: 'Danh mục con',
+        selectChildCategory: 'Chọn danh mục con',
+        noChildCategories: 'Danh mục này không có danh mục con.',
+      };
+    }
+    return {
+      parentCategory: '대분류',
+      selectParentCategory: '대분류 선택',
+      noCategories: '카테고리가 없습니다',
+      childCategory: '세부분류',
+      selectChildCategory: '세부분류 선택',
+      noChildCategories: '이 카테고리에는 세부분류가 없습니다.',
+    };
+  }, [lang]);
+  const parentCategoryLabel = t.parentCategory || categoryFallbacks.parentCategory;
+  const selectParentCategoryLabel = t.selectParentCategory || categoryFallbacks.selectParentCategory;
+  const noCategoriesLabel = t.noCategories || categoryFallbacks.noCategories;
+  const childCategoryLabel = t.childCategory || categoryFallbacks.childCategory;
+  const selectChildCategoryLabel = t.selectChildCategory || categoryFallbacks.selectChildCategory;
+  const noChildCategoriesLabel = t.noChildCategories || categoryFallbacks.noChildCategories;
+  const templateBackgroundPlaceholder = t.templateBackgroundPlaceholder || templateFallbacks.backgroundPlaceholder;
+  const thumbnailLabel = t.thumbnailLabel || (lang === 'vi' ? 'Ảnh đại diện' : lang === 'en' ? 'Cover image' : '대표 이미지');
+  const thumbnailHint = t.thumbnailHint || (lang === 'vi' ? 'Chọn ảnh sẽ hiển thị trên thẻ bài viết.' : lang === 'en' ? 'Choose which image appears on the post card.' : '게시글 카드에 표시할 이미지를 선택하세요.');
+  const thumbnailEmpty = t.thumbnailEmpty || (lang === 'vi' ? 'Không tìm thấy ảnh trong nội dung.' : lang === 'en' ? 'No images found in the content.' : '본문에서 이미지를 찾지 못했습니다.');
+  const thumbnailSelectedLabel = t.thumbnailSelected || (lang === 'vi' ? 'Đã chọn' : lang === 'en' ? 'Selected' : '선택됨');
+  const uiFallbacks = useMemo(() => {
+    if (lang === 'en') {
+      return {
+        categoryRequiredError: 'Please select a category.',
+        titleLowQualityError: 'The title is too simple or repetitive. Please revise.',
+        contentLowQualityError: 'The content is too simple or repetitive. Please revise.',
+        bannedWarning: 'Inappropriate words detected. Please revise your text.',
+        spamWarning: 'External links or contact info detected. Only informational posts are allowed.',
+        categoryResetError: 'Please reselect the category.',
+        childCategoryResetError: 'Please reselect the subcategory.',
+        submitSuccess: 'Your post has been published.',
+        submitError: 'Failed to create the post.',
+        cancelConfirm: 'You have unsaved changes. Are you sure you want to cancel?',
+        goBack: 'Go back',
+        askQuestion: 'Ask a question',
+        share: 'Share',
+        rulesTitle: 'Community guidelines',
+        rulesRespect: 'Be respectful. No abusive or hateful language.',
+        rulesAds: 'Posts with ads/contact/external links may be limited or require approval.',
+        rulesDup: 'Search for similar questions before posting and avoid duplicates.',
+        typeSelection: 'Select type',
+        question: 'Question',
+        title: 'Title',
+        titlePlaceholderQuestion: 'Enter your question',
+        titlePlaceholderShare: 'Enter a title',
+        titleMinWarning: 'Please write at least {min} characters for the title.',
+        content: 'Content',
+        contentPlaceholderQuestion: 'Write your question...',
+        contentPlaceholderShare: 'Write what you want to share...',
+        contentMinWarning: 'Please write at least {min} characters in the content.',
+        contentMaxWarning: 'Content can be up to {max} characters.',
+        tags: 'Tags',
+        tagsMax: 'Max 5',
+        defaultTag: 'Recommend',
+        tagPlaceholder: 'Type a tag and click add',
+        add: 'Add',
+        submitting: 'Submitting...',
+        submitQuestion: 'Post question',
+        submitShare: 'Share post',
+        cancel: 'Cancel',
+      };
+    }
+    if (lang === 'vi') {
+      return {
+        categoryRequiredError: 'Vui lòng chọn danh mục.',
+        titleLowQualityError: 'Tiêu đề quá đơn giản hoặc lặp lại. Vui lòng chỉnh sửa.',
+        contentLowQualityError: 'Nội dung quá đơn giản hoặc lặp lại. Vui lòng chỉnh sửa.',
+        bannedWarning: 'Có từ ngữ không phù hợp. Vui lòng chỉnh sửa.',
+        spamWarning: 'Phát hiện liên kết ngoài/thông tin liên hệ. Chỉ cho phép bài viết mang tính thông tin.',
+        categoryResetError: 'Vui lòng chọn lại danh mục.',
+        childCategoryResetError: 'Vui lòng chọn lại danh mục con.',
+        submitSuccess: 'Bài viết đã được đăng.',
+        submitError: 'Không thể đăng bài.',
+        cancelConfirm: 'Bạn có nội dung chưa lưu. Bạn có chắc muốn hủy?',
+        goBack: 'Quay lại',
+        askQuestion: 'Đặt câu hỏi',
+        share: 'Chia sẻ',
+        rulesTitle: 'Hướng dẫn cộng đồng',
+        rulesRespect: 'Giữ lịch sự, không dùng ngôn từ xúc phạm/kỳ thị.',
+        rulesAds: 'Bài có quảng cáo/thông tin liên hệ/liên kết ngoài có thể bị hạn chế hoặc cần phê duyệt.',
+        rulesDup: 'Tìm câu hỏi tương tự trước khi đăng, tránh trùng lặp.',
+        typeSelection: 'Chọn loại',
+        question: 'Câu hỏi',
+        title: 'Tiêu đề',
+        titlePlaceholderQuestion: 'Nhập câu hỏi',
+        titlePlaceholderShare: 'Nhập tiêu đề',
+        titleMinWarning: 'Tiêu đề cần ít nhất {min} ký tự.',
+        content: 'Nội dung',
+        contentPlaceholderQuestion: 'Viết nội dung câu hỏi...',
+        contentPlaceholderShare: 'Viết nội dung chia sẻ...',
+        contentMinWarning: 'Nội dung cần ít nhất {min} ký tự.',
+        contentMaxWarning: 'Nội dung tối đa {max} ký tự.',
+        tags: 'Thẻ',
+        tagsMax: 'Tối đa 5',
+        defaultTag: 'Gợi ý',
+        tagPlaceholder: 'Nhập thẻ rồi bấm thêm',
+        add: 'Thêm',
+        submitting: 'Đang đăng...',
+        submitQuestion: 'Đăng câu hỏi',
+        submitShare: 'Đăng chia sẻ',
+        cancel: 'Hủy',
+      };
+    }
+    return {
+      categoryRequiredError: '카테고리를 선택해주세요.',
+      titleLowQualityError: '제목이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.',
+      contentLowQualityError: '내용이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.',
+      bannedWarning: '금칙어가 포함되어 있습니다. 내용을 순화해주세요.',
+      spamWarning: '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.',
+      categoryResetError: '카테고리를 다시 선택해주세요.',
+      childCategoryResetError: '세부분류를 다시 선택해주세요.',
+      submitSuccess: '게시글이 등록되었습니다.',
+      submitError: '게시글 작성에 실패했습니다.',
+      cancelConfirm: '작성 중인 내용이 있습니다. 정말 취소하시겠습니까?',
+      goBack: '뒤로 가기',
+      askQuestion: '질문하기',
+      share: '공유하기',
+      rulesTitle: '커뮤니티 가이드',
+      rulesRespect: '예의 준수, 욕설·혐오 표현 금지',
+      rulesAds: '광고/연락처/외부 링크 포함 글은 제한 또는 승인 필요',
+      rulesDup: '게시 전 유사 질문 검색, 중복 게시 자제',
+      typeSelection: '타입 선택',
+      question: '질문',
+      title: '제목',
+      titlePlaceholderQuestion: '질문을 입력하세요',
+      titlePlaceholderShare: '제목을 입력하세요',
+      titleMinWarning: '제목을 최소 {min}자 이상 작성해주세요.',
+      content: '내용',
+      contentPlaceholderQuestion: '질문 내용을 작성하세요...',
+      contentPlaceholderShare: '공유할 내용을 작성하세요...',
+      contentMinWarning: '본문을 최소 {min}자 이상 작성해주세요.',
+      contentMaxWarning: '본문은 최대 {max}자까지 작성할 수 있습니다.',
+      tags: '태그',
+      tagsMax: '최대 5개',
+      defaultTag: '추천',
+      tagPlaceholder: '태그 입력 후 추가 버튼 클릭',
+      add: '추가',
+      submitting: '등록 중...',
+      submitQuestion: '질문 등록',
+      submitShare: '공유 등록',
+      cancel: '취소',
+    };
+  }, [lang]);
+  const categoryRequiredError = t.validationError || uiFallbacks.categoryRequiredError;
+  const titleLowQualityError = tErrors.POST_TITLE_LOW_QUALITY || t.validationError || uiFallbacks.titleLowQualityError;
+  const contentLowQualityError = tErrors.POST_CONTENT_LOW_QUALITY || t.validationError || uiFallbacks.contentLowQualityError;
+  const bannedWarningLabel = t.bannedWarning || uiFallbacks.bannedWarning;
+  const spamWarningLabel = t.spamWarning || uiFallbacks.spamWarning;
+  const categoryResetError = t.validationError || uiFallbacks.categoryResetError;
+  const childCategoryResetError = t.validationError || uiFallbacks.childCategoryResetError;
+  const submitSuccessLabel = t.submitSuccess || uiFallbacks.submitSuccess;
+  const submitErrorLabel = t.submitError || uiFallbacks.submitError;
+  const cancelConfirmLabel = t.cancelConfirm || uiFallbacks.cancelConfirm;
+  const goBackLabel = t.goBack || uiFallbacks.goBack;
+  const askQuestionLabel = t.askQuestion || uiFallbacks.askQuestion;
+  const shareLabel = t.share || uiFallbacks.share;
+  const rulesTitleLabel = t.rulesTitle || uiFallbacks.rulesTitle;
+  const rulesRespectLabel = t.rulesRespect || uiFallbacks.rulesRespect;
+  const rulesAdsLabel = t.rulesAds || uiFallbacks.rulesAds;
+  const rulesDupLabel = t.rulesDup || uiFallbacks.rulesDup;
+  const typeSelectionLabel = t.typeSelection || uiFallbacks.typeSelection;
+  const questionLabel = t.question || uiFallbacks.question;
+  const titleLabel = t.title || uiFallbacks.title;
+  const titlePlaceholderQuestionLabel = t.titlePlaceholderQuestion || uiFallbacks.titlePlaceholderQuestion;
+  const titlePlaceholderShareLabel = t.titlePlaceholderShare || uiFallbacks.titlePlaceholderShare;
+  const titleMinWarningTemplate = t.titleMinWarning || uiFallbacks.titleMinWarning;
+  const contentLabel = t.content || uiFallbacks.content;
+  const contentPlaceholderQuestionLabel = t.contentPlaceholderQuestion || uiFallbacks.contentPlaceholderQuestion;
+  const contentPlaceholderShareLabel = t.contentPlaceholderShare || uiFallbacks.contentPlaceholderShare;
+  const contentMinWarningTemplate = t.contentMinWarning || uiFallbacks.contentMinWarning;
+  const contentMaxWarningTemplate = t.contentMaxWarning || uiFallbacks.contentMaxWarning;
+  const tagsLabel = t.tags || uiFallbacks.tags;
+  const tagsMaxLabel = t.tagsMax || uiFallbacks.tagsMax;
+  const defaultTagLabel = t.defaultTag || uiFallbacks.defaultTag;
+  const tagPlaceholderLabel = t.tagPlaceholder || uiFallbacks.tagPlaceholder;
+  const addLabel = t.add || uiFallbacks.add;
+  const submittingLabel = t.submitting || uiFallbacks.submitting;
+  const submitQuestionLabel = t.submitQuestion || uiFallbacks.submitQuestion;
+  const submitShareLabel = t.submitShare || uiFallbacks.submitShare;
+  const cancelLabel = t.cancel || uiFallbacks.cancel;
+  const fallbackTagSeeds = lang === 'vi'
+    ? ['Thông tin', 'TIP', 'Hướng dẫn']
+    : lang === 'en'
+      ? ['Info', 'TIP', 'Guide']
+      : ['정보', 'TIP', '가이드'];
+
+  const templateSections = useMemo(() => {
+    const sections = [
+      { label: templateConditionLabel, value: templateCondition.trim() },
+      { label: templateGoalLabel, value: templateGoal.trim() },
+      { label: templateBackgroundLabel, value: templateBackground.trim() },
+    ];
+    return sections.filter((section) => section.value.length > 0);
+  }, [templateBackground, templateBackgroundLabel, templateCondition, templateConditionLabel, templateGoal, templateGoalLabel]);
+
+  const templateHtml = useMemo(() => {
+    if (templateSections.length === 0) return '';
+    return templateSections
+      .map((section) => `<h3>${escapeHtml(section.label)}</h3><p>${formatTemplateHtml(section.value)}</p>`)
+      .join('');
+  }, [templateSections]);
+
+  const resolvedContent = useMemo(() => {
+    const trimmedContent = content.trim();
+    if (!templateHtml) return trimmedContent;
+    return trimmedContent ? `${templateHtml}<p></p>${trimmedContent}` : templateHtml;
+  }, [content, templateHtml]);
+
+  const contentImages = useMemo(() => extractImageSources(content), [content]);
+
+  useEffect(() => {
+    if (contentImages.length === 0) {
+      if (selectedThumbnail) {
+        setSelectedThumbnail('');
+      }
+      return;
+    }
+    if (!selectedThumbnail || !contentImages.includes(selectedThumbnail)) {
+      setSelectedThumbnail(contentImages[0]);
+    }
+  }, [contentImages, selectedThumbnail]);
+
+  const resolvedContentWithThumbnail = useMemo(
+    () => applyThumbnailSelection(resolvedContent, selectedThumbnail),
+    [resolvedContent, selectedThumbnail]
+  );
+
   const titleLength = title.trim().length;
-  const contentLength = getPlainTextLength(content);
+  const contentLength = getPlainTextLength(resolvedContentWithThumbnail);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +425,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
       toast.error(tErrors.POST_TITLE_TOO_LONG || t.validationError || `제목을 ${MAX_TITLE}자 이하로 작성해주세요.`);
       return;
     }
-    if (!content.trim() || contentLength < MIN_CONTENT) {
+    if (!resolvedContentWithThumbnail.trim() || contentLength < MIN_CONTENT) {
       toast.error(tErrors.POST_CONTENT_TOO_SHORT || t.validationError || `본문을 최소 ${MIN_CONTENT}자 이상 입력해주세요.`);
       return;
     }
@@ -98,37 +434,37 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
       return;
     }
     if (!parentCategory || (hasChildren && !childCategory)) {
-      toast.error(t.validationError || '카테고리를 선택해주세요.');
+      toast.error(categoryRequiredError);
       return;
     }
 
     if (isLowQualityText(title)) {
-      toast.error(tErrors.POST_TITLE_LOW_QUALITY || t.validationError || '제목이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.');
+      toast.error(titleLowQualityError);
       return;
     }
-    if (isLowQualityText(content)) {
-      toast.error(tErrors.POST_CONTENT_LOW_QUALITY || t.validationError || '내용이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.');
+    if (isLowQualityText(resolvedContentWithThumbnail)) {
+      toast.error(contentLowQualityError);
       return;
     }
 
     if (hasBannedWords) {
-      toast.error(t.bannedWarning || '금칙어가 포함되어 있습니다. 내용을 순화해주세요.');
+      toast.error(bannedWarningLabel);
       return;
     }
 
     if (hasSpamIndicators) {
-      toast.error(t.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.');
+      toast.error(spamWarningLabel);
       return;
     }
 
     const parentOpt = parentOptions.find((opt) => opt.slug === parentCategory);
     if (!parentOpt) {
-      toast.error(t.validationError || '카테고리를 다시 선택해주세요.');
+      toast.error(categoryResetError);
       return;
     }
     const childOpt = hasChildren ? parentOpt.children.find((c) => c.slug === childCategory) : null;
     if (hasChildren && !childOpt) {
-      toast.error(t.validationError || '세부분류를 다시 선택해주세요.');
+      toast.error(childCategoryResetError);
       return;
     }
 
@@ -141,17 +477,17 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
       const result = await createPost.mutateAsync({
         type: postType,
         title: title.trim(),
-        content: content.trim(),
+        content: resolvedContentWithThumbnail.trim(),
         category: resolvedCategory,
         subcategory: resolvedSubcategory || undefined,
         tags: tags.length > 0 ? tags : undefined,
       });
 
       if (result.success && result.data) {
-        toast.success(t.submitSuccess || '게시글이 등록되었습니다.');
+        toast.success(submitSuccessLabel);
         router.push(`/${lang}/posts/${result.data.id}`);
       } else {
-        toast.error(t.submitError || '게시글 작성에 실패했습니다.');
+        toast.error(submitErrorLabel);
       }
     } catch (error) {
       console.error('Failed to create post:', error);
@@ -160,7 +496,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
       } else if (error instanceof ApiError && error.code && tErrors[error.code]) {
         toast.error(tErrors[error.code]);
       } else {
-        toast.error(error instanceof Error ? error.message : (t.submitError || '게시글 작성에 실패했습니다.'));
+        toast.error(error instanceof Error ? error.message : submitErrorLabel);
       }
     } finally {
       setIsSubmitting(false);
@@ -321,11 +657,11 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
       childLabel,
       parentLabel,
       ...collected,
-      t.defaultTag || '추천',
+      defaultTagLabel,
     ].filter(Boolean) as string[];
     const localized = base.map(localizeTag);
     const unique = Array.from(new Set(localized));
-    const fallback = ['정보', 'TIP', '가이드', parentLabel, childLabel, t.defaultTag || '추천'].filter(Boolean) as string[];
+    const fallback = [...fallbackTagSeeds, parentLabel, childLabel, defaultTagLabel].filter(Boolean) as string[];
     while (unique.length < 3 && fallback.length > 0) {
       const next = fallback.shift() as string;
       const localizedNext = localizeTag(next);
@@ -373,8 +709,8 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   }, [parentCategory, childCategory, parentOptions, tags.length, manualTagEdit]);
 
   const handleCancel = () => {
-    if (title || content || tags.length > 0) {
-      if (!confirm(t.cancelConfirm || '작성 중인 내용이 있습니다. 정말 취소하시겠습니까?')) {
+    if (title || content || tags.length > 0 || templateCondition || templateGoal || templateBackground) {
+      if (!confirm(cancelConfirmLabel)) {
         return;
       }
     }
@@ -414,14 +750,14 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
       /\b\d{9,}\b/
     ];
 
-    const text = `${title} ${content}`;
+    const text = `${title} ${templateCondition} ${templateGoal} ${templateBackground} ${content}`;
     const sanitized = text
       .replace(/<img[^>]*>/gi, ' ')
       .replace(/https?:\/\/[^\s"']*supabase\.co[^\s"']*/gi, ' ')
       .replace(/https?:\/\/[^\s"']+\.(png|jpe?g|gif|webp)/gi, ' ');
     setHasBannedWords(bannedPatterns.some((pattern) => pattern.test(text)));
     setHasSpamIndicators(spamPatterns.some((pattern) => pattern.test(sanitized)));
-  }, [title, content]);
+  }, [title, content, templateCondition, templateGoal, templateBackground]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -432,7 +768,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
             onClick={handleCancel}
             className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
-            ← {t.goBack || '뒤로 가기'}
+            ← {goBackLabel}
           </button>
         </div>
       </div>
@@ -441,18 +777,18 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200/50 dark:border-gray-700/50 p-6">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              {postType === 'question' ? (t.askQuestion || '질문하기') : (t.share || '공유하기')}
+              {postType === 'question' ? askQuestionLabel : shareLabel}
             </h1>
 
             <div className="mb-4 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-2">
               <div className="flex items-center gap-2 text-amber-800 dark:text-amber-100 font-semibold">
                 <ShieldAlert className="h-4 w-4" />
-                <span>{t.rulesTitle || '커뮤니티 가이드'}</span>
+                <span>{rulesTitleLabel}</span>
               </div>
               <ul className="text-sm text-amber-800 dark:text-amber-50 space-y-1.5 list-disc list-inside">
-                <li>{t.rulesRespect || '예의 준수, 욕설·혐오 표현 금지'}</li>
-                <li>{t.rulesAds || '광고/연락처/외부 링크 포함 글은 제한 또는 승인 필요'}</li>
-                <li>{t.rulesDup || '게시 전 유사 질문 검색, 중복 게시 자제'}</li>
+                <li>{rulesRespectLabel}</li>
+                <li>{rulesAdsLabel}</li>
+                <li>{rulesDupLabel}</li>
               </ul>
             </div>
 
@@ -460,7 +796,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
               {/* Post Type Selection */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  {t.typeSelection || '타입 선택'}
+                  {typeSelectionLabel}
                 </label>
                 <div className="flex gap-4">
                   <button
@@ -471,7 +807,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                   >
-                    {t.question || '질문'}
+                    {questionLabel}
                   </button>
                   <button
                     type="button"
@@ -481,7 +817,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                   >
-                    {t.share || '공유하기'}
+                    {shareLabel}
                   </button>
                 </div>
               </div>
@@ -491,7 +827,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                 {/* Parent Category */}
                 <div>
                   <label htmlFor="parentCategory" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    {t.parentCategory || '대분류'} <span className="text-red-500">*</span>
+                    {parentCategoryLabel} <span className="text-red-500">*</span>
                   </label>
                   <select
                     id="parentCategory"
@@ -500,7 +836,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                     className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                     required
                   >
-                    <option value="">{t.selectParentCategory || '대분류 선택'}</option>
+                    <option value="">{selectParentCategoryLabel}</option>
                     {parentOptions.length > 0 ? (
                       parentOptions.map((opt) => (
                         <option key={opt.slug} value={opt.slug}>
@@ -508,7 +844,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                         </option>
                       ))
                     ) : (
-                      <option disabled>{t.noCategories || '카테고리가 없습니다'}</option>
+                      <option disabled>{noCategoriesLabel}</option>
                     )}
                   </select>
                 </div>
@@ -516,7 +852,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                 {/* Child Category */}
                 <div>
                   <label htmlFor="childCategory" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    {t.childCategory || '세부분류'} <span className="text-red-500">*</span>
+                    {childCategoryLabel} <span className="text-red-500">*</span>
                   </label>
                   <select
                     id="childCategory"
@@ -526,7 +862,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                 className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 required={childCategories.length > 0}
               >
-                <option value="">{t.selectChildCategory || '세부분류 선택'}</option>
+                <option value="">{selectChildCategoryLabel}</option>
                 {(childCategories as Array<{ slug: string }>).map((child) => (
                   <option key={child.slug} value={child.slug}>
                     {getCategoryName(child as any, lang)}
@@ -535,7 +871,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                   </select>
                   {parentCategory && childCategories.length === 0 && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {t.noChildCategories || '이 카테고리에는 세부분류가 없습니다.'}
+                      {noChildCategoriesLabel}
                     </p>
                   )}
                 </div>
@@ -544,7 +880,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
               {/* Title */}
               <div>
                 <label htmlFor="title" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  {t.title || '제목'} <span className="text-red-500">*</span>
+                  {titleLabel} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="title"
@@ -560,14 +896,12 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                     if (!user) openLoginPrompt();
                   }}
                   className={`w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
-                  placeholder={postType === 'question' ? (t.titlePlaceholderQuestion || '질문을 입력하세요') : (t.titlePlaceholderShare || '제목을 입력하세요')}
+                  placeholder={postType === 'question' ? titlePlaceholderQuestionLabel : titlePlaceholderShareLabel}
                   required
                 />
                 {titleLength > 0 && titleLength < MIN_TITLE ? (
                   <p className="mt-1 text-xs text-red-600">
-                    {t.titleMinWarning
-                      ? t.titleMinWarning.replace('{min}', String(MIN_TITLE))
-                      : `제목을 최소 ${MIN_TITLE}자 이상 작성해주세요.`}
+                    {titleMinWarningTemplate.replace('{min}', String(MIN_TITLE))}
                   </p>
                 ) : null}
               </div>
@@ -578,10 +912,99 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                 </div>
               ) : null}
 
+              {postType === 'question' ? (
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-4 space-y-4">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {templateTitleLabel}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {templateDescLabel}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {templateNoteLabel}
+                    </p>
+                  </div>
+                  <div className="grid gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">
+                        {templateConditionLabel}
+                      </label>
+                      <textarea
+                        value={templateCondition}
+                        onChange={(e) => setTemplateCondition(e.target.value)}
+                        rows={3}
+                        readOnly={!user}
+                        onFocus={() => {
+                          if (!user) openLoginPrompt();
+                        }}
+                        onClick={() => {
+                          if (!user) openLoginPrompt();
+                        }}
+                        className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                        placeholder={templateConditionPlaceholder}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">
+                        {templateGoalLabel}
+                      </label>
+                      <textarea
+                        value={templateGoal}
+                        onChange={(e) => setTemplateGoal(e.target.value)}
+                        rows={3}
+                        readOnly={!user}
+                        onFocus={() => {
+                          if (!user) openLoginPrompt();
+                        }}
+                        onClick={() => {
+                          if (!user) openLoginPrompt();
+                        }}
+                        className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                        placeholder={templateGoalPlaceholder}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">
+                        {templateBackgroundLabel}
+                      </label>
+                      <textarea
+                        value={templateBackground}
+                        onChange={(e) => setTemplateBackground(e.target.value)}
+                        rows={3}
+                        readOnly={!user}
+                        onFocus={() => {
+                          if (!user) openLoginPrompt();
+                        }}
+                        onClick={() => {
+                          if (!user) openLoginPrompt();
+                        }}
+                        className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                        placeholder={templateBackgroundPlaceholder}
+                      />
+                    </div>
+                  </div>
+                  {templateSections.length > 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-3 space-y-2">
+                      {templateSections.map((section) => (
+                        <div key={section.label} className="text-xs text-gray-600 dark:text-gray-300">
+                          <div className="font-semibold text-gray-700 dark:text-gray-200">
+                            {section.label}
+                          </div>
+                          <div className="whitespace-pre-line">
+                            {section.value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               {/* Rich Text Editor */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  {t.content || '내용'} <span className="text-red-500">*</span>
+                  {contentLabel} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   {!user && (
@@ -596,32 +1019,74 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                     <RichTextEditor
                       content={content}
                       onChange={setContent}
-                      placeholder={postType === 'question' ? (t.contentPlaceholderQuestion || '질문 내용을 작성하세요...') : (t.contentPlaceholderShare || '공유할 내용을 작성하세요...')}
+                      placeholder={postType === 'question' ? contentPlaceholderQuestionLabel : contentPlaceholderShareLabel}
                       translations={translations}
                       onFocus={handleEditorFocus}
+                      locale={lang}
                     />
                   </div>
                 </div>
                 {contentLength > 0 && contentLength < MIN_CONTENT ? (
                   <p className="mt-1 text-xs text-red-600">
-                    {t.contentMinWarning
-                      ? t.contentMinWarning.replace('{min}', String(MIN_CONTENT))
-                      : `본문을 최소 ${MIN_CONTENT}자 이상 작성해주세요.`}
+                    {contentMinWarningTemplate.replace('{min}', String(MIN_CONTENT))}
                   </p>
                 ) : null}
                 {contentLength > MAX_CONTENT ? (
                   <p className="mt-1 text-xs text-red-600">
-                    {t.contentMaxWarning
-                      ? t.contentMaxWarning.replace('{max}', String(MAX_CONTENT))
-                      : `본문은 최대 ${MAX_CONTENT}자까지 작성할 수 있습니다.`}
+                    {contentMaxWarningTemplate.replace('{max}', String(MAX_CONTENT))}
                   </p>
                 ) : null}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  {thumbnailLabel}
+                </label>
+                {contentImages.length > 0 ? (
+                  <>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {thumbnailHint}
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {contentImages.map((src) => {
+                        const isSelected = src === selectedThumbnail;
+                        return (
+                          <button
+                            key={src}
+                            type="button"
+                            onClick={() => setSelectedThumbnail(src)}
+                            className={`group relative overflow-hidden rounded-lg border transition-all ${
+                              isSelected
+                                ? 'border-red-500 ring-2 ring-red-200 dark:ring-red-900/40'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-red-300'
+                            }`}
+                          >
+                            <img
+                              src={src}
+                              alt={thumbnailLabel}
+                              className="h-28 w-full object-cover"
+                            />
+                            {isSelected ? (
+                              <span className="absolute left-2 top-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
+                                {thumbnailSelectedLabel}
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {thumbnailEmpty}
+                  </p>
+                )}
               </div>
 
               {/* Tags */}
               <div>
                 <label htmlFor="tags" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tags || '태그'} <span className="text-xs text-gray-500">({t.tagsMax || '최대 5개'})</span>
+                  {tagsLabel} <span className="text-xs text-gray-500">({tagsMaxLabel})</span>
                 </label>
                 <div className="flex gap-2 mb-3">
                   <input
@@ -630,7 +1095,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                    placeholder={t.tagPlaceholder || '태그 입력 후 추가 버튼 클릭'}
+                    placeholder={tagPlaceholderLabel}
                     disabled={tags.length >= 5}
                   />
                   <button
@@ -639,7 +1104,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                     disabled={tags.length >= 5 || !tagInput.trim()}
                     className="px-6 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    {t.add || '추가'}
+                    {addLabel}
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -665,11 +1130,11 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                 <div className="flex items-start gap-3 rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-800 dark:text-red-100">
                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <div className="space-y-1">
-                    {hasBannedWords ? <p>{t.bannedWarning || '금칙어가 포함되어 있습니다. 내용을 순화해주세요.'}</p> : null}
+                    {hasBannedWords ? <p>{bannedWarningLabel}</p> : null}
                     {hasSpamIndicators ? (
                       <p className="flex items-center gap-1">
                         <LinkIcon className="h-4 w-4" />
-                        <span>{t.spamWarning || '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.'}</span>
+                        <span>{spamWarningLabel}</span>
                       </p>
                     ) : null}
                   </div>
@@ -683,7 +1148,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                   disabled={isSubmitting || hasBannedWords || hasSpamIndicators}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-amber-500 text-white font-semibold rounded-lg hover:from-red-700 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? (t.submitting || '등록 중...') : postType === 'question' ? (t.submitQuestion || '질문 등록') : (t.submitShare || '공유 등록')}
+                  {isSubmitting ? submittingLabel : postType === 'question' ? submitQuestionLabel : submitShareLabel}
                 </button>
                 <button
                   type="button"
@@ -691,7 +1156,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                   disabled={isSubmitting}
                   className="flex-1 px-6 py-3 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-300 disabled:opacity-50"
                 >
-                  {t.cancel || '취소'}
+                  {cancelLabel}
                 </button>
               </div>
             </form>
