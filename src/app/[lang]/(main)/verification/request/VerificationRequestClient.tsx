@@ -11,8 +11,7 @@ import { ApiError } from '@/lib/api/errors';
 import { toast } from 'sonner';
 import { suggestBadgeType } from '@/lib/constants/badges';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
-import TrustBadge from '@/components/atoms/TrustBadge';
-import Tooltip from '@/components/atoms/Tooltip';
+import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
 
 interface VerificationRequestClientProps {
   translations: Record<string, unknown>;
@@ -613,30 +612,13 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                                 : '승인 후 아래 정보가 프로필에 표시될 수 있어요.')}
                         </p>
                       </div>
-                      <Tooltip
-                        content={
-                          <div className="space-y-1">
-                            <div>{trustBadgePreview.tooltip}</div>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                router.push(trustBadgeGuideHref);
-                              }}
-                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              {learnMoreLabel}
-                            </button>
-                          </div>
-                        }
-                        position="top"
-                        touchBehavior="longPress"
-                        interactive
-                      >
-                        <span className="inline-flex">
-                          <TrustBadge level={trustBadgePreview.level} label={trustBadgePreview.label} />
-                        </span>
-                      </Tooltip>
+                      <UserTrustBadge
+                        presentation={trustBadgePreview}
+                        learnMoreLabel={learnMoreLabel}
+                        onClick={() => router.push(trustBadgeGuideHref)}
+                        labelVariant="badge"
+                        badgeClassName="!px-1.5 !py-0.5"
+                      />
                     </div>
 
                     {verifiedProfilePreview.keywords.length > 0 ? (

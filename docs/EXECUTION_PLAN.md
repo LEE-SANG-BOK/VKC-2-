@@ -16,7 +16,7 @@
 - 서버 액션 금지, `/api/**` API Routes만 사용
 
 ### 0.2 PR 산출물 규칙
-- 운영 방식: **단일 작업 브랜치(공유) + 지속 PR 1개**로 진행(같은 브랜치에서 커밋을 누적 push)
+- 운영 방식: **스코프별 브랜치/PR 분리**로 진행(동일 스코프 내에서는 커밋을 누적 push)
 - 각 작업은 **커밋 단위로 분리** (에이전트/스코프 prefix 포함)
 - PR 설명에 아래 3개 항목 필수 포함
   - **why**: 어떤 문제를 해결하는가
@@ -26,10 +26,24 @@
 - PR 본문에 `@codex` 멘션(자동 코드리뷰 트리거) + 새 커밋 push마다 리뷰 갱신
 
 ### 0.3 커밋/브랜치 규칙(충돌 최소화)
-- 브랜치: **1개 고정(공유)**, PR도 **1개 고정(지속)**
+- 브랜치: **스코프별 고정(공유)**, PR도 **스코프별 고정(지속)**
+- 권장 브랜치 prefix: `codex-fe-*`, `codex-webbe-*`, `codex-lead-*`
 - 커밋 메시지 prefix 권장: `[LEAD]`, `[WEB]`, `[FE]`, `[BE]`
 - `git push`/PR 갱신은 **[LEAD]가 수행**(작업 단위로 push)
 - (주의) Codex CLI 환경에서 `.git/index.lock` 생성이 막혀 `git add/commit/push`가 실패할 수 있음 → 이 경우 **로컬 터미널에서 수동으로** 커밋/푸시 진행
+
+### 0.3.1 브랜치/워크트리 현황 + 커밋/PR 플로우
+
+- 주 워크트리: `/Users/bk/Desktop/VKC-2-` (작업 기준)
+  - 작업 전 `main` 최신 pull → 스코프 브랜치 체크아웃 후 진행
+  - 빌드가 DB/스크립트에 막히면 `SKIP_SITEMAP_DB=true npm run build`로 대체 기록
+- 백업 워크트리: `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2`
+  - `.env.local` 백업 목적, **커밋 금지**
+- 커밋/PR 플로우
+  - 스코프 단일 커밋 → i18n 포함 → `lint` → `build` → 문서 갱신
+  - 로컬 터미널에서 커밋/푸시 → 스코프 PR 유지
+  - PR 본문에 `@codex` 멘션 후 리뷰 → 승인되면 merge
+  - 모든 워크트리에서 `git pull`로 동기화
 
 ### 0.4 역할/분업(필수, 충돌 최소화)
 - **[LEAD/Codex] (고정)**: 우선순위/플랜 수립 → 분업/소유권 관리 → 품질 게이트(`lint/build`) → 커밋/푸시/PR 관리 → `HANDOVER.md` + `docs/EXECUTION_PLAN.md` 갱신
@@ -158,6 +172,23 @@
 - 변경 파일
   - (deleted) src/app/api/admin/content-reports/route.ts
   - (deleted) src/app/api/admin/content-reports/[id]/route.ts
+
+#### (2025-12-19) [LEAD] TrustBadge 표기 통일: Leaderboard/인증 미리보기 (P0)
+
+- 플랜(체크리스트)
+  - [x] Leaderboard TrustBadge → UserTrustBadge 교체
+  - [x] Verification request 미리보기 TrustBadge → UserTrustBadge 교체
+- 현황 분석(코드 기준)
+  - Leaderboard/인증 미리보기에서만 TrustBadge를 직접 호출해 배지 스타일/툴팁 동작이 분기됨
+- 변경 내용(why/what)
+  - why: 인증 배지 UX 일관성 확보 및 공통 컴포넌트 유지보수 단일화
+  - what: `UserTrustBadge`로 교체하고 동일한 padding/label 변형 적용
+- 검증
+  - [x] npm run lint
+  - [ ] npm run build (실패: EPERM: operation not permitted, open '.next/trace')
+- 변경 파일
+  - src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx
+  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
 
 #### (2025-12-18) [LEAD] 컴포넌트 폴더 구조 정리: molecules/cards 분리 (P0)
 
@@ -1086,6 +1117,38 @@
   - docs/EXECUTION_PLAN.md
 - 다음 액션/의존성
   - 없음
+
+#### (2025-12-19) [FE] 피드 공식/검수 답변 배지 표시 + API 카운트 확장 (P0)
+
+- 플랜(체크리스트)
+  - [x] posts 리스트 API에 공식/검수 답변 카운트 포함
+  - [x] PostCard에 공식/검수 배지 노출 + 전달 경로 보강
+  - [ ] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 피드(PostCard)에는 공식/검수 답변 배지가 없어 상세/프로필 대비 신뢰 신호가 약함
+- 변경 내용(why/what)
+  - why: 피드에서도 공식/검수 답변을 즉시 인지 가능하게 하여 신뢰도 강화
+  - what: posts/trending/users posts/bookmarks API에 공식/검수 카운트 추가, PostCard에 배지 표시 및 전달 경로 보강
+- 검증
+  - [x] npm run lint (pass)
+  - [ ] npm run build (fail: EPERM opening `.next/trace-build`)
+- 변경 파일
+  - src/app/api/posts/route.ts
+  - src/app/api/posts/trending/route.ts
+  - src/app/api/users/[id]/posts/route.ts
+  - src/app/api/users/[id]/bookmarks/route.ts
+  - src/repo/posts/types.ts
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/organisms/PostList.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/BookmarksModal.tsx
+  - docs/EXECUTION_PLAN.md
+- i18n
+  - 신규 키 요청: common.officialAnswer, common.reviewedAnswer
+- 다음 액션/의존성
+  - `.next` 쓰기 권한 가능한 위치에서 build 재시도 필요
 
 ### 0.6.2 [WEB] Web Feature Agent
 
