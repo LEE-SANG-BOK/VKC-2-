@@ -1554,3 +1554,8 @@ Post 관련 타입을 정리해줘.
 - `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2`
   - 브랜치: `codex-subscriptions` (dirty). 대량 수정/신규 파일 존재 → 백업 전용, 선별 이관 전까지 커밋 금지.
 - 머지 상태: PR #6/#7/#8/#9는 원격 `main`에 머지 완료. 로컬 워크트리는 `git pull origin main`으로 동기화 필요.
+
+## 최근 변경 요약 (2025-12-20)
+
+- 헤더 로고 툴팁 제거, 로고 우측에 브랜드 문구 상시 노출(모바일 포함).
+- LanguageSwitcher에서 영어 옵션 숨김(ko/vi만 노출), en 라우팅은 유지.

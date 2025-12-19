@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Bug, Trophy } from 'lucide-react';
 import { LEGACY_CATEGORIES, getCategoryName, CATEGORY_GROUPS } from '@/lib/constants/categories';
 import CategoryItem from '@/components/molecules/categories/CategoryItem';
@@ -38,6 +38,7 @@ export default function CategorySidebar({
   const t = (translations?.sidebar || {}) as Record<string, string>;
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const locale = params.lang as string || 'ko';
   const { data: session } = useSession();
   const user = session?.user;
@@ -268,6 +269,8 @@ export default function CategorySidebar({
   const topicSubscriptions = useMemo(() => {
     return (mySubs || []).filter((cat) => topicSlugs.has(cat.slug));
   }, [mySubs, topicSlugs]);
+  const isLeaderboardRoute = pathname === `/${locale}/leaderboard`;
+  const activeCategory = isLeaderboardRoute ? 'leaderboard' : selectedCategory;
 
   const groupOptions = useMemo(() => {
     return Object.entries(CATEGORY_GROUPS).map(([slug, group]) => {
@@ -413,7 +416,7 @@ export default function CategorySidebar({
               description={showInlineDescriptions ? tooltipSummary(menuTooltips[category.id]) : undefined}
               icon={category.icon}
               count={category.count}
-              isActive={selectedCategory === category.id}
+              isActive={activeCategory === category.id}
               onClick={handleCategoryClick}
               tooltip={undefined}
               className={(category as { className?: string }).className}
