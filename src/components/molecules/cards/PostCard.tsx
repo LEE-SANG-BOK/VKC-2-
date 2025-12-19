@@ -8,8 +8,9 @@ import { useSession } from 'next-auth/react';
 import { Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
-import TrustBadge from '@/components/atoms/TrustBadge';
+import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
 import Avatar from '@/components/atoms/Avatar';
+import { useLoginPrompt } from '@/providers/LoginPromptProvider';
 import { useCategories } from '@/repo/categories/query';
 import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
 import { useToggleFollow } from '@/repo/users/mutation';
@@ -63,11 +64,17 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
+  const { openLoginPrompt } = useLoginPrompt();
   const locale = (params?.lang as 'ko' | 'en' | 'vi') || 'ko';
   const t = (translations?.tooltips || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tPost = (translations?.post || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
+  const likeLabel = t.like || (locale === 'vi' ? 'Thích' : locale === 'en' ? 'Like' : '좋아요');
+  const shareLabel = t.share || (locale === 'vi' ? 'Chia sẻ' : locale === 'en' ? 'Share' : '공유');
+  const bookmarkLabel = t.bookmark || (locale === 'vi' ? 'Lưu' : locale === 'en' ? 'Bookmark' : '북마크');
+  const copyLinkLabel = t.copyLink || (locale === 'vi' ? 'Sao chép liên kết' : locale === 'en' ? 'Copy link' : '링크 복사');
+  const closeLabel = t.close || (locale === 'vi' ? 'Đóng' : locale === 'en' ? 'Close' : '닫기');
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -96,16 +103,11 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const responseNoun = isQuestion
     ? (locale === 'en' ? 'answers' : tCommon.answer || '답변')
     : (locale === 'en' ? 'comments' : tCommon.comment || '댓글');
+  const responseNounCompact = locale === 'vi'
+    ? (isQuestion ? 'trả lời' : 'bình luận')
+    : responseNoun;
   const certifiedCompactLabel = certifiedCount > 0
-    ? (tPost.certifiedResponderCompact
-      ? tPost.certifiedResponderCompact
-          .replace('{certified}', String(certifiedCount))
-          .replace('{noun}', responseNoun)
-      : locale === 'vi'
-        ? `Đã xác minh +${certifiedCount} ${responseNoun}`
-        : locale === 'en'
-          ? `Certified +${certifiedCount} ${responseNoun}`
-          : `인증 사용자 +${certifiedCount} ${responseNoun}`)
+    ? `+${certifiedCount} ${responseNounCompact}`
     : '';
   const certifiedSummaryLabel = certifiedCount > 0
     ? (otherCount > 0
@@ -319,7 +321,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     if (!authorId || isSelf) return;
 
     if (!session?.user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
 
@@ -344,7 +346,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     e.stopPropagation();
 
     if (!session?.user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
 
@@ -367,7 +369,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     e.stopPropagation();
 
     if (!session?.user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
 
@@ -388,11 +390,11 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   };
 
   const shareLabels = {
-    title: t.share || '공유',
+    title: shareLabel,
     facebook: t.shareFacebook || 'Facebook',
     x: t.shareX || 'X (Twitter)',
     telegram: t.shareTelegram || 'Telegram',
-    copy: t.copyLink || '링크 복사',
+    copy: copyLinkLabel,
   };
 
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/${locale}/posts/${id}` : '';
@@ -470,7 +472,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 />
               </button>
               <div className="flex flex-col gap-0.5 min-w-0">
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
                   <button
                     type="button"
                     className="text-left min-w-0"
@@ -480,6 +482,13 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                       {safeName(author.name)}
                     </span>
                   </button>
+                  <UserTrustBadge
+                    presentation={trustBadgePresentation}
+                    learnMoreLabel={learnMoreLabel}
+                    onClick={() => router.push(trustBadgeGuideHref)}
+                    labelVariant="text"
+                    badgeClassName="!px-1.5 !py-0.5"
+                  />
                   {!isSelf && authorId ? (
                     <button
                       type="button"
@@ -496,40 +505,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
                   <span>{formatDateTime(publishedAt, locale)}</span>
-                  {trustBadgePresentation.show ? (
-                    <>
-                      <Tooltip
-                        content={
-                          <div className="space-y-1">
-                            <div>{trustBadgePresentation.tooltip}</div>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                router.push(trustBadgeGuideHref);
-                              }}
-                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              {learnMoreLabel}
-                            </button>
-                          </div>
-                        }
-                        position="top"
-                        touchBehavior="longPress"
-                        interactive
-                      >
-                        <span className="inline-flex items-center gap-1">
-                          <TrustBadge
-                            level={trustBadgePresentation.level}
-                            label={trustBadgePresentation.label}
-                            showLabel={false}
-                            className="!px-1.5 !py-1"
-                          />
-                        </span>
-                      </Tooltip>
-                      <span>{trustBadgePresentation.label}</span>
-                    </>
-                  ) : null}
                 </div>
               </div>
             </div>
@@ -612,7 +587,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
       <div className="question-card-actions">
         <div className="question-card-footer-fixed">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
             <button
               type="button"
               onClick={handleAnswerCountClick}
@@ -624,17 +599,19 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             </button>
             {certifiedSummaryLabel ? (
               <>
-                <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-200 truncate min-w-0 md:hidden">
-                  {certifiedCompactLabel}
+                <span className="inline-flex flex-wrap items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-200 min-w-0 md:hidden leading-tight">
+                  <CircleCheck className="h-3 w-3 shrink-0" />
+                  <span className="min-w-0 break-words whitespace-normal sm:truncate">{certifiedCompactLabel}</span>
                 </span>
-                <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-200 truncate min-w-0 hidden md:inline">
-                  {certifiedSummaryLabel}
+                <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-200 min-w-0 leading-tight">
+                  <CircleCheck className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{certifiedSummaryLabel}</span>
                 </span>
               </>
             ) : null}
           </div>
           <div className="question-card-actions-row shrink-0">
-            <Tooltip content={t.like || '좋아요'} position="top">
+            <Tooltip content={likeLabel} position="top">
               <button
                 type="button"
                 onClick={handleLikeClick}
@@ -645,7 +622,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               </button>
             </Tooltip>
             <div className="relative">
-              <Tooltip content={t.share || '공유'} position="top">
+              <Tooltip content={shareLabel} position="top">
                 <button
                   onClick={handleShareClick}
                   className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -668,7 +645,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                         <button
                           onClick={() => setShowShareMenu(false)}
                           className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                          aria-label={t.close || '닫기'}
+                          aria-label={closeLabel}
                         >
                           ✕
                         </button>
@@ -705,7 +682,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 )
                 : null}
             </div>
-            <Tooltip content={t.bookmark || '북마크'} position="top">
+            <Tooltip content={bookmarkLabel} position="top">
               <button
                 type="button"
                 onClick={handleBookmarkClick}
@@ -724,7 +701,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                     type="button"
                     onClick={(e) => e.stopPropagation()}
                     aria-label={t.questionPost || (locale === 'vi' ? 'Bài hỏi đáp' : locale === 'en' ? 'Question post' : '질문글')}
-                    className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-blue-600 bg-blue-50 dark:bg-blue-900/30"
+                    className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 shrink-0"
                   >
                     <CircleHelp className="w-4 h-4" />
                   </button>
@@ -749,7 +726,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                       isAdopted
                         ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
                         : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'
-                    }`}
+                    } shrink-0`}
                   >
                     {isAdopted ? <CircleCheck className="w-4 h-4" /> : <CircleDashed className="w-4 h-4" />}
                   </button>

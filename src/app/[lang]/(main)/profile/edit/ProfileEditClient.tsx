@@ -132,6 +132,37 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
   const avatarBlobUrlRef = useRef<string | null>(null);
 
   const t = (translations?.profileEdit || {}) as Record<string, string>;
+  const avatarChangeLabel = t.avatarChange || (lang === 'vi' ? 'Thay ảnh đại diện' : lang === 'en' ? 'Change avatar' : '프로필 사진 변경');
+  const avatarTooltipText = t.avatarTooltip || (lang === 'vi'
+    ? 'Bạn có thể dùng ảnh bất kỳ để dễ nhận diện.'
+    : lang === 'en'
+      ? 'Upload any image that helps others recognize you.'
+      : '식별 가능한 이미지를 업로드해 주세요.');
+  const nameTooltipText = t.nameTooltip || (lang === 'vi'
+    ? 'Tên này sẽ được hiển thị công khai trên hồ sơ và bài viết.'
+    : lang === 'en'
+      ? 'This name will be shown publicly on your profile and posts.'
+      : '프로필과 게시글에 공개로 표시되는 이름입니다.');
+  const bioTooltipText = t.bioTooltip || (lang === 'vi'
+    ? 'Giới thiệu ngắn giúp mọi người hiểu bạn tốt hơn.'
+    : lang === 'en'
+      ? 'A short intro helps others understand you.'
+      : '간단한 소개를 적으면 신뢰도와 소통이 좋아져요.');
+  const genderTooltipText = t.genderTooltip || (lang === 'vi'
+    ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
+    : lang === 'en'
+      ? 'Optional. Used to personalize recommendations.'
+      : '선택 사항입니다. 맞춤 추천에 활용됩니다.');
+  const ageGroupTooltipText = t.ageGroupTooltip || (lang === 'vi'
+    ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
+    : lang === 'en'
+      ? 'Optional. Used to personalize recommendations.'
+      : '선택 사항입니다. 맞춤 추천에 활용됩니다.');
+  const userTypeTooltipText = t.userTypeTooltip || t.statusTooltip || (lang === 'vi'
+    ? 'Không bắt buộc. Chọn loại người dùng của bạn.'
+    : lang === 'en'
+      ? 'Optional. Choose your user type.'
+      : '선택 사항입니다. 사용자 유형을 선택해 주세요.');
 
   const { data: profile, isLoading: profileLoading } = useMyProfile({
     enabled: !!user?.id,
@@ -464,7 +495,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     type="button"
                     onClick={handleAvatarPick}
                     disabled={!user?.id || isAvatarUploading}
-                    aria-label={t.avatarChange || '프로필 사진 변경'}
+                    aria-label={avatarChangeLabel}
                     className="absolute bottom-0 right-0 bg-gradient-to-r from-red-600 to-amber-500 text-white rounded-full p-2.5 hover:from-red-700 hover:to-amber-600 transition-all duration-300 shadow-lg"
                   >
                     {isAvatarUploading ? (
@@ -475,21 +506,14 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                   </button>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                  <span>{t.avatarChange || '프로필 사진 변경'}</span>
+                  <span>{avatarChangeLabel}</span>
                   <Tooltip
-                    content={
-                      t.avatarTooltip ||
-                      (lang === 'vi'
-                        ? 'Bạn có thể dùng ảnh bất kỳ để dễ nhận diện.'
-                        : lang === 'en'
-                          ? 'Upload any image that helps others recognize you.'
-                          : '식별 가능한 이미지를 업로드해 주세요.')
-                    }
+                    content={avatarTooltipText}
                     position="top"
                   >
                     <button
                       type="button"
-                      aria-label={t.avatarTooltip || '프로필 사진 도움말'}
+                      aria-label={avatarTooltipText}
                       className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                     >
                       <Info className="h-4 w-4" />
@@ -504,19 +528,12 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     {t.nameLabel || '이름'}
                   </label>
                   <Tooltip
-                    content={
-                      t.nameTooltip ||
-                      (lang === 'vi'
-                        ? 'Tên này sẽ được hiển thị công khai trên hồ sơ và bài viết.'
-                        : lang === 'en'
-                          ? 'This name will be shown publicly on your profile and posts.'
-                          : '프로필과 게시글에 공개로 표시되는 이름입니다.')
-                    }
+                    content={nameTooltipText}
                     position="top"
                   >
                     <button
                       type="button"
-                      aria-label={t.nameTooltip || '이름 도움말'}
+                      aria-label={nameTooltipText}
                       className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                     >
                       <Info className="h-4 w-4" />
@@ -540,19 +557,12 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     {t.bioLabel || '자기소개'}
                   </label>
                   <Tooltip
-                    content={
-                      t.bioTooltip ||
-                      (lang === 'vi'
-                        ? 'Giới thiệu ngắn giúp mọi người hiểu bạn tốt hơn.'
-                        : lang === 'en'
-                          ? 'A short intro helps others understand you.'
-                          : '간단한 소개를 적으면 신뢰도와 소통이 좋아져요.')
-                    }
+                    content={bioTooltipText}
                     position="top"
                   >
                     <button
                       type="button"
-                      aria-label={t.bioTooltip || '자기소개 도움말'}
+                      aria-label={bioTooltipText}
                       className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                     >
                       <Info className="h-4 w-4" />
@@ -576,19 +586,12 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                       {t.genderLabel || '성별'}
                     </label>
                     <Tooltip
-                      content={
-                        t.genderTooltip ||
-                        (lang === 'vi'
-                          ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
-                          : lang === 'en'
-                            ? 'Optional. Used to personalize recommendations.'
-                            : '선택 사항입니다. 맞춤 추천에 활용됩니다.')
-                      }
+                      content={genderTooltipText}
                       position="top"
                     >
                       <button
                         type="button"
-                        aria-label={t.genderTooltip || '성별 도움말'}
+                        aria-label={genderTooltipText}
                         className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                       >
                         <Info className="h-4 w-4" />
@@ -614,19 +617,12 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                       {t.ageGroupLabel || '연령대'}
                     </label>
                     <Tooltip
-                      content={
-                        t.ageGroupTooltip ||
-                        (lang === 'vi'
-                          ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
-                          : lang === 'en'
-                            ? 'Optional. Used to personalize recommendations.'
-                            : '선택 사항입니다. 맞춤 추천에 활용됩니다.')
-                      }
+                      content={ageGroupTooltipText}
                       position="top"
                     >
                       <button
                         type="button"
-                        aria-label={t.ageGroupTooltip || '연령대 도움말'}
+                        aria-label={ageGroupTooltipText}
                         className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                       >
                         <Info className="h-4 w-4" />
@@ -655,20 +651,12 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                       {t.userTypeLabel || t.statusLabel || (lang === 'vi' ? 'Loại người dùng' : lang === 'en' ? 'User type' : '사용자 유형')}
                     </label>
                     <Tooltip
-                      content={
-                        t.userTypeTooltip ||
-                        t.statusTooltip ||
-                        (lang === 'vi'
-                          ? 'Không bắt buộc. Chọn loại người dùng của bạn.'
-                          : lang === 'en'
-                            ? 'Optional. Choose your user type.'
-                            : '선택 사항입니다. 사용자 유형을 선택해 주세요.')
-                      }
+                      content={userTypeTooltipText}
                       position="top"
                     >
                       <button
                         type="button"
-                        aria-label={t.userTypeTooltip || t.statusTooltip || (lang === 'vi' ? 'Loại người dùng 도움말' : lang === 'en' ? 'User type help' : '사용자 유형 도움말')}
+                        aria-label={userTypeTooltipText}
                         className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                       >
                         <Info className="h-4 w-4" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { Calendar, Mail, Phone, Edit, MessageCircle, FileText, CheckCircle, User, Briefcase, Bookmark, LogOut, Info } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
@@ -8,7 +8,7 @@ import dayjs from 'dayjs';
 import Button from '@/components/atoms/Button';
 import Avatar from '@/components/atoms/Avatar';
 import FollowButton from '@/components/atoms/FollowButton';
-import TrustBadge from '@/components/atoms/TrustBadge';
+import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
 import Header from '@/components/organisms/Header';
 import Tooltip from '@/components/atoms/Tooltip';
 import PostCard from '@/components/molecules/cards/PostCard';
@@ -16,6 +16,7 @@ import AnswerCard from '@/components/molecules/cards/AnswerCard';
 import CommentCard from '@/components/molecules/cards/CommentCard';
 import { useInfiniteUserPosts, useInfiniteUserAnswers, useInfiniteUserComments, useInfiniteUserBookmarks, useFollowStatus } from '@/repo/users/query';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
+import { getUserTypeLabel } from '@/utils/userTypeLabel';
 
 
 export interface ProfileData {
@@ -83,6 +84,8 @@ interface AnswerItem {
   likes?: number;
   isLiked?: boolean;
   isAdopted?: boolean;
+  isOfficial?: boolean;
+  reviewStatus?: 'pending' | 'approved' | 'rejected';
   post?: { id: string; title: string };
 }
 
@@ -115,6 +118,153 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
 
   const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
   const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
+  const profileFallbacks = useMemo(() => {
+    if (locale === 'en') {
+      return {
+        userName: 'User',
+        verifiedInfoTitle: 'Verified info',
+        editProfile: 'Edit Profile',
+        editProfileTooltip: 'Edit your profile.',
+        logout: 'Logout',
+        joinedAt: 'Joined',
+        gender: 'Gender',
+        ageGroup: 'Age',
+        status: 'Status',
+        followers: 'Followers',
+        following: 'Following',
+        posts: 'Posts',
+        accepted: 'Accepted',
+        comments: 'Comments',
+        myPosts: 'My Posts',
+        acceptedAnswers: 'Accepted Answers',
+        myComments: 'My Comments',
+        bookmarks: 'Bookmarks',
+        noPosts: 'No posts yet',
+        noAccepted: 'No accepted answers yet',
+        noComments: 'No comments yet',
+        noBookmarks: 'No bookmarks yet',
+        loading: 'Loading...',
+        male: 'Male',
+        female: 'Female',
+        other: 'Other',
+        teens: 'Teens',
+        twenties: '20s',
+        thirties: '30s',
+        forties: '40s',
+        fifties: '50s',
+        sixtyPlus: '60+',
+      };
+    }
+    if (locale === 'vi') {
+      return {
+        userName: 'Người dùng',
+        verifiedInfoTitle: 'Thông tin xác minh',
+        editProfile: 'Chỉnh sửa hồ sơ',
+        editProfileTooltip: 'Chỉnh sửa hồ sơ của bạn.',
+        logout: 'Đăng xuất',
+        joinedAt: 'Tham gia',
+        gender: 'Giới tính',
+        ageGroup: 'Độ tuổi',
+        status: 'Trạng thái',
+        followers: 'Người theo dõi',
+        following: 'Đang theo dõi',
+        posts: 'Bài viết',
+        accepted: 'Được chấp nhận',
+        comments: 'Bình luận',
+        myPosts: 'Bài viết của tôi',
+        acceptedAnswers: 'Câu trả lời được chấp nhận',
+        myComments: 'Bình luận của tôi',
+        bookmarks: 'Đánh dấu',
+        noPosts: 'Chưa có bài viết',
+        noAccepted: 'Chưa có câu trả lời được chấp nhận',
+        noComments: 'Chưa có bình luận',
+        noBookmarks: 'Chưa có đánh dấu',
+        loading: 'Đang tải...',
+        male: 'Nam',
+        female: 'Nữ',
+        other: 'Khác',
+        teens: '10-19',
+        twenties: '20-29',
+        thirties: '30-39',
+        forties: '40-49',
+        fifties: '50-59',
+        sixtyPlus: '60+',
+      };
+    }
+    return {
+      userName: '사용자',
+      verifiedInfoTitle: '인증 정보',
+      editProfile: '프로필 수정',
+      editProfileTooltip: '프로필을 수정할 수 있어요.',
+      logout: '로그아웃',
+      joinedAt: '가입일',
+      gender: '성별',
+      ageGroup: '연령대',
+      status: '상태',
+      followers: '팔로워',
+      following: '팔로잉',
+      posts: '게시글',
+      accepted: '채택',
+      comments: '댓글',
+      myPosts: '내 게시글',
+      acceptedAnswers: '채택된 답변',
+      myComments: '내 댓글',
+      bookmarks: '북마크',
+      noPosts: '게시글이 없습니다',
+      noAccepted: '채택된 답변이 없습니다',
+      noComments: '댓글이 없습니다',
+      noBookmarks: '북마크한 게시글이 없습니다',
+      loading: '로딩 중...',
+      male: '남성',
+      female: '여성',
+      other: '기타',
+      teens: '10대',
+      twenties: '20대',
+      thirties: '30대',
+      forties: '40대',
+      fifties: '50대',
+      sixtyPlus: '60대 이상',
+    };
+  }, [locale]);
+
+  const profileLabels = {
+    verifiedInfoTitle: t.verifiedInfoTitle || profileFallbacks.verifiedInfoTitle,
+    editProfile: t.editProfile || profileFallbacks.editProfile,
+    editProfileTooltip: t.editProfileTooltip || profileFallbacks.editProfileTooltip,
+    logout: t.logout || profileFallbacks.logout,
+    joinedAt: t.joinedAt || profileFallbacks.joinedAt,
+    gender: t.gender || profileFallbacks.gender,
+    ageGroup: t.ageGroup || profileFallbacks.ageGroup,
+    status: t.status || profileFallbacks.status,
+    followers: t.followers || profileFallbacks.followers,
+    following: t.following || profileFallbacks.following,
+    posts: t.posts || profileFallbacks.posts,
+    accepted: t.accepted || profileFallbacks.accepted,
+    comments: t.comments || profileFallbacks.comments,
+    myPosts: t.myPosts || profileFallbacks.myPosts,
+    acceptedAnswers: t.acceptedAnswers || profileFallbacks.acceptedAnswers,
+    myComments: t.myComments || profileFallbacks.myComments,
+    bookmarks: t.bookmarks || profileFallbacks.bookmarks,
+    noPosts: t.noPosts || profileFallbacks.noPosts,
+    noAccepted: t.noAccepted || profileFallbacks.noAccepted,
+    noComments: t.noComments || profileFallbacks.noComments,
+    noBookmarks: t.noBookmarks || profileFallbacks.noBookmarks,
+    loading: t.loading || profileFallbacks.loading,
+  };
+  const genderLabels = {
+    male: t.male || profileFallbacks.male,
+    female: t.female || profileFallbacks.female,
+    other: t.other || profileFallbacks.other,
+  };
+  const ageGroupLabels = {
+    teens: t.teens || profileFallbacks.teens,
+    twenties: t.twenties || profileFallbacks.twenties,
+    thirties: t.thirties || profileFallbacks.thirties,
+    forties: t.forties || profileFallbacks.forties,
+    fifties: t.fifties || profileFallbacks.fifties,
+    sixtyPlus: t.sixtyPlus || profileFallbacks.sixtyPlus,
+  };
+  const displayName = initialProfile.displayName || initialProfile.username || profileFallbacks.userName;
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -285,39 +435,29 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
 
   const getGenderLabel = (gender: string) => {
     switch (gender) {
-      case 'male': return t.male || 'Male';
-      case 'female': return t.female || 'Female';
-      default: return t.other || 'Other';
+      case 'male': return genderLabels.male;
+      case 'female': return genderLabels.female;
+      default: return genderLabels.other;
     }
   };
 
   const getAgeGroupLabel = (ageGroup: string) => {
     switch (ageGroup) {
-      case '10s': return t.teens || '10s';
-      case '20s': return t.twenties || '20s';
-      case '30s': return t.thirties || '30s';
-      case '40s': return t.forties || '40s';
-      case '50s': return t.fifties || '50s';
-      case '60plus': return t.sixtyPlus || '60+';
+      case '10s': return ageGroupLabels.teens;
+      case '20s': return ageGroupLabels.twenties;
+      case '30s': return ageGroupLabels.thirties;
+      case '40s': return ageGroupLabels.forties;
+      case '50s': return ageGroupLabels.fifties;
+      case '60plus': return ageGroupLabels.sixtyPlus;
       default: return ageGroup;
     }
   };
 
-  const getUserTypeLabel = (value: string) => {
-    const normalized = value.toLowerCase();
-    if (normalized === 'student' || value === '학생') {
-      return locale === 'vi' ? 'Sinh viên' : locale === 'en' ? 'Student' : '학생';
-    }
-    if (normalized === 'worker' || value === '직장인' || value === '근로자') {
-      return locale === 'vi' ? 'Người lao động' : locale === 'en' ? 'Worker' : '근로자';
-    }
-    if (normalized === 'resident' || value === '거주자') {
-      return locale === 'vi' ? 'Cư dân' : locale === 'en' ? 'Resident' : '거주자';
-    }
-    if (normalized === 'other' || value === '기타') {
-      return locale === 'vi' ? 'Khác' : locale === 'en' ? 'Other' : '기타';
-    }
-    return value;
+  const userTypeLabels = {
+    student: locale === 'vi' ? 'Sinh viên' : locale === 'en' ? 'Student' : '학생',
+    worker: locale === 'vi' ? 'Người lao động' : locale === 'en' ? 'Worker' : '근로자',
+    resident: locale === 'vi' ? 'Cư dân' : locale === 'en' ? 'Resident' : '거주자',
+    other: locale === 'vi' ? 'Khác' : locale === 'en' ? 'Other' : '기타',
   };
 
   const formatDate = (dateString: string) => {
@@ -342,7 +482,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-shrink-0 flex flex-col items-center gap-3">
               <Avatar
-                name={initialProfile.displayName || initialProfile.username || '사용자'}
+                name={displayName}
                 imageUrl={initialProfile.avatar}
                 size="xl"
                 hoverHighlight
@@ -350,14 +490,14 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
               {!isOwnProfile && (
                 <FollowButton
                   userId={initialProfile.id}
-                  userName={initialProfile.displayName}
                   isFollowing={isFollowing}
                   size="sm"
                   onToggle={handleFollowChange}
+                  userName={displayName}
                 />
               )}
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                팔로워 {followersCount.toLocaleString()}
+                {profileLabels.followers} {followersCount.toLocaleString()}
               </div>
             </div>
 
@@ -365,32 +505,14 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.displayName}</h1>
-                    {trustBadgePresentation.show ? (
-                      <Tooltip
-                        content={
-                          <div className="space-y-1">
-                            <div>{trustBadgePresentation.tooltip}</div>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                router.push(trustBadgeGuideHref);
-                              }}
-                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              {learnMoreLabel}
-                            </button>
-                          </div>
-                        }
-                        touchBehavior="longPress"
-                        interactive
-                      >
-                        <span className="inline-flex">
-                          <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />
-                        </span>
-                      </Tooltip>
-                    ) : null}
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{displayName}</h1>
+                    <UserTrustBadge
+                      presentation={trustBadgePresentation}
+                      learnMoreLabel={learnMoreLabel}
+                      onClick={() => router.push(trustBadgeGuideHref)}
+                      labelVariant="text"
+                      badgeClassName="!px-1.5 !py-0.5"
+                    />
                   </div>
                   <p className="text-gray-500 dark:text-gray-400">@{initialProfile.username}</p>
 
@@ -399,7 +521,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                       Boolean(initialProfile.verifiedProfileKeywords?.length)) && (
                       <div className="mt-3 space-y-2">
                         <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                          {t.verifiedInfoTitle || 'Verified info'}
+                          {profileLabels.verifiedInfoTitle}
                         </p>
                         {Boolean(initialProfile.verifiedProfileKeywords?.length) && (
                           <div className="flex flex-wrap gap-1.5">
@@ -436,23 +558,16 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                         size="sm"
                       >
                         <Edit className="w-4 h-4" />
-                        <span className="hidden sm:inline">{t.editProfile || 'Edit Profile'}</span>
+                        <span className="hidden sm:inline">{profileLabels.editProfile}</span>
                       </Button>
                       <div className="absolute -top-2 -right-2 sm:hidden">
                         <Tooltip
-                          content={
-                            t.editProfileTooltip ||
-                            (locale === 'vi'
-                              ? 'Chỉnh sửa hồ sơ của bạn.'
-                              : locale === 'en'
-                                ? 'Edit your profile.'
-                                : '프로필을 수정할 수 있어요.')
-                          }
+                          content={profileLabels.editProfileTooltip}
                           position="top"
                         >
                           <button
                             type="button"
-                            aria-label={t.editProfileTooltip || '프로필 편집 도움말'}
+                            aria-label={profileLabels.editProfileTooltip}
                             className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/60 text-gray-600 dark:text-gray-200 shadow-sm"
                           >
                             <Info className="h-4 w-4" />
@@ -467,7 +582,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                       size="sm"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span className="hidden sm:inline">{t.logout || 'Logout'}</span>
+                      <span className="hidden sm:inline">{profileLabels.logout}</span>
                     </Button>
                   </div>
                 ) : null}
@@ -480,18 +595,18 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-2 sm:gap-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-2 min-w-0">
                   <Calendar className="w-4 h-4" />
-                  <span className="truncate">{t.joinedAt || 'Joined'}: {new Date(initialProfile.joinedAt).toLocaleDateString(locale)}</span>
+                  <span className="truncate">{profileLabels.joinedAt}: {new Date(initialProfile.joinedAt).toLocaleDateString(locale)}</span>
                 </div>
                 {initialProfile.gender && (
                   <div className="flex items-center gap-2 min-w-0">
                     <User className="w-4 h-4" />
-                    <span className="truncate">{t.gender || 'Gender'}: {getGenderLabel(initialProfile.gender)}</span>
+                    <span className="truncate">{profileLabels.gender}: {getGenderLabel(initialProfile.gender)}</span>
                   </div>
                 )}
                 {initialProfile.ageGroup && (
                   <div className="flex items-center gap-2 min-w-0">
                     <User className="w-4 h-4" />
-                    <span className="truncate">{t.ageGroup || 'Age'}: {getAgeGroupLabel(initialProfile.ageGroup)}</span>
+                    <span className="truncate">{profileLabels.ageGroup}: {getAgeGroupLabel(initialProfile.ageGroup)}</span>
                   </div>
                 )}
                 {(() => {
@@ -503,7 +618,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                   return (
                     <div className="flex items-center gap-2 min-w-0">
                       <Briefcase className="w-4 h-4" />
-                      <span className="truncate">{t.status || 'Status'}: {getUserTypeLabel(effectiveUserType)}</span>
+                      <span className="truncate">{profileLabels.status}: {getUserTypeLabel(effectiveUserType, userTypeLabels)}</span>
                     </div>
                   );
                 })()}
@@ -522,26 +637,26 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
               </div>
 
               <div className="flex flex-wrap gap-4 sm:gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex-1 min-w-[80px] text-center cursor-pointer hover:opacity-80 transition-opacity">
-                  <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{followersCount}</div>
-                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t.followers || 'Followers'}</div>
-                </div>
-                <div className="flex-1 min-w-[80px] text-center cursor-pointer hover:opacity-80 transition-opacity">
-                  <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.following}</div>
-                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t.following || 'Following'}</div>
-                </div>
-                <div className="flex-1 min-w-[80px] text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.posts}</div>
-                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t.posts || 'Posts'}</div>
-                </div>
-                <div className="flex-1 min-w-[80px] text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.accepted}</div>
-                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t.accepted || 'Accepted'}</div>
-                </div>
-                <div className="flex-1 min-w-[80px] text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.comments}</div>
-                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t.comments || 'Comments'}</div>
-                </div>
+              <div className="flex-1 min-w-[80px] text-center cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{followersCount}</div>
+                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{profileLabels.followers}</div>
+              </div>
+              <div className="flex-1 min-w-[80px] text-center cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.following}</div>
+                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{profileLabels.following}</div>
+              </div>
+              <div className="flex-1 min-w-[80px] text-center">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.posts}</div>
+                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{profileLabels.posts}</div>
+              </div>
+              <div className="flex-1 min-w-[80px] text-center">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.accepted}</div>
+                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{profileLabels.accepted}</div>
+              </div>
+              <div className="flex-1 min-w-[80px] text-center">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.comments}</div>
+                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{profileLabels.comments}</div>
+              </div>
               </div>
             </div>
           </div>
@@ -560,7 +675,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
               >
                 <div className="flex items-center justify-center gap-1 sm:gap-2">
                   <FileText className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-xs sm:text-base">{t.myPosts || 'My Posts'}</span>
+                  <span className="text-xs sm:text-base">{profileLabels.myPosts}</span>
                   <span className="text-xs sm:text-sm">({initialProfile.stats.posts})</span>
                 </div>
               </button>
@@ -574,7 +689,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
               >
                 <div className="flex items-center justify-center gap-1 sm:gap-2">
                   <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-xs sm:text-base">{t.acceptedAnswers || 'Accepted Answers'}</span>
+                  <span className="text-xs sm:text-base">{profileLabels.acceptedAnswers}</span>
                   <span className="text-xs sm:text-sm">({initialProfile.stats.accepted})</span>
                 </div>
               </button>
@@ -588,7 +703,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
               >
                 <div className="flex items-center justify-center gap-1 sm:gap-2">
                   <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-xs sm:text-base">{t.myComments || 'My Comments'}</span>
+                  <span className="text-xs sm:text-base">{profileLabels.myComments}</span>
                   <span className="text-xs sm:text-sm">({initialProfile.stats.comments})</span>
                 </div>
               </button>
@@ -603,7 +718,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                 >
                   <div className="flex items-center justify-center gap-1 sm:gap-2">
                     <Bookmark className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                    <span className="text-xs sm:text-base">{t.bookmarks || 'Bookmarks'}</span>
+                    <span className="text-xs sm:text-base">{profileLabels.bookmarks}</span>
                     <span className="text-xs sm:text-sm">({initialProfile.stats.bookmarks})</span>
                   </div>
                 </button>
@@ -617,7 +732,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                 {postsLoading ? renderLoading() : userPosts.length === 0 ? (
                   <div className="text-center py-12">
                     <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">{t.noPosts || 'No posts yet'}</p>
+                    <p className="text-gray-500 dark:text-gray-400">{profileLabels.noPosts}</p>
                   </div>
                 ) : (
                   userPosts.map((post: PostItem) => {
@@ -663,7 +778,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                     {isFetchingNextPostsPage && (
                       <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
                         <div className="h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm">{t.loading || '로딩 중...'}</span>
+                        <span className="text-sm">{profileLabels.loading}</span>
                       </div>
                     )}
                   </div>
@@ -676,7 +791,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                 {answersLoading ? renderLoading() : acceptedAnswers.length === 0 ? (
                   <div className="text-center py-12">
                     <CheckCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">{t.noAccepted || 'No accepted answers yet'}</p>
+                    <p className="text-gray-500 dark:text-gray-400">{profileLabels.noAccepted}</p>
                   </div>
                 ) : (
                   acceptedAnswers.map((answer: AnswerItem) => (
@@ -689,6 +804,8 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                       likes={answer.stats?.likes || answer.likes || 0}
                       isLiked={answer.isLiked}
                       isAdopted={answer.isAdopted}
+                      isOfficial={answer.isOfficial}
+                      reviewStatus={answer.reviewStatus}
                       post={answer.post}
                       locale={locale}
                       translations={translations}
@@ -702,7 +819,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                     {isFetchingNextAnswersPage && (
                       <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
                         <div className="h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm">{t.loading || '로딩 중...'}</span>
+                        <span className="text-sm">{profileLabels.loading}</span>
                       </div>
                     )}
                   </div>
@@ -715,7 +832,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                 {commentsLoading ? renderLoading() : userComments.length === 0 ? (
                   <div className="text-center py-12">
                     <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">{t.noComments || 'No comments yet'}</p>
+                    <p className="text-gray-500 dark:text-gray-400">{profileLabels.noComments}</p>
                   </div>
                 ) : (
                   userComments.map((comment: CommentItem) => (
@@ -740,7 +857,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                     {isFetchingNextCommentsPage && (
                       <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
                         <div className="h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm">{t.loading || '로딩 중...'}</span>
+                        <span className="text-sm">{profileLabels.loading}</span>
                       </div>
                     )}
                   </div>
@@ -753,7 +870,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                 {bookmarksLoading ? renderLoading() : userBookmarks.length === 0 ? (
                   <div className="text-center py-12">
                     <Bookmark className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">{t.noBookmarks || 'No bookmarks yet'}</p>
+                    <p className="text-gray-500 dark:text-gray-400">{profileLabels.noBookmarks}</p>
                   </div>
                 ) : (
                   userBookmarks.map((bookmark: PostItem) => {
@@ -799,7 +916,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                     {isFetchingNextBookmarksPage && (
                       <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
                         <div className="h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm">{t.loading || '로딩 중...'}</span>
+                        <span className="text-sm">{profileLabels.loading}</span>
                       </div>
                     )}
                   </div>
