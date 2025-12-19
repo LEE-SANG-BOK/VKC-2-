@@ -21,6 +21,8 @@ export interface Comment {
   replies?: Comment[];
 }
 
+export type AnswerReviewStatus = 'pending' | 'approved' | 'rejected';
+
 export interface Answer {
   id: string;
   postId: string;
@@ -28,6 +30,8 @@ export interface Answer {
   content: string;
   likes: number;
   isAdopted: boolean;
+  isOfficial?: boolean;
+  reviewStatus?: AnswerReviewStatus;
   createdAt: string;
   updatedAt: string;
   author: Author;
