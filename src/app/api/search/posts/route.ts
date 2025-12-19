@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = (searchParams.get('q') || '').trim();
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
+    const pageCandidate = parseInt(searchParams.get('page') || '1');
+    const page = Math.min(100, Math.max(1, Number.isNaN(pageCandidate) ? 1 : pageCandidate));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20));
     const type = searchParams.get('type') as 'question' | 'share' | null;
     const category = searchParams.get('category');
@@ -154,7 +155,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = paginatedResponse(postsResult, page, limit, responseTotal, meta);
-    response.headers.set('Cache-Control', 'no-store');
+    response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
     return response;
   } catch (error) {
     console.error('GET /api/search/posts error:', error);
