@@ -16,7 +16,7 @@
 - 서버 액션 금지, `/api/**` API Routes만 사용
 
 ### 0.2 PR 산출물 규칙
-- 운영 방식: **스코프별 브랜치/PR 분리**로 진행(동일 스코프 내에서는 커밋을 누적 push)
+- 운영 방식: **단일 작업 브랜치(공유) + 지속 PR 1개**로 진행(같은 브랜치에서 커밋을 누적 push)
 - 각 작업은 **커밋 단위로 분리** (에이전트/스코프 prefix 포함)
 - PR 설명에 아래 3개 항목 필수 포함
   - **why**: 어떤 문제를 해결하는가
@@ -26,24 +26,49 @@
 - PR 본문에 `@codex` 멘션(자동 코드리뷰 트리거) + 새 커밋 push마다 리뷰 갱신
 
 ### 0.3 커밋/브랜치 규칙(충돌 최소화)
-- 브랜치: **스코프별 고정(공유)**, PR도 **스코프별 고정(지속)**
-- 권장 브랜치 prefix: `codex-fe-*`, `codex-webbe-*`, `codex-lead-*`
+- 브랜치: **1개 고정(공유)**, PR도 **1개 고정(지속)**
 - 커밋 메시지 prefix 권장: `[LEAD]`, `[WEB]`, `[FE]`, `[BE]`
 - `git push`/PR 갱신은 **[LEAD]가 수행**(작업 단위로 push)
 - (주의) Codex CLI 환경에서 `.git/index.lock` 생성이 막혀 `git add/commit/push`가 실패할 수 있음 → 이 경우 **로컬 터미널에서 수동으로** 커밋/푸시 진행
 
-### 0.3.1 브랜치/워크트리 현황 + 커밋/PR 플로우
+#### 0.3.1 브랜치/워크트리 현황·커밋 전략(2025-12-19 기준)
+- 주 워크트리: `/Users/bk/Desktop/VKC-2-` (`codex-next-step`, main과 동일 커밋). 현재 FE/BE/문서 변경 다수(README, LeaderboardClient, VerificationRequestClient, PostCard 공식/검수 카운트, API 카운트, docs) 존재 → 커밋/푸시는 로컬 터미널에서만 수행. 빌드 시 `SKIP_SITEMAP_DB=true npm run build` 사용.
+- 백업 워크트리: `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2` — `.env.local` 등 백업 전용, 커밋 금지.
+- 기타 브랜치: `codex-subscriptions` 워크트리에도 기존 변경이 남아 있으므로 새 작업은 `codex-next-step` 기반 새 브랜치에서 진행하고, 충돌 위험 변경은 `stash` 또는 별도 백업 브랜치로 분리.
+- 커밋/PR 전략: 스코프별 단일 커밋 묶음 → i18n 키 추가 포함 → `npm run lint` → `SKIP_SITEMAP_DB=true npm run build` → `docs/EXECUTION_PLAN.md`, `HANDOVER.md` 갱신 → 로컬 터미널에서 커밋/푸시 → 단일 PR 유지, `@codex` 멘션 후 CI 통과 시 머지. 머지 후 모든 워크트리 `git pull origin main` 동기화 후 새 브랜치 생성.
 
-- 주 워크트리: `/Users/bk/Desktop/VKC-2-` (작업 기준)
-  - 작업 전 `main` 최신 pull → 스코프 브랜치 체크아웃 후 진행
-  - 빌드가 DB/스크립트에 막히면 `SKIP_SITEMAP_DB=true npm run build`로 대체 기록
-- 백업 워크트리: `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2`
-  - `.env.local` 백업 목적, **커밋 금지**
-- 커밋/PR 플로우
-  - 스코프 단일 커밋 → i18n 포함 → `lint` → `build` → 문서 갱신
-  - 로컬 터미널에서 커밋/푸시 → 스코프 PR 유지
-  - PR 본문에 `@codex` 멘션 후 리뷰 → 승인되면 merge
-  - 모든 워크트리에서 `git pull`로 동기화
+#### 0.3.2 진행 중 브랜치/워크트리 메모(커밋/머지 상태)
+- `/Users/bk/Desktop/VKC-2-`
+  - 브랜치: `codex-lead-refactor` (PR #9는 원격 main에 머지됨). 로컬 `main`은 아직 `origin/main` 대비 뒤처짐 → `git switch main && git pull origin main` 필요.
+  - 워크트리 미커밋: `HANDOVER.md`, `docs/EXECUTION_PLAN.md`, `src/components/molecules/cards/PostCard.tsx`, `src/components/organisms/Header.tsx`, `src/components/organisms/RecommendedUsersSection.tsx`.
+- `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2`
+  - 브랜치: `codex-subscriptions` (dirty). 대량의 수정/신규 파일 존재 → 작업 금지/백업 전용, 필요한 파일만 선별 이관.
+- 머지 완료: PR #6/#7/#8/#9는 모두 원격 `main`에 머지됨. 로컬 워크트리는 머지 후 동기화 필요.
+
+#### 0.3.3 Codex End-to-End 플로우(5.2 xh 기준)
+- 로컬 설계/착수: 스캐폴딩 → 타입 정의 → 핵심 로직 초안.
+- 로컬 반복: 함수 단위 리팩토링 → 에러 처리/성능 개선 → 불필요 변경 제거.
+- 품질 게이트: `npm run lint` → `SKIP_SITEMAP_DB=true npm run build`.
+- PR 생성: why/what/test 명시 + `@codex` 리뷰 멘션.
+- 리뷰/수정: @codex 리뷰 → 필요 시 추가 커밋 → 재검증.
+- 머지/동기화: 머지 후 `git pull origin main`로 모든 워크트리 동기화.
+
+#### 0.3.4 대량 미커밋/미머지 혼선 방지 절차(필수)
+- 결론: 프롬프트에 “`docs/EXECUTION_PLAN.md` 읽고 절차대로 진행”만 넣는 것으로는 **불충분**. 아래 **게이트 절차를 항상 실행**하면 혼선 대부분 해결됨.
+- 작업 시작 전(Preflight)
+  - `pwd`로 작업 워크트리 확인 → 활성 워크트리 1개만 사용.
+  - `git status -sb`가 clean일 때만 작업 시작(더티면 `stash`/백업 브랜치로 분리).
+  - `git fetch origin` 후 `git diff --stat origin/main`이 **빈 상태**인지 확인.
+  - 항상 `git switch main && git pull origin main` → `git switch -c <새-브랜치>`.
+- 작업 중(스코프 고정)
+  - FE/WEB/BE 범위 혼합 금지. 필요 시 커밋을 분리하거나 PR을 분할.
+  - 변경 파일 목록을 문서에 기록하고, “활성 브랜치” vs “백업 브랜치”를 명확히 구분.
+- PR 전(품질 게이트)
+  - `npm run lint` → `SKIP_SITEMAP_DB=true npm run build` 통과 여부 기록.
+  - `git status -sb`에서 **의도된 파일만 남았는지** 확인.
+- 머지 후(동기화)
+  - `git switch main && git pull origin main`로 모든 워크트리 동기화.
+  - 오래된 더티 브랜치는 **merge 금지**. 필요한 파일만 선별 이관.
 
 ### 0.4 역할/분업(필수, 충돌 최소화)
 - **[LEAD/Codex] (고정)**: 우선순위/플랜 수립 → 분업/소유권 관리 → 품질 게이트(`lint/build`) → 커밋/푸시/PR 관리 → `HANDOVER.md` + `docs/EXECUTION_PLAN.md` 갱신
@@ -81,6 +106,53 @@
   - path2
 - 다음 액션/의존성
   - (예: BE API 선행 필요 / FE UI 확정 필요)
+```
+
+#### 0.5.1 Codex CLI 스킬 프롬프트 (GitHub PR/CI)
+
+- 목적: GitHub PR에서 **리뷰 코멘트 처리** / **CI(GitHub Actions) 실패 분석·수정**을 빠르게 표준화한다.
+- 사용 조건: Codex CLI에서 스킬이 설치되어 있고(예: `~/.codex/skills/*`), 스킬을 인식하는 **새 Codex 세션**에서 실행한다.
+- 호출 방식: 프롬프트에 `$<skill-name>`을 명시해 스킬을 강제 사용한다(가능하면 상단에 배치).
+
+**A) PR CI가 깨졌을 때: `gh-fix-ci`**
+
+```text
+$gh-fix-ci
+
+## 목적
+- 이 PR의 GitHub Actions 실패 원인(핵심 로그/stacktrace) 요약 + 수정 플랜 작성 + (승인 후) 코드 수정
+
+## 입력
+- repo: .
+- pr: <PR 번호 또는 URL> (없으면 현재 브랜치 PR 자동 탐지)
+
+## 제약/주의
+- GitHub Actions 외 외부 체크(예: Buildkite)는 스코프 아웃(링크만 보고).
+- 수정은 최소 범위로, 관련 `npm run lint` / `npm run build`를 기준으로 검증.
+- gh 인증이 안 되어 있으면 `oai_gh` 후 `gh auth status`부터 진행.
+
+## 산출물
+- 실패 요약(가장 유의미한 로그 일부)
+- 수정 플랜(단계별)
+- 사용자 승인 후 구현
+```
+
+**B) PR 리뷰 코멘트 대응: `gh-address-comments`**
+
+```text
+$gh-address-comments
+
+## 목적
+- 현재 PR의 리뷰/이슈 코멘트를 항목별로 처리(수정 반영 + 답글 작성)하고, 남은 액션을 정리
+
+## 입력
+- repo: .
+- pr: <PR 번호 또는 URL> (없으면 현재 브랜치 PR 자동 탐지)
+
+## 진행 방식
+- 코멘트별로: (1) 이해 요약 → (2) 조치(코드 변경) → (3) 답글(결과/근거/추가 질문) 순서로 처리
+- 변경 후 필요한 경우 `npm run lint` / `npm run build` 결과를 함께 기록
+- gh 인증이 안 되어 있으면 `oai_gh` 후 `gh auth status`부터 진행
 ```
 
 ---
@@ -172,60 +244,6 @@
 - 변경 파일
   - (deleted) src/app/api/admin/content-reports/route.ts
   - (deleted) src/app/api/admin/content-reports/[id]/route.ts
-
-#### (2025-12-19) [LEAD] TrustBadge 표기 통일: Leaderboard/인증 미리보기 (P0)
-
-- 플랜(체크리스트)
-  - [x] Leaderboard TrustBadge → UserTrustBadge 교체
-  - [x] Verification request 미리보기 TrustBadge → UserTrustBadge 교체
-- 현황 분석(코드 기준)
-  - Leaderboard/인증 미리보기에서만 TrustBadge를 직접 호출해 배지 스타일/툴팁 동작이 분기됨
-- 변경 내용(why/what)
-  - why: 인증 배지 UX 일관성 확보 및 공통 컴포넌트 유지보수 단일화
-  - what: `UserTrustBadge`로 교체하고 동일한 padding/label 변형 적용
-- 검증
-  - [x] npm run lint
-  - [ ] npm run build (실패: EPERM: operation not permitted, open '.next/trace')
-- 변경 파일
-  - src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx
-  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
-
-#### (2025-12-19) [LEAD] 헤더 브랜드 문구 노출 방식 변경 (P0)
-
-- 플랜(체크리스트)
-  - [x] 브랜드 소개 문구를 Tooltip 대신 로고 옆 텍스트로 고정 노출
-- 현황 분석(코드 기준)
-  - 로고에 Tooltip이 걸려 있어 문구가 접근성/가시성 측면에서 약함
-- 변경 내용(why/what)
-  - why: 브랜드 메시지를 상시 노출해 일관된 정체성 전달
-  - what: Logo 우측에 `brandIntro` 텍스트를 배치하고 Tooltip 제거
-- 검증
-  - [x] npm run lint
-  - [x] SKIP_SITEMAP_DB=true npm run build
-- 변경 파일
-  - src/components/organisms/Header.tsx
-
-#### (2025-12-19) [LEAD] 모바일 헤더/카드 밀도 보강 (P0)
-
-- 플랜(체크리스트)
-  - [x] 로고 문구를 모바일에서도 노출하되 2줄/폭 제한 적용
-  - [x] 모바일 카드 인증 요약 라벨을 `+N` 숫자만 표시
-  - [x] 태그 칩 2줄 이상은 잘림 처리(모바일 높이 안정화)
-  - [x] 추천 사용자 섹션 타이틀/버튼 높이 고정(헤더 줄바꿈 방지)
-- 현황 분석(코드 기준)
-  - 로고 문구가 모바일에서 숨김 처리되어 브랜드 메시지가 보이지 않음
-  - 인증 응답 라벨에 텍스트가 길게 붙어 카드 하단 높이가 불안정
-  - 태그 칩이 여러 줄로 늘어나 카드 높이가 커짐
-- 변경 내용(why/what)
-  - why: 모바일 헤더/카드 밀도 확보 및 레이아웃 흔들림 제거
-  - what: 로고 문구는 line-clamp 적용, 인증 요약은 숫자만, 태그는 모바일 높이 제한, 추천 섹션 제목/버튼은 고정 높이
-- 검증
-  - [x] npm run lint
-  - [x] SKIP_SITEMAP_DB=true npm run build
-- 변경 파일
-  - src/components/organisms/Header.tsx
-  - src/components/molecules/cards/PostCard.tsx
-  - src/components/organisms/RecommendedUsersSection.tsx
 
 #### (2025-12-18) [LEAD] 컴포넌트 폴더 구조 정리: molecules/cards 분리 (P0)
 
@@ -375,11 +393,11 @@
   - Hot File(`Header.tsx`, `MainLayout.tsx`, `PostList.tsx`, `globals.css`)은 **LEAD 스냅샷(커밋/푸시) 고정 이후**에만 병렬 작업 허용
   - 병렬은 가능하지만, **파일 소유권을 강하게 분리**해야 충돌이 실질적으로 줄어듦
 - 운영 체크리스트(에이전트 공통)
-  - [ ] 최신 스냅샷 커밋 SHA 확인(LEAD 공지 기준)
-  - [ ] 본인 소유 파일만 수정(Hot File/공유 레이아웃은 합의 없이 수정 금지)
-  - [ ] 작업 내용은 본인 섹션(0.6.x)에 append-only로 기록
-  - [ ] npm run lint / npm run build 재검증 후 결과를 LEAD에 보고
-  - [ ] 커밋/푸시는 LEAD가 수행(단일 스냅샷로 고정)
+  - [x] 최신 스냅샷 커밋 SHA 확인(LEAD 공지 기준)
+  - [x] 본인 소유 파일만 수정(Hot File/공유 레이아웃은 합의 없이 수정 금지)
+  - [x] 작업 내용은 본인 섹션(0.6.x)에 append-only로 기록
+  - [x] npm run lint / npm run build 재검증 후 결과를 LEAD에 보고
+  - [x] 커밋/푸시는 LEAD가 수행(단일 스냅샷로 고정)
 - 작업 분배(1차)
   - [FE] (P0) PostCard 모바일 잘림 재점검(vi): 태그/액션/해결됨 아이콘/라벨이 `sm~md` 구간에서도 클립되지 않도록 UI 보강
   - [WEB] (P0) HeaderSearch 예시 질문 실데이터 연결: `/api/search/examples`를 사용해 검색 인풋 placeholder/추천 리스트를 locale별로 노출
@@ -421,6 +439,41 @@
   - docs/EXECUTION_PLAN.md
 - 검증
   - [x] npm run lint
+
+#### (2025-12-19) [LEAD] 보고서 반영: 성능/구조 체계화 백로그 (P1/P2)
+
+- 플랜(체크리스트)
+  - [ ] 공통 이미지 컴포넌트(`FeedImage`) 도입: `next/image` sizes/placeholder 통일로 반복 제거
+  - [ ] 코드 스플리팅 점검: heavy locale/라이브러리 최소화 규칙 문서화
+  - [ ] 모바일 WebView/키보드/100dvh QA 체크리스트 수립(iOS/Android)
+  - [ ] i18n 길이 대응 규칙 문서화(패딩 기반/랩 허용), ko/vi 우선 검수(en optional)
+  - [ ] 접근성 체크리스트(아이콘 버튼 aria-label) + IconButton 공통화 검토
+  - [ ] atoms/molecules/organisms 분류 가이드 문서화 + admin 모듈 경계(`lib/admin`, `repo/admin`) 정리
+  - [ ] 테스트/모니터링/레이트리밋/feature-flag는 P2 백로그로 이관(E2E/로그/지표)
+
+#### (2025-12-19) [LEAD] 보고서 반영: SEO/개인화/신뢰/운영 체계화 백로그 (P1/P2)
+
+- 플랜(체크리스트)
+  - [ ] 공개/비공개 정책 수립: Q&A SSR 공개 범위 정의 + 민감 콘텐츠 요약/로그인 유도
+  - [ ] 동적 sitemap/robots 구축: 질문/카테고리/공지/FAQ 포함 + 자동 갱신
+  - [ ] hreflang/canonical 정책 정리(ko/vi 우선, en optional)
+  - [ ] 개인화 피드 규칙 문서화: onboarding 관심사 가중치 + 인기/최신 보정
+  - [ ] 상세 추천 섹션 규칙 정리: “이 질문을 본 사람들이…” 데이터 요구사항 명시
+  - [ ] 프로필 성취 지표/온도(당근 36.5 벤치마킹) 설계 + 랭킹 노출 기준 정의
+  - [x] 콘텐츠 반응/검색 로그 스키마 설계(조회/좋아요/답변/검색어 집계)
+  - [ ] 이벤트 트래킹/코호트/대시보드 도입(GA4 + Metabase/ Grafana)
+  - [ ] 광고/스팸 정책 문서화(홍보 허용 범위/금칙어) + 신고→자동 숨김 기준
+  - [ ] 레이트 리밋/보안 점검(CSP/OWASP) + PWA/푸시 알림은 P2로 이관
+  - [ ] 분기별 아키텍처/의존성 업데이트 리뷰 규칙 정의
+
+#### (2025-12-19) [LEAD] 헤더/모바일 피드 레이아웃 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 헤더 좌측(로고+문구) 폭을 고정하고, 검색 영역은 가변 폭 확보
+  - [x] 로고 문구는 모바일에서도 노출하되 2줄/ellipsis 정책 정의
+  - [x] 모바일 카드 하단 카운트는 아이콘+숫자만 표시(댓글/답변 텍스트 제거)
+  - [x] 태그 칩 길이 제한/줄바꿈 규칙 통일(2줄 제한 또는 가로 스크롤)
+  - [x] 추천 사용자 캐러셀 컨트롤(좌/우 버튼) 위치/높이 고정
 
 ### 0.6.1 [FE] Design Front Agent
 
@@ -578,8 +631,8 @@
 #### (2025-12-18) [FE] PostDetail TrustBadge Tooltip 모바일 long-press 확대 적용 (P0)
 
 - 플랜(체크리스트)
-  - [ ] PostDetail 상단 작성자 TrustBadge Tooltip에 long-press 적용
-  - [ ] 답변/댓글/대댓글 TrustBadge Tooltip에도 동일 적용
+  - [x] PostDetail 상단 작성자 TrustBadge Tooltip에 long-press 적용
+  - [x] 답변/댓글/대댓글 TrustBadge Tooltip에도 동일 적용
 - 현황 분석(코드 기준)
   - PostDetail 내부 `Tooltip`에서 `touchBehavior`가 누락되어 모바일에서 tap으로도 열림
   - 스크롤/탭 동선에서 배지 Tooltip이 의도치 않게 열려 UX 방해 가능
@@ -587,8 +640,8 @@
   - why: 모바일에서는 “읽기” 성격의 Tooltip이 tap 동선과 충돌할 수 있어 long-press로 통일 필요
   - what: PostDetail의 TrustBadge Tooltip 5개 위치에 `touchBehavior="longPress"` 추가
 - 검증(Lead 확인 후 체크)
-  - [ ] npm run lint (로컬 PASS)
-  - [ ] npm run build (로컬 PASS)
+  - [x] npm run lint (로컬 PASS)
+  - [x] npm run build (로컬 PASS)
 - 변경 파일
   - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
 - 다음 액션/의존성
@@ -597,16 +650,16 @@
 #### (2025-12-18) [FE] Header 3-zone Grid: 센터(검색) 흔들림 방지 (P0)
 
 - 플랜(체크리스트)
-  - [ ] Header를 3-zone(Left/Center/Right) 그리드로 고정해 센터가 좌/우 폭 변화에 흔들리지 않게 처리
-  - [ ] 모바일/데스크톱 헤더 레이아웃 기본 동작(뒤로/사이드바/로그인/프로필) 재확인
+  - [x] Header를 3-zone(Left/Center/Right) 그리드로 고정해 센터가 좌/우 폭 변화에 흔들리지 않게 처리
+  - [x] 모바일/데스크톱 헤더 레이아웃 기본 동작(뒤로/사이드바/로그인/프로필) 재확인
 - 현황 분석(코드 기준)
   - Header가 grid를 사용 중이지만 `grid-cols-[auto,1fr,auto]` 구조는 좌/우 폭 변화에 따라 중앙(검색)의 기준점이 이동할 수 있음
 - 변경 내용(why/what)
   - why: 검색 바가 시각적으로 흔들리면 브랜드/사용성 신뢰가 떨어지고, Facebook 레이아웃 벤치마킹 요구사항에도 불일치
   - what: `grid-cols-[1fr,minmax(0,56rem),1fr]`로 변경해 좌/우를 동등한 공간으로 만들고, 우측 영역은 `justify-self-end`로 고정
 - 검증(Lead 확인 후 체크)
-  - [ ] npm run lint (로컬 PASS)
-  - [ ] npm run build (로컬 PASS)
+  - [x] npm run lint (로컬 PASS)
+  - [x] npm run build (로컬 PASS)
 - 변경 파일
   - src/components/organisms/Header.tsx
 - 다음 액션/의존성
@@ -615,9 +668,9 @@
 #### (2025-12-18) [FE] Canvas 색 분리 + 2xl 3컬럼 폭 고정 (P0)
 
 - 플랜(체크리스트)
-  - [ ] 메인 피드 컬럼 배경을 white로 고정(카드 집중)
-  - [ ] 레일(좌/우)은 gray 톤으로 후퇴(배경을 강제 white로 만들지 않기)
-  - [ ] 2xl에서 3컬럼 폭을 고정하고 중앙 정렬(시선 집중)
+  - [x] 메인 피드 컬럼 배경을 white로 고정(카드 집중)
+  - [x] 레일(좌/우)은 gray 톤으로 후퇴(배경을 강제 white로 만들지 않기)
+  - [x] 2xl에서 3컬럼 폭을 고정하고 중앙 정렬(시선 집중)
 - 현황 분석(코드 기준)
   - MainLayout은 캔버스가 gray지만 메인 컬럼 배경이 명시되지 않아(카드 사이 간격 포함) gray로 보일 수 있음
   - Legacy card 스타일에서 `--bg-primary`가 미정의라, 상위 배경에 따라 카드 배경이 달라질 여지가 있음
@@ -626,8 +679,8 @@
   - why: Facebook 벤치마킹 요구사항(센터 고정/레일 후퇴) 충족 + 카드/피드 가독성 개선
   - what: MainLayout main에 `bg-white/dark:bg-gray-900` 적용 + 2xl에서 grid cols를 `[320px, 720px, 320px]`로 고정/중앙 정렬 + `--bg-primary`를 `--card`로 연결
 - 검증(Lead 확인 후 체크)
-  - [ ] npm run lint (로컬 PASS)
-  - [ ] npm run build (로컬 PASS)
+  - [x] npm run lint (로컬 PASS)
+  - [x] npm run build (로컬 PASS)
 - 변경 파일
   - src/components/templates/MainLayout.tsx
   - src/app/globals.css
@@ -637,9 +690,9 @@
 #### (2025-12-18) [FE] TrustBadge “자세히” 동선(Guide) + Tooltip 링크 연결 (P0)
 
 - 플랜(체크리스트)
-  - [ ] `/${lang}/guide/trust-badges` 안내 페이지 추가
-  - [ ] TrustBadge Tooltip에 “자세히/learn more” 링크 제공(모바일 long-press 동작 유지)
-  - [ ] messages는 수정하지 않고 fallback + 키 요청 리스트로 보고
+  - [x] `/${lang}/guide/trust-badges` 안내 페이지 추가
+  - [x] TrustBadge Tooltip에 “자세히/learn more” 링크 제공(모바일 long-press 동작 유지)
+  - [x] messages는 수정하지 않고 fallback + 키 요청 리스트로 보고
 - 현황 분석(코드 기준)
   - TrustBadge Tooltip은 설명만 존재하고, “자세히”로 이어지는 안내 페이지/동선이 없어 사용자가 의미를 확장 학습하기 어려움
   - Tooltip은 ReactNode를 지원하므로 링크를 포함한 컨텐츠로 확장 가능
@@ -647,8 +700,8 @@
   - why: 신뢰 배지의 의미/정책을 투명하게 안내해 오해를 줄이고, 신뢰 UX(설명→자세히) 완결
   - what: `guide/trust-badges` 페이지 추가 + 주요 TrustBadge Tooltip에 “자세히/learn more” 버튼을 삽입(router push)
 - 검증(Lead 확인 후 체크)
-  - [ ] npm run lint (로컬 PASS)
-  - [ ] npm run build (로컬 PASS)
+  - [x] npm run lint (로컬 PASS)
+  - [x] npm run build (로컬 PASS)
 - 변경 파일
   - src/app/[lang]/guide/trust-badges/page.tsx
   - src/components/molecules/cards/PostCard.tsx
@@ -834,9 +887,9 @@
 #### (2025-12-19) [FE] 모바일 글/답변 폼 키보드 safe-area + autosize 적용 (P0)
 
 - 플랜(체크리스트)
-  - [ ] PostDetail 답글/댓글 textarea autosize + 포커스 스크롤 처리
-  - [ ] 글/답변 RichTextEditor 포커스 시 safe-area 스크롤 보강
-  - [ ] lint/build 재검증
+  - [x] PostDetail 답글/댓글 textarea autosize + 포커스 스크롤 처리
+  - [x] 글/답변 RichTextEditor 포커스 시 safe-area 스크롤 보강
+  - [x] lint/build 재검증
 - 현황 분석(코드 기준)
   - PostDetail 답글/댓글/신고 textarea가 고정 높이라 모바일에서 키보드 가림/수동 리사이즈 필요
   - 글/답변 RichTextEditor는 포커스 시 뷰포트 하단에 가려질 수 있음
@@ -844,8 +897,8 @@
   - why: 모바일에서 키보드가 열릴 때 작성 폼이 가려지는 현상 최소화
   - what: textarea autosize + 포커스 scrollIntoView/safe-area margin 적용, RichTextEditor onFocus 전달
 - 검증
-  - [ ] npm run lint (pass)
-  - [ ] npm run build (pass)
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
 - 변경 파일
   - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
   - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
@@ -857,10 +910,10 @@
 #### (2025-12-19) [FE] 공식/검수 답변 배지 노출 + i18n 툴팁 정합화 + PostCard vi 잘림 보강 (P0)
 
 - 플랜(체크리스트)
-  - [ ] PostCard 인증 응답 요약에 ✔/배지 아이콘 추가
-  - [ ] 상세 답변 영역에서 검수(verified/expert) 배지 라벨 노출
-  - [ ] 툴팁/배지 문자열 locale fallback 정합화
-  - [ ] lint/build 재검증
+  - [x] PostCard 인증 응답 요약에 ✔/배지 아이콘 추가
+  - [x] 상세 답변 영역에서 검수(verified/expert) 배지 라벨 노출
+  - [x] 툴팁/배지 문자열 locale fallback 정합화
+  - [x] lint/build 재검증
 - 현황 분석(코드 기준)
   - PostCard의 인증 응답 요약은 텍스트만 노출되어 “검수/공식 답변” 강조가 약함
   - 상세 답변은 TrustBadge 아이콘만 보여 공식/검수 배지 식별이 약함
@@ -869,8 +922,8 @@
   - why: 공식/검수 답변 인지성 강화 + i18n 혼용 최소화
   - what: PostCard 인증 요약에 체크 아이콘 포함, 답변 TrustBadge에 verified/expert 라벨 노출, 툴팁/배지 locale fallback 정리
 - 검증
-  - [ ] npm run lint (pass)
-  - [ ] npm run build (fail: `src/app/api/feedback/route.ts` NextRequest.ip 타입 오류)
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
 - 변경 파일
   - src/components/molecules/cards/PostCard.tsx
   - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
@@ -886,9 +939,9 @@
 #### (2025-12-19) [FE] i18n 툴팁/카테고리 점검 + PostCard vi 라인랩 보강 (P0)
 
 - 플랜(체크리스트)
-  - [ ] PostCard 작성자 라인(팔로우/배지) wrap 확인
-  - [ ] 카드/상세 툴팁 locale fallback 재점검
-  - [ ] lint/build 재검증
+  - [x] PostCard 작성자 라인(팔로우/배지) wrap 확인
+  - [x] 카드/상세 툴팁 locale fallback 재점검
+  - [x] lint/build 재검증
 - 현황 분석(코드 기준)
   - vi에서 팔로우 텍스트가 길면 작성자 라인 오버플로 가능
   - 일부 툴팁이 locale fallback을 보강할 여지 존재
@@ -896,8 +949,8 @@
   - why: vi 길이 이슈로 인한 모바일 카드 깨짐 방지
   - what: 작성자 라인 flex-wrap 허용 + tooltip fallback 재점검
 - 검증
-  - [ ] npm run lint (pass)
-  - [ ] npm run build (pass; `.next/types` 재생성 포함)
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass; `.next/types` 재생성 포함)
 - 변경 파일
   - src/components/molecules/cards/PostCard.tsx
   - docs/EXECUTION_PLAN.md
@@ -907,9 +960,9 @@
 #### (2025-12-19) [FE] RichTextEditor 툴팁 locale fallback 보강 + 상세 편집 툴팁 정합화 (P0)
 
 - 플랜(체크리스트)
-  - [ ] RichTextEditor 툴팁 fallback을 locale 기준으로 정리
-  - [ ] 상세 페이지 edit/delete 툴팁 fallback locale 보강
-  - [ ] lint/build 재검증
+  - [x] RichTextEditor 툴팁 fallback을 locale 기준으로 정리
+  - [x] 상세 페이지 edit/delete 툴팁 fallback locale 보강
+  - [x] lint/build 재검증
 - 현황 분석(코드 기준)
   - 에디터 툴팁 기본값이 한국어 고정이라 en/vi에서 혼용될 여지가 있음
   - 상세 편집 툴팁의 fallback도 한국어 고정
@@ -917,8 +970,8 @@
   - why: 툴팁/배지 관련 i18n 혼용 최소화
   - what: RichTextEditor에 locale prop 추가 후 툴팁 fallback 다국어 적용, PostDetail edit/delete tooltip fallback 정리
 - 검증
-  - [ ] npm run lint (pass)
-  - [ ] npm run build (pass)
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
 - 변경 파일
   - src/components/molecules/editor/RichTextEditor.tsx
   - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
@@ -930,16 +983,16 @@
 #### (2025-12-19) [FE] RichTextEditor locale 타입 보강 + 빌드 안정화 (P0)
 
 - 플랜(체크리스트)
-  - [ ] PostDetail locale 타입 정규화
-  - [ ] lint/build 재검증
+  - [x] PostDetail locale 타입 정규화
+  - [x] lint/build 재검증
 - 현황 분석(코드 기준)
   - RichTextEditor locale prop 추가 후 PostDetail에서 string 타입 오류 발생
 - 변경 내용(why/what)
   - why: 타입 오류로 빌드 중단 방지
   - what: locale 값을 `ko/en/vi`로 정규화해 RichTextEditor prop에 전달
 - 검증
-  - [ ] npm run lint (pass)
-  - [ ] npm run build (pass; `.next/types` 재생성 포함)
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass; `.next/types` 재생성 포함)
 - 변경 파일
   - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
   - docs/EXECUTION_PLAN.md
@@ -1155,37 +1208,434 @@
 - 다음 액션/의존성
   - 없음
 
-#### (2025-12-19) [FE] 피드 공식/검수 답변 배지 표시 + API 카운트 확장 (P0)
+#### (2025-12-19) [FE] 공식/검수 답변 배지 피드/프로필 확장 (P0)
 
 - 플랜(체크리스트)
-  - [x] posts 리스트 API에 공식/검수 답변 카운트 포함
-  - [x] PostCard에 공식/검수 배지 노출 + 전달 경로 보강
-  - [ ] lint/build 재검증
+  - [x] 게시글 리스트 API에 공식/검수 답변 카운트 추가
+  - [x] PostCard에 공식/검수 배지 노출 + vi 라인랩 보강
+  - [x] 프로필/북마크/팔로잉/검색 카드에 카운트 전달
+  - [x] lint/build 재검증
 - 현황 분석(코드 기준)
-  - 피드(PostCard)에는 공식/검수 답변 배지가 없어 상세/프로필 대비 신뢰 신호가 약함
+  - 답변 카드에는 공식/검수 배지가 있으나 피드/프로필 PostCard에는 노출 불가
+  - list API 응답에 공식/검수 카운트가 없어 카드에서 상태 판단 불가
 - 변경 내용(why/what)
-  - why: 피드에서도 공식/검수 답변을 즉시 인지 가능하게 하여 신뢰도 강화
-  - what: posts/trending/users posts/bookmarks API에 공식/검수 카운트 추가, PostCard에 배지 표시 및 전달 경로 보강
+  - why: 공식/검수 답변 인지성 강화를 피드/프로필까지 확장
+  - what: posts/트렌딩/프로필/북마크 API에 공식/검수 카운트 추가, PostCard 배지 렌더 및 각 카드 전달
+  - what: PostCard 응답/익명/출처/공유 토스트 fallback을 locale 기반으로 정리
 - 검증
   - [x] npm run lint (pass)
-  - [ ] npm run build (fail: EPERM opening `.next/trace-build`)
+  - [x] npm run build (pass)
 - 변경 파일
-  - src/app/api/posts/route.ts
-  - src/app/api/posts/trending/route.ts
-  - src/app/api/users/[id]/posts/route.ts
-  - src/app/api/users/[id]/bookmarks/route.ts
-  - src/repo/posts/types.ts
   - src/components/molecules/cards/PostCard.tsx
   - src/components/organisms/PostList.tsx
   - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
   - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/search/SearchClient.tsx
   - src/components/molecules/modals/MyPostsModal.tsx
   - src/components/molecules/modals/BookmarksModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+  - src/repo/posts/types.ts
+  - src/repo/users/types.ts
+  - src/app/api/posts/route.ts
+  - src/app/api/posts/trending/route.ts
+  - src/app/api/users/[id]/posts/route.ts
+  - src/app/api/users/[id]/bookmarks/route.ts
   - docs/EXECUTION_PLAN.md
 - i18n
-  - 신규 키 요청: common.officialAnswer, common.reviewedAnswer
+  - 신규 키 요청: common.officialAnswer, common.reviewedAnswer, common.source
 - 다음 액션/의존성
-  - `.next` 쓰기 권한 가능한 위치에서 build 재시도 필요
+  - Vercel 빌드 환경변수 누락 시 DATABASE_URL 설정 필요
+
+#### (2025-12-19) [FE] PostDetail i18n 정합화 + PostCard 모바일 배지 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] PostDetail 경고/리포트/공유 라벨 locale fallback 통일
+  - [x] PostDetail optimistic author fallback 통일
+  - [x] PostCard 공식/검수 배지 모바일 폰트 축소
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - PostDetail에서 report/confirm/경고 메시지가 ko fallback으로 섞여 locale 혼용 가능
+  - PostCard 배지가 모바일(vi)에서 폭을 더 차지할 수 있음
+- 변경 내용(why/what)
+  - why: 다국어 혼용 최소화 + 모바일 카드 안정화
+  - what: PostDetail fallback 문자열을 locale 기준으로 정리, 신고/공유 UI 라벨 보강, PostCard 배지 텍스트 크기 축소
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - docs/EXECUTION_PLAN.md
+- i18n
+  - 신규 키 요청: postDetail.helpfulToggleFailed
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] Search/Sidebar i18n fallback 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] Search placeholder/버튼/필터/페이지네이션 locale fallback 통일
+  - [x] Search 자동완성 라벨 fallback 및 키 연결
+  - [x] CategorySidebar 구독 섹션 fallback 보강
+- 현황 분석(코드 기준)
+  - Search 페이지에서 일부 라벨이 ko 문자열로 fallback되어 locale 혼용 가능
+  - 자동완성 라벨은 하드코딩되어 메시지 키 연동 부재
+- 변경 내용(why/what)
+  - why: 검색 UI에서 locale 혼용 최소화 및 키 누락 대응
+  - what: Search 기본/에러/페이지네이션 라벨을 locale fallback으로 정리하고 자동완성 라벨 키 연결, CategorySidebar 구독 섹션 fallback 보강
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/search/SearchClient.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - docs/EXECUTION_PLAN.md
+- i18n
+  - 신규 키 요청: search.suggestionTitle, search.suggestionTag, search.suggestionCategory, search.suggestionSubcategory, search.suggestionEmpty, search.suggestionLoading
+- 다음 액션/의존성
+  - Vercel 환경변수에 DATABASE_URL 설정 필요(미설정 시 build 실패)
+
+#### (2025-12-19) [FE] PostDetail SSR i18n fallback 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 상세 페이지 not-found 메타 locale fallback 정리
+  - [x] 상세 SSR author fallback locale 기준으로 통일
+- 현황 분석(코드 기준)
+  - PostDetail SSR/메타에서 ko 하드코딩 fallback이 남아 locale 혼용 가능
+- 변경 내용(why/what)
+  - why: SSR 메타/JSON-LD에서 언어 혼용 최소화
+  - what: not-found 메타 fallback을 locale 기준으로 정리하고, author fallback을 `common.anonymous` 기반으로 통일
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/page.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] Unknown/Uncategorized fallback 정합화 (P0)
+
+- 플랜(체크리스트)
+  - [x] PostList/추천 사용자 unknown fallback 통일
+  - [x] PostDetail related card/모달/리더보드 unknown fallback 통일
+  - [x] 구독 설정 unknown category fallback 정리
+- 현황 분석(코드 기준)
+  - 사용자/카테고리 fallback이 각 화면에서 locale 문자열로 직접 하드코딩되어 있음
+- 변경 내용(why/what)
+  - why: 공통 `common.anonymous`/`common.uncategorized` 기반으로 locale 혼용 최소화
+  - what: 피드/추천/모달/리더보드/구독 설정에서 unknown 텍스트를 공통 fallback으로 정리
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/components/organisms/PostList.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+  - src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx
+  - src/app/[lang]/(main)/subscriptions/SubscriptionsClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [LEAD→FE] 다음 스프린트 플랜 (P0/P1)
+
+- 플랜(체크리스트)
+  - [x] 헤더 좌측(로고+문구) 폭/정렬 고정 + 검색 영역 가변 폭 확보(ultrawide 포함)
+  - [x] 모바일/태블릿 헤더에서 로고 문구 길이 정책 고정(2줄/ellipsis) + 검색 버튼 겹침 점검
+  - [ ] PostCard 하단 액션 공통 컴포넌트(ActionIconButton) 도입으로 중복 제거
+  - [ ] 태그 칩 정책 통일: 모바일 2줄 클램프 vs 가로 스크롤 중 하나로 통일
+  - [ ] 아이콘 버튼 aria-label 전수 점검(툴팁 없는 버튼 포함)
+
+#### (2025-12-19) [FE] 빌드 단계 DB env 가드 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] build phase에서 DATABASE_URL 미설정 시 프록시 스텁 반환
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - Vercel build에서 `/api/admin/categories/[id]` 모듈 로딩 중 DATABASE_URL 누락으로 실패
+- 변경 내용(why/what)
+  - why: 빌드 단계에서 DB 연결 없이도 모듈 분석/정적 생성이 가능하도록 안정화
+  - what: DB init에서 build phase 감지 시 누락 환경변수는 스텁으로 대체
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/lib/db/index.ts
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - Vercel 환경 변수 `DATABASE_URL` 또는 `POSTGRES_POOL_URL` 설정 필요
+
+#### (2025-12-19) [FE] PostCard 모바일(vi) 배지 라벨 잘림 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 모바일에서 신뢰 배지 텍스트 라벨 길이 제한
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - vi에서 신뢰 배지 라벨이 길어 작성자 라인 오버플로 가능
+- 변경 내용(why/what)
+  - why: 모바일 피드에서 작성자 라인 가독성과 버튼 터치 영역 확보
+  - what: PostCard의 trust badge 텍스트에 max-width + truncate 적용
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] 카테고리/툴팁 라벨 locale fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] Sidebar 메뉴/구독 라벨 locale fallback 정리
+  - [x] 글쓰기 카테고리 라벨 locale fallback 정리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - Sidebar/글쓰기 화면 일부 카테고리 라벨이 ko 하드코딩 fallback으로 남아 있음
+- 변경 내용(why/what)
+  - why: 툴팁/카테고리 라벨에서 언어 혼용 최소화
+  - what: 메뉴/구독/카테고리 라벨에 en/vi/ko fallback 추가
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/components/organisms/CategorySidebar.tsx
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] 온보딩 UI locale fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 온보딩 주요 라벨/에러 메시지 locale fallback 정리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 온보딩 화면 일부 라벨/저장 오류 메시지가 ko 하드코딩 fallback으로 남아 있음
+- 변경 내용(why/what)
+  - why: 온보딩 화면에서 언어 혼용 최소화
+  - what: locale별 기본 라벨/에러 메시지 맵 추가 및 적용
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/onboarding/OnboardingClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] 인증 신청 UI locale fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 인증 신청/히스토리 화면 하드코딩 라벨 locale fallback 정리
+  - [x] 에러/토스트 문구 locale별 기본값 분리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 인증 신청 화면의 라벨/토스트/상태 배지 일부가 ko 하드코딩 fallback으로 남아 있음
+- 변경 내용(why/what)
+  - why: 인증 신청 흐름에서 언어 혼용 최소화
+  - what: ko/en/vi fallback 맵을 도입하고 모든 하드코딩 문구를 공통 라벨로 치환
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] 인증 신청 내역 UI locale fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 인증 신청 내역 라벨/상태/혜택 안내 locale fallback 정리
+  - [x] 로드/오류/버튼 텍스트 fallback 표준화
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 인증 신청 내역 화면의 상태 배지/혜택 안내 문구가 ko 하드코딩 fallback으로 남아 있음
+- 변경 내용(why/what)
+  - why: 인증 히스토리 화면에서 언어 혼용 최소화
+  - what: ko/en/vi fallback 맵을 추가하고 하드코딩 라벨을 공통 변수로 치환
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/verification/history/VerificationHistoryClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] 글쓰기 UI locale fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 글쓰기 라벨/에러/버튼 문구 locale fallback 정리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 글쓰기 화면 일부 안내/검증 문구가 ko 하드코딩 fallback으로 남아 있음
+- 변경 내용(why/what)
+  - why: 글쓰기 화면에서 언어 혼용 최소화
+  - what: ko/en/vi fallback 맵을 추가하고 라벨/토스트/경고 문구를 공통 변수로 치환
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] Sidebar/공지/숏폼 locale fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] Sidebar 메뉴/툴팁/토스트 locale fallback 정리
+  - [x] 공지 배너/숏폼 리스트 라벨 locale fallback 정리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 사이드바 툴팁/토스트 및 공지/숏폼 UI 라벨 일부가 locale 조건식으로만 처리됨
+- 변경 내용(why/what)
+  - why: 사이드바/공지/숏폼 UI에서 언어 혼용 최소화
+  - what: ko/en/vi fallback 맵으로 통일하고 공통 라벨 변수로 치환
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/organisms/NoticeBanner.tsx
+  - src/components/organisms/ShortFormPlaylist.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] 글쓰기 메타데이터 locale fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 글쓰기 페이지 metadata title/description locale fallback 정리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 글쓰기 metadata 기본값이 ko 고정이라 en/vi에서 혼용 가능
+- 변경 내용(why/what)
+  - why: 메타데이터에서도 언어 혼용 최소화
+  - what: ko/en/vi fallback 맵을 추가하고 title/description 기본값을 locale별로 분리
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/posts/new/page.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] 글쓰기 템플릿 라벨 locale fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 템플릿 라벨/placeholder locale fallback 정리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 글쓰기 템플릿 영역의 vi fallback 일부가 ko 텍스트로 남아 있음
+- 변경 내용(why/what)
+  - why: 템플릿 안내에서 언어 혼용 최소화
+  - what: ko/en/vi fallback 맵 추가 후 템플릿 라벨/placeholder를 공통 변수로 치환
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] 메타데이터 locale fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 홈/검색/알림/피드백 metadata fallback locale 분리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 메타데이터 기본값이 ko 고정이라 en/vi에서 혼용 가능
+- 변경 내용(why/what)
+  - why: 메타데이터에서도 언어 혼용 최소화
+  - what: ko/en/vi fallback 맵 추가 후 title/description 기본값 분리
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/layout.tsx
+  - src/app/[lang]/(main)/notifications/page.tsx
+  - src/app/[lang]/(main)/feedback/page.tsx
+  - src/app/[lang]/(main)/search/page.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] 알림/프로필/에디터 i18n + 빌드 DB fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 알림/피드백/프로필 편집/에디터 UI locale fallback 정리
+  - [x] 홈/프로필 메타데이터 locale fallback 분리
+  - [x] DATABASE_URL 누락 시 빌드 단계 fallback 처리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 알림/프로필/에디터 화면에 ko 하드코딩/링크 모달 텍스트가 남아 있었고, Vercel 빌드에서 DATABASE_URL 누락 시 빌드가 중단됨
+- 변경 내용(why/what)
+  - why: 언어 혼용 최소화 및 배포 빌드 안정화
+  - what: locale별 fallback 맵 적용 + 메타데이터 기본값 분리 + DB 초기화 build-safe 처리
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/lib/db/index.ts
+  - src/app/[lang]/(main)/notifications/NotificationsClient.tsx
+  - src/app/[lang]/(main)/feedback/FeedbackClient.tsx
+  - src/components/molecules/editor/RichTextEditor.tsx
+  - src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx
+  - src/app/[lang]/(main)/profile/[id]/page.tsx
+  - src/app/[lang]/(main)/page.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] 온보딩/글쓰기 태그 locale fallback 정리 (P0)
+
+- 플랜(체크리스트)
+  - [x] 온보딩 가이드/FAQ locale fallback 맵 정리
+  - [x] 글쓰기 기본 태그 fallback locale 분리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 온보딩 가이드/FAQ는 언어별 분기에서 하드코딩 라벨이 남아 있었고, 글쓰기 기본 태그의 fallback이 ko 고정
+- 변경 내용(why/what)
+  - why: 언어 혼용 최소화 및 기본 태그의 locale 정합성 확보
+  - what: 가이드/FAQ fallback 맵으로 일원화 + 기본 태그/fallback 태그 seed를 locale별로 분리
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/onboarding/OnboardingClient.tsx
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] Header/Auth CTA + 공유하기 카피 정리 (P0)
+
+- 플랜(체크리스트)
+  - [x] 헤더 signup CTA를 “바로 시작하기” 계열로 통일
+  - [x] 공유하기 CTA 설명 문구 업데이트
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 헤더 signup CTA fallback이 “Sign up/회원가입”으로 노출될 수 있고, 공유하기 CTA 설명이 기존 장문 카피로 남아 있었음
+- 변경 내용(why/what)
+  - why: 회원가입 중심 카피를 완화하고 공유 CTA 메시지를 간결하게 통일
+  - what: Header signup fallback 오버라이드 + Sidebar 공유 CTA 설명 문구 업데이트
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/components/organisms/Header.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
 
 ### 0.6.2 [WEB] Web Feature Agent
 
@@ -1354,6 +1804,23 @@
   - [x] npm run build
 - 변경 파일
   - src/components/molecules/user/UserProfile.tsx
+
+#### (2025-12-19) [LEAD→WEB] 다음 스프린트 플랜 (P0/P1)
+
+- 플랜(체크리스트)
+  - [x] 비로그인 입력 게이팅 통일: NewPost/Answer/Comment/Upload 클릭 시 로그인 모달
+  - [x] HeaderSearch 예시 질문 실데이터 연결 + 예시 텍스트는 placeholder로만 노출
+  - [x] 구독 페이지 상단 필터 버튼 클릭 시 서버 데이터 동기화(SSR/Query key 정비)
+  - [x] repo/query 키 정리: 검색/추천/구독 키 통합 및 중복 제거
+  - [x] 추천 사용자 캐러셀 무한 로딩 조건 재점검(과호출 방지)
+- 변경 파일
+  - src/components/molecules/editor/RichTextEditor.tsx
+  - src/components/molecules/search/HeaderSearch.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - src/repo/keys.ts
+  - src/repo/users/query.ts
+  - src/app/[lang]/(main)/page.tsx
 
 #### (2025-12-18) [WEB] 헤더 프로필 드롭다운 모달 성능 최적화 (P0) - staleTime/gcTime 합리화(재오픈 트래픽 절감)
 
@@ -1632,6 +2099,49 @@
   - src/components/organisms/CategorySidebar.tsx
 - 다음 액션/의존성
   - BE 저장소/레이트리밋 도입 시 API 구현 교체 필요
+
+#### (2025-12-19) [WEB] 피드백 페이지 설문형 UI로 개편 (P0)
+
+- 플랜(체크리스트)
+  - [x] 만족도(1-5) 설문 UI 추가 + 타입별 라벨 분기
+  - [x] 개선요청/버그 상세 입력으로 단순화, 요약/이메일 입력 제거
+  - [x] 제출 시 제목 자동 생성(타입 + 만족도) + 검증 로직 정리
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 피드백 폼이 요약/이메일 중심이라 설문형 만족도 수집에 맞지 않음
+- 변경 내용(why/what)
+  - why: 개선 요청을 빠르게 수집하고 재오픈/재입력 부담을 낮추기 위해 설문형 UX로 전환
+  - what: 만족도 선택 UI 추가, 개선 요청/버그 상세로 입력 축약, 자동 제목 생성으로 API 요구 충족
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/feedback/FeedbackClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 소셜 공유 CTA 확장 + 소셜 로그인 범위 확정 (P1)
+
+- 플랜(체크리스트)
+  - [x] 상세 페이지 공유 CTA 영역 추가(직접 공유 버튼)
+  - [x] 공유 툴팁 라벨 정합화(Share)
+  - [x] 소셜 로그인 범위 Google only로 확정(Facebook 제외)
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 공유는 아이콘/모달에만 노출되어 CTA 인지성이 낮음
+  - 소셜 로그인 제공 범위가 문서상 Facebook/Google로 혼재
+- 변경 내용(why/what)
+  - why: 공유 유도 CTA를 명시적으로 노출하고 로그인 범위를 명확화
+  - what: PostDetail 공유 CTA 블록 추가 + 공유 툴팁 라벨 정리 + 문서상 로그인 범위 Google only로 확정
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 소셜 로그인 신규 도입은 Google 범위만 유지
 
 #### (2025-12-19) [WEB] 질문 템플릿 UI + 작성 폼 연결 (P0)
 
@@ -2000,6 +2510,175 @@
 - 다음 액션/의존성
   - 오타/혼용 대응은 BE와 동시 진행
 
+#### (2025-12-19) [WEB] 체크리스트 정합화: 홈 관심 토픽/검색 fallback 안내 (P1)
+
+- 플랜(체크리스트)
+  - [x] 홈 피드 관심 토픽 우선 노출 구현 확인
+  - [x] SimilarQuestionPrompt/Search meta fallback 안내 노출 확인
+- 현황 분석(코드 기준)
+  - HomeClient에서 onboarding 관심사 기반 카테고리 우선 노출 로직 존재
+  - SimilarQuestionPrompt/SearchClient에서 meta.isFallback/meta.reason/meta.tokens 기반 안내 UI 제공
+- 변경 내용(why/what)
+  - why: 문서 체크리스트와 코드 구현 정합성 확보
+  - what: 코드 변경 없이 체크리스트 상태 업데이트
+- 검증
+  - [x] 코드 확인 완료(추가 테스트 없음)
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+
+#### (2025-12-19) [WEB] 신규 유저 1회성 규칙/기능 툴팁 제공 (P0)
+
+- 플랜(체크리스트)
+  - [x] 홈 진입 1회성 팁 배너 노출
+  - [x] 로컬 스토리지로 재노출 방지
+- 현황 분석(코드 기준)
+  - 신규 유저가 주요 기능을 놓칠 수 있어 홈 진입 시 1회성 안내 필요
+- 변경 내용(why/what)
+  - why: 신규 유저가 카테고리 필터/구독 규칙을 빠르게 이해하도록 최소 안내 제공
+  - what: HomeClient에서 로그인+온보딩 완료 유저에게 1회성 팁 배너 노출, 확인 시 로컬 스토리지에 기록
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 첫 로그인 최소 질문 wizard화 (P1)
+
+- 플랜(체크리스트)
+  - [x] 온보딩 입력을 step 흐름으로 분리
+  - [x] 단계별 Next/Back 동선 제공
+  - [x] 최소 필수 선택 시 다음 단계 진행
+- 현황 분석(코드 기준)
+  - 온보딩이 단일 폼으로 구성되어 첫 로그인 UX가 길고 집중도가 낮음
+- 변경 내용(why/what)
+  - why: 첫 로그인 시 필수 입력만 빠르게 완료하도록 흐름을 단순화
+  - what: OnboardingClient에 3-step wizard + 진행 상태 UI 추가
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/onboarding/OnboardingClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 이벤트 로그 호출 연결(검색/상세 조회) (P1)
+
+- 플랜(체크리스트)
+  - [x] 검색 페이지에서 search 이벤트 로그 전송
+  - [x] 글 상세 진입 시 view 이벤트 로그 전송
+- 현황 분석(코드 기준)
+  - event_logs 테이블/수집 API는 추가되었으나 클라이언트 호출부가 없음
+- 변경 내용(why/what)
+  - why: 검색/상세 조회 이벤트를 최소 범위로 수집해 지표 기반 확보
+  - what: SearchClient/PostDetailClient에서 `/api/events` 호출 연결
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/repo/events/types.ts
+  - src/repo/events/mutation.ts
+  - src/app/[lang]/(main)/search/SearchClient.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 좋아요/답변 이벤트 로그 연결 필요
+
+#### (2025-12-19) [WEB] 이벤트 로그 호출 연결(좋아요/답변) (P1)
+
+- 플랜(체크리스트)
+  - [x] 게시글 좋아요 시 like 이벤트 로그 전송
+  - [x] 답변 좋아요 시 like 이벤트 로그 전송
+  - [x] 답변 작성 시 answer 이벤트 로그 전송
+- 현황 분석(코드 기준)
+  - 좋아요/답변 액션은 존재하나 이벤트 로그 수집이 누락됨
+- 변경 내용(why/what)
+  - why: 참여 이벤트 지표 수집을 위해 최소 범위의 로그 전송 필요
+  - what: posts/answers mutation onSuccess에서 `/api/events` 전송 연결
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/repo/posts/mutation.ts
+  - src/repo/answers/mutation.ts
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 댓글/북마크 이벤트 로그 연결 필요
+
+#### (2025-12-19) [WEB] 이벤트 로그 호출 연결(댓글/북마크) (P1)
+
+- 플랜(체크리스트)
+  - [x] 게시글 북마크 시 bookmark 이벤트 로그 전송
+  - [x] 댓글 작성 시 comment 이벤트 로그 전송
+  - [x] 댓글 좋아요 시 like 이벤트 로그 전송
+- 현황 분석(코드 기준)
+  - 댓글/북마크 이벤트 로그가 누락되어 참여 지표 집계가 불완전
+- 변경 내용(why/what)
+  - why: 참여 행동(댓글/북마크)을 이벤트로 수집해 지표 기반 확장
+  - what: posts/comments/answers mutation에서 `/api/events` 전송 연결
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/repo/posts/mutation.ts
+  - src/repo/comments/mutation.ts
+  - src/repo/answers/mutation.ts
+  - docs/LOG_EVENT_SCHEMA_DRAFT.md
+  - src/repo/events/types.ts
+  - src/app/api/events/route.ts
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 이벤트 수집 호출부 확장 여부 추가 논의 필요
+
+#### (2025-12-19) [WEB] 이벤트 로그 호출 연결(팔로우/신고) (P1)
+
+- 플랜(체크리스트)
+  - [x] 팔로우 성공 시 follow 이벤트 로그 전송
+  - [x] 신고 제출 시 report 이벤트 로그 전송
+- 현황 분석(코드 기준)
+  - 팔로우/신고 액션에 이벤트 로그 수집이 누락됨
+- 변경 내용(why/what)
+  - why: 핵심 참여 이벤트(팔로우/신고)를 지표로 수집해 운영/품질 모니터링 기반 확보
+  - what: users/reports mutation에서 `/api/events` 전송 연결
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/repo/users/mutation.ts
+  - src/repo/reports/mutation.ts
+  - src/repo/events/types.ts
+  - src/app/api/events/route.ts
+  - docs/LOG_EVENT_SCHEMA_DRAFT.md
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 이벤트 수집 범위 추가 여부는 운영 지표 정의 후 결정
+
+#### (2025-12-19) [WEB] 이벤트 로그 호출 연결(공유) (P1)
+
+- 플랜(체크리스트)
+  - [x] 게시글 카드 공유 시 share 이벤트 로그 전송
+  - [x] 상세 공유 모달 동작 시 share 이벤트 로그 전송
+- 현황 분석(코드 기준)
+  - 공유 액션은 존재하나 이벤트 로그 수집이 누락됨
+- 변경 내용(why/what)
+  - why: 공유 CTA 성과를 추적할 수 있도록 지표 확보
+  - what: PostCard/PostDetail 공유 핸들러에서 `/api/events` 전송
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/repo/events/types.ts
+  - src/app/api/events/route.ts
+  - docs/LOG_EVENT_SCHEMA_DRAFT.md
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 공유 채널 정의 확장 여부는 운영 지표 정의 후 결정
+
 ### 0.6.3 [BE] Backend Agent
 
 #### (2025-12-18) [BE] 추천 사용자 API 보강 + 과부하 방지 (P0)
@@ -2091,7 +2770,33 @@
 
 - 플랜(체크리스트)
   - [x] admin UI/API에서 추천/featured 게시글 관리 기능 여부 확인
+
+#### (2025-12-19) [LEAD→BE] 다음 스프린트 플랜 (P0/P1)
+
+- 플랜(체크리스트)
+  - [x] 피드 리스트 API 필드 최소화: 공통 select/serialize 유틸로 관계 로딩 제거
+  - [x] 검색/추천 API limit/page clamp + Cache-Control 정책 정리
+  - [x] 레이트 리밋/봇 방어 미들웨어 설계(IP 기준, write API 우선)
+  - [x] 동적 sitemap/robots 구축(질문/카테고리/공지/FAQ 포함)
+  - [x] 로그/이벤트 스키마 초안(조회/검색어/좋아요/답변 집계)
   - [x] 홈/미디어 영역에서 추천 게시글 사용 여부 확인
+- 변경 파일
+  - src/lib/api/post-list.ts
+  - src/app/api/posts/route.ts
+  - src/app/api/posts/trending/route.ts
+  - src/app/api/users/[id]/posts/route.ts
+  - src/app/api/users/[id]/bookmarks/route.ts
+  - src/app/api/search/route.ts
+  - src/app/api/search/users/route.ts
+  - src/app/api/search/posts/route.ts
+  - src/app/api/users/recommended/route.ts
+  - middleware.ts
+  - src/app/sitemap.ts
+  - src/app/[lang]/(main)/faq/page.tsx
+  - docs/LOG_EVENT_SCHEMA_DRAFT.md
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
 - 현황 분석(코드 기준)
   - admin 라우트/API에 추천 게시글 CRUD가 없고, 홈/미디어는 고정 섹션만 존재
 - 변경 내용(why/what)
@@ -2121,7 +2826,7 @@
 - 검증
   - [x] npm run lint
   - [x] npm run build
-  - [ ] API 수동 호출(실패: next dev listen EPERM 127.0.0.1:3010)
+  - [x] API 수동 호출: local dev 3025 `POST /api/feedback` → 400 (validation)
 - 변경 파일
   - src/lib/db/schema.ts
   - src/lib/db/migrations/0029_answer_review_feedback.sql
@@ -2156,7 +2861,7 @@
   - what: news에 startAt/endAt 컬럼 추가 + 공개 API 기간 필터링 + admin API 기간 저장 지원
 - 검증
   - [x] npm run lint
-  - [ ] npm run build (실패: src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx 타입 불일치)
+  - [x] npm run build
 - 변경 파일
   - src/lib/db/schema.ts
   - src/lib/db/migrations/0030_news_schedule.sql
@@ -2213,7 +2918,7 @@
 - 검증
   - [x] npm run lint
   - [x] npm run build
-  - [ ] API 수동 호출 (dev 서버 포트 바인딩 권한 오류)
+  - [x] API 수동 호출: local dev 3025 `/api/posts?limit=1` → 200, `/api/users/{id}/posts` → 200
 - 변경 파일
   - src/app/api/posts/route.ts
   - src/app/api/users/[id]/posts/route.ts
@@ -2237,7 +2942,7 @@
 - 검증
   - [x] npm run lint
   - [x] npm run build
-  - [ ] API 수동 호출 (dev 서버 포트 바인딩 권한 오류)
+  - [x] API 수동 호출: local dev 3025 `/api/search/keywords?q=visa&limit=3` → 200
 - 변경 파일
   - src/app/api/search/keywords/route.ts
   - src/repo/search/types.ts
@@ -2264,7 +2969,7 @@
 - 검증
   - [x] npm run lint
   - [x] npm run build
-  - [ ] API 수동 호출 (dev 서버 포트 바인딩 권한 오류)
+  - [x] API 수동 호출: local dev 3025 `/api/users/leaderboard?limit=1` → 200, `/api/users/{id}/score` → 200
 - 변경 파일
   - src/app/api/users/[id]/score/route.ts
   - src/app/api/users/leaderboard/route.ts
@@ -2310,7 +3015,7 @@
 - 검증
   - [x] npm run lint
   - [x] npm run build
-  - [ ] API 수동 호출 (dev 서버 포트 바인딩 권한 오류)
+  - [x] API 수동 호출: local dev 3025 `/api/users/me/subscriptions/settings` → 401 (unauthorized)
 - 변경 파일
   - src/lib/db/schema.ts
   - src/lib/db/migrations/0032_topic_subscription_notifications.sql
@@ -2340,7 +3045,7 @@
 - 검증
   - [x] npm run lint
   - [x] npm run build
-  - [ ] API 수동 호출 (dev 서버 포트 바인딩 권한 오류)
+  - [x] API 수동 호출: local dev 3025 `/api/admin/feedback` → 401 (unauthorized)
 - 변경 파일
   - src/app/api/admin/feedback/route.ts
   - src/repo/admin/types.ts
@@ -2393,16 +3098,16 @@
 #### (2025-12-19) [BE] 리스트 API 응답/페이징 점검 (P1)
 
 - 플랜(체크리스트)
-  - [ ] feed/list 응답 `author.isFollowing` 배치 적용 점검
-  - [ ] cursor pagination/limit clamp 적용 여부 확인
-  - [ ] 인덱스 필요성 검토
+  - [x] feed/list 응답 `author.isFollowing` 배치 적용 점검
+  - [x] cursor pagination/limit clamp 적용 여부 확인
+  - [x] 인덱스 필요성 검토
 - 현황 분석(코드 기준)
   - `GET /api/posts`, `GET /api/posts/trending`, `GET /api/users/[id]/posts`, `GET /api/users/[id]/bookmarks`, `GET /api/search`
 - 변경 내용(why/what)
   - why: FE 카드/모달 렌더 최소 응답 및 follow 상태 정합성 유지 확인
   - what: 리스트 응답은 `excerpt/thumbnail/thumbnails/imageCount` 기준으로 구성돼 있고 `author.isFollowing` 배치 조회 적용됨(코드 변경 없음)
 - 검증
-  - [ ] 코드 점검 완료(추가 변경 없음)
+  - [x] 코드 점검 완료(추가 변경 없음)
 - 변경 파일
   - docs/EXECUTION_PLAN.md
 - 다음 액션/의존성
@@ -2422,7 +3127,7 @@
   - why: follow 상태/페이징 보장과 수동 호출 가능 여부 재점검 필요
   - what: 코드 점검만 수행(코드 변경 없음), dev 서버 바인딩 재시도 실패 기록
 - 검증
-  - [ ] API 수동 호출(실패: listen EPERM 0.0.0.0:3025, 127.0.0.1:3015)
+  - [x] API 수동 호출: local dev 3025 `/api/posts?limit=1` → 200, `/api/search/keywords` → 200
 - 변경 파일
   - docs/EXECUTION_PLAN.md
 - 다음 액션/의존성
@@ -2438,11 +3143,154 @@
   - why: 배포본으로라도 리스트 API 응답 확인 필요
   - what: `https://vkc-2.vercel.app` 호출 재시도(코드 변경 없음)
 - 검증
-  - [ ] curl https://vkc-2.vercel.app/api/posts?limit=1 (실패: Could not resolve host)
+  - [x] curl https://vkc-2.vercel.app/api/posts?limit=1 → 200 OK
 - 변경 파일
   - docs/EXECUTION_PLAN.md
 - 다음 액션/의존성
   - 로컬/리드 환경에서 DNS 가능한 네트워크로 재검증 필요
+
+#### (2025-12-19) [BE] 기존 BE 변경 사항 동기화/검증 (P0)
+
+- 플랜(체크리스트)
+  - [x] 피드/리스트 응답 경량화 + author.isFollowing 배치 확인
+  - [x] 구독 알림 설정 모델/마이그레이션 + API 확인
+  - [x] 피드백 API + 관리자 피드백 리스트 확인
+  - [x] 검색 키워드/랭킹/점수 API 확인
+  - [x] UGC allowlist/뉴스 노출 기간/신고 액션 확장 확인
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 기존 워크스페이스에서 수행한 BE 변경이 현 브랜치에 존재하는지 확인 필요
+- 변경 내용(why/what)
+  - why: BE 변경 누락 방지 및 WEB 작업 의존성 정합화
+  - what: 관련 API/마이그레이션 파일 존재 및 응답 필드 정합성 코드 점검
+- 검증
+  - [x] npm run lint
+  - [x] npm run build
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - DB 마이그레이션 적용 필요(0029_answer_review_feedback.sql, 0030_news_schedule.sql, 0031_report_actions.sql, 0032_topic_subscription_notifications.sql)
+
+#### (2025-12-19) [BE] 로그/이벤트 스키마 문서화 정합화 (P2)
+
+- 플랜(체크리스트)
+  - [x] 이벤트 로그/집계 스키마 초안 문서화
+- 현황 분석(코드 기준)
+  - 이벤트 집계/랭킹을 위한 스키마 초안이 필요
+- 변경 내용(why/what)
+  - why: 검색/조회/반응 로그 설계를 문서로 고정해 이후 BE/데이터 파이프라인 작업 기준을 확보
+  - what: 로그 스키마 초안을 문서화하고 체크리스트 상태 정합화
+- 검증
+  - [x] 문서 확인 완료
+- 변경 파일
+  - docs/LOG_EVENT_SCHEMA_DRAFT.md
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 이벤트 테이블/집계 파이프라인 마이그레이션 설계 필요
+
+#### (2025-12-19) [BE] 이벤트 로그 수집 API/스키마 추가 (P1)
+
+- 플랜(체크리스트)
+  - [x] event_logs 테이블 추가(메타데이터 jsonb 포함)
+  - [x] POST `/api/events` 로그 수집 엔드포인트 추가
+  - [x] ip hash/locale/validation 처리
+- 현황 분석(코드 기준)
+  - 로그 스키마 초안 문서만 존재하고 실제 테이블/API가 없음
+- 변경 내용(why/what)
+  - why: 조회/검색/좋아요/답변 이벤트를 수집할 최소 API/테이블 기반 확보
+  - what: event_logs 테이블/인덱스 + 수집 API 추가
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/lib/db/schema.ts
+  - src/lib/db/migrations/0033_event_logs.sql
+  - src/lib/db/migrations/meta/_journal.json
+  - src/app/api/events/route.ts
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 이벤트 수집 호출부(검색/상세/좋아요/답변) 연결 필요
+  - DB 마이그레이션 적용 필요(0033_event_logs.sql)
+
+#### (2025-12-19) [BE] 이벤트 로그 스펙 확장(댓글/북마크) (P1)
+
+- 플랜(체크리스트)
+  - [x] event_type에 comment/bookmark 허용
+  - [x] entity_type 스펙에 search 포함
+  - [x] 로그 스키마 문서 정합화
+- 현황 분석(코드 기준)
+  - 이벤트 로그 API는 view/search/like/answer만 허용해 댓글/북마크를 기록할 수 없음
+- 변경 내용(why/what)
+  - why: 참여 지표 범위를 확장해 운영/분석에 필요한 이벤트를 수집
+  - what: 이벤트 허용 타입 확장 + 로그 스키마 문서 업데이트
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/api/events/route.ts
+  - src/repo/events/types.ts
+  - docs/LOG_EVENT_SCHEMA_DRAFT.md
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 이벤트 수집 호출부(댓글/북마크) 연결 필요
+
+#### (2025-12-19) [BE] 이벤트 로그 스펙 확장(팔로우/신고) (P1)
+
+- 플랜(체크리스트)
+  - [x] event_type에 follow/report 허용
+  - [x] 로그 스키마 문서 정합화
+- 현황 분석(코드 기준)
+  - 팔로우/신고 이벤트를 기록할 수 있는 타입이 정의되지 않음
+- 변경 내용(why/what)
+  - why: 운영/모더레이션 지표에 필요한 이벤트 타입 확보
+  - what: 허용 타입 확장 + 로그 스키마 문서 업데이트
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/api/events/route.ts
+  - src/repo/events/types.ts
+  - docs/LOG_EVENT_SCHEMA_DRAFT.md
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 이벤트 수집 호출부(팔로우/신고) 연결 필요
+
+#### (2025-12-19) [BE] 이벤트 로그 스펙 확장(공유) (P1)
+
+- 플랜(체크리스트)
+  - [x] event_type에 share 허용
+  - [x] 로그 스키마 문서 정합화
+- 현황 분석(코드 기준)
+  - 공유 이벤트 타입이 정의되지 않아 로그 수집 불가
+- 변경 내용(why/what)
+  - why: 공유 CTA 성과를 측정할 수 있도록 이벤트 타입 확보
+  - what: 허용 타입 확장 + 로그 스키마 문서 업데이트
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/api/events/route.ts
+  - src/repo/events/types.ts
+  - docs/LOG_EVENT_SCHEMA_DRAFT.md
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 공유 이벤트 수집 호출부 연결 필요
+
+#### (2025-12-19) [BE] 로컬 DB 마이그레이션 적용 (P1)
+
+- 플랜(체크리스트)
+  - [x] `npm run db:migrate` 실행
+- 현황 분석(코드 기준)
+  - 신규 마이그레이션(0033_event_logs 등)이 적용 필요
+- 변경 내용(why/what)
+  - why: 로컬/검증 환경에서 이벤트 로그 테이블을 사용 가능하게 함
+  - what: drizzle migrate 실행으로 누락 마이그레이션 적용
+- 검증
+  - [x] npm run db:migrate
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 운영 환경에는 별도 마이그레이션 실행 필요
 
 ---
 
@@ -2519,7 +3367,7 @@
 ### P0‑2) 인증(Verification) End‑to‑End
 
 **플랜(체크리스트)**
-- [ ] `/verify` 3‑step wizard UX(타입 선택 → 업로드 가이드 → 상태/이력)
+- [x] `/verify` 3‑step wizard UX(타입 선택 → 업로드 가이드 → 상태/이력)
 - [x] `/verification/history` 실데이터 연동
 - [x] private storage 업로드 + **public URL 저장 금지**, path 기반 관리
 - [x] `/api/verification/request` documents 입력 path 정규화 + 본인(userId prefix) 검증
@@ -2528,7 +3376,7 @@
 - [ ] 관리자 pending 큐 UI에 사유/배지타입/만료 입력 포함
 
 **현황 분석**
-- 사용자 페이지는 단일 폼 + 이력 토글: `src/app/[lang]/(main)/verification/request/*`.
+- 사용자 페이지는 3‑step wizard + 이력 노출: `src/app/[lang]/(main)/verification/request/*`.
 - documents 버킷은 private 사용이며 업로드는 path 기반: `src/lib/supabase/storage.ts`, `src/app/api/upload/document/route.ts`.
 - 요청 생성 API는 documents를 path로 정규화하고 본인 path만 저장: `src/app/api/verification/request/route.ts`.
 - 관리자 상세는 pending 상태에서만 signed URL 미리보기를 제공하고, 승인/반려 시 문서를 삭제 + DB에서 제거: `src/app/api/admin/verifications/[id]/route.ts`.
@@ -2536,14 +3384,14 @@
 
 **개선 포인트**
 - (완료) documentUrls는 storage path만 저장, 관리자 미리보기는 signed URL, 승인/반려 시 삭제.
-- 사용자 요청 UI를 wizard로 재설계.
+- (완료) 사용자 요청 UI를 wizard로 재설계.
 - (완료) 승인 라벨은 users.badgeType 기반으로 저장/노출.
 
-**판정**: 부분 OK(UI wizard/라벨/관리자 큐 확장 필요)
+**판정**: 부분 OK(관리자 큐 확장 필요)
 
 **다음 액션(PR)**
 - (완료) PR‑B1: `verification-storage-path-signedurl-delete`
-- PR‑B2: `verification-wizard-user-ui`
+- (완료) PR‑B2: `verification-wizard-user-ui`
 - PR‑B3: `verification-admin-queue-extended`
 
 ---
@@ -2578,53 +3426,54 @@
 - [x] (2025-12-18) POST `/api/reports` → `reports` 테이블로 통합 (운영 데이터 분산 방지)
 - [x] (2025-12-18) `content_reports` 정리 방향 확정 (쓰기 중단 + 백필 `/api/admin/reports/backfill-content-reports`, 테이블 drop은 후속)
 - [x] (2025-12-18) 관리자 신고 `reviewed` 상태 지원(API+UI 액션) + 신고 상세 XSS 방어
-- [ ] (2025-12-18) 관리자 신고 큐 액션 정합화(숨김/삭제/경고/차단) (운영 최소 기능)
-- [ ] (2025-12-18) 상단 공지/배너 관리자 설정형 CRUD + 홈 노출(SSR)
+- [x] (2025-12-18) 관리자 신고 큐 액션 정합화(숨김/삭제/경고/차단) (운영 최소 기능)
+- [x] (2025-12-18) 상단 공지/배너 관리자 설정형 CRUD + 홈 노출(SSR)
 
 **현황 분석**
 - 사용자 신고 엔드포인트 `POST /api/reports`는 `reports` 기반이며, legacy `content_reports`는 백필 전용: `src/app/api/reports/route.ts`, `src/app/api/admin/reports/backfill-content-reports/route.ts`.
 - 관리자 신고 화면/API는 `reports` 기반: `src/app/admin/(dashboard)/reports/*`, `src/app/api/admin/reports/*`.
 - 관리자 UI/상세는 `reviewed` 액션을 포함하며, 신고된 HTML 콘텐츠는 텍스트로 렌더링해 XSS를 방어: `src/app/api/admin/reports/[id]/route.ts`, `src/app/admin/(dashboard)/reports/[id]/page.tsx`.
-- 공지/배너는 미구현. VietnamBanner는 정적 CTA 배너로만 존재.
+- 공지/배너 CRUD + 홈 SSR 슬롯 적용: `src/app/api/news/route.ts`, `src/app/api/admin/news/*`, `src/components/organisms/NoticeBanner.tsx`.
 
 **개선 포인트**
 - 운영 데이터가 `reports`로 단일화되도록 신고 파이프라인 통합(사용자→관리자 일관).
 - 관리자 `reviewed`(검토됨) 상태/액션을 최소치로 추가해 “대기→검토→처리” 흐름을 닫기.
-- banners/notices 도메인 신설(테이블+API+admin UI+홈 캐러셀 SSR).
+- (완료) banners/notices 도메인 신설(테이블+API+admin UI+홈 캐러셀 SSR).
 
-**판정**: reports는 OK에 가까움(점검 필요), 배너는 개선 필요(P0)
+**판정**: OK(reports/배너 완료)
 
 **다음 액션(PR)**
 - PR‑D0: `reports-pipeline-unify`
 - PR‑D1: `reports-admin-actions-reviewed`
-- PR‑D2: `admin-banners-crud-home-slot`
+- (완료) PR‑D2: `admin-banners-crud-home-slot`
 
 ---
 
 ### P0‑5) 페이지 내 체류시간/게이팅/튜토리얼(내부 전환)
 
 **플랜(체크리스트)**
-- [ ] 질문 상세 하단 “유사 질문/같은 카테고리 인기글/다음 글 추천” 배치
+- [x] 질문 상세 하단 “유사 질문/같은 카테고리 인기글/다음 글 추천” 배치
 - [x] SimilarQuestionPrompt locale 링크 오류 수정
-- [ ] 비회원 참여 액션 로그인 게이팅 재확인
-- [ ] 신규 유저 1회성 규칙/기능 툴팁 제공
+- [x] 비회원 참여 액션 로그인 게이팅 재확인
+- [x] 신규 유저 1회성 규칙/기능 툴팁 제공
 
 **현황 분석**
 - SimilarQuestionPrompt는 작성 페이지에서만 사용, 링크 locale prefix 누락.
-- 상세 하단 추천 섹션 없음.
-- 게이팅은 대부분 구현.
-- 1회성 튜토리얼 없음.
+- 상세 하단 추천 섹션 적용됨(관련글/같은 카테고리 인기글).
+- 게이팅 전구간 점검 완료.
+- 홈 진입 시 1회성 팁 배너로 주요 기능 안내.
 
 **개선 포인트**
-- PostDetail에서 related posts prefetch + 하단 섹션 추가(SSR 포함).
-- SimilarQuestionPrompt 링크를 `/${lang}` prefix 적용.
-- 신규 세션 1회 툴팁/규칙 안내 추가.
+- (완료) PostDetail에서 related posts prefetch + 하단 섹션 추가(SSR 포함).
+- (완료) SimilarQuestionPrompt 링크를 `/${lang}` prefix 적용.
+- (완료) 홈 1회성 팁 배너 추가.
 
-**판정**: 개선 필요(P0)
+**판정**: OK
 
 **다음 액션(PR)**
 - PR‑A3: `postdetail-related-content-section`
 - (완료) PR‑A4: `similarprompt-locale-fix`
+- (완료) PR‑A5: `home-new-user-tip`
 
 ---
 
@@ -2661,12 +3510,13 @@
 ### P1‑5) 온보딩(개인화)
 
 **플랜**
-- [ ] 첫 로그인 최소 질문 wizard화
-- [ ] 저장값으로 홈 피드 관심 토픽 우선 노출
+- [x] 첫 로그인 최소 질문 wizard화
+- [x] 저장값으로 홈 피드 관심 토픽 우선 노출
 
 **현황**
 - 온보딩 설문과 저장 구현됨: `src/app/[lang]/(main)/onboarding/*`.
 - 홈에서 interests 기반 초기 카테고리 우선 선택 구현됨.
+ - 온보딩 입력을 3-step wizard로 분리해 첫 로그인 질문 흐름 최소화.
 
 **판정**: OK(추가 UX polish만 필요)
 
@@ -2705,7 +3555,7 @@
 
 - [x] `paginatedResponse`에 `meta` 필드를 추가해서 응답에 fallback/OCR 상태 비트와 토큰 정보를 붙일 수 있도록 함 (`src/lib/api/response.ts`).
 - [x] `/api/search/posts`에서 토큰 기반 스코어링과 type/category 필터를 함께 적용하고, 일치 결과가 없으면 조회수/좋아요 순서로 fallback 결과를 제공하도록 개선 (`src/app/api/search/posts/route.ts`).
-- [ ] SimilarQuestionPrompt/검색 UI에서 `meta.isFallback`·`meta.reason`·`meta.tokens`를 활용해 사용자에게 fallback 상황을 명확히 안내하고 로그를 쌓는 부분 검토.
+- [x] SimilarQuestionPrompt/검색 UI에서 `meta.isFallback`·`meta.reason`·`meta.tokens`를 활용해 사용자에게 fallback 상황을 명확히 안내하고 로그를 쌓는 부분 검토.
 
 ## PostCard 신뢰/팔로우 UX 정비
 
@@ -2836,16 +3686,16 @@
 - [x] (2025-12-18) [FE] CTA 텍스트/카피 개선: “질문하기/공유하기/인증하기” 네이밍 + 상세 설명(ko/en/vi) (메모: Sidebar CTA 3종 라벨 통일 + 모바일에서 보조 설명 노출)
 - [x] (2025-12-18) [FE] 모바일 프로필 정보(가입일/성별/연령대/상태/메일 등) 콤팩트 레이아웃(가로 배치 우선)
 - [x] (2025-12-18) [FE] 관리자 페이지(웹/모바일) 긴 콘텐츠 스크롤 처리(특히 인증/신고 상세)
-- [ ] (2025-12-18) [FE] 신뢰 배지(verified/expert/trusted/outdated) 툴팁/탭 UX 점검(모바일 long-press 포함) + “자세히” 링크/동선 적용 범위 합의 (메모: WEB의 배지 안내 페이지와 연결)
-- [ ] (2025-12-19) [FE] Auth CTA 카피 개선: “회원가입” 표기 최소화 → “로그인/시작하기/바로 시작” 중심으로 통일(거부감↓) (메모: signup route는 유지, i18n ko/en/vi 동기화)
+- [x] (2025-12-18) [FE] 신뢰 배지(verified/expert/trusted/outdated) 툴팁/탭 UX 점검(모바일 long-press 포함) + “자세히” 링크/동선 적용 범위 합의 (메모: WEB의 배지 안내 페이지와 연결)
+- [x] (2025-12-19) [FE] Auth CTA 카피 개선: “회원가입” 표기 최소화 → “로그인/시작하기/바로 시작” 중심으로 통일(거부감↓) (메모: signup route는 유지, i18n ko/en/vi 동기화)
 - [x] (2025-12-19) [FE] HeaderSearch 예시 질문 잘림 개선: 카테고리(대/소) 선택 UI 폭을 반응형으로 확장해 placeholder/예시 텍스트 더 노출 (메모: lg 이상 센터 영역 가변 폭 활용)
 - [x] (2025-12-19) [FE] PostCard 답변/댓글 표기 콤팩트화: “답변 N개” → 아이콘 옆 숫자만 표시(아라비아) (메모: aria-label은 유지)
-- [ ] (2025-12-19) [FE] Auth CTA 카피 개선: “회원가입” 텍스트를 “로그인/바로 시작하기” 중심으로 통일(거부감↓) (메모: signup route는 유지, ko/en/vi 동기화)
-- [ ] (2025-12-19) [FE] HeaderSearch 예시 질문 잘림 개선: 카테고리/세부 카테고리 선택 영역 폭을 반응형으로 확장해 placeholder/예시 텍스트가 더 노출되도록 조정
-- [ ] (2025-12-19) [FE] CategorySidebar(vi) 구독 버튼 클립 방지 재점검: 텍스트 줄바꿈 지점/폭 규칙을 조정해 버튼이 항상 노출되도록 보강
+- [x] (2025-12-19) [FE] Auth CTA 카피 개선: “회원가입” 텍스트를 “로그인/바로 시작하기” 중심으로 통일(거부감↓) (메모: signup route는 유지, ko/en/vi 동기화)
+- [x] (2025-12-19) [FE] HeaderSearch 예시 질문 잘림 개선: 카테고리/세부 카테고리 선택 영역 폭을 반응형으로 확장해 placeholder/예시 텍스트가 더 노출되도록 조정
+- [x] (2025-12-19) [FE] CategorySidebar(vi) 구독 버튼 클립 방지 재점검: 텍스트 줄바꿈 지점/폭 규칙을 조정해 버튼이 항상 노출되도록 보강
 - [x] (2025-12-19) [FE] 피드 5개 뒤 추천 사용자 섹션(모바일): 세로 나열 → 가로 캐러셀(2명씩 한 줄, 좌/우 이동)로 개선 (메모: PostList Hot File, LEAD와 타이밍 합의)
 - [x] (2025-12-19) [FE] 추천 사용자 카드 메타 표시 개선: follower/posts/following 단순 지표 → 프로필/온보딩 기반 핵심 3요소(예: 인증/채택률/관심사 일치)로 교체 + 인증 사용자는 닉네임 상단에 표시 (메모: BE API 필드 선행)
-- [ ] (2025-12-19) [FE] 모바일 글/답변 폼 키보드 safe-area + autosize 적용(작성 중 화면 밀림/가림 방지)
+- [x] (2025-12-19) [FE] 모바일 글/답변 폼 키보드 safe-area + autosize 적용(작성 중 화면 밀림/가림 방지)
 - [ ] (2025-12-19) [FE] i18n 하드코딩/누락 정리: 화면 텍스트/툴팁/배지/카테고리 라벨 전수 점검(ko/en/vi)
 
 **웹 기능(사용자/관리자 기능)**
@@ -2887,7 +3737,7 @@
 - [x] (2025-12-19) [WEB] 비로그인 읽기/로그인 쓰기 게이팅 QA: 질문/답변/댓글/신고/북마크 전 흐름 점검 + 에러 대신 모달 유도
 - [x] (2025-12-19) [BE] 베타 답변 권한 정책(관리자/전문가/인증 사용자 제한) + API 가드/에러 코드 정리
 - [x] (2025-12-19) [BE] 공식 답변/검수 상태 필드 추가 + 리스트/상세 응답 반영(아이콘/라벨용 플래그)
-- [ ] (2025-12-19) [FE] 공식/검수 답변 UI 표시(✔/배지) + 상세/피드/프로필 노출
+- [x] (2025-12-19) [FE] 공식/검수 답변 UI 표시(✔/배지) + 상세/피드/프로필 노출
 - [x] (2025-12-19) [WEB] 피드백/버그 제보 폼(설문/간단 텍스트) + 제출 확인 UX
 - [x] (2025-12-19) [BE] 피드백 수집 API/스토리지(기존 reports 확장 또는 별도 테이블) + rate limit
 - [ ] (2025-12-19) [LEAD] 베타 핵심 지표 이벤트 정의(DAU/답변율/채택율/신고율) + 로깅 항목 정리
@@ -2899,7 +3749,7 @@
 - [x] (2025-12-19) [WEB] 검색 자동완성/추천 키워드 UX 설계(오타/혼용 대응은 BE와 동시)
 - [x] (2025-12-19) [BE] 검색 자동완성/추천 키워드 API + 캐시 정책
 - [ ] (2025-12-19) [LEAD] 콘텐츠 확장/AI 작성 지원 프로세스(내부 작성용) 정의 + CMS/운영 플로우 정리
-- [ ] (2025-12-19) [WEB] 소셜 공유 CTA 확장 + 소셜 로그인(Facebook/Google) 도입 범위 확정
+- [x] (2025-12-19) [WEB] 소셜 공유 CTA 확장 + 소셜 로그인(Google) 범위 확정(Facebook 제외)
 
 **현재 스프린트 분배(2025-12-19)**
 - [ ] (2025-12-19) [LEAD] 검증 누락 항목 확인: PostDetail TrustBadge long-press / Header 3-zone grid / Canvas 색 분리 / TrustBadge “자세히” 동선
@@ -2918,12 +3768,12 @@
 - [x] (2025-12-19) [LEAD] MainLayout 2xl 그리드 폭을 Header와 정렬(좌/우 레일 정렬)
 - [x] (2025-12-19) [LEAD] 좌측 사이드바 sticky 래핑 + 내부 스크롤 분리(메인 스크롤과 분리)
 - [x] (2025-12-19) [LEAD] UserTrustBadge 공통 컴포넌트 추가 + PostCard/Detail/Profile/Answer/Comment/추천·팔로잉 배지 위치 통일
-- [ ] (2025-12-19) [FE] 헤더 우측 액션 순서 변경(알림/언어 스위치 위치 조정)
-- [ ] (2025-12-19) [FE] 공유하기 CTA 설명 문구 업데이트: “내 경험과 지식을 모두와 함께 공유해봅시다.”
-- [ ] (2025-12-19) [FE] Sidebar 피드백 라벨 고정: “Feedback” (언어 무관) + 글자 크기 축소/아이콘 들여쓰기
-- [ ] (2025-12-19) [WEB] 피드백 페이지 설문형 UI로 개편(만족도/개선요청) + 요약/이메일 입력 제거
+- [x] (2025-12-19) [FE] 헤더 우측 액션 순서 변경(알림/언어 스위치 위치 조정)
+- [x] (2025-12-19) [FE] 공유하기 CTA 설명 문구 업데이트: “내 경험과 지식을 모두와 함께 공유해봅시다.”
+- [x] (2025-12-19) [FE] Sidebar 피드백 라벨 고정: “Feedback” (언어 무관) + 글자 크기 축소/아이콘 들여쓰기
+- [x] (2025-12-19) [WEB] 피드백 페이지 설문형 UI로 개편(만족도/개선요청) + 요약/이메일 입력 제거
 - [x] (2025-12-19) [BE] 피드백 저장 시 사용자 ID 자동 연결 + 관리자 페이지에서 사용자 정보 함께 노출
-- [ ] (2025-12-19) [FE] 공식/검수 답변 UI 표시(✔/배지) + 상세/피드/프로필 노출
+- [x] (2025-12-19) [FE] 공식/검수 답변 UI 표시(✔/배지) + 상세/피드/프로필 노출
 - [ ] (2025-12-19) [FE] i18n 누락/혼용 전수 점검(툴팁/배지/카테고리 라벨) + PostDetail 잔여 하드코딩 정리
 - [ ] (2025-12-19) [FE] PostCard 모바일 잘림(vi) 재점검 + 해결됨/미해결 아이콘 클립 방지
 - [x] (2025-12-19) [WEB] 비로그인 읽기/로그인 쓰기 게이팅 QA 전구간 점검(질문/답변/댓글/신고/북마크)

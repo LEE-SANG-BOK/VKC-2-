@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../keys';
 import { updateMyProfile, toggleFollow } from './fetch';
 import type { UpdateProfileRequest, UserProfile } from './types';
+import { logEvent } from '@/repo/events/mutation';
 
 export function useUpdateMyProfile() {
   const queryClient = useQueryClient();
@@ -82,11 +83,18 @@ export function useToggleFollow() {
         });
       }
     },
-    onSuccess: (_, userId) => {
+    onSuccess: (response, userId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.details() });
       queryClient.invalidateQueries({ queryKey: ['followStatus', userId] });
+      if (response?.data?.isFollowing) {
+        logEvent({
+          eventType: 'follow',
+          entityType: 'user',
+          entityId: userId,
+        });
+      }
     },
   });
 }

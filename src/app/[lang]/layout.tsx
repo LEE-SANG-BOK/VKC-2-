@@ -40,10 +40,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const locale = lang as Locale;
   const dict = await getDictionary(locale);
   const meta = (dict?.metadata?.home || {}) as Record<string, string>;
-  const title = meta.title || 'viet kconnect - 베트남 한인 커뮤니티';
-  const description =
-    meta.description ||
-    '베트남 거주 한인을 위한 Q&A 커뮤니티. 기술, 비즈니스, 라이프스타일, 교육 등 다양한 주제의 질문과 답변을 공유하세요.';
+  const fallback = (() => {
+    if (locale === 'en') {
+      return {
+        title: 'viet kconnect - Vietnamese community in Korea',
+        description:
+          'A Q&A community for Vietnamese residents in Korea. Share questions and answers on tech, business, lifestyle, education, and more.',
+      };
+    }
+    if (locale === 'vi') {
+      return {
+        title: 'viet kconnect - Cộng đồng người Việt tại Hàn Quốc',
+        description:
+          'Cộng đồng hỏi đáp dành cho người Việt tại Hàn Quốc. Chia sẻ câu hỏi và câu trả lời về công nghệ, kinh doanh, đời sống, giáo dục và nhiều hơn nữa.',
+      };
+    }
+    return {
+      title: 'viet kconnect - 베트남 한인 커뮤니티',
+      description:
+        '베트남 거주 한인을 위한 Q&A 커뮤니티. 기술, 비즈니스, 라이프스타일, 교육 등 다양한 주제의 질문과 답변을 공유하세요.',
+    };
+  })();
+  const title = meta.title || fallback.title;
+  const description = meta.description || fallback.description;
   const siteName = meta.siteName || 'viet kconnect';
 
   return {

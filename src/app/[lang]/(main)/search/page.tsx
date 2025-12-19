@@ -28,6 +28,30 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const { q: query } = await searchParams;
   const dict = await getDictionary(lang);
   const t = (dict?.metadata?.search || {}) as Record<string, string>;
+  const fallback = (() => {
+    if (lang === 'en') {
+      return {
+        titleDefault: 'Search - viet kconnect',
+        titleWithQuery: '{query} search results - viet kconnect',
+        descriptionDefault: 'Search the Viet K-Connect community for the information you need.',
+        descriptionWithQuery: 'See search results for "{query}".',
+      };
+    }
+    if (lang === 'vi') {
+      return {
+        titleDefault: 'Tìm kiếm - viet kconnect',
+        titleWithQuery: 'Kết quả tìm kiếm "{query}" - viet kconnect',
+        descriptionDefault: 'Tìm kiếm nội dung bạn quan tâm trong cộng đồng Viet K-Connect.',
+        descriptionWithQuery: 'Xem kết quả tìm kiếm cho "{query}".',
+      };
+    }
+    return {
+      titleDefault: '검색 - viet kconnect',
+      titleWithQuery: '{query} 검색 결과 - viet kconnect',
+      descriptionDefault: '베트남 한인 커뮤니티에서 궁금한 내용을 검색해보세요.',
+      descriptionWithQuery: '"{query}"에 대한 검색 결과를 확인하세요.',
+    };
+  })();
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vietkconnect.com';
   const currentUrl = query 
@@ -35,12 +59,12 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
     : `${baseUrl}/${lang}/search`;
 
   const title = query
-    ? t.titleWithQuery?.replace('{query}', query) || `${query} 검색 결과 - viet kconnect`
-    : t.titleDefault || '검색 - viet kconnect';
+    ? t.titleWithQuery?.replace('{query}', query) || fallback.titleWithQuery.replace('{query}', query)
+    : t.titleDefault || fallback.titleDefault;
   
   const description = query
-    ? t.descriptionWithQuery?.replace('{query}', query) || `"${query}"에 대한 검색 결과를 확인하세요.`
-    : t.descriptionDefault || '베트남 한인 커뮤니티에서 궁금한 내용을 검색해보세요.';
+    ? t.descriptionWithQuery?.replace('{query}', query) || fallback.descriptionWithQuery.replace('{query}', query)
+    : t.descriptionDefault || fallback.descriptionDefault;
 
   const alternateLanguages: Record<string, string> = {};
   i18n.locales.forEach((locale) => {

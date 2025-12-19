@@ -5,7 +5,8 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import { Bold, Italic, List, ListOrdered, Quote, Undo, Redo, Heading1, Heading2, Code, ImageIcon, Link2 } from 'lucide-react';
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Tooltip from '@/components/atoms/Tooltip';
 import { toast } from 'sonner';
 import { useLoginPrompt } from '@/providers/LoginPromptProvider';
@@ -46,6 +47,24 @@ export default function RichTextEditor({
   locale = 'ko',
 }: RichTextEditorProps) {
   const t = translations?.tooltips || {};
+  const tEditor = translations?.editor || {};
+  const tCommon = translations?.common || {};
+  const editorCopy = useMemo(() => {
+    const isVi = locale === 'vi';
+    const isEn = locale === 'en';
+    return {
+      imageTypeError: tEditor.imageTypeError || (isVi ? 'Chỉ cho phép tệp ảnh.' : isEn ? 'Only image files are allowed.' : '이미지 파일만 업로드할 수 있습니다.'),
+      imageSizeError: tEditor.imageSizeError || (isVi ? 'Kích thước ảnh phải ≤ 5MB.' : isEn ? 'Image size must be 5MB or less.' : '이미지 크기는 5MB 이하여야 합니다.'),
+      imageUploadFailed: tEditor.imageUploadFailed || (isVi ? 'Tải ảnh thất bại.' : isEn ? 'Failed to upload image.' : '이미지 업로드에 실패했습니다.'),
+      imageUploadError: tEditor.imageUploadError || (isVi ? 'Đã xảy ra lỗi khi tải ảnh.' : isEn ? 'An error occurred while uploading the image.' : '이미지 업로드 중 오류가 발생했습니다.'),
+      linkTitle: tEditor.linkTitle || (isVi ? 'Thêm liên kết' : isEn ? 'Add link' : '링크 추가'),
+      linkPlaceholder: tEditor.linkPlaceholder || 'https://example.com',
+      linkCancel: tEditor.linkCancel || tCommon.cancel || (isVi ? 'Huỷ' : isEn ? 'Cancel' : '취소'),
+      linkRemove: tEditor.linkRemove || (isVi ? 'Xoá liên kết' : isEn ? 'Remove link' : '링크 제거'),
+      linkUpdate: tEditor.linkUpdate || (isVi ? 'Cập nhật' : isEn ? 'Update' : '수정'),
+      linkAdd: tEditor.linkAdd || (isVi ? 'Thêm' : isEn ? 'Add' : '추가'),
+    };
+  }, [locale, tCommon, tEditor]);
   const fallbackTooltips = {
     bold: locale === 'vi' ? 'Đậm' : locale === 'en' ? 'Bold' : '굵게',
     italic: locale === 'vi' ? 'Nghiêng' : locale === 'en' ? 'Italic' : '기울임',
@@ -79,6 +98,7 @@ export default function RichTextEditor({
   const [linkUrl, setLinkUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const { openLoginPrompt } = useLoginPrompt();
+  const { data: session } = useSession();
 
   const editor = useEditor({
     extensions: [
@@ -115,8 +135,12 @@ export default function RichTextEditor({
   }, [content, editor]);
 
   const handleImageUpload = useCallback(() => {
+    if (!session?.user) {
+      openLoginPrompt();
+      return;
+    }
     fileInputRef.current?.click();
-  }, []);
+  }, [openLoginPrompt, session?.user]);
 
   const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -124,13 +148,13 @@ export default function RichTextEditor({
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      toast.error('이미지 파일만 업로드할 수 있습니다.');
+      toast.error(editorCopy.imageTypeError);
       return;
     }
 
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('이미지 크기는 5MB 이하여야 합니다.');
+      toast.error(editorCopy.imageSizeError);
       return;
     }
 
@@ -153,21 +177,21 @@ export default function RichTextEditor({
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        toast.error(result.error || '이미지 업로드에 실패했습니다.');
+        toast.error(result.error || editorCopy.imageUploadFailed);
         return;
       }
 
       editor.chain().focus().setImage({ src: result.data.url }).run();
     } catch (error) {
       console.error('Image upload error:', error);
-      toast.error('이미지 업로드 중 오류가 발생했습니다.');
+      toast.error(editorCopy.imageUploadError);
     } finally {
       setIsUploading(false);
     }
 
     // Reset input
     event.target.value = '';
-  }, [editor, openLoginPrompt]);
+  }, [editor, editorCopy, openLoginPrompt]);
 
   const handleSetLink = useCallback(() => {
     if (!editor) return;
@@ -393,13 +417,13 @@ export default function RichTextEditor({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-              링크 추가
+              {editorCopy.linkTitle}
             </h3>
             <input
               type="url"
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder="https://example.com"
+              placeholder={editorCopy.linkPlaceholder}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
               autoFocus
               onKeyDown={(e) => {
@@ -422,7 +446,7 @@ export default function RichTextEditor({
                 }}
                 className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
-                취소
+                {editorCopy.linkCancel}
               </button>
               {editor.isActive('link') && (
                 <button
@@ -434,7 +458,7 @@ export default function RichTextEditor({
                   }}
                   className="px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                 >
-                  링크 제거
+                  {editorCopy.linkRemove}
                 </button>
               )}
               <button
@@ -442,7 +466,7 @@ export default function RichTextEditor({
                 onClick={handleSetLink}
                 className="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors"
               >
-                {editor.isActive('link') ? '수정' : '추가'}
+                {editor.isActive('link') ? editorCopy.linkUpdate : editorCopy.linkAdd}
               </button>
             </div>
           </div>

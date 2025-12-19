@@ -9,8 +9,13 @@ import { fetchPosts } from '@/repo/posts/fetch';
 import { fetchCategories } from '@/repo/categories/fetch';
 import { queryKeys } from '@/repo/keys';
 import { fetchNews } from '@/repo/news/fetch';
+import { CATEGORY_GROUPS } from '@/lib/constants/categories';
 
 export const revalidate = 60;
+const categoryParents = Object.keys(CATEGORY_GROUPS);
+const categoryChildren = new Set(
+  Object.values(CATEGORY_GROUPS).flatMap((group) => group.slugs as readonly string[])
+);
 
 interface PageProps {
   params: Promise<{
@@ -18,6 +23,7 @@ interface PageProps {
   }>;
   searchParams: Promise<{
     c?: string;
+    sc?: string;
     page?: string;
   }>;
 }
@@ -25,11 +31,26 @@ interface PageProps {
 // 메타데이터 생성
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { lang } = await params;
-  const { c: category, page } = await searchParams;
+  const { c: category, sc, page } = await searchParams;
 
   const dict = await getDictionary(lang);
   const metadata = dict.metadata;
   const sidebar = dict.sidebar;
+  const categoryFallbacks = {
+    ko: {
+      title: '{category} - viet kconnect',
+      description: '{category} 카테고리의 질문과 답변을 확인하세요.',
+    },
+    en: {
+      title: '{category} - viet kconnect',
+      description: 'Explore questions and answers in {category}.',
+    },
+    vi: {
+      title: '{category} - viet kconnect',
+      description: 'Khám phá câu hỏi và câu trả lời trong {category}.',
+    },
+  };
+  const categoryFallback = categoryFallbacks[lang] ?? categoryFallbacks.ko;
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
   const currentPage = Math.max(1, parseInt(page || '1') || 1);
@@ -38,6 +59,12 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
     const url = new URL(`${baseUrl}/${locale}`);
     if (category && category !== 'all') {
       url.searchParams.set('c', category);
+    }
+    if (category === 'subscribed' && sc && sc !== 'all') {
+      const isValidSubscribed = categoryParents.includes(sc) || categoryChildren.has(sc);
+      if (isValidSubscribed) {
+        url.searchParams.set('sc', sc);
+      }
     }
     if (currentPage > 1) {
       url.searchParams.set('page', String(currentPage));
@@ -53,8 +80,8 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   // 카테고리별 메타데이터
   if (category && category !== 'all') {
     const categoryName = sidebar[category as keyof typeof sidebar] || category;
-    title = (metadata.category?.title || '{category} - viet kconnect').replace('{category}', categoryName);
-    description = (metadata.category?.description || '{category} 카테고리의 질문과 답변을 확인하세요.')
+    title = (metadata.category?.title || categoryFallback.title).replace('{category}', categoryName);
+    description = (metadata.category?.description || categoryFallback.description)
       .replace('{category}', categoryName);
   }
 
@@ -117,7 +144,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
 // 홈 페이지 서버 컴포넌트 - SSR with Hydration
 export default async function Home({ params, searchParams }: PageProps) {
   const { lang } = await params;
-  const { c: category, page } = await searchParams;
+  const { c: category, sc, page } = await searchParams;
   const currentPage = Math.max(1, parseInt(page || '1') || 1);
 
   // 번역 로드
@@ -129,18 +156,21 @@ export default async function Home({ params, searchParams }: PageProps) {
   // URL 카테고리에 따른 필터 결정
   const urlCategory = category || 'popular';
   const isMenuCategory = ['popular', 'latest', 'following', 'subscribed', 'my-posts'].includes(urlCategory);
+  const subscribedKey = sc && sc !== 'all' && (categoryParents.includes(sc) || categoryChildren.has(sc)) ? sc : null;
+  const subscribedParent = subscribedKey && categoryParents.includes(subscribedKey) ? subscribedKey : undefined;
+  const subscribedCategory = subscribedKey && categoryChildren.has(subscribedKey) ? subscribedKey : undefined;
 
   const getFilter = () => {
     if (urlCategory === 'following') return 'following-users';
-    if (urlCategory === 'subscribed') return 'following';
+    if (urlCategory === 'subscribed') return subscribedKey ? undefined : 'following';
     if (urlCategory === 'my-posts') return 'my-posts';
     return undefined;
   };
 
   const filters = {
-    parentCategory: isMenuCategory ? undefined : urlCategory,
-    category: undefined,
-    sort: (urlCategory === 'popular' ? 'popular' : 'latest') as 'popular' | 'latest',
+    parentCategory: urlCategory === 'subscribed' ? subscribedParent : isMenuCategory ? undefined : urlCategory,
+    category: urlCategory === 'subscribed' ? subscribedCategory : undefined,
+    sort: (urlCategory === 'popular' || urlCategory === 'subscribed' ? 'popular' : 'latest') as 'popular' | 'latest',
     filter: getFilter() as 'following-users' | 'following' | 'my-posts' | undefined,
   };
 
