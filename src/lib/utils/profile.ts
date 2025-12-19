@@ -21,7 +21,12 @@ export function sanitizeDisplayName(input: string | undefined | null, fallback =
 export function generateDisplayNameFromEmail(email?: string | null) {
   const localPart = (email || '').split('@')[0] || 'vietkconnect';
   const sanitizedLocal = sanitizeDisplayName(localPart, 'vietkconnect');
-  const suffix = Math.random().toString().slice(2, 6);
+  const seed = (email || localPart || 'vietkconnect').toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  const suffix = String(hash % 10000).padStart(4, '0');
   const maxBaseLength = Math.max(1, DISPLAY_NAME_MAX_LENGTH - (suffix.length + 1));
   return `${sanitizedLocal.slice(0, maxBaseLength)}-${suffix}`;
 }
