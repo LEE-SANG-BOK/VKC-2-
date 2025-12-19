@@ -6,6 +6,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { Globe } from 'lucide-react';
 
 const locales = ['ko', 'en', 'vi'] as const;
+const visibleLocales = ['ko', 'vi'] as const;
 type Locale = (typeof locales)[number];
 
 const localeNames: Record<Locale, string> = {
@@ -59,7 +60,7 @@ export default function LanguageSwitcher() {
       {/* Dropdown */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-32 sm:w-40 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-          {locales.map((locale) => (
+          {visibleLocales.map((locale) => (
             <button
               key={locale}
               onClick={() => handleLocaleChange(locale)}
