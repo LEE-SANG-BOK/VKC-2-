@@ -3,11 +3,12 @@ import { notFound } from 'next/navigation';
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/config';
-import { fetchPost } from '@/repo/posts/fetch';
+import { fetchPost, fetchPosts } from '@/repo/posts/fetch';
 import { queryKeys } from '@/repo/keys';
 import PostDetailClient from './PostDetailClient';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 import { stripHtml } from '@/utils/htmlToText';
+import { buildCategoryPopularFilters, buildRelatedPostFilters } from '@/utils/postRecommendationFilters';
 
 // 동적 라우트 설정
 export const dynamicParams = true;
@@ -28,11 +29,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const t = (dict?.metadata?.post || {}) as Record<string, string>;
   const response = await fetchPost(id);
   const post = response?.data;
+  const notFoundFallbacks =
+    lang === 'en'
+      ? {
+          title: 'Post not found',
+          description: 'The requested post could not be found.',
+        }
+      : lang === 'vi'
+        ? {
+            title: 'Không tìm thấy bài viết',
+            description: 'Không thể tìm thấy bài viết bạn yêu cầu.',
+          }
+        : {
+            title: '게시글을 찾을 수 없습니다',
+            description: '요청하신 게시글을 찾을 수 없습니다',
+          };
 
   if (!post) {
     return {
-      title: t.notFoundTitle || '게시글을 찾을 수 없습니다',
-      description: t.notFoundDescription || '요청하신 게시글을 찾을 수 없습니다',
+      title: t.notFoundTitle || notFoundFallbacks.title,
+      description: t.notFoundDescription || notFoundFallbacks.description,
     };
   }
 
@@ -109,6 +125,9 @@ export async function generateStaticParams() {
 // 서버 컴포넌트 - 데이터 페칭 및 렌더링
 export default async function PostDetailPage({ params }: PageProps) {
   const { lang, id } = await params;
+  const translations = await getDictionary(lang as Locale);
+  const tCommon = (translations?.common || {}) as Record<string, string>;
+  const anonymousLabel = tCommon.anonymous || (lang === 'vi' ? 'Người dùng ẩn danh' : lang === 'en' ? 'Anonymous user' : '익명 사용자');
   const queryClient = new QueryClient();
   try {
     await queryClient.prefetchQuery({
@@ -132,6 +151,39 @@ export default async function PostDetailPage({ params }: PageProps) {
   if (!post) {
     notFound();
   }
+  const relatedFilters = buildRelatedPostFilters({
+    title: post.title,
+    tags: post.tags,
+    category: post.category,
+    type: post.type,
+    limit: 6,
+  });
+  const categoryFilters = buildCategoryPopularFilters({
+    category: post.category,
+    type: post.type,
+    limit: 6,
+  });
+
+  const recommendationTasks: Array<Promise<unknown>> = [];
+  if (relatedFilters) {
+    recommendationTasks.push(
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.posts.list(relatedFilters),
+        queryFn: () => fetchPosts(relatedFilters),
+      })
+    );
+  }
+  if (categoryFilters) {
+    recommendationTasks.push(
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.posts.list(categoryFilters),
+        queryFn: () => fetchPosts(categoryFilters),
+      })
+    );
+  }
+  if (recommendationTasks.length > 0) {
+    await Promise.all(recommendationTasks);
+  }
 
   const mappedPost: any = {
     id: post.id,
@@ -140,7 +192,7 @@ export default async function PostDetailPage({ params }: PageProps) {
     trustWeight: (post as any).trustWeight,
     author: {
       id: post.author?.id,
-      name: post.author?.displayName || post.author?.name || '알 수 없음',
+      name: post.author?.displayName || post.author?.name || anonymousLabel,
       avatar: post.author?.image || post.author?.avatar || '/default-avatar.jpg',
       followers: 0,
       isFollowing: false,
@@ -243,7 +295,7 @@ export default async function PostDetailPage({ params }: PageProps) {
 
       {/* SSR with TanStack Query Hydration */}
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <PostDetailClient initialPost={mappedPost} locale={lang} translations={await getDictionary(lang as Locale)} />
+      <PostDetailClient initialPost={mappedPost} locale={lang} translations={translations} />
       </HydrationBoundary>
     </>
   );
