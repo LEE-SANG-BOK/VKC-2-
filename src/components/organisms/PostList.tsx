@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
 import PostCard from '@/components/molecules/cards/PostCard';
 import { useInfinitePosts, useMyPostInteractions } from '@/repo/posts/query';
-import { useRecommendedUsers } from '@/repo/users/query';
+import { useInfiniteRecommendedUsers } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
 import RecommendedUsersSection from '@/components/organisms/RecommendedUsersSection';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
@@ -24,6 +24,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const t = (translations?.post || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
+  const tOnboarding = (translations?.onboarding || {}) as Record<string, string>;
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = (params?.lang as string) || 'ko';
@@ -91,7 +92,8 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
         ? selectedCategory
       : undefined;
 
-  const sortForQuery: 'popular' | 'latest' = selectedCategory === 'popular' ? 'popular' : 'latest';
+  const sortForQuery: 'popular' | 'latest' =
+    selectedCategory === 'popular' || selectedCategory === 'subscribed' ? 'popular' : 'latest';
 
   const getFilterForQuery = () => {
     if (selectedCategory === 'following') return 'following-users';
@@ -161,11 +163,26 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
 
   const shouldInsertRecommended = Boolean(session?.user) && !isSearchMode && (selectedCategory === 'popular' || selectedCategory === 'latest') && allPosts.length >= 5;
   const shouldFetchRecommended = Boolean(session?.user) && (selectedCategory === 'following' || shouldInsertRecommended);
-  const { data: recommended, isLoading: recommendedLoading } = useRecommendedUsers({ enabled: shouldFetchRecommended });
+  const {
+    data: recommended,
+    isLoading: recommendedLoading,
+    fetchNextPage: fetchNextRecommendedPage,
+    hasNextPage: hasNextRecommendedPage,
+    isFetchingNextPage: isFetchingNextRecommendedPage,
+  } = useInfiniteRecommendedUsers({ enabled: shouldFetchRecommended });
+  const recommendedUsers = useMemo(() => {
+    return recommended?.pages.flatMap((page) => page.data) ?? [];
+  }, [recommended?.pages]);
   const sortedRecommendations = useMemo(() => {
-    const list = recommended?.data ?? [];
-    return [...list].sort((a, b) => (b.stats?.followers ?? 0) - (a.stats?.followers ?? 0));
-  }, [recommended?.data]);
+    const seen = new Set<string>();
+    const deduped = recommendedUsers.filter((user) => {
+      const id = String(user.id);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+    return [...deduped].sort((a, b) => (b.stats?.followers ?? 0) - (a.stats?.followers ?? 0));
+  }, [recommendedUsers]);
 
   const shouldFetchInteractions = Boolean(session?.user) && !filterForQueryResolved && allPosts.length > 0;
   const interactionPostIds = useMemo(() => allPosts.map((post) => post.id), [allPosts]);
@@ -202,8 +219,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const followerLabel = tCommon.followers || (locale === 'vi' ? 'Người theo dõi' : locale === 'en' ? 'Followers' : '팔로워');
   const postsLabel = tCommon.posts || (locale === 'vi' ? 'Bài viết' : locale === 'en' ? 'Posts' : '게시글');
   const followingLabel = tCommon.following || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로잉');
-  const adoptionRateLabel = tCommon.adoptionRate || (locale === 'vi' ? 'Tỷ lệ được chấp nhận' : locale === 'en' ? 'Adoption rate' : '채택률');
-  const interestMatchRateLabel = tCommon.interestMatchRate || (locale === 'vi' ? 'Tỷ lệ khớp sở thích' : locale === 'en' ? 'Interest match rate' : '관심사 일치율');
   const verifiedLabel = tCommon.verifiedUser || (locale === 'vi' ? 'Đã xác minh' : locale === 'en' ? 'Verified' : '인증됨');
   const badgeLabels = {
     expert: tTrust.expertLabel || (locale === 'vi' ? 'Chuyên gia' : locale === 'en' ? 'Expert' : '전문가'),
@@ -211,8 +226,9 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     verified: tTrust.verifiedUserLabel || verifiedLabel,
   };
   const metaLabels = {
-    adoptionRate: adoptionRateLabel,
-    interestMatchRate: interestMatchRateLabel,
+    followers: followerLabel,
+    posts: postsLabel,
+    following: followingLabel,
     badge: verifiedLabel,
   };
   const recommendedUsersLabel = t.recommendedUsersTitle || t.recommendedUsers || (locale === 'vi' ? 'Người dùng đề xuất' : locale === 'en' ? 'Recommended users' : '추천 사용자');
@@ -248,7 +264,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
             <button
               type="button"
               onClick={() => setSelectedSubscribedCategory('all')}
-              className={`shrink-0 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
+              className={`shrink-0 inline-flex items-center rounded-full border px-3.5 py-1.5 text-[12px] font-semibold leading-none transition-colors ${
                 selectedSubscribedCategory === 'all'
                   ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
                   : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
@@ -265,7 +281,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                   key={cat.id}
                   type="button"
                   onClick={() => setSelectedSubscribedCategory(cat.slug)}
-                  className={`shrink-0 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
+                  className={`shrink-0 inline-flex items-center rounded-full border px-3.5 py-1.5 text-[12px] font-semibold leading-none transition-colors ${
                     active
                       ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
                       : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
@@ -300,7 +316,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
           </div>
         )}
 
-      {selectedCategory === 'following' && recommended?.data?.length ? (
+      {selectedCategory === 'following' && sortedRecommendations.length ? (
         <button
           type="button"
           onClick={scrollToRecommended}
@@ -373,14 +389,24 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                       locale={locale}
                       users={sortedRecommendations as any}
                       isLoading={recommendedLoading}
+                      hasNextPage={hasNextRecommendedPage}
+                      isFetchingNextPage={isFetchingNextRecommendedPage}
+                      onLoadMore={() => {
+                        if (hasNextRecommendedPage && !isFetchingNextRecommendedPage) {
+                          fetchNextRecommendedPage();
+                        }
+                      }}
                       followerLabel={followerLabel}
                       postsLabel={postsLabel}
                       followingLabel={followingLabel}
                       metaLabels={metaLabels}
                       verifiedLabel={verifiedLabel}
+                      trustBadgeTranslations={tTrust}
                       badgeLabels={badgeLabels}
                       previousLabel={previousLabel}
                       nextLabel={nextLabel}
+                      onboardingLabels={tOnboarding}
+                      compact
                     />
                   </div>
                 ) : null}
@@ -398,21 +424,31 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
             </div>
           )}
 
-          {selectedCategory === 'following' && (recommendedLoading || recommended?.data?.length) ? (
+          {selectedCategory === 'following' && (recommendedLoading || sortedRecommendations.length) ? (
             <div ref={recommendedRef} className="mt-3">
               <RecommendedUsersSection
                 title={recommendedUsersLabel}
                 locale={locale}
                 users={sortedRecommendations as any}
                 isLoading={recommendedLoading}
+                hasNextPage={hasNextRecommendedPage}
+                isFetchingNextPage={isFetchingNextRecommendedPage}
+                onLoadMore={() => {
+                  if (hasNextRecommendedPage && !isFetchingNextRecommendedPage) {
+                    fetchNextRecommendedPage();
+                  }
+                }}
                 followerLabel={followerLabel}
                 postsLabel={postsLabel}
                 followingLabel={followingLabel}
                 metaLabels={metaLabels}
                 verifiedLabel={verifiedLabel}
+                trustBadgeTranslations={tTrust}
                 badgeLabels={badgeLabels}
                 previousLabel={previousLabel}
                 nextLabel={nextLabel}
+                onboardingLabels={tOnboarding}
+                compact
               />
             </div>
           ) : null}

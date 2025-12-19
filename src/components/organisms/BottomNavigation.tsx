@@ -153,14 +153,14 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
             isFeedToggleReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
           }`}
         >
-          <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-gray-200/70 dark:border-gray-700/60 bg-white/80 dark:bg-gray-900/65 backdrop-blur px-1.5 py-1.5 shadow-lg">
+          <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-gray-200/70 dark:border-gray-700/60 bg-white/35 dark:bg-gray-900/30 backdrop-blur px-1.5 py-1.5 shadow-lg">
             <button
               type="button"
               onClick={() => handleHomeFeedToggle('popular')}
               className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition duration-200 ease-out active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${
                 homeFeed === 'popular'
-                  ? 'bg-blue-600/90 text-white shadow-sm'
-                  : 'text-gray-700 dark:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/70'
+                  ? 'bg-blue-600/35 text-white shadow-sm'
+                  : 'text-gray-700 dark:text-gray-200 hover:bg-white/20 dark:hover:bg-gray-800/30'
               }`}
               aria-label={popularLabel}
               aria-pressed={homeFeed === 'popular'}
@@ -173,8 +173,8 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
               onClick={() => handleHomeFeedToggle('latest')}
               className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition duration-200 ease-out active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${
                 homeFeed === 'latest'
-                  ? 'bg-blue-600/90 text-white shadow-sm'
-                  : 'text-gray-700 dark:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/70'
+                  ? 'bg-blue-600/35 text-white shadow-sm'
+                  : 'text-gray-700 dark:text-gray-200 hover:bg-white/20 dark:hover:bg-gray-800/30'
               }`}
               aria-label={latestLabel}
               aria-pressed={homeFeed === 'latest'}
