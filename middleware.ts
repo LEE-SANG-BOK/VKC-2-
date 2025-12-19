@@ -3,14 +3,60 @@ import type { NextRequest } from 'next/server';
 
 const locales = ['ko', 'en', 'vi'];
 const defaultLocale = 'vi';
+const rateStore = new Map<string, { count: number; resetAt: number }>();
+const writeLimitWindowMs = 60_000;
+const writeLimitMax = 60;
+
+const getClientIp = (request: NextRequest) => {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0]?.trim() || 'unknown';
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+  return 'unknown';
+};
+
+const checkRateLimit = (key: string) => {
+  const now = Date.now();
+  const entry = rateStore.get(key);
+  if (!entry || now >= entry.resetAt) {
+    const resetAt = now + writeLimitWindowMs;
+    rateStore.set(key, { count: 1, resetAt });
+    return { ok: true, resetAt, remaining: writeLimitMax - 1 };
+  }
+  if (entry.count >= writeLimitMax) {
+    return { ok: false, resetAt: entry.resetAt, remaining: 0 };
+  }
+  entry.count += 1;
+  rateStore.set(key, entry);
+  return { ok: true, resetAt: entry.resetAt, remaining: writeLimitMax - entry.count };
+};
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 정적 파일, API 라우트, admin 경로는 무시
+  if (pathname.startsWith('/api')) {
+    const method = request.method.toUpperCase();
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      const ip = getClientIp(request);
+      const rateKey = `${ip}:write`;
+      const result = checkRateLimit(rateKey);
+      if (!result.ok) {
+        const retryAfter = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
+        return new NextResponse(JSON.stringify({ error: 'Too many requests' }), {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': String(retryAfter),
+          },
+        });
+      }
+    }
+    return NextResponse.next();
+  }
+
+  // 정적 파일, admin 경로는 무시
   if (
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
     pathname.startsWith('/admin') ||
     pathname.includes('.') ||
     pathname.startsWith('/favicon.ico')
@@ -66,5 +112,5 @@ function getLocale(request: NextRequest): string {
 }
 
 export const config = {
-  matcher: ['/((?!_next|api|.*\\..*).*)'],
+  matcher: ['/((?!_next|.*\\..*).*)'],
 };
