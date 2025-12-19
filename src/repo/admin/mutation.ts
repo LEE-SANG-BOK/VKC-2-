@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminFetch } from './fetch';
 import { adminQueryKeys } from './query';
 import { queryKeys } from '../keys';
+import type { ReportAction } from './types';
 
 export function useAdminLogin() {
   const queryClient = useQueryClient();
@@ -82,7 +83,7 @@ export function useUpdateReportStatus() {
       data,
     }: {
       id: string;
-      data: { status: string; reviewNote?: string; deleteTarget?: boolean };
+      data: { status: string; reviewNote?: string; deleteTarget?: boolean; action?: ReportAction };
     }) => adminFetch.reports.updateStatus(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.reports.all });
@@ -213,6 +214,8 @@ export function useUpdateNews() {
         linkUrl?: string | null;
         isActive?: boolean;
         order?: number;
+        startAt?: string | null;
+        endAt?: string | null;
       };
     }) => adminFetch.news.update(id, data),
     onSuccess: () => {

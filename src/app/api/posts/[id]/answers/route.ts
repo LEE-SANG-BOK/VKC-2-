@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
-import { answers, posts, likes } from '@/lib/db/schema';
+import { answers, posts, likes, users } from '@/lib/db/schema';
 import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, paginatedResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkUserStatus } from '@/lib/user-status';
@@ -9,6 +9,8 @@ import { eq, desc, sql, and, inArray, or, lt, type SQL } from 'drizzle-orm';
 import { createAnswerNotification } from '@/lib/notifications/create';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
+import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
+import { isExpertBadgeType } from '@/lib/constants/badges';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -111,6 +113,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         createdAt: true,
         likes: true,
         isAdopted: true,
+        isOfficial: true,
+        reviewStatus: true,
       },
       with: {
         author: {
@@ -208,6 +212,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       helpful: answer.likes || 0,
       isHelpful: user ? likedAnswerIds.has(answer.id) : false,
       isAdopted: answer.isAdopted || false,
+      isOfficial: answer.isOfficial || false,
+      reviewStatus: answer.reviewStatus,
       replies:
         answer.comments?.map((reply) => ({
           id: reply.id,
@@ -265,6 +271,35 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return forbiddenResponse(userStatus.message || 'Account restricted');
     }
 
+    const userRecord = await db.query.users.findFirst({
+      where: eq(users.id, user.id),
+      columns: {
+        id: true,
+        email: true,
+        isVerified: true,
+        isExpert: true,
+        badgeType: true,
+      },
+    });
+
+    if (!userRecord) {
+      return unauthorizedResponse();
+    }
+
+    const adminEmailList = (process.env.ADMIN_USER_EMAILS || process.env.ADMIN_EMAILS || 'admin@vietkconnect.com')
+      .split(',')
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean);
+    const adminEmailSet = new Set(adminEmailList);
+    const emailValue = (userRecord.email || user.email || '').toLowerCase();
+    const isAdmin = adminEmailSet.has(emailValue);
+    const isExpert = userRecord.isExpert || isExpertBadgeType(userRecord.badgeType);
+    const isVerified = userRecord.isVerified || Boolean(userRecord.badgeType);
+
+    if (!isAdmin && !isExpert && !isVerified) {
+      return errorResponse('베타 답변 권한이 없습니다.', 'ANSWER_PERMISSION_DENIED', 403);
+    }
+
     const { id: postId } = await context.params;
 
     // 게시글 존재 여부 확인
@@ -303,12 +338,25 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
     }
 
+    const linkValidation = validateUgcExternalLinks(normalizedContent);
+    if (!linkValidation.ok) {
+      return errorResponse('공식 출처 도메인만 사용할 수 있습니다.', 'UGC_EXTERNAL_LINK_BLOCKED');
+    }
+
     // 답변 작성
-    const [newAnswer] = await db.insert(answers).values({
-      postId,
-      authorId: user.id,
-      content: normalizedContent,
-    }).returning();
+    const isOfficial = isAdmin || isExpert;
+    const reviewStatus = isOfficial ? 'approved' : 'pending';
+
+    const [newAnswer] = await db
+      .insert(answers)
+      .values({
+        postId,
+        authorId: user.id,
+        content: normalizedContent,
+        isOfficial,
+        reviewStatus,
+      })
+      .returning();
 
     // 작성자 정보 포함하여 반환
     const answerWithAuthor = await db.query.answers.findFirst({

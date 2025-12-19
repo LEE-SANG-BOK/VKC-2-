@@ -22,13 +22,22 @@ const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).sl
 
 const extractImages = (html: string, maxThumbs = 4) => {
   if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
-  const regex = /<img[^>]+src=["']([^"']+)["']/gi;
+  const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
   const thumbnails: string[] = [];
   let match: RegExpExecArray | null;
   let imageCount = 0;
+  let selected: string | null = null;
   while ((match = regex.exec(html))) {
     imageCount += 1;
-    if (thumbnails.length < maxThumbs) thumbnails.push(match[1]);
+    const src = match[1];
+    if (!selected && /data-thumbnail\s*=\s*['"]?true['"]?/i.test(match[0])) {
+      selected = src;
+    }
+    if (thumbnails.length < maxThumbs) thumbnails.push(src);
+  }
+  if (selected) {
+    const ordered = [selected, ...thumbnails.filter((src) => src !== selected)];
+    return { thumbnails: ordered.slice(0, maxThumbs), thumbnail: selected, imageCount };
   }
   return { thumbnails, thumbnail: thumbnails[0] ?? null, imageCount };
 };
@@ -41,11 +50,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
     const type = searchParams.get('type') as 'question' | 'share' | null;
     const cursorParam = searchParams.get('cursor');
-    const include = (searchParams.get('include') || '')
-      .split(',')
-      .map((value) => value.trim())
-      .filter(Boolean);
-    const includeContent = include.includes('content');
 
     const currentUser = await getSession(request);
 
@@ -115,9 +119,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         authorId: posts.authorId,
         type: posts.type,
         title: posts.title,
-        content: includeContent
-          ? posts.content
-          : sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
+        content: sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
         category: posts.category,
         subcategory: posts.subcategory,
         tags: posts.tags,
@@ -293,7 +295,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
         id: post.id,
         type: post.type,
         title: post.title,
-        ...(includeContent ? { content } : {}),
         excerpt,
         category: post.category,
         subcategory: post.subcategory,

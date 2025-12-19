@@ -4,6 +4,20 @@ import { news } from '@/lib/db/schema';
 import { getAdminSession } from '@/lib/admin/auth';
 import { desc, ilike, or, SQL, and, count, eq } from 'drizzle-orm';
 
+const parseDateValue = (value: unknown) => {
+  if (value === undefined) {
+    return { ok: true, value: undefined as Date | null | undefined };
+  }
+  if (value === null || value === '') {
+    return { ok: true, value: null };
+  }
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) {
+    return { ok: false, value: undefined };
+  }
+  return { ok: true, value: date };
+};
+
 export async function GET(request: NextRequest) {
   const admin = await getAdminSession(request);
   if (!admin) {
@@ -71,7 +85,23 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, category, imageUrl, linkUrl, isActive, order, language, content, type } = body;
+    const { title, category, imageUrl, linkUrl, isActive, order, language, content, type, startAt, endAt } = body;
+
+    const startAtResult = parseDateValue(startAt);
+    if (!startAtResult.ok) {
+      return NextResponse.json({ error: 'Invalid startAt' }, { status: 400 });
+    }
+
+    const endAtResult = parseDateValue(endAt);
+    if (!endAtResult.ok) {
+      return NextResponse.json({ error: 'Invalid endAt' }, { status: 400 });
+    }
+
+    const resolvedStartAt = startAtResult.value ?? null;
+    const resolvedEndAt = endAtResult.value ?? null;
+    if (resolvedStartAt && resolvedEndAt && resolvedStartAt > resolvedEndAt) {
+      return NextResponse.json({ error: 'startAt must be before endAt' }, { status: 400 });
+    }
 
     const normalizedType = type || 'post';
     if (!['post', 'cardnews', 'shorts'].includes(normalizedType)) {
@@ -90,6 +120,8 @@ export async function POST(request: NextRequest) {
       content: content || '',
       imageUrl: imageUrl || null,
       linkUrl: linkUrl || null,
+      startAt: resolvedStartAt,
+      endAt: resolvedEndAt,
       isActive: isActive ?? true,
       order: order ?? 0,
     }).returning();

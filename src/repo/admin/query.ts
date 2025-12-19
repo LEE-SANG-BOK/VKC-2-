@@ -30,6 +30,11 @@ export const adminQueryKeys = {
     list: (params?: { page?: number; limit?: number; search?: string }) =>
       ['admin', 'comments', 'list', params] as const,
   },
+  feedback: {
+    all: ['admin', 'feedback'] as const,
+    list: (params?: { page?: number; limit?: number; type?: 'feedback' | 'bug'; search?: string }) =>
+      ['admin', 'feedback', 'list', params] as const,
+  },
   reports: {
     all: ['admin', 'reports'] as const,
     list: (params?: { page?: number; limit?: number; status?: string; type?: string }) =>
@@ -180,6 +185,18 @@ export function useAdminComments(params?: {
   return useQuery({
     queryKey: adminQueryKeys.comments.list(params),
     queryFn: () => adminFetch.comments.getAll(params),
+  });
+}
+
+export function useAdminFeedback(params?: {
+  page?: number;
+  limit?: number;
+  type?: 'feedback' | 'bug';
+  search?: string;
+}) {
+  return useQuery({
+    queryKey: adminQueryKeys.feedback.list(params),
+    queryFn: () => adminFetch.feedback.getAll(params),
   });
 }
 

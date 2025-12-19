@@ -9,6 +9,7 @@ import { desc, eq, and, or, sql, inArray, SQL, lt, isNull } from 'drizzle-orm';
 import dayjs from 'dayjs';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
+import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 import { ACTIVE_GROUP_PARENT_SLUGS, DEPRECATED_GROUP_PARENT_SLUGS, getChildrenForParent, isGroupChildSlug, isGroupParentSlug } from '@/lib/constants/category-groups';
 import { isExpertBadgeType } from '@/lib/constants/badges';
 import { getFollowingIdSet } from '@/lib/api/follow';
@@ -46,11 +47,6 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') as 'question' | 'share' | null;
     const sort = searchParams.get('sort') || 'latest';
     const filter = searchParams.get('filter');
-    const include = (searchParams.get('include') || '')
-      .split(',')
-      .map((value) => value.trim())
-      .filter(Boolean);
-    const includeContent = include.includes('content');
 
     const user = await getSession(request);
 
@@ -273,13 +269,22 @@ export async function GET(request: NextRequest) {
 
     const extractImages = (html: string, maxThumbs = 4) => {
       if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
-      const regex = /<img[^>]+src=["']([^"']+)["']/gi;
+      const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
       const thumbnails: string[] = [];
       let match: RegExpExecArray | null;
       let imageCount = 0;
+      let selected: string | null = null;
       while ((match = regex.exec(html))) {
         imageCount += 1;
-        if (thumbnails.length < maxThumbs) thumbnails.push(match[1]);
+        const src = match[1];
+        if (!selected && /data-thumbnail\s*=\s*['"]?true['"]?/i.test(match[0])) {
+          selected = src;
+        }
+        if (thumbnails.length < maxThumbs) thumbnails.push(src);
+      }
+      if (selected) {
+        const ordered = [selected, ...thumbnails.filter((src) => src !== selected)];
+        return { thumbnails: ordered.slice(0, maxThumbs), thumbnail: selected, imageCount };
       }
       return { thumbnails, thumbnail: thumbnails[0] ?? null, imageCount };
     };
@@ -290,9 +295,7 @@ export async function GET(request: NextRequest) {
       authorId: posts.authorId,
       type: posts.type,
       title: posts.title,
-      content: includeContent
-        ? posts.content
-        : sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
+      content: sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
       category: posts.category,
       subcategory: posts.subcategory,
       tags: posts.tags,
@@ -458,7 +461,6 @@ export async function GET(request: NextRequest) {
           authorId: post.authorId,
           type: post.type,
           title: post.title,
-          ...(includeContent ? { content: post.content } : {}),
           excerpt,
           category: post.category,
           subcategory: post.subcategory,
@@ -737,6 +739,11 @@ export async function POST(request: NextRequest) {
 
     if (hasProhibitedContent(`${normalizedTitle} ${normalizedContent}`)) {
       return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
+    }
+
+    const linkValidation = validateUgcExternalLinks(`${normalizedTitle} ${normalizedContent}`);
+    if (!linkValidation.ok) {
+      return errorResponse('공식 출처 도메인만 사용할 수 있습니다.', 'UGC_EXTERNAL_LINK_BLOCKED');
     }
 
     const normalizeTag = (raw: unknown) => {
