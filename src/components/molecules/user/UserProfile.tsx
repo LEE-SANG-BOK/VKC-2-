@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, createContext, useContext } from 'react';
+import { useState, useRef, useEffect, useMemo, createContext, useContext } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'nextjs-toploader/app';
@@ -107,6 +107,48 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
   const menuRef = useRef<HTMLDivElement>(null);
 
   const t = translations;
+  const menuFallbacks = useMemo(() => {
+    if (locale === 'en') {
+      return {
+        profile: 'Profile',
+        myPosts: 'My Posts',
+        followingFeed: 'Following Feed',
+        bookmarks: 'Bookmarks',
+        settings: 'Settings',
+        askQuestion: 'Ask a question',
+        logout: 'Logout',
+      };
+    }
+    if (locale === 'vi') {
+      return {
+        profile: 'Hồ sơ',
+        myPosts: 'Bài viết của tôi',
+        followingFeed: 'Bảng tin đang theo dõi',
+        bookmarks: 'Đánh dấu',
+        settings: 'Cài đặt',
+        askQuestion: 'Đặt câu hỏi',
+        logout: 'Đăng xuất',
+      };
+    }
+    return {
+      profile: '프로필',
+      myPosts: '내 게시글',
+      followingFeed: '팔로잉 피드',
+      bookmarks: '북마크',
+      settings: '설정',
+      askQuestion: '나도 질문하기',
+      logout: '로그아웃',
+    };
+  }, [locale]);
+  const menuLabels = {
+    profile: t.profile || menuFallbacks.profile,
+    myPosts: t.myPosts || menuFallbacks.myPosts,
+    followingFeed: t.followingFeed || menuFallbacks.followingFeed,
+    bookmarks: t.bookmarks || menuFallbacks.bookmarks,
+    settings: t.settings || menuFallbacks.settings,
+    askQuestion: t.askQuestion || menuFallbacks.askQuestion,
+    logout: t.logout || menuFallbacks.logout,
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -138,7 +180,7 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
   const menuItems = [
     {
       icon: <User className="w-5 h-5 text-gray-500" />,
-      label: t.profile || '프로필',
+      label: menuLabels.profile,
       onClick: () => {
         setIsOpen(false);
         router.push(`/${locale}/profile/${userId || 'me'}`);
@@ -146,22 +188,22 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
     },
     {
       icon: <FileText className="w-5 h-5 text-gray-500" />,
-      label: t.myPosts || '내 게시글',
+      label: menuLabels.myPosts,
       onClick: () => openModal('myPosts'),
     },
     {
       icon: <Users className="w-5 h-5 text-gray-500" />,
-      label: t.followingFeed || '팔로잉 피드',
+      label: menuLabels.followingFeed,
       onClick: () => openModal('following'),
     },
     {
       icon: <Bookmark className="w-5 h-5 text-gray-500" />,
-      label: t.bookmarks || '북마크',
+      label: menuLabels.bookmarks,
       onClick: () => openModal('bookmarks'),
     },
     {
       icon: <Settings className="w-5 h-5 text-gray-500" />,
-      label: t.settings || '설정',
+      label: menuLabels.settings,
       onClick: () => openModal('settings'),
     },
   ];
@@ -189,7 +231,7 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
               }}
               className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-full transition-colors"
             >
-              {t.askQuestion || '나도 질문하기'}
+              {menuLabels.askQuestion}
             </button>
           </div>
 
@@ -224,7 +266,7 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
             >
               <LogOut className="w-5 h-5 text-gray-500" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t.logout || '로그아웃'}
+                {menuLabels.logout}
               </span>
             </button>
           </div>

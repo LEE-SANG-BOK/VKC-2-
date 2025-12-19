@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { X, Mailbox } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/atoms/Modal';
@@ -19,8 +20,60 @@ type FilterType = 'all' | 'question' | 'answer' | 'post';
 export default function BookmarksModal({ isOpen, onClose, translations = {} }: BookmarksModalProps) {
   const { data: session } = useSession();
   const user = session?.user;
+  const params = useParams();
+  const locale = params.lang as string || 'ko';
 
   const t = translations;
+  const modalFallbacks = useMemo(() => {
+    if (locale === 'en') {
+      return {
+        bookmarks: 'Bookmarks',
+        bookmarksDesc: 'Manage your saved questions and posts in one place.',
+        all: 'All',
+        question: 'Questions',
+        answer: 'Answers',
+        post: 'Posts',
+        noBookmarksTitle: 'No bookmarks for this type',
+        noBookmarksDesc: 'Save questions or posts to revisit them anytime.',
+        loading: 'Loading...',
+      };
+    }
+    if (locale === 'vi') {
+      return {
+        bookmarks: 'Đánh dấu',
+        bookmarksDesc: 'Quản lý câu hỏi và bài viết đã lưu tại đây.',
+        all: 'Tất cả',
+        question: 'Câu hỏi',
+        answer: 'Câu trả lời',
+        post: 'Bài viết',
+        noBookmarksTitle: 'Không có đánh dấu cho loại đã chọn',
+        noBookmarksDesc: 'Lưu câu hỏi hoặc bài viết để xem lại bất cứ lúc nào.',
+        loading: 'Đang tải...',
+      };
+    }
+    return {
+      bookmarks: '북마크',
+      bookmarksDesc: '저장한 질문과 게시글을 한 번에 관리하세요.',
+      all: '전체',
+      question: '질문',
+      answer: '답변',
+      post: '게시글',
+      noBookmarksTitle: '선택한 유형의 북마크가 없습니다',
+      noBookmarksDesc: '관심 있는 질문이나 게시글을 저장해 두면 언제든지 다시 확인할 수 있어요.',
+      loading: '로딩 중...',
+    };
+  }, [locale]);
+  const modalLabels = {
+    bookmarks: t.bookmarks || modalFallbacks.bookmarks,
+    bookmarksDesc: t.bookmarksDesc || modalFallbacks.bookmarksDesc,
+    all: t.all || modalFallbacks.all,
+    question: t.question || modalFallbacks.question,
+    answer: t.answer || modalFallbacks.answer,
+    post: t.post || modalFallbacks.post,
+    noBookmarksTitle: t.noBookmarksTitle || modalFallbacks.noBookmarksTitle,
+    noBookmarksDesc: t.noBookmarksDesc || modalFallbacks.noBookmarksDesc,
+    loading: t.loading || modalFallbacks.loading,
+  };
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const modalBodyRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -123,10 +176,12 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
   }, [fetchNextPage, filteredBookmarks.length, hasNextPage, isFetchingNextPage, isOpen, visibleCount]);
 
   const formatDate = (dateString: string) => {
-    if (!dateString || dateString === '방금 전') return dateString;
+    const justNowValues = new Set(['방금 전', 'Just now', 'Vừa xong']);
+    if (!dateString || justNowValues.has(dateString)) return dateString;
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
-    return new Intl.DateTimeFormat('ko-KR', {
+    const dateLocale = locale === 'vi' ? 'vi-VN' : locale === 'en' ? 'en-US' : 'ko-KR';
+    return new Intl.DateTimeFormat(dateLocale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -136,10 +191,10 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
   };
 
   const filters: { key: FilterType; label: string }[] = [
-    { key: 'all', label: t.all || '전체' },
-    { key: 'question', label: t.question || '질문' },
-    { key: 'answer', label: t.answer || '답변' },
-    { key: 'post', label: t.post || '게시글' },
+    { key: 'all', label: modalLabels.all },
+    { key: 'question', label: modalLabels.question },
+    { key: 'answer', label: modalLabels.answer },
+    { key: 'post', label: modalLabels.post },
   ];
 
   return (
@@ -157,10 +212,10 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
         <div className="px-5 py-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <span>📬</span>
-            {t.bookmarks || '북마크'}
+            {modalLabels.bookmarks}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {t.bookmarksDesc || '저장한 질문과 게시글을 한 번에 관리하세요.'}
+            {modalLabels.bookmarksDesc}
           </p>
         </div>
 
@@ -193,10 +248,10 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
             <div className="text-center py-12">
               <Mailbox className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                {t.noBookmarksTitle || '선택한 유형의 북마크가 없습니다'}
+                {modalLabels.noBookmarksTitle}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t.noBookmarksDesc || '관심 있는 질문이나 게시글을 저장해 두면 언제든지 다시 확인할 수 있어요.'}
+                {modalLabels.noBookmarksDesc}
               </p>
             </div>
           ) : (
@@ -220,6 +275,11 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
                   officialAnswerCount={bookmark.officialAnswerCount}
                   reviewedAnswerCount={bookmark.reviewedAnswerCount}
                   thumbnail={bookmark.thumbnail}
+                  imageCount={bookmark.imageCount}
+                  certifiedResponderCount={bookmark.certifiedResponderCount}
+                  otherResponderCount={bookmark.otherResponderCount}
+                  officialAnswerCount={bookmark.officialAnswerCount}
+                  reviewedAnswerCount={bookmark.reviewedAnswerCount}
                   publishedAt={formatDate(bookmark.publishedAt)}
                   isQuestion={bookmark.isQuestion}
                   isAdopted={bookmark.isAdopted}
@@ -251,7 +311,7 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
                   {isFetchingNextPage && (
                     <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
                       <div className="h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm">{t.loading || '로딩 중...'}</span>
+                      <span className="text-sm">{modalLabels.loading}</span>
                     </div>
                   )}
                 </div>

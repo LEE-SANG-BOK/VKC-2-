@@ -1,8 +1,9 @@
 'use client';
 
+import { useMemo } from 'react';
 import Image from 'next/image';
-import ShareButton from '@/components/molecules/actions/ShareButton';
 import { useParams } from 'next/navigation';
+import ShareButton from '@/components/molecules/actions/ShareButton';
 import { useNews } from '@/repo/news/query';
 
 export default function ShortFormPlaylist() {
@@ -12,14 +13,40 @@ export default function ShortFormPlaylist() {
   const { data: newsItems, isLoading } = useNews(locale);
   const clips = (newsItems || []).filter((item) => item.type === 'shorts').slice(0, 8);
 
-  const title = locale === 'vi' ? 'Danh sách Shorts' : locale === 'en' ? 'Shorts playlist' : '숏폼 플레이리스트';
-  const autoplay = locale === 'vi' ? 'Tự phát' : locale === 'en' ? 'Autoplay' : '자동 재생';
-  const more = locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'More' : '더 보기';
-  const watch = locale === 'vi' ? 'Xem' : locale === 'en' ? 'Watch' : '보기';
-  const save = locale === 'vi' ? 'Lưu' : locale === 'en' ? 'Save' : '저장';
-  const share = locale === 'vi' ? 'Chia sẻ' : locale === 'en' ? 'Share' : '공유';
-  const emptyLabel =
-    locale === 'vi' ? 'Chưa có shorts.' : locale === 'en' ? 'No shorts yet.' : '아직 숏폼이 없습니다.';
+  const labels = useMemo(() => {
+    if (locale === 'en') {
+      return {
+        title: 'Shorts playlist',
+        autoplay: 'Autoplay',
+        more: 'More',
+        watch: 'Watch',
+        save: 'Save',
+        share: 'Share',
+        empty: 'No shorts yet.',
+      };
+    }
+    if (locale === 'vi') {
+      return {
+        title: 'Danh sách Shorts',
+        autoplay: 'Tự phát',
+        more: 'Xem thêm',
+        watch: 'Xem',
+        save: 'Lưu',
+        share: 'Chia sẻ',
+        empty: 'Chưa có shorts.',
+      };
+    }
+    return {
+      title: '숏폼 플레이리스트',
+      autoplay: '자동 재생',
+      more: '더 보기',
+      watch: '보기',
+      save: '저장',
+      share: '공유',
+      empty: '아직 숏폼이 없습니다.',
+    };
+  }, [locale]);
+  const { title, autoplay, more, watch, save, share, empty: emptyLabel } = labels;
 
   const handleViewAll = () => {
     const target = `/${locale}/media`;

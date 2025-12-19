@@ -25,6 +25,34 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
   const observerRef = useRef<HTMLDivElement>(null);
 
   const t = translations;
+  const tCommon = (translations as any)?.common || {};
+  const modalFallbacks = useMemo(() => {
+    if (locale === 'en') {
+      return {
+        myPosts: 'My Posts',
+        noPosts: 'No posts yet',
+        loading: 'Loading...',
+      };
+    }
+    if (locale === 'vi') {
+      return {
+        myPosts: 'Bài viết của tôi',
+        noPosts: 'Chưa có bài viết',
+        loading: 'Đang tải...',
+      };
+    }
+    return {
+      myPosts: '내 게시글',
+      noPosts: '게시글이 없습니다',
+      loading: '로딩 중...',
+    };
+  }, [locale]);
+  const modalLabels = {
+    myPosts: t.myPosts || modalFallbacks.myPosts,
+    noPosts: t.noPosts || modalFallbacks.noPosts,
+    loading: t.loading || modalFallbacks.loading,
+  };
+  const anonymousLabel = tCommon.anonymous || (locale === 'vi' ? 'Người dùng ẩn danh' : locale === 'en' ? 'Anonymous user' : '익명 사용자');
 
   const { 
     data,
@@ -97,7 +125,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {t.myPosts || '내 게시글'}
+            {modalLabels.myPosts}
           </h2>
           <button
             onClick={onClose}
@@ -116,7 +144,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
           ) : posts.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">{t.noPosts || 'No posts yet'}</p>
+              <p className="text-gray-500 dark:text-gray-400">{modalLabels.noPosts}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -133,7 +161,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
                         post.author?.displayName ||
                         post.author?.name ||
                         post.author?.email ||
-                        (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음'),
+                        anonymousLabel,
                       avatar: post.author?.avatar || post.author?.image || '/default-avatar.jpg',
                       followers: post.author?.followers ?? 0,
                       isFollowing: post.author?.isFollowing ?? false,
@@ -193,7 +221,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
                   {isFetchingNextPage && (
                     <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
                       <div className="h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm">{t.loading || '로딩 중...'}</span>
+                      <span className="text-sm">{modalLabels.loading}</span>
                     </div>
                   )}
                 </div>
