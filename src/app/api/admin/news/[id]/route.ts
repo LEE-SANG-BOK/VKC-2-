@@ -4,6 +4,20 @@ import { news } from '@/lib/db/schema';
 import { getAdminSession } from '@/lib/admin/auth';
 import { eq } from 'drizzle-orm';
 
+const parseDateValue = (value: unknown) => {
+  if (value === undefined) {
+    return { ok: true, value: undefined as Date | null | undefined };
+  }
+  if (value === null || value === '') {
+    return { ok: true, value: null };
+  }
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) {
+    return { ok: false, value: undefined };
+  }
+  return { ok: true, value: date };
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -46,7 +60,7 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { title, category, imageUrl, linkUrl, isActive, order, language, content, type } = body;
+    const { title, category, imageUrl, linkUrl, isActive, order, language, content, type, startAt, endAt } = body;
 
     if (type !== undefined && !['post', 'cardnews', 'shorts'].includes(type)) {
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
@@ -62,6 +76,22 @@ export async function PATCH(
       return NextResponse.json({ error: 'News not found' }, { status: 404 });
     }
 
+    const startAtResult = parseDateValue(startAt);
+    if (!startAtResult.ok) {
+      return NextResponse.json({ error: 'Invalid startAt' }, { status: 400 });
+    }
+
+    const endAtResult = parseDateValue(endAt);
+    if (!endAtResult.ok) {
+      return NextResponse.json({ error: 'Invalid endAt' }, { status: 400 });
+    }
+
+    const nextStartAt = startAtResult.value !== undefined ? startAtResult.value : existing.startAt;
+    const nextEndAt = endAtResult.value !== undefined ? endAtResult.value : existing.endAt;
+    if (nextStartAt && nextEndAt && nextStartAt > nextEndAt) {
+      return NextResponse.json({ error: 'startAt must be before endAt' }, { status: 400 });
+    }
+
     const updateData: Partial<typeof news.$inferInsert> = {
       updatedAt: new Date(),
     };
@@ -73,6 +103,8 @@ export async function PATCH(
     if (content !== undefined) updateData.content = content;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (linkUrl !== undefined) updateData.linkUrl = linkUrl;
+    if (startAtResult.value !== undefined) updateData.startAt = startAtResult.value;
+    if (endAtResult.value !== undefined) updateData.endAt = endAtResult.value;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (order !== undefined) updateData.order = order;
 

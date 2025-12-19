@@ -7,6 +7,7 @@ import { getSession, isOwner } from '@/lib/api/auth';
 import { eq, and, sql, isNull } from 'drizzle-orm';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
+import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 import { getChildrenForParent, isGroupParentSlug } from '@/lib/constants/category-groups';
 import dayjs from 'dayjs';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
@@ -46,12 +47,23 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return notFoundResponse('게시글을 찾을 수 없습니다.');
     }
 
-    const imageMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)) as RegExpMatchArray[];
-    const thumbnails = imageMatches
-      .map((match) => normalizePostImageSrc(match[1]))
-      .filter((src): src is string => Boolean(src))
-      .slice(0, 4);
-    const thumbnail = thumbnails[0] ?? null;
+    const imageRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    const thumbnails: string[] = [];
+    let selected: string | null = null;
+    let match: RegExpExecArray | null;
+    let imageCount = 0;
+    while ((match = imageRegex.exec(post.content))) {
+      imageCount += 1;
+      const src = normalizePostImageSrc(match[1]);
+      if (!src) continue;
+      if (!selected && /data-thumbnail\s*=\s*['"]?true['"]?/i.test(match[0])) {
+        selected = src;
+      }
+      if (thumbnails.length < 4) thumbnails.push(src);
+    }
+    const orderedThumbnails = selected ? [selected, ...thumbnails.filter((src) => src !== selected)] : thumbnails;
+    const resolvedThumbnails = orderedThumbnails.slice(0, 4);
+    const thumbnail = selected ?? resolvedThumbnails[0] ?? null;
 
     let isFollowing = false;
     if (user && post.authorId !== user.id) {
@@ -120,8 +132,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       tags: post.tags || [],
       subcategory: post.subcategory || undefined,
       thumbnail,
-      thumbnails,
-      imageCount: imageMatches.length,
+      thumbnails: resolvedThumbnails,
+      imageCount,
       stats: {
         likes: post.likes || 0,
         comments: commentsCount,
@@ -227,6 +239,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (title !== undefined || content !== undefined) {
       if (hasProhibitedContent(`${finalTitle} ${finalContent}`)) {
         return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
+      }
+      const linkValidation = validateUgcExternalLinks(`${finalTitle} ${finalContent}`);
+      if (!linkValidation.ok) {
+        return errorResponse('공식 출처 도메인만 사용할 수 있습니다.', 'UGC_EXTERNAL_LINK_BLOCKED');
       }
     }
 

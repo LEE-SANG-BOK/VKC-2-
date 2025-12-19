@@ -88,6 +88,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         createdAt: true,
         isAdopted: true,
         likes: true,
+        isOfficial: true,
+        reviewStatus: true,
       },
       with: {
         author: {
@@ -165,6 +167,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       isBookmarked: false,
       isQuestion: false,
       isAdopted: answer.isAdopted,
+      isOfficial: answer.isOfficial || false,
+      reviewStatus: answer.reviewStatus,
       post: {
         id: answer.post?.id,
         title: answer.post?.title,

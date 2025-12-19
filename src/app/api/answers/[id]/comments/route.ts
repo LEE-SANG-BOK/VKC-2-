@@ -8,6 +8,7 @@ import { checkUserStatus } from '@/lib/user-status';
 import { eq, asc } from 'drizzle-orm';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
+import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -96,6 +97,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (hasProhibitedContent(normalizedContent)) {
       return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
+    }
+
+    const linkValidation = validateUgcExternalLinks(normalizedContent);
+    if (!linkValidation.ok) {
+      return errorResponse('공식 출처 도메인만 사용할 수 있습니다.', 'UGC_EXTERNAL_LINK_BLOCKED');
     }
 
     if (parentId) {

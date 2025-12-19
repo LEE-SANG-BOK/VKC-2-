@@ -67,10 +67,32 @@ export interface AdminComment {
   } | null;
 }
 
+export interface AdminFeedback {
+  id: string;
+  type: 'feedback' | 'bug';
+  title: string;
+  description: string;
+  steps: string | null;
+  pageUrl: string | null;
+  contactEmail: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+  } | null;
+}
+
+export type ReportAction = 'none' | 'warn' | 'hide' | 'blind' | 'delete';
+
 export interface AdminReport {
   id: string;
   type: 'spam' | 'harassment' | 'inappropriate' | 'misinformation' | 'other';
   status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  action: ReportAction;
   reason: string;
   postId: string | null;
   answerId: string | null;
@@ -224,6 +246,7 @@ export interface AdminUserReport {
   id: string;
   type: 'spam' | 'harassment' | 'inappropriate' | 'misinformation' | 'other';
   status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  action: ReportAction;
   reason: string;
   postId: string | null;
   commentId: string | null;
@@ -277,6 +300,7 @@ export interface AdminReportDetail {
   id: string;
   type: 'spam' | 'harassment' | 'inappropriate' | 'misinformation' | 'other';
   status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  action: ReportAction;
   reason: string;
   postId: string | null;
   answerId: string | null;
@@ -307,6 +331,8 @@ export interface AdminNews {
   linkUrl: string | null;
   isActive: boolean;
   order: number;
+  startAt?: string | null;
+  endAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

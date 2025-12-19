@@ -5,6 +5,7 @@ import { comments } from '@/lib/db/schema';
 import { successResponse, errorResponse, notFoundResponse, forbiddenResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession, isOwner } from '@/lib/api/auth';
 import { eq } from 'drizzle-orm';
+import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -48,11 +49,17 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return errorResponse('댓글 내용을 입력해주세요.');
     }
 
+    const normalizedContent = content.trim();
+    const linkValidation = validateUgcExternalLinks(normalizedContent);
+    if (!linkValidation.ok) {
+      return errorResponse('공식 출처 도메인만 사용할 수 있습니다.', 'UGC_EXTERNAL_LINK_BLOCKED');
+    }
+
     // 댓글 수정
     const [updatedComment] = await db
       .update(comments)
       .set({
-        content: content.trim(),
+        content: normalizedContent,
         updatedAt: new Date(),
       })
       .where(eq(comments.id, id))

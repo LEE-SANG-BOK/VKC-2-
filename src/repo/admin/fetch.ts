@@ -2,6 +2,7 @@ import {
   AdminUser,
   AdminPost,
   AdminComment,
+  AdminFeedback,
   AdminReport,
   AdminReportDetail,
   AdminVerification,
@@ -14,6 +15,7 @@ import {
   AdminUserPost,
   AdminUserComment,
   AdminUserReport,
+  ReportAction,
 } from './types';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || '';
@@ -170,6 +172,26 @@ export const adminFetch = {
       ),
   },
 
+  feedback: {
+    getAll: (params?: {
+      page?: number;
+      limit?: number;
+      type?: 'feedback' | 'bug';
+      search?: string;
+    }) => {
+      const searchParams = new URLSearchParams();
+      if (params?.page) searchParams.set('page', String(params.page));
+      if (params?.limit) searchParams.set('limit', String(params.limit));
+      if (params?.type) searchParams.set('type', params.type);
+      if (params?.search) searchParams.set('search', params.search);
+
+      return fetchWithCredentials<{
+        feedbacks: AdminFeedback[];
+        pagination: { page: number; limit: number; total: number; totalPages: number };
+      }>(`${BASE_URL}/feedback?${searchParams}`);
+    },
+  },
+
   reports: {
     getAll: (params?: {
       page?: number;
@@ -194,7 +216,7 @@ export const adminFetch = {
 
     updateStatus: (
       id: string,
-      data: { status: string; reviewNote?: string; deleteTarget?: boolean }
+      data: { status: string; reviewNote?: string; deleteTarget?: boolean; action?: ReportAction }
     ) =>
       fetchWithCredentials<{ report: AdminReport }>(
         `${BASE_URL}/reports/${id}`,
@@ -423,6 +445,8 @@ export const adminFetch = {
       linkUrl?: string;
       isActive?: boolean;
       order?: number;
+      startAt?: string | null;
+      endAt?: string | null;
     }) =>
       fetchWithCredentials<{ news: AdminNews }>(`${BASE_URL}/news`, {
         method: 'POST',
@@ -441,6 +465,8 @@ export const adminFetch = {
         linkUrl?: string | null;
         isActive?: boolean;
         order?: number;
+        startAt?: string | null;
+        endAt?: string | null;
       }
     ) =>
       fetchWithCredentials<{ news: AdminNews }>(`${BASE_URL}/news/${id}`, {

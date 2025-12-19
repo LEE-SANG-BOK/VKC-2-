@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import MainLayout from '@/components/templates/MainLayout';
 import PostCard from '@/components/molecules/cards/PostCard';
 import { usePosts } from '@/repo/posts/query';
+import { useSearchKeywords } from '@/repo/search/query';
 import type { PostListItem } from '@/repo/posts/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
@@ -88,11 +89,17 @@ export default function SearchClient({
   const [parentCategory, setParentCategory] = useState(resolvedInitial.parent);
   const [childCategory, setChildCategory] = useState(resolvedInitial.child);
   const [examplePlaceholder, setExamplePlaceholder] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
   const activeQuery = initialQuery;
   const activeQueryTrimmed = activeQuery.trim();
   const activeParentCategory = initialParentCategory;
   const activeChildCategory = initialChildCategory;
   const isActiveQueryValid = activeQueryTrimmed.length >= MIN_SEARCH_QUERY_LENGTH;
+  const trimmedQuery = query.trim();
+  const debouncedTrimmedQuery = debouncedQuery.trim();
+  const shouldSuggest = debouncedTrimmedQuery.length >= MIN_SEARCH_QUERY_LENGTH;
 
   // 카테고리/소분류별 예시 키 풀을 구성
   const resolveExamplePool = useCallback(() => {
@@ -142,6 +149,25 @@ export default function SearchClient({
     setChildCategory(resolvedInitial.child);
   }, [initialQuery, resolvedInitial]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    if (!isInputFocused) {
+      setIsSuggestionOpen(false);
+      return;
+    }
+    if (query.trim().length >= MIN_SEARCH_QUERY_LENGTH) {
+      setIsSuggestionOpen(true);
+    } else {
+      setIsSuggestionOpen(false);
+    }
+  }, [isInputFocused, query]);
+
   const filters = useMemo(() => ({
     search: activeQueryTrimmed || undefined,
     parentCategory: activeParentCategory !== 'all' ? activeParentCategory : undefined,
@@ -153,11 +179,72 @@ export default function SearchClient({
   const { data: postsData, isLoading, isError, error } = usePosts(filters, {
     enabled: isActiveQueryValid,
   });
+  const { data: keywordSuggestionsData, isFetching: isSuggestionsFetching } = useSearchKeywords(
+    { q: shouldSuggest ? debouncedTrimmedQuery : undefined, limit: 8 },
+    { enabled: shouldSuggest }
+  );
+  const { data: keywordRecommendationsData } = useSearchKeywords({ limit: 10 });
+
+  const suggestionLabels = useMemo(() => {
+    if (lang === 'en') {
+      return {
+        title: 'Autocomplete',
+        tag: 'Tag',
+        category: 'Category',
+        subcategory: 'Subcategory',
+        empty: 'No suggestions yet.',
+        loading: 'Loading...',
+      };
+    }
+    if (lang === 'vi') {
+      return {
+        title: 'Gợi ý',
+        tag: 'Thẻ',
+        category: 'Danh mục',
+        subcategory: 'Danh mục con',
+        empty: 'Chưa có gợi ý.',
+        loading: 'Đang tải...',
+      };
+    }
+    return {
+      title: '자동완성',
+      tag: '태그',
+      category: '카테고리',
+      subcategory: '세부',
+      empty: '추천 결과가 없습니다.',
+      loading: '로딩 중...',
+    };
+  }, [lang]);
   useEffect(() => {
     if (isError) {
       toast.error(t.searchError || '검색 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
   }, [isError, t.searchError, error]);
+
+  const keywordSuggestions = useMemo(() => {
+    const keywords = keywordSuggestionsData?.data?.keywords || [];
+    const seen = new Set<string>();
+    return keywords
+      .map((item) => {
+        const rawValue = item.value?.trim() || '';
+        if (!rawValue) return null;
+        const key = rawValue.toLowerCase();
+        if (seen.has(key)) return null;
+        seen.add(key);
+        const categoryMatch = LEGACY_CATEGORIES.find((cat) => cat.slug === rawValue);
+        const display =
+          item.source === 'tag'
+            ? rawValue
+            : categoryMatch
+              ? getCategoryName(categoryMatch, lang)
+              : rawValue;
+        return {
+          ...item,
+          display,
+        };
+      })
+      .filter(Boolean) as Array<{ value: string; count: number; source: string; display: string }>;
+  }, [keywordSuggestionsData, lang]);
 
   const posts = postsData?.data || [];
   const totalPages = postsData?.pagination?.totalPages || 0;
@@ -178,14 +265,16 @@ export default function SearchClient({
       .filter((token): token is string => Boolean(token))
       .slice(0, 6);
   }, [fallbackMeta?.tokens]);
+  const questionLabel = tCommon.question || (lang === 'vi' ? 'Câu hỏi' : lang === 'en' ? 'Question' : '질문');
+  const shareLabel = tTooltips.share || (lang === 'vi' ? 'Chia sẻ' : lang === 'en' ? 'Share' : '공유');
   const filterLabels = useMemo(() => {
     const filters = fallbackMeta?.fallbackFilters;
     if (!filters) return [];
     const labels: string[] = [];
     if (filters.type) {
       const typeMap: Record<string, string> = {
-        question: tCommon.question || '질문',
-        share: tTooltips.share || '공유',
+        question: questionLabel,
+        share: shareLabel,
       };
       labels.push(typeMap[filters.type] || filters.type);
     }
@@ -198,7 +287,7 @@ export default function SearchClient({
       }
     }
     return labels;
-  }, [fallbackMeta?.fallbackFilters, lang, tCommon.question, tTooltips.share]);
+  }, [fallbackMeta?.fallbackFilters, lang, questionLabel, shareLabel]);
   const fallbackReasonText = fallbackMeta?.reason === 'popular'
     ? t.fallbackReasonPopular || (lang === 'vi'
       ? 'Không có kết quả tương đồng nên đang hiển thị câu hỏi phổ biến.'
@@ -233,6 +322,24 @@ export default function SearchClient({
     router.push(`/${lang}/search?${params.toString()}`);
   };
 
+  const handleInputFocus = () => {
+    setIsInputFocused(true);
+  };
+
+  const handleInputBlur = () => {
+    setIsInputFocused(false);
+    setTimeout(() => {
+      setIsSuggestionOpen(false);
+    }, 150);
+  };
+
+  const handleInputChange = (value: string) => {
+    setQuery(value);
+    if (value.trim().length >= MIN_SEARCH_QUERY_LENGTH) {
+      setIsSuggestionOpen(true);
+    }
+  };
+
   const buildPageUrl = (page: number) => {
     const params = new URLSearchParams();
     if (activeQueryTrimmed) params.set('q', activeQueryTrimmed);
@@ -252,8 +359,26 @@ export default function SearchClient({
     ].filter(Boolean) as string[];
   }, [t.popularKeyword1, t.popularKeyword2, t.popularKeyword3, t.popularKeyword4, t.popularKeyword5]);
 
+  const recommendedKeywords = useMemo(() => {
+    const apiKeywords = keywordRecommendationsData?.data?.keywords || [];
+    const values = apiKeywords.length > 0 ? apiKeywords.map((item) => item.value) : popularKeywords;
+    const seen = new Set<string>();
+    return values
+      .map((value) => value?.trim())
+      .filter((value): value is string => Boolean(value))
+      .filter((value) => {
+        const key = value.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 10);
+  }, [keywordRecommendationsData, popularKeywords]);
+
   const handleApplyKeyword = (keyword: string) => {
     setQuery(keyword);
+    setIsSuggestionOpen(false);
+    setIsInputFocused(false);
     const params = new URLSearchParams();
     params.set('q', keyword);
     if (parentCategory && parentCategory !== 'all') params.set('c', parentCategory);
@@ -299,7 +424,8 @@ export default function SearchClient({
 
         {/* Search Bar */}
         <div className="mb-6 flex justify-center">
-          <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 max-w-4xl w-full shadow-sm">
+          <div className="relative max-w-4xl w-full">
+            <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 w-full shadow-sm">
             {/* Category - Desktop */}
             <div className="relative flex-shrink-0 hidden md:block">
               <select
@@ -349,8 +475,16 @@ export default function SearchClient({
               <input
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onChange={(e) => handleInputChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSearch();
+                  }
+                }}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+                onClick={handleInputFocus}
                 placeholder={examplePlaceholder || t.searchPlaceholder || '검색어를 입력하세요'}
                 className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none min-w-0"
               />
@@ -363,14 +497,60 @@ export default function SearchClient({
               {t.searchButton || '검색'}
             </button>
           </div>
+            {isSuggestionOpen && shouldSuggest ? (
+              <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl z-20 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200/60 dark:border-gray-800/60">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    {suggestionLabels.title}
+                  </span>
+                  {isSuggestionsFetching ? (
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">{suggestionLabels.loading}</span>
+                  ) : null}
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {keywordSuggestions.length > 0 ? (
+                    keywordSuggestions.map((item) => {
+                      const sourceLabel =
+                        item.source === 'tag'
+                          ? suggestionLabels.tag
+                          : item.source === 'category'
+                            ? suggestionLabels.category
+                            : suggestionLabels.subcategory;
+                      const displayValue = item.source === 'tag' ? `#${item.display}` : item.display;
+                      return (
+                        <button
+                          key={`${item.source}-${item.value}`}
+                          type="button"
+                          onMouseDown={() => handleApplyKeyword(item.value)}
+                          className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                        >
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{displayValue}</span>
+                          <span className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                            <span className="rounded-full border border-gray-200 dark:border-gray-700 px-2 py-0.5">
+                              {sourceLabel}
+                            </span>
+                            <span>{item.count}</span>
+                          </span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      {suggestionLabels.empty}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
 
-        {popularKeywords.length > 0 && (
+        {recommendedKeywords.length > 0 && (
           <div className="mb-6 flex flex-wrap gap-2 items-center">
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               {t.popularKeywordsTitle || '인기 검색어'}
             </span>
-            {popularKeywords.map((kw) => (
+            {recommendedKeywords.map((kw) => (
               <button
                 key={kw}
                 onClick={() => handleApplyKeyword(kw)}

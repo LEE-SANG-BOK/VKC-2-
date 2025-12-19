@@ -4,6 +4,15 @@
 
 ## 최근 주요 변경 사항
 
+- [LEAD] 좌측 사이드바 sticky 래핑 적용: 메인 스크롤과 분리된 내부 스크롤 유지(MainLayout/CategorySidebar)
+- [LEAD] UserTrustBadge 공통 컴포넌트 추가 + PostCard/Detail/Profile/Answer/Comment/추천·팔로잉에서 인증 배지 위치 통일(닉네임 옆)
+- [LEAD] 모바일 홈 필터(인기/최신) 알약 투명도 미세 조정
+- [FE] 헤더 우측 액션 순서 변경(언어 스위치 → 알림) + 공유 CTA(ko) 문구 업데이트 + 사이드바 피드백 라벨을 “Feedback”으로 고정(텍스트 축소/아이콘 들여쓰기)
+- [FE] PostCard 모바일 해결/미해결 아이콘 shrink-0 보강 + PostDetail 답글/댓글 렌더 블록 괄호 정리로 lint 파서 오류 해소
+- [FE] PostDetail/Search/ProfileEdit 툴팁·카테고리 locale fallback 보강(미지정/익명/툴팁 aria-label 정리)
+- [FE] PostCard 인증 응답 요약 라벨 모바일 flex-wrap 보강(vi 줄바꿈 대응)
+- [WEB] 온보딩 가이드 추가: Onboarding 화면에 첫 질문/첫 답변/카테고리 탐색 카드 + 툴팁 + FAQ 섹션 구성
+- [WEB] 검색 UX 보강: 검색 입력 자동완성 드롭다운 + `/api/search/keywords` 기반 추천 키워드 칩 노출
 - [WEB] 리더보드 UI/IA 추가: `/[lang]/leaderboard` SSR + HydrationBoundary, Top3 강조 카드/전체 랭킹 리스트/페이지네이션 구성
 - [WEB] 구독/알림 설정 UX 확장: `/[lang]/subscriptions` 구독 관리 화면(카테고리/토픽 토글) + 채널/빈도 설정, Settings 모달에서 진입 CTA 추가
 - [WEB] 구독 토글 후 알림 설정 캐시 invalidation 추가로 설정 목록 동기화

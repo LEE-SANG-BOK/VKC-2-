@@ -14,3 +14,16 @@ export interface SearchExample {
 export interface SearchExamplesResponse {
   examples: SearchExample[];
 }
+
+export type SearchKeywordSource = 'tag' | 'category' | 'subcategory';
+
+export interface SearchKeyword {
+  value: string;
+  count: number;
+  source: SearchKeywordSource;
+}
+
+export interface SearchKeywordsResponse {
+  keywords: SearchKeyword[];
+  query?: string;
+}

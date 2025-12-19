@@ -1032,6 +1032,61 @@
 - 다음 액션/의존성
   - 피드(PostCard)는 인증 답변 요약 배지로 유지 중이며, 공식/검수 여부를 별도 노출하려면 list API에 필드 추가 필요
 
+#### (2025-12-19) [FE] 헤더/사이드바 CTA·모바일 아이콘 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] 헤더 우측 액션 순서 변경(언어 스위치 → 알림)
+  - [x] 공유하기 CTA 설명 문구(ko) 업데이트
+  - [x] Sidebar 피드백 라벨 고정 + 텍스트 축소/아이콘 들여쓰기
+  - [x] PostCard 모바일 해결/미해결 아이콘 shrink-0 보강
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 헤더 우측 액션 순서가 기대 흐름과 달라 언어/알림 전환이 어색함
+  - 공유 CTA 요약 문구가 구형 카피로 남아 있음
+  - 피드백 라벨이 언어마다 달라 사이드바 일관성 저하
+  - PostDetail 렌더 블록에서 괄호 정합이 깨져 lint 파서 오류 발생
+- 변경 내용(why/what)
+  - why: CTA 톤 정합/사이드바 일관성 개선 + 모바일 아이콘 안정화
+  - what: 헤더 우측 액션 순서 변경, 공유하기 ko 툴팁 카피 교체, 피드백 라벨/스타일 고정, PostCard 아이콘 shrink-0 적용, PostDetail 렌더 블록 괄호 정리
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/components/organisms/Header.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - messages/ko.json
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - docs/EXECUTION_PLAN.md
+- i18n
+  - 신규 키 요청: 없음 (ko 카피만 업데이트)
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [FE] i18n 툴팁/카테고리 fallback 보강 + PostCard 모바일 랩 (P0)
+
+- 플랜(체크리스트)
+  - [x] PostDetail/검색/프로필 편집 툴팁·카테고리 fallback 정리
+  - [x] PostCard 인증 응답 요약 모바일 wrap 보강
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 툴팁 aria-label/카테고리 미지정 텍스트가 한국어 fallback으로 남아 locale 혼용 가능
+  - 모바일에서 인증 응답 요약 라벨이 긴 경우 줄바꿈이 제한될 수 있음
+- 변경 내용(why/what)
+  - why: locale 혼용 최소화 + 모바일 텍스트 잘림 방지
+  - what: PostDetail/검색/프로필 편집에 locale fallback 정리, PostCard 인증 요약 라인 flex-wrap 보강
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/app/[lang]/(main)/search/SearchClient.tsx
+  - src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
 ### 0.6.2 [WEB] Web Feature Agent
 
 #### (2025-12-18) [WEB] 헤더/프로필 모달 성능 최적화 (P0)
@@ -1806,6 +1861,44 @@
   - src/repo/categories/mutation.ts
 - 다음 액션/의존성
   - DB 마이그레이션 적용 필요(0032_topic_subscription_notifications.sql)
+
+#### (2025-12-19) [WEB] 온보딩 도움말/FAQ/툴팁 가이드 (P1)
+
+- 플랜(체크리스트)
+  - [x] 첫 질문/첫 답변/카테고리 탐색 카드 + CTA 구성
+  - [x] 도움말 툴팁 + FAQ 섹션 추가
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 온보딩 화면에 실행 가이드/FAQ가 없어 다음 행동 유도가 약함
+- 변경 내용(why/what)
+  - why: 첫 행동 전환을 높이고 사용자가 즉시 다음 액션을 찾도록 개선
+  - what: 온보딩 페이지에 빠른 시작 카드(툴팁 포함)와 FAQ 섹션 추가
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/onboarding/OnboardingClient.tsx
+- 다음 액션/의존성
+  - 없음
+
+#### (2025-12-19) [WEB] 검색 자동완성/추천 키워드 UX (P1)
+
+- 플랜(체크리스트)
+  - [x] 자동완성 드롭다운 + 소스/카운트 표시
+  - [x] 추천 키워드 API 연동 + 번역 fallback
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 검색 화면은 번역 기반 인기 키워드만 제공하고 자동완성이 없음
+- 변경 내용(why/what)
+  - why: 검색 의도 입력을 돕고 빈 검색 상태에서 탐색 진입률을 높이기 위함
+  - what: 검색 입력에 자동완성 드롭다운을 추가하고 `/api/search/keywords` 기반 추천 키워드 칩을 노출
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/search/SearchClient.tsx
+- 다음 액션/의존성
+  - 오타/혼용 대응은 BE와 동시 진행
 
 ### 0.6.3 [BE] Backend Agent
 
@@ -2700,10 +2793,10 @@
 - [ ] (2025-12-19) [LEAD] 베타 핵심 지표 이벤트 정의(DAU/답변율/채택율/신고율) + 로깅 항목 정리
 
 **T+1 개선(참여/리텐션)**
-- [ ] (2025-12-19) [WEB] 온보딩 도움말/FAQ/툴팁: 첫 질문/첫 답변/카테고리 탐색 가이드
+- [x] (2025-12-19) [WEB] 온보딩 도움말/FAQ/툴팁: 첫 질문/첫 답변/카테고리 탐색 가이드
 - [x] (2025-12-19) [BE] 포인트/레벨/랭킹 산정 규칙 확정 + 조회 API 설계
 - [ ] (2025-12-19) [FE] 프로필/피드에 포인트·랭킹·칭호 UI
-- [ ] (2025-12-19) [WEB] 검색 자동완성/추천 키워드 UX 설계(오타/혼용 대응은 BE와 동시)
+- [x] (2025-12-19) [WEB] 검색 자동완성/추천 키워드 UX 설계(오타/혼용 대응은 BE와 동시)
 - [x] (2025-12-19) [BE] 검색 자동완성/추천 키워드 API + 캐시 정책
 - [ ] (2025-12-19) [LEAD] 콘텐츠 확장/AI 작성 지원 프로세스(내부 작성용) 정의 + CMS/운영 플로우 정리
 - [ ] (2025-12-19) [WEB] 소셜 공유 CTA 확장 + 소셜 로그인(Facebook/Google) 도입 범위 확정
@@ -2723,6 +2816,8 @@
 - [x] (2025-12-19) [LEAD] 추천 사용자 메타에 비자 타입 포함(숫자 허용) + 표시값 대문자 정규화
 - [x] (2025-12-19) [LEAD] README 최신화: 프로젝트 개요/명령어/구조/SEO 규칙 요약
 - [x] (2025-12-19) [LEAD] MainLayout 2xl 그리드 폭을 Header와 정렬(좌/우 레일 정렬)
+- [x] (2025-12-19) [LEAD] 좌측 사이드바 sticky 래핑 + 내부 스크롤 분리(메인 스크롤과 분리)
+- [x] (2025-12-19) [LEAD] UserTrustBadge 공통 컴포넌트 추가 + PostCard/Detail/Profile/Answer/Comment/추천·팔로잉 배지 위치 통일
 - [ ] (2025-12-19) [FE] 헤더 우측 액션 순서 변경(알림/언어 스위치 위치 조정)
 - [ ] (2025-12-19) [FE] 공유하기 CTA 설명 문구 업데이트: “내 경험과 지식을 모두와 함께 공유해봅시다.”
 - [ ] (2025-12-19) [FE] Sidebar 피드백 라벨 고정: “Feedback” (언어 무관) + 글자 크기 축소/아이콘 들여쓰기

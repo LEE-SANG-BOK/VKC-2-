@@ -1,7 +1,7 @@
 
 import { db } from '@/lib/db';
 import { news } from '@/lib/db/schema';
-import { desc, eq, asc } from 'drizzle-orm';
+import { desc, eq, asc, and, or, isNull, lte, gte } from 'drizzle-orm';
 import { successResponse, serverErrorResponse } from '@/lib/api/response';
 
 export async function GET(request: Request) {
@@ -9,10 +9,17 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const lang = searchParams.get('lang') || 'vi';
 
+    const now = new Date();
     const newsItems = await db
       .select()
       .from(news)
-      .where(eq(news.isActive, true))
+      .where(
+        and(
+          eq(news.isActive, true),
+          or(isNull(news.startAt), lte(news.startAt, now)),
+          or(isNull(news.endAt), gte(news.endAt, now))
+        )
+      )
       .orderBy(asc(news.order), desc(news.createdAt));
 
     // 언어 우선순위: 현재 언어 → vi → 나머지
@@ -24,7 +31,9 @@ export async function GET(request: Request) {
 
     const merged = [...preferred, ...fallbackVi, ...others];
 
-    return successResponse(merged);
+    const response = successResponse(merged);
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    return response;
   } catch (error) {
     console.error('Failed to fetch news:', error);
     return serverErrorResponse('Failed to fetch news');

@@ -8,6 +8,35 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
+const reportStatusSet = new Set(['pending', 'reviewed', 'resolved', 'dismissed']);
+const reportActionSet = new Set(['none', 'warn', 'hide', 'blind', 'delete']);
+
+const resolveStatus = (value: unknown) =>
+  typeof value === 'string' && reportStatusSet.has(value) ? (value as typeof reports.$inferSelect.status) : null;
+
+const resolveAction = (value: unknown) =>
+  typeof value === 'string' && reportActionSet.has(value) ? (value as typeof reports.$inferSelect.action) : null;
+
+const statusTransitions: Record<string, Set<string>> = {
+  pending: new Set(['pending', 'reviewed', 'resolved', 'dismissed']),
+  reviewed: new Set(['reviewed', 'resolved', 'dismissed']),
+};
+
+const reportActionMessages = {
+  hide: {
+    postTitle: '숨김 처리됨',
+    postContent: '관리자에 의해 숨김 처리된 게시글입니다.',
+    answerContent: '관리자에 의해 숨김 처리된 답변입니다.',
+    commentContent: '관리자에 의해 숨김 처리된 댓글입니다.',
+  },
+  blind: {
+    postTitle: '블라인드 처리됨',
+    postContent: '관리자에 의해 블라인드 처리된 게시글입니다.',
+    answerContent: '관리자에 의해 블라인드 처리된 답변입니다.',
+    commentContent: '관리자에 의해 블라인드 처리된 댓글입니다.',
+  },
+};
+
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const session = await getAdminSession(request);
@@ -191,7 +220,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     const { id } = await context.params;
     const body = await request.json();
-    const { status, reviewNote, deleteTarget } = body;
+    const { status, reviewNote, deleteTarget, action } = body;
 
     const [report] = await db
       .select()
@@ -207,27 +236,78 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Report already processed' }, { status: 400 });
     }
 
-    if (status !== 'reviewed' && status !== 'resolved' && status !== 'dismissed') {
+    const nextStatus = resolveStatus(status);
+    if (!nextStatus) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
+
+    const transitionSet = statusTransitions[report.status];
+    if (!transitionSet || !transitionSet.has(nextStatus)) {
+      return NextResponse.json({ error: 'Invalid status transition' }, { status: 400 });
+    }
+
+    const actionValue = resolveAction(action);
+    const resolvedAction = actionValue || (deleteTarget ? 'delete' : report.action || 'none');
+    if (resolvedAction !== 'none' && nextStatus !== 'resolved') {
+      return NextResponse.json({ error: 'Action requires resolved status' }, { status: 400 });
+    }
+    if (nextStatus === 'dismissed' && resolvedAction !== 'none') {
+      return NextResponse.json({ error: 'Dismissed reports cannot include actions' }, { status: 400 });
+    }
+
+    const resolvedReviewNote = typeof reviewNote === 'string' ? reviewNote.trim() : report.reviewNote;
 
     const [updatedReport] = await db
       .update(reports)
       .set({
-        status,
-        reviewNote: reviewNote || null,
+        status: nextStatus,
+        action: resolvedAction,
+        reviewNote: resolvedReviewNote || null,
         updatedAt: new Date(),
       })
       .where(eq(reports.id, id))
       .returning();
 
-    if (deleteTarget && status === 'resolved') {
-      if (report.postId) {
-        await db.delete(posts).where(eq(posts.id, report.postId));
-      } else if (report.answerId) {
-        await db.delete(answers).where(eq(answers.id, report.answerId));
-      } else if (report.commentId) {
-        await db.delete(comments).where(eq(comments.id, report.commentId));
+    if (nextStatus === 'resolved' && resolvedAction !== 'none') {
+      if (resolvedAction === 'delete') {
+        if (report.postId) {
+          await db.delete(posts).where(eq(posts.id, report.postId));
+        } else if (report.answerId) {
+          await db.delete(answers).where(eq(answers.id, report.answerId));
+        } else if (report.commentId) {
+          await db.delete(comments).where(eq(comments.id, report.commentId));
+        }
+      }
+
+      if (resolvedAction === 'hide' || resolvedAction === 'blind') {
+        const messages = reportActionMessages[resolvedAction];
+        if (report.postId) {
+          const title = resolvedAction === 'hide' ? messages.postTitle : undefined;
+          await db
+            .update(posts)
+            .set({
+              ...(title ? { title } : {}),
+              content: messages.postContent,
+              updatedAt: new Date(),
+            })
+            .where(eq(posts.id, report.postId));
+        } else if (report.answerId) {
+          await db
+            .update(answers)
+            .set({
+              content: messages.answerContent,
+              updatedAt: new Date(),
+            })
+            .where(eq(answers.id, report.answerId));
+        } else if (report.commentId) {
+          await db
+            .update(comments)
+            .set({
+              content: messages.commentContent,
+              updatedAt: new Date(),
+            })
+            .where(eq(comments.id, report.commentId));
+        }
       }
     }
 

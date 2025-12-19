@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users, follows, posts } from '@/lib/db/schema';
-import { isExpertBadgeType } from '@/lib/constants/badges';
 import { eq, ne, notInArray, sql, desc, and } from 'drizzle-orm';
-import { successResponse, errorResponse } from '@/lib/api/response';
+import { errorResponse } from '@/lib/api/response';
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,21 +19,8 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(12, Math.max(1, limitCandidate));
     const offset = (page - 1) * limit;
 
-    const currentUser = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-      columns: {
-        interests: true,
-      },
-    });
-
     const normalizeInterest = (value: string | null | undefined) =>
       typeof value === 'string' ? value.trim().toLowerCase() : '';
-
-    const currentInterestSet = new Set(
-      (currentUser?.interests || [])
-        .map((interest) => normalizeInterest(interest))
-        .filter(Boolean)
-    );
 
     // Get users that current user is already following
     const followingUsers = await db
@@ -42,7 +28,8 @@ export async function GET(req: NextRequest) {
       .from(follows)
       .where(eq(follows.followerId, session.user.id));
 
-    const followingIds = followingUsers.map(f => f.followingId);
+    const followingIds = followingUsers.map(f => f.followingId).filter(Boolean) as string[];
+    const followingIdSet = new Set(followingIds);
 
     // Get recommended users (exclude self and already following)
     const whereConditions = [
@@ -76,8 +63,8 @@ export async function GET(req: NextRequest) {
         status: users.status,
         userType: users.userType,
         interests: users.interests,
-        adoptionRate: users.adoptionRate,
-        trustScore: users.trustScore,
+        visaType: users.visaType,
+        koreanLevel: users.koreanLevel,
         followersCount: sql<number>`(
           SELECT COUNT(*)::int 
           FROM ${follows} 
@@ -102,24 +89,23 @@ export async function GET(req: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    const resolveBadgeLevel = (user: { isExpert: boolean; isVerified: boolean; badgeType?: string | null }) => {
-      if (user.isExpert || isExpertBadgeType(user.badgeType)) return 'expert';
-      if (user.isVerified || user.badgeType) return 'verified';
-      return 'community';
+    const pickInterest = (interestList?: string[] | null) => {
+      if (!interestList || interestList.length === 0) return '';
+      return interestList.find((interest) => normalizeInterest(interest)) || '';
     };
-
-    const resolveInterestMatchRate = (interestList?: string[] | null) => {
-      if (!interestList || interestList.length === 0 || currentInterestSet.size === 0) return 0;
-      const matchCount = interestList.reduce((count, interest) => {
-        const normalized = normalizeInterest(interest);
-        return normalized && currentInterestSet.has(normalized) ? count + 1 : count;
-      }, 0);
-      return Math.round((matchCount / currentInterestSet.size) * 100);
-    };
+    const hasDigits = (value: string) => /\d/.test(value);
 
     const formattedUsers = recommendedUsers.map(user => {
-      const adoptionRateValue = Number(user.adoptionRate ?? 0);
-      const adoptionRate = Number.isFinite(adoptionRateValue) ? adoptionRateValue : 0;
+      const recommendationMeta = [
+        { key: 'userType', value: user.userType || '' },
+        { key: 'visaType', value: user.visaType || '' },
+        { key: 'koreanLevel', value: user.koreanLevel || '' },
+        { key: 'interest', value: pickInterest(user.interests) },
+        { key: 'status', value: user.status || '' },
+      ]
+        .filter((item) => typeof item.value === 'string' && item.value.trim().length > 0)
+        .filter((item) => item.key === 'visaType' || !hasDigits(item.value as string))
+        .slice(0, 3);
 
       return {
       id: user.id,
@@ -131,21 +117,11 @@ export async function GET(req: NextRequest) {
       isVerified: user.isVerified,
       status: user.status,
       userType: user.userType,
-      isFollowing: false,
-      recommendationMeta: [
-        {
-          key: 'badge',
-          value: resolveBadgeLevel(user),
-        },
-        {
-          key: 'adoptionRate',
-          value: adoptionRate,
-        },
-        {
-          key: 'interestMatchRate',
-          value: resolveInterestMatchRate(user.interests),
-        },
-      ],
+      visaType: user.visaType,
+      koreanLevel: user.koreanLevel,
+      interests: user.interests,
+      isFollowing: followingIdSet.has(user.id),
+      recommendationMeta,
       stats: {
         followers: user.followersCount,
         following: user.followingCount,

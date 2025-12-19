@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
           id: reports.id,
           type: reports.type,
           status: reports.status,
+          action: reports.action,
           reason: reports.reason,
           postId: reports.postId,
           answerId: reports.answerId,

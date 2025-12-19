@@ -62,6 +62,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
           id: reports.id,
           type: reports.type,
           status: reports.status,
+          action: reports.action,
           reason: reports.reason,
           postId: reports.postId,
           commentId: reports.commentId,
