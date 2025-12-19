@@ -18,7 +18,7 @@ const NotificationModal = dynamic(() => import('@/components/molecules/modals/No
 
 function HeaderSearchFallback() {
   return (
-    <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 max-w-4xl w-full shadow-sm animate-pulse">
+    <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 w-full shadow-sm animate-pulse">
       <div className="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700" />
       <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
       <div className="h-4 flex-1 rounded bg-gray-200 dark:bg-gray-700" />
@@ -61,6 +61,42 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
     if (locale === 'vi') return 'Hỏi về Hàn Quốc, trả lời đáng tin.';
     return '한국을 묻고, 믿을 수 있게 답하다.';
   }, [locale]);
+  const labelFallbacks = useMemo(() => {
+    if (locale === 'en') {
+      return {
+        goBack: 'Go back',
+        sidebarToggle: 'Toggle sidebar',
+        notifications: 'Notifications',
+        login: 'Log in',
+        signup: 'Sign up',
+        userName: 'User',
+      };
+    }
+    if (locale === 'vi') {
+      return {
+        goBack: 'Quay lại',
+        sidebarToggle: 'Mở thanh bên',
+        notifications: 'Thông báo',
+        login: 'Đăng nhập',
+        signup: 'Đăng ký',
+        userName: 'Người dùng',
+      };
+    }
+    return {
+      goBack: '뒤로',
+      sidebarToggle: '사이드바 열기',
+      notifications: '알림',
+      login: '로그인',
+      signup: '회원가입',
+      userName: '사용자',
+    };
+  }, [locale]);
+  const goBackLabel = tSearch.goBack || labelFallbacks.goBack;
+  const sidebarToggleLabel = tTooltip.sidebarToggle || labelFallbacks.sidebarToggle;
+  const notificationsLabel = tTooltip.notifications || labelFallbacks.notifications;
+  const loginLabel = t.login || labelFallbacks.login;
+  const signupLabel = t.signup || labelFallbacks.signup;
+  const userNameFallback = labelFallbacks.userName;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -90,22 +126,22 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
         }
         text-gray-900 dark:text-white`}
     >
-      <div className="mx-auto grid w-full max-w-[1680px] h-[var(--vk-header-height)] grid-cols-[auto_minmax(0,1fr)_auto] lg:grid-cols-[320px_minmax(0,1fr)_320px] 2xl:grid-cols-[320px_minmax(0,720px)_320px] items-center gap-2 px-2 sm:px-3 lg:px-4">
+      <div className="mx-auto grid w-full max-w-[1680px] h-[var(--vk-header-height)] grid-cols-[auto_minmax(0,1fr)_auto] lg:grid-cols-[320px_minmax(0,1fr)_320px] 2xl:grid-cols-[320px_minmax(0,1040px)_320px] 2xl:justify-center items-center gap-2 px-2 sm:px-3 lg:px-4">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 justify-self-start">
           {showBackButton && (
             <button
               onClick={() => router.back()}
               className="p-1.5 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-300 text-gray-600 dark:text-gray-400"
-              aria-label="Go back"
+              aria-label={goBackLabel}
             >
-              <span className="text-lg sm:text-base">←</span> {tSearch.goBack || '뒤로'}
+              <span className="text-lg sm:text-base">←</span> {goBackLabel}
             </button>
           )}
           {!showBackButton && (
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="lg:hidden p-1.5 sm:p-1.5 rounded-xl border-2 border-blue-300/90 dark:border-blue-900/60 bg-white/70 dark:bg-gray-900/40 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 group"
-              aria-label={tTooltip.sidebarToggle || 'Toggle sidebar'}
+              aria-label={sidebarToggleLabel}
             >
               {isMobileMenuOpen ? (
                 <X className="h-5 w-5 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
@@ -124,7 +160,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
         </div>
 
         {!hideSearch && (
-          <div className="hidden lg:flex justify-center items-center justify-self-center w-full max-w-4xl">
+          <div className="hidden lg:flex justify-center items-center justify-self-center w-full">
             {shouldRenderSearch ? (
               <HeaderSearch locale={locale} translations={translations} />
             ) : (
@@ -136,12 +172,14 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
         <div className="flex items-center space-x-1 sm:space-x-2 justify-self-end">
           {rightActions || (
             <>
+              <LanguageSwitcher />
+
               {user && (
                 <div className="relative">
                   <button
                     onClick={() => setIsNotificationModalOpen(!isNotificationModalOpen)}
                     className="relative p-1 sm:p-1 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
-                    aria-label={tTooltip.notifications || '알림'}
+                    aria-label={notificationsLabel}
                   >
                     <Bell className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-amber-400 transition-colors" />
                     {unreadCount > 0 && (
@@ -160,8 +198,6 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
                 </div>
               )}
 
-              <LanguageSwitcher />
-
               {status === 'loading' ? (
                 <div className="flex items-center space-x-1 sm:space-x-1.5">
                   <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
@@ -169,7 +205,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
               ) : user ? (
                 <div className="flex items-center space-x-1 sm:space-x-1.5">
                   <UserProfile
-                    name={user.name || 'User'}
+                    name={user.name || userNameFallback}
                     avatar={user.image || undefined}
                     isLoggedIn={true}
                     userId={user.id}
@@ -185,7 +221,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
                     onClick={() => router.push(`/${locale}/login`)}
                     className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
                   >
-                    {t.login || '로그인'}
+                    {loginLabel}
                   </Button>
                   <Button
                     variant="primary"
@@ -193,7 +229,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
                     className="hidden xs:block text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
                     onClick={() => router.push(`/${locale}/signup`)}
                   >
-                    {t.signup || '회원가입'}
+                    {signupLabel}
                   </Button>
                 </div>
               )}

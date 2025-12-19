@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
-import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake } from 'lucide-react';
+import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Bug } from 'lucide-react';
 import { LEGACY_CATEGORIES, getCategoryName, CATEGORY_GROUPS } from '@/lib/constants/categories';
 import CategoryItem from '@/components/molecules/categories/CategoryItem';
 import { useSession } from 'next-auth/react';
@@ -87,13 +87,23 @@ export default function CategorySidebar({
         : locale === 'en'
           ? 'See posts from categories you follow.'
           : '구독한 카테고리 글만 모아볼 수 있어요.'),
+    feedback:
+      t.feedbackTooltip ||
+      (locale === 'vi'
+        ? 'Gửi phản hồi hoặc báo lỗi cho đội ngũ.'
+        : locale === 'en'
+          ? 'Send feedback or report a bug.'
+          : '피드백이나 버그를 제보할 수 있어요.'),
   };
+
+  const feedbackLabel = 'Feedback';
 
   const menuCategories = [
     { id: 'popular', icon: TrendingUp, count: 0 },
     { id: 'latest', icon: Sparkles, count: 0 },
     { id: 'following', icon: Users, count: 0 },
     { id: 'subscribed', icon: HeartHandshake, count: 0 },
+    { id: 'feedback', icon: Bug, count: 0, label: feedbackLabel, className: 'px-5 text-xs gap-2' },
     // { id: 'media', icon: Film, count: 0 }, // 미디어 전용 페이지 (숨김 상태)
   ];
 
@@ -192,6 +202,12 @@ export default function CategorySidebar({
       return;
     }
 
+    if (categoryId === 'feedback') {
+      router.push(`/${locale}/feedback`);
+      setIsMobileMenuOpen(false);
+      return;
+    }
+
     if (onCategoryChange) {
       onCategoryChange(categoryId);
     }
@@ -210,13 +226,11 @@ export default function CategorySidebar({
         pt-0
       `
     : `
-        w-[320px] flex flex-col
+        w-[320px] h-full flex flex-col
         bg-transparent
         overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300
         scrollbar-track-transparent hover:scrollbar-thumb-gray-400
-        transition-transform duration-300 z-40
-        lg:translate-x-0
-        top-[var(--vk-header-height)] h-[calc(100vh-var(--vk-header-height))]
+        z-40
         pt-0
       `;
 
@@ -229,11 +243,8 @@ export default function CategorySidebar({
         ref={containerRef}
         className={`
         ${isMobileVariant ? '' : 'hidden lg:flex'}
-        ${isMobileVariant ? '' : 'sticky'}
-        ${isMobileVariant ? '' : 'left-0'}
-        ${isMobileVariant ? '' : 'lg:top-[var(--vk-header-height)]'}
+        ${isMobileVariant ? '' : 'h-full'}
         ${isMobileVariant ? 'flex' : ''}
-        ${isMobileVariant ? '' : 'translate-x-0'}
         ${containerClass}
         ${isMobileVariant ? '' : 'px-0'}
       `}>
@@ -257,13 +268,14 @@ export default function CategorySidebar({
             <CategoryItem
               key={category.id}
               id={category.id}
-              name={t[category.id] || category.id}
+              name={(category as { label?: string }).label || t[category.id] || category.id}
               description={showInlineDescriptions ? tooltipSummary(menuTooltips[category.id]) : undefined}
               icon={category.icon}
               count={category.count}
               isActive={selectedCategory === category.id}
               onClick={handleCategoryClick}
               tooltip={undefined}
+              className={(category as { className?: string }).className}
             />
           ))}
         </div>
@@ -364,7 +376,7 @@ export default function CategorySidebar({
                       const apiChild = apiBySlug.get(child.slug);
                       const subscribed = apiChild ? subscribedIds.has(apiChild.id) : false;
                       return (
-                        <div key={child.slug} className="flex items-center gap-2 pr-3 py-1 min-w-0">
+                        <div key={child.slug} className="flex items-center gap-2 pr-4 py-1 min-w-0">
                           <CategoryItem
                             id={child.slug}
                             name={getCategoryName(child, locale)}
@@ -377,13 +389,13 @@ export default function CategorySidebar({
                           {apiChild ? (
                           <button
                             onClick={() => handleSubscribe(apiChild.id)}
-                            className={`shrink-0 whitespace-normal break-keep text-[10px] sm:text-[11px] min-h-[28px] min-w-[56px] sm:min-w-[72px] px-2 sm:px-2.5 py-1 rounded-full transition-colors ${
+                            className={`shrink-0 whitespace-nowrap text-[11px] min-h-[32px] min-w-[84px] sm:min-w-[96px] px-2.5 sm:px-3 py-1.5 rounded-full transition-colors ${
                               subscribed
                                 ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
                                 : 'border border-transparent bg-blue-600 text-white shadow-sm hover:bg-blue-700'
                             }`}
                           >
-                            <span className="block leading-tight">
+                            <span className="block leading-none">
                               {subscribed
                                 ? (t.subscribedLabel || t.subscribed || '구독 중')
                                 : (t.subscribe || '구독')}
@@ -419,9 +431,9 @@ export default function CategorySidebar({
                   />
                   <button
                     onClick={() => handleSubscribe(cat.id)}
-                    className="shrink-0 whitespace-normal break-keep text-[10px] sm:text-[11px] min-h-[28px] min-w-[56px] sm:min-w-[72px] px-2 sm:px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="shrink-0 whitespace-nowrap text-[11px] min-h-[32px] min-w-[84px] sm:min-w-[96px] px-2.5 sm:px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <span className="block leading-tight">
+                    <span className="block leading-none">
                       {t.subscribedLabel || t.subscribed || '구독 중'}
                     </span>
                   </button>

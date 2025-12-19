@@ -3,15 +3,16 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
-import { MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, HelpCircle, CheckCircle, ThumbsUp, AlertTriangle, Link as LinkIcon, ShieldAlert } from 'lucide-react';
+import { MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, HelpCircle, CheckCircle, ThumbsUp, AlertTriangle, Link as LinkIcon, BadgeCheck } from 'lucide-react';
 import Avatar from '@/components/atoms/Avatar';
 import UserChip from '@/components/molecules/user/UserChip';
+import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
 import Button from '@/components/atoms/Button';
 import Tooltip from '@/components/atoms/Tooltip';
 import Modal from '@/components/atoms/Modal';
 import RichTextEditor from '@/components/molecules/editor/RichTextEditor';
+import PostCard from '@/components/molecules/cards/PostCard';
 import Header from '@/components/organisms/Header';
-import TrustBadge from '@/components/atoms/TrustBadge';
 import FollowButton from '@/components/atoms/FollowButton';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { useSession } from 'next-auth/react';
@@ -25,14 +26,17 @@ import { useTogglePostLike, useTogglePostBookmark, useDeletePost, useUpdatePost,
 import { useCreateAnswer, useUpdateAnswer, useDeleteAnswer, useToggleAnswerLike, useAdoptAnswer, useCreateAnswerComment } from '@/repo/answers/mutation';
 import { useCreatePostComment, useUpdateComment, useDeleteComment, useToggleCommentLike } from '@/repo/comments/mutation';
 import { useReportPost, useReportComment, useReportAnswer } from '@/repo/reports/mutation';
+import { usePosts } from '@/repo/posts/query';
 import { useFollowStatus } from '@/repo/users/query';
 import { useCategories } from '@/repo/categories/query';
 import { ALLOWED_CATEGORY_SLUGS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
+import type { PostListItem } from '@/repo/posts/types';
 import { useQuery, useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { queryKeys } from '@/repo/keys';
 import type { ReportType } from '@/repo/reports/types';
 import { ApiError, isAccountRestrictedError } from '@/lib/api/errors';
 import { toast } from 'sonner';
+import { buildCategoryPopularFilters, buildRelatedPostFilters } from '@/utils/postRecommendationFilters';
 
 interface PaginatedListResponse<T> {
   success: boolean;
@@ -114,6 +118,8 @@ interface Answer {
   helpful: number;
   isHelpful: boolean;
   isAdopted: boolean;
+  isOfficial?: boolean;
+  reviewStatus?: 'pending' | 'approved' | 'rejected';
   replies?: AnswerReply[];
 }
 
@@ -217,13 +223,36 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const tPostDetail = (translations?.postDetail || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
   const tErrors = (translations?.errors || {}) as Record<string, string>;
+  const resolvedLocale = (locale === 'en' || locale === 'vi' ? locale : 'ko') as 'ko' | 'en' | 'vi';
+  const likeTooltipLabel = tTooltips.like || (locale === 'vi' ? 'Thích' : locale === 'en' ? 'Like' : '좋아요');
+  const copyLinkLabel = tTooltips.copyLink || (locale === 'vi' ? 'Sao chép liên kết' : locale === 'en' ? 'Copy link' : '링크 복사');
+  const bookmarkLabel = tTooltips.bookmark || (locale === 'vi' ? 'Lưu' : locale === 'en' ? 'Bookmark' : '북마크');
+  const reportLabel = tCommon.report || (locale === 'vi' ? 'Báo cáo' : locale === 'en' ? 'Report' : '신고');
+  const helpfulLabel = tCommon.helpful || (locale === 'vi' ? 'Hữu ích' : locale === 'en' ? 'Helpful' : '도움됨');
+  const editLabel = tCommon.edit || (locale === 'vi' ? 'Chỉnh sửa' : locale === 'en' ? 'Edit' : '수정');
+  const deleteLabel = tCommon.delete || (locale === 'vi' ? 'Xóa' : locale === 'en' ? 'Delete' : '삭제');
+  const adoptedLabel = tCommon.adopted || (locale === 'vi' ? 'Đã chọn' : locale === 'en' ? 'Adopted' : '채택됨');
+  const savingLabel = tCommon.saving || (locale === 'vi' ? 'Đang lưu...' : locale === 'en' ? 'Saving...' : '저장 중...');
+  const loadingLabel = tPost.loading || (locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...');
+  const uncategorizedLabel = tCommon.uncategorized || (locale === 'vi' ? 'Chưa phân loại' : locale === 'en' ? 'Uncategorized' : '미지정');
+  const anonymousLabel = tCommon.anonymous || (locale === 'vi' ? 'Người dùng ẩn danh' : locale === 'en' ? 'Anonymous user' : '익명 사용자');
+  const answerBadgeFallbacks = locale === 'en'
+    ? { officialAnswer: 'Official answer', reviewedAnswer: 'Reviewed answer' }
+    : locale === 'vi'
+      ? { officialAnswer: 'Câu trả lời chính thức', reviewedAnswer: 'Câu trả lời đã kiểm duyệt' }
+      : { officialAnswer: '공식 답변', reviewedAnswer: '검수 답변' };
+  const officialAnswerLabel = tPostDetail.officialAnswer || tCommon.officialAnswer || answerBadgeFallbacks.officialAnswer;
+  const reviewedAnswerLabel = tPostDetail.reviewedAnswer || tCommon.reviewedAnswer || answerBadgeFallbacks.reviewedAnswer;
 
   const guidelineTooltip =
     tCommon.guidelineTooltip ||
-    '예의·혐오 표현 금지, 광고/연락처 제한, 위반 시 게시 제한 또는 계정 제재가 있을 수 있습니다.';
+    (locale === 'vi'
+      ? 'Không dùng ngôn từ thù ghét/xúc phạm, hạn chế quảng cáo/liên hệ. Vi phạm có thể bị hạn chế đăng hoặc khóa tài khoản.'
+      : locale === 'en'
+        ? 'No hate/abuse, no ads or contact info. Violations may restrict posts or accounts.'
+        : '예의·혐오 표현 금지, 광고/연락처 제한, 위반 시 게시 제한 또는 계정 제재가 있을 수 있습니다.');
   const justNowLabel = getJustNowLabel(locale);
-  const anonymousFallback = tCommon.anonymous || '익명 사용자';
-  const safeName = (author?: { name?: string }) => safeDisplayName(author?.name, anonymousFallback);
+  const safeName = (author?: { name?: string }) => safeDisplayName(author?.name, anonymousLabel);
   const safeLabel = (raw?: string) => safeShortLabel(raw);
   const tRules = (translations?.newPost || {}) as Record<string, string>;
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
@@ -334,6 +363,73 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     () => commentsInfiniteQuery.data?.pages.flatMap((page) => page.data) || [],
     [commentsInfiniteQuery.data]
   );
+  const postType = post.isQuestion ? 'question' : 'share';
+  const relatedFilters = useMemo(
+    () =>
+      buildRelatedPostFilters({
+        title: post.title,
+        tags: post.tags,
+        category: post.category,
+        type: postType,
+        limit: 6,
+      }),
+    [post.category, post.tags, post.title, postType]
+  );
+  const categoryFilters = useMemo(
+    () =>
+      buildCategoryPopularFilters({
+        category: post.category,
+        type: postType,
+        limit: 6,
+      }),
+    [post.category, postType]
+  );
+
+  const relatedPostsQuery = usePosts(relatedFilters || {}, {
+    enabled: Boolean(relatedFilters),
+    staleTime: 1000 * 60,
+    gcTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+  const categoryPopularQuery = usePosts(categoryFilters || {}, {
+    enabled: Boolean(categoryFilters),
+    staleTime: 1000 * 60,
+    gcTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const relatedPosts = useMemo(() => {
+    const list = relatedPostsQuery.data?.data || [];
+    const seen = new Set<string>();
+    return list
+      .filter((item) => String(item.id) !== String(post.id))
+      .filter((item) => {
+        const id = String(item.id);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
+      .slice(0, 4);
+  }, [post.id, relatedPostsQuery.data?.data]);
+
+  const categoryPopularPosts = useMemo(() => {
+    const list = categoryPopularQuery.data?.data || [];
+    const seen = new Set<string>(relatedPosts.map((item) => String(item.id)));
+    return list
+      .filter((item) => String(item.id) !== String(post.id))
+      .filter((item) => {
+        const id = String(item.id);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
+      .slice(0, 4);
+  }, [categoryPopularQuery.data?.data, post.id, relatedPosts]);
+  const showRelatedSection = Boolean(relatedFilters);
+  const showCategorySection = Boolean(categoryFilters);
+  const showRecommendations = showRelatedSection || showCategorySection;
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -344,22 +440,58 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
   const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
   const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
-  const renderTrustBadgeTooltip = (tooltip: string) => (
-    <div className="space-y-1">
-      <div>{tooltip}</div>
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          router.push(trustBadgeGuideHref);
-        }}
-        className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-      >
-        {learnMoreLabel}
-      </button>
-    </div>
-  );
-
+  const relatedTitleLabel = tPostDetail.relatedPostsTitle || (locale === 'vi' ? 'Bài viết liên quan' : locale === 'en' ? 'Related posts' : '관련 글');
+  const categoryPopularTitleLabel = tPostDetail.categoryPopularTitle || (locale === 'vi' ? 'Bài viết phổ biến trong danh mục' : locale === 'en' ? 'Popular in this category' : '같은 카테고리 인기글');
+  const relatedEmptyLabel = tPostDetail.relatedPostsEmpty || (locale === 'vi' ? 'Chưa có bài viết liên quan.' : locale === 'en' ? 'No related posts yet.' : '관련 글이 아직 없습니다.');
+  const categoryPopularEmptyLabel = tPostDetail.categoryPopularEmpty || (locale === 'vi' ? 'Chưa có bài viết phổ biến trong danh mục này.' : locale === 'en' ? 'No popular posts in this category yet.' : '이 카테고리의 인기글이 아직 없습니다.');
+  const mapPostToCardProps = (item: PostListItem) => ({
+    id: item.id,
+    author: {
+      id: item.author?.id,
+      name:
+        item.author?.displayName ||
+        item.author?.name ||
+        (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음'),
+      avatar: item.author?.image || item.author?.avatar || '/default-avatar.jpg',
+      followers: 0,
+      isFollowing: item.author?.isFollowing ?? false,
+      isVerified: item.author?.isVerified || false,
+      isExpert: item.author?.isExpert || false,
+      badgeType: item.author?.badgeType || null,
+    },
+    title: item.title,
+    excerpt:
+      item.excerpt ||
+      (item.content || '')
+        .replace(/<img[^>]*>/gi, '')
+        .replace(/<[^>]*>/g, '')
+        .trim()
+        .substring(0, 200),
+    tags: item.tags || [],
+    stats: {
+      likes: item.likesCount ?? item.likes ?? 0,
+      comments:
+        item.type === 'question'
+          ? (item.answersCount ?? item.commentsCount ?? 0)
+          : (item.commentsCount ?? 0),
+      shares: 0,
+    },
+    category: item.category,
+    subcategory: item.subcategory || undefined,
+    thumbnail: item.thumbnail,
+    thumbnails: item.thumbnails,
+    publishedAt: formatDateTime(item.createdAt, locale),
+    isQuestion: item.type === 'question',
+    isAdopted: item.isResolved,
+    isLiked: item.isLiked,
+    isBookmarked: item.isBookmarked,
+    imageCount: item.imageCount,
+    certifiedResponderCount: item.certifiedResponderCount,
+    otherResponderCount: item.otherResponderCount,
+    trustBadge: item.trustBadge,
+    trustWeight: item.trustWeight,
+    translations: translations || {},
+  });
   const resizeTextarea = useCallback((target: HTMLTextAreaElement) => {
     target.style.height = 'auto';
     target.style.height = `${target.scrollHeight}px`;
@@ -618,7 +750,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   }, [post.tags, categoryLabel, subcategoryLabel, tTrust.communityLabel, tTrust.expertEmploymentLabel, tTrust.expertLabel, tTrust.expertVisaLabel, tTrust.outdatedLabel, tTrust.trustedAnswererLabel, tTrust.verifiedLabel, tTrust.verifiedStudentLabel, tTrust.verifiedUserLabel, tTrust.verifiedWorkerLabel]);
 
   const categoryChips = useMemo(() => {
-    const base = [categoryLabel || tCommon.uncategorized || '미지정', subcategoryLabel]
+    const base = [categoryLabel || uncategorizedLabel, subcategoryLabel]
       .map((v) => v?.trim())
       .filter(Boolean) as string[];
     const seen = new Set<string>();
@@ -628,7 +760,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       seen.add(key);
       return true;
     });
-  }, [categoryLabel, subcategoryLabel, tCommon.uncategorized]);
+  }, [categoryLabel, subcategoryLabel, uncategorizedLabel]);
 
   const tagChips = useMemo(() => uniqueTags.slice(0, 3), [uniqueTags]);
   const displayChips = useMemo(() => [...categoryChips, ...tagChips], [categoryChips, tagChips]);
@@ -951,6 +1083,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     }
 
     const tempId = `temp-${Date.now()}`;
+    const isOfficialAnswer = Boolean((user as any).isExpert || (user as any).isAdmin);
     const optimisticAnswer: Answer = {
       id: tempId,
       author: {
@@ -965,6 +1098,8 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       helpful: 0,
       isHelpful: false,
       isAdopted: false,
+      isOfficial: isOfficialAnswer,
+      reviewStatus: isOfficialAnswer ? 'approved' : 'pending',
       replies: [],
     };
 
@@ -1000,6 +1135,8 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           helpful: 0,
           isHelpful: false,
           isAdopted: false,
+          isOfficial: result.data.isOfficial || false,
+          reviewStatus: result.data.reviewStatus,
           replies: [],
         };
 
@@ -1665,7 +1802,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           <>
             {isUserPost && (
               <>
-                <Tooltip content={tCommon.edit || "수정"}>
+                <Tooltip content={editLabel}>
                   <button
                     onClick={handleEditPost}
                     className="p-1.5 sm:p-2 rounded-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
@@ -1673,7 +1810,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                 </Tooltip>
-                <Tooltip content={tCommon.delete || "삭제"}>
+                <Tooltip content={deleteLabel}>
                   <button
                     onClick={handleDeletePost}
                     className="p-1.5 sm:p-2 rounded-full text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
@@ -1710,14 +1847,15 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     내용
                   </label>
-                  <RichTextEditor
-                    content={editPostContent}
-                    onChange={setEditPostContent}
-                    placeholder={tPostDetail.editPlaceholder || "내용을 입력하세요..."}
-                    translations={translations || {}}
-                    tooltipPosition="below"
-                    onFocus={handleEditorFocus}
-                  />
+                    <RichTextEditor
+                      content={editPostContent}
+                      onChange={setEditPostContent}
+                      placeholder={tPostDetail.editPlaceholder || "내용을 입력하세요..."}
+                      translations={translations || {}}
+                      tooltipPosition="below"
+                      onFocus={handleEditorFocus}
+                      locale={resolvedLocale}
+                    />
                 </div>
                 <div className="flex gap-2 justify-end">
                   <Button variant="secondary" size="sm" onClick={handleCancelEditPost}>
@@ -1760,7 +1898,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             {/* Author Info */}
             {!isEditingPost && (
 	            <div className="mb-4 sm:mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-	              <div className="flex items-center gap-1 min-w-0">
+	              <div className="flex items-center gap-2 min-w-0">
                 <button
                   type="button"
                   className="shrink-0"
@@ -1774,15 +1912,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     hoverHighlight
                   />
                 </button>
-
-                {trustBadgePresentation.show ? (
-                  <Tooltip content={renderTrustBadgeTooltip(trustBadgePresentation.tooltip)} position="top" touchBehavior="longPress" interactive>
-                    <span className="shrink-0 inline-flex">
-                      <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />
-                    </span>
-                  </Tooltip>
-                ) : null}
-
                 <button
                   type="button"
                   className="min-w-0 text-left"
@@ -1792,6 +1921,14 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     {safeName(post.author)}
                   </span>
                 </button>
+
+                <UserTrustBadge
+                  presentation={trustBadgePresentation}
+                  learnMoreLabel={learnMoreLabel}
+                  onClick={() => router.push(trustBadgeGuideHref)}
+                  labelVariant="text"
+                  badgeClassName="!px-1.5 !py-0.5"
+                />
 
                 {!isUserPost && post.author?.id ? (
                   <FollowButton
@@ -1835,7 +1972,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 	            {/* Action Buttons */}
 	            {!isEditingPost && (
 	          <div className="flex items-center gap-2 sm:gap-4 pt-4 sm:pt-6">
-	            <Tooltip content={tTooltips.like || '좋아요'} position="top">
+	            <Tooltip content={likeTooltipLabel} position="top">
 	              <button
 	                onClick={handleLike}
 	                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all ${
@@ -1849,7 +1986,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               </button>
             </Tooltip>
 
-            <Tooltip content={tTooltips.copyLink || '링크 복사'} position="top">
+            <Tooltip content={copyLinkLabel} position="top">
               <button
                 onClick={handleShare}
                 className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -1858,7 +1995,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               </button>
             </Tooltip>
 
-	            <Tooltip content={tTooltips.bookmark || '북마크'} position="top">
+	            <Tooltip content={bookmarkLabel} position="top">
 	              <button
 	                onClick={handleBookmark}
 	                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all ${
@@ -1871,13 +2008,13 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 	              </button>
 	            </Tooltip>
 
-            <Tooltip content={tCommon.report || "신고"} position="top">
+            <Tooltip content={reportLabel} position="top">
               <button
                 onClick={() => openReportDialog('post', post.id)}
                 className="ml-auto flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 border border-red-100 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-800/50 transition-colors"
               >
                 <Flag className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="font-semibold text-sm sm:text-base">{tCommon.report || "신고"}</span>
+                <span className="font-semibold text-sm sm:text-base">{reportLabel}</span>
               </button>
             </Tooltip>
           </div>
@@ -1912,7 +2049,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-300" />
               <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">
                 {answersInfiniteQuery.isLoading
-                  ? (tPost.loading || '로딩 중...')
+                  ? loadingLabel
                   : sortedAnswers.length > 0
                     ? answerCountLabel
                     : answerEmptyLabel}
@@ -1946,6 +2083,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                       variant="basic"
                       tooltipPosition="below"
                       onFocus={handleEditorFocus}
+                      locale={resolvedLocale}
                     />
                   </div>
                 </div>
@@ -1999,11 +2137,20 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             <>
               {answersInfiniteQuery.isLoading ? (
                 <div className="flex justify-center py-12 text-gray-500 dark:text-gray-400 text-sm">
-                  {tPost.loading || '로딩 중...'}
+                  {loadingLabel}
                 </div>
               ) : sortedAnswers.length > 0 ? (
                 <div className="space-y-6">
-                  {sortedAnswers.map((answer, index) => (
+                  {sortedAnswers.map((answer, index) => {
+                    const answerBadge = getTrustBadgePresentation({
+                      locale,
+                      author: answer.author,
+                      translations: tTrust,
+                    });
+                    const badgeClassName = answerBadge.level === 'expert'
+                      ? '!px-1.5 !py-0.5 border-amber-200'
+                      : '!px-1.5 !py-0.5';
+                    return (
                     <div
                       key={answer.id}
                       className={`rounded-lg p-3 sm:p-4 ${
@@ -2025,41 +2172,35 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                 <UserChip
                                   name={safeName(answer.author)}
                                   avatar={answer.author.avatar}
-                                  isVerified={false}
                                   size="md"
+                                  trustBadgePresentation={answerBadge}
+                                  learnMoreLabel={learnMoreLabel}
+                                  onBadgeClick={() => router.push(trustBadgeGuideHref)}
+                                  badgeLabelVariant="text"
+                                  badgeClassName={badgeClassName}
                                 />
-                                {(() => {
-                                  const badge = getTrustBadgePresentation({
-                                    locale,
-                                    author: answer.author,
-                                    translations: tTrust,
-                                  });
-                                  if (!badge.show) return null;
-                                  const badgeClassName = badge.level === 'expert'
-                                    ? '!px-2 !py-0.5 border-amber-200'
-                                    : '!px-2 !py-0.5';
-                                  return (
-                                    <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress" interactive>
-                                      <span className="inline-flex">
-                                        <TrustBadge
-                                          level={badge.level}
-                                          showLabel={false}
-                                          label={badge.label}
-                                          className={badgeClassName}
-                                        />
-                                      </span>
-                                    </Tooltip>
-                                  );
-                                })()}
                               </div>
                               <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                 <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                   {formatDateTime(answer.publishedAt, locale)}
                                 </span>
+                                {(() => {
+                                  if (!answer.isOfficial && answer.reviewStatus !== 'approved') return null;
+                                  const label = answer.isOfficial ? officialAnswerLabel : reviewedAnswerLabel;
+                                  const badgeClassName = answer.isOfficial
+                                    ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700'
+                                    : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700';
+                                  return (
+                                    <span className={`flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border whitespace-nowrap ${badgeClassName}`}>
+                                      <BadgeCheck className="w-3 h-3" />
+                                      {label}
+                                    </span>
+                                  );
+                                })()}
                                 {answer.isAdopted && (
                                   <span className="flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-semibold rounded-full border border-green-200 dark:border-green-700 whitespace-nowrap">
                                     <CheckCircle className="w-3 h-3" />
-                                    {tCommon.adopted || "채택됨"}
+                                    {adoptedLabel}
                                   </span>
                                 )}
                               </div>
@@ -2068,21 +2209,21 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                               {user && answer.author.id === user.id && !answer.isAdopted && (
                                 <>
                                   {answer.id.startsWith('temp-') ? (
-                                    <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">{tCommon.saving || '저장 중...'}</span>
+                                    <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">{savingLabel}</span>
                                   ) : (
                                     <>
                                       <button
                                         onClick={() => handleEditAnswer(answer.id, answer.content)}
                                         className="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap"
                                       >
-                                        {tCommon.edit || "수정"}
+                                        {editLabel}
                                       </button>
                                       <span className="text-gray-300 dark:text-gray-600">|</span>
                                       <button
                                         onClick={() => handleDeleteAnswer(answer.id)}
                                         className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors whitespace-nowrap"
                                       >
-                                        {tCommon.delete || "삭제"}
+                                        {deleteLabel}
                                       </button>
                                     </>
                                   )}
@@ -2093,7 +2234,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                   onClick={() => openReportDialog('answer', answer.id)}
                                   className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors whitespace-nowrap"
                                 >
-                                  {tCommon.report || "신고"}
+									  {reportLabel}
                                 </button>
                               )}
                             </div>
@@ -2108,6 +2249,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                 translations={translations || {}}
                                 tooltipPosition="below"
                                 onFocus={handleEditorFocus}
+                                locale={resolvedLocale}
                               />
                               <div className="flex justify-end gap-2 mt-3">
                                 <Button
@@ -2138,7 +2280,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                           )}
 
                           <div className="flex items-center flex-wrap gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Tooltip content={tCommon.helpful || "도움됨"} position="top">
+	              <Tooltip content={helpfulLabel} position="top">
                 <button
                   onClick={() => handleToggleHelpful(answer.id)}
                   disabled={helpfulLoadingId === answer.id}
@@ -2149,7 +2291,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     } ${helpfulLoadingId === answer.id ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
                     <ThumbsUp className={`h-4 w-4 ${answer.isHelpful ? 'fill-current' : ''}`} />
-                    <span className="text-sm font-medium">{tCommon.helpful || "도움됨"} {answer.helpful}</span>
+	                  <span className="text-sm font-medium">{helpfulLabel} {answer.helpful}</span>
                   </button>
                 </Tooltip>
 
@@ -2230,151 +2372,149 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
                           {answer.replies && answer.replies.length > 0 && (
                             <div className="mt-4 space-y-4 pl-4 sm:pl-6 border-l-2 border-gray-200 dark:border-gray-700">
-                              {answer.replies.map((reply) => (
-                                <div key={reply.id} className="flex gap-3 sm:gap-4">
-                                  <div
-                                    className="cursor-pointer hover:opacity-80 transition-opacity"
-                                    onClick={() => reply.author.id && router.push(`/${locale}/profile/${reply.author.id}`)}
-                                  >
-                                  <Avatar name={safeName(reply.author)} size="md" imageUrl={reply.author.avatar} />
-                                  </div>
-                                  <div className="flex-1">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
-                                  onClick={() => reply.author.id && router.push(`/${locale}/profile/${reply.author.id}`)}
-                                >
-                                  <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                    {safeName(reply.author)}
-                                  </span>
-                                  {(() => {
-                                    const badge = getTrustBadgePresentation({
-                                      locale,
-                                      author: reply.author,
-                                      translations: tTrust,
-                                    });
-                                    if (!badge.show) return null;
-                                    const badgeClassName = badge.level === 'expert'
-                                      ? '!px-2 !py-0.5 border-amber-200'
-                                      : '!px-2 !py-0.5';
-                                    return (
-                                      <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress" interactive>
-                                        <span className="inline-flex">
-                                          <TrustBadge
-                                            level={badge.level}
-                                            showLabel={false}
-                                            label={badge.label}
-                                            className={badgeClassName}
-                                          />
-                                        </span>
-                                      </Tooltip>
-                                    );
-                                  })()}
-                                </div>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  {formatDateTime(reply.publishedAt, locale)}
-                                </span>
-                              </div>
-                                      <div className="flex items-center gap-2">
-                                        {user && reply.author.id === user.id ? (
-                                          <>
-                                            {reply.id.startsWith('temp-') ? (
-                                              <span className="text-xs text-gray-400 dark:text-gray-500">{tCommon.saving || '저장 중...'}</span>
-                                            ) : (
-                                              <>
-                                                <button
-                                                  onClick={() => handleEditAnswerReply(reply.id, reply.content)}
-                                                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                                                >
-                                                  {tCommon.edit || "수정"}
-                                                </button>
-                                                <span className="text-gray-300 dark:text-gray-600">|</span>
-                                                <button
-                                                  onClick={() => handleDeleteAnswerReply(answer.id, reply.id)}
-                                                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                                >
-                                                  {tCommon.delete || "삭제"}
-                                                </button>
-                                              </>
-                                            )}
-                                          </>
-                                        ) : (
-                                          user && (
-                                            <button
-                                              onClick={() => handleReportAnswerReply(reply.id)}
-                                              className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-1"
-                                            >
-                                              <Flag className="w-3 h-3" />
-                                              {tCommon.report || "신고"}
-                                            </button>
-                                          )
-                                        )}
-                                      </div>
-                                    </div>
+                              {answer.replies.map((reply) => {
+                                const replyBadge = getTrustBadgePresentation({
+                                  locale,
+                                  author: reply.author,
+                                  translations: tTrust,
+                                });
+                                const replyBadgeClassName = replyBadge.level === 'expert'
+                                  ? '!px-1.5 !py-0.5 border-amber-200'
+                                  : '!px-1.5 !py-0.5';
 
-                                    {editingCommentId === reply.id ? (
-                                      <div className="mb-2">
-                                        <textarea
-                                          value={editContent}
-                                          onChange={(e) => setEditContent(e.target.value)}
-                                          onInput={handleTextareaInput}
-                                          onFocus={handleTextareaFocus}
-                                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
-                                          rows={2}
-                                          autoFocus
-                                        />
-                                        <div className="flex justify-end gap-2 mt-2">
-                                          <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="sm"
-                                            onClick={handleCancelEdit}
+                                return (
+                                  <div key={reply.id} className="flex gap-3 sm:gap-4">
+                                    <div
+                                      className="cursor-pointer hover:opacity-80 transition-opacity"
+                                      onClick={() => reply.author.id && router.push(`/${locale}/profile/${reply.author.id}`)}
+                                    >
+                                      <Avatar name={safeName(reply.author)} size="md" imageUrl={reply.author.avatar} />
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-start justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                          <div
+                                            className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                                            onClick={() => reply.author.id && router.push(`/${locale}/profile/${reply.author.id}`)}
                                           >
-                                            취소
-                                          </Button>
-                                          <Button
-                                            type="button"
-                                            size="sm"
-                                            onClick={() => handleSaveAnswerReplyEdit(answer.id, reply.id)}
-                                            disabled={!editContent.trim()}
-                                          >
-                                            저장
-                                          </Button>
+                                            <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                                              {safeName(reply.author)}
+                                            </span>
+                                            <UserTrustBadge
+                                              presentation={replyBadge}
+                                              learnMoreLabel={learnMoreLabel}
+                                              onClick={() => router.push(trustBadgeGuideHref)}
+                                              labelVariant="text"
+                                              badgeClassName={replyBadgeClassName}
+                                            />
+                                          </div>
+                                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                                            {formatDateTime(reply.publishedAt, locale)}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          {user && reply.author.id === user.id ? (
+                                            <>
+                                              {reply.id.startsWith('temp-') ? (
+                                                <span className="text-xs text-gray-400 dark:text-gray-500">
+                                                  {savingLabel}
+                                                </span>
+                                              ) : (
+                                                <>
+                                                  <button
+                                                    onClick={() => handleEditAnswerReply(reply.id, reply.content)}
+                                                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                                  >
+                                                    {editLabel}
+                                                  </button>
+                                                  <span className="text-gray-300 dark:text-gray-600">|</span>
+                                                  <button
+                                                    onClick={() => handleDeleteAnswerReply(answer.id, reply.id)}
+                                                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                                  >
+                                                    {deleteLabel}
+                                                  </button>
+                                                </>
+                                              )}
+                                            </>
+                                          ) : (
+                                            user && (
+                                              <button
+                                                onClick={() => handleReportAnswerReply(reply.id)}
+                                                className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-1"
+                                              >
+                                                <Flag className="w-3 h-3" />
+                                                {reportLabel}
+                                              </button>
+                                            )
+                                          )}
                                         </div>
                                       </div>
-                                    ) : (
-                                      <div
-                                    className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mb-2 leading-relaxed"
-                                    dangerouslySetInnerHTML={createSafeUgcMarkup(reply.content, { targetBlank: true })}
-                                  />
-                                    )}
 
-                                    {!editingCommentId && (
-                                      <Tooltip content={"좋아요"} position="top">
-                                        <button
-                                          onClick={() => handleAnswerReplyLike(answer.id, reply.id)}
-                                          className={`flex items-center gap-1 text-xs ${
-                                            reply.isLiked
-                                              ? 'text-blue-600 dark:text-blue-400'
-                                              : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
-                                          } transition-colors`}
-                                        >
-                                          <ThumbsUp className={`h-3.5 w-3.5 ${reply.isLiked ? 'fill-current' : ''}`} />
-                                          <span>{reply.likes}</span>
-                                        </button>
-                                      </Tooltip>
-                                    )}
+                                      {editingCommentId === reply.id ? (
+                                        <div className="mb-2">
+                                          <textarea
+                                            value={editContent}
+                                            onChange={(e) => setEditContent(e.target.value)}
+                                            onInput={handleTextareaInput}
+                                            onFocus={handleTextareaFocus}
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
+                                            rows={2}
+                                            autoFocus
+                                          />
+                                          <div className="flex justify-end gap-2 mt-2">
+                                            <Button
+                                              type="button"
+                                              variant="secondary"
+                                              size="sm"
+                                              onClick={handleCancelEdit}
+                                            >
+                                              취소
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              onClick={() => handleSaveAnswerReplyEdit(answer.id, reply.id)}
+                                              disabled={!editContent.trim()}
+                                            >
+                                              저장
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div
+                                          className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mb-2 leading-relaxed"
+                                          dangerouslySetInnerHTML={createSafeUgcMarkup(reply.content, { targetBlank: true })}
+                                        />
+                                      )}
+
+                                      {!editingCommentId && (
+                                        <Tooltip content={likeTooltipLabel} position="top">
+                                          <button
+                                            onClick={() => handleAnswerReplyLike(answer.id, reply.id)}
+                                            className={`flex items-center gap-1 text-xs ${
+                                              reply.isLiked
+                                                ? 'text-blue-600 dark:text-blue-400'
+                                                : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                                            } transition-colors`}
+                                          >
+                                            <ThumbsUp className={`h-3.5 w-3.5 ${reply.isLiked ? 'fill-current' : ''}`} />
+                                            <span>{reply.likes}</span>
+                                          </button>
+                                        </Tooltip>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
 
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                })}
                 </div>
               ) : (
                 <div className="flex items-center justify-center py-4 text-gray-500 dark:text-gray-400 text-sm">
@@ -2387,7 +2527,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   {answersInfiniteQuery.isFetchingNextPage ? (
                     <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
                       <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm">{tPost.loading || '로딩 중...'}</span>
+                      <span className="text-sm">{loadingLabel}</span>
                     </div>
                   ) : null}
                 </div>
@@ -2397,11 +2537,20 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             <>
               {commentsInfiniteQuery.isLoading ? (
                 <div className="flex items-center justify-center py-12 text-gray-500 dark:text-gray-400 text-sm">
-                  {tPost.loading || '로딩 중...'}
+                  {loadingLabel}
                 </div>
               ) : post.comments && post.comments.length > 0 ? (
                 <div className="space-y-4 sm:space-y-6">
-                  {post.comments.map((comment) => (
+                  {post.comments.map((comment) => {
+                    const commentBadge = getTrustBadgePresentation({
+                      locale,
+                      author: comment.author,
+                      translations: tTrust,
+                    });
+                    const commentBadgeClassName = commentBadge.level === 'expert'
+                      ? '!px-1.5 !py-0.5 border-amber-200'
+                      : '!px-1.5 !py-0.5';
+                    return (
                     <div key={comment.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4 space-y-4">
                       <div className="flex gap-3 sm:gap-4">
                         <div
@@ -2420,29 +2569,13 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                               <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                                 {safeName(comment.author)}
                               </span>
-                            {(() => {
-                              const badge = getTrustBadgePresentation({
-                                locale,
-                                author: comment.author,
-                                translations: tTrust,
-                              });
-                              if (!badge.show) return null;
-                              const badgeClassName = badge.level === 'expert'
-                                ? '!px-2 !py-0.5 border-amber-200'
-                                : '!px-2 !py-0.5';
-                              return (
-                                <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress" interactive>
-                                  <span className="inline-flex">
-                                    <TrustBadge
-                                      level={badge.level}
-                                      showLabel={false}
-                                      label={badge.label}
-                                      className={badgeClassName}
-                                    />
-                                  </span>
-                                </Tooltip>
-                              );
-                            })()}
+                              <UserTrustBadge
+                                presentation={commentBadge}
+                                learnMoreLabel={learnMoreLabel}
+                                onClick={() => router.push(trustBadgeGuideHref)}
+                                labelVariant="text"
+                                badgeClassName={commentBadgeClassName}
+                              />
                           </div>
                           <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                               {formatDateTime(comment.publishedAt, locale)}
@@ -2452,21 +2585,21 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                               {user && comment.author.id === user.id && (
                                 <>
                                   {comment.id.startsWith('temp-') ? (
-                                    <span className="text-xs text-gray-400 dark:text-gray-500">{tCommon.saving || '저장 중...'}</span>
+                                    <span className="text-xs text-gray-400 dark:text-gray-500">{savingLabel}</span>
                                   ) : (
                                     <>
                                       <button
                                         onClick={() => handleEditComment(comment.id, comment.content)}
                                         className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                       >
-                                        {tCommon.edit || "수정"}
+                                        {editLabel}
                                       </button>
                                       <span className="text-gray-300 dark:text-gray-600">|</span>
                                       <button
                                         onClick={() => handleDeleteComment(comment.id)}
                                         className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                       >
-                                        {tCommon.delete || "삭제"}
+                                        {deleteLabel}
                                       </button>
                                     </>
                                   )}
@@ -2477,7 +2610,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                   onClick={() => openReportDialog('comment', comment.id)}
                                   className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                 >
-                                  {tCommon.report || "신고"}
+	                              {reportLabel}
                                 </button>
                               )}
                             </div>
@@ -2522,7 +2655,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
                           {!editingCommentId && (
                             <div className="flex items-center gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
-                              <Tooltip content={"좋아요"} position="top">
+	                                <Tooltip content={likeTooltipLabel} position="top">
                                 <button
                                   onClick={() => handleCommentLike(comment.id)}
                                   className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm ${
@@ -2592,7 +2725,16 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
 
                           {comment.replies && comment.replies.length > 0 && (
                             <div className="mt-4 space-y-4 pl-4 sm:pl-6 border-l-2 border-gray-200 dark:border-gray-700">
-                              {comment.replies.map((reply) => (
+                              {comment.replies.map((reply) => {
+                                const replyBadge = getTrustBadgePresentation({
+                                  locale,
+                                  author: reply.author,
+                                  translations: tTrust,
+                                });
+                                const replyBadgeClassName = replyBadge.level === 'expert'
+                                  ? '!px-1.5 !py-0.5 border-amber-200'
+                                  : '!px-1.5 !py-0.5';
+                                return (
                                 <div key={reply.id} className="flex gap-3 sm:gap-4">
                                   <div
                                     className="cursor-pointer hover:opacity-80 transition-opacity"
@@ -2610,29 +2752,13 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                           <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                             {safeName(reply.author)}
                                           </span>
-                                        {(() => {
-                                          const badge = getTrustBadgePresentation({
-                                            locale,
-                                            author: reply.author,
-                                            translations: tTrust,
-                                          });
-                                          if (!badge.show) return null;
-                                          const badgeClassName = badge.level === 'expert'
-                                            ? '!px-2 !py-0.5 border-amber-200'
-                                            : '!px-2 !py-0.5';
-                                          return (
-                                            <Tooltip content={renderTrustBadgeTooltip(badge.tooltip)} position="top" touchBehavior="longPress" interactive>
-                                              <span className="inline-flex">
-                                                <TrustBadge
-                                                  level={badge.level}
-                                                  showLabel={false}
-                                                  label={badge.label}
-                                                  className={badgeClassName}
-                                                />
-                                              </span>
-                                            </Tooltip>
-                                          );
-                                        })()}
+                                          <UserTrustBadge
+                                            presentation={replyBadge}
+                                            learnMoreLabel={learnMoreLabel}
+                                            onClick={() => router.push(trustBadgeGuideHref)}
+                                            labelVariant="text"
+                                            badgeClassName={replyBadgeClassName}
+                                          />
                                       </div>
                                       <span className="text-xs text-gray-500 dark:text-gray-400">
                                           {formatDateTime(reply.publishedAt, locale)}
@@ -2642,21 +2768,21 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                         {user && reply.author.id === user.id ? (
                                           <>
                                             {reply.id.startsWith('temp-') ? (
-                                              <span className="text-xs text-gray-400 dark:text-gray-500">{tCommon.saving || '저장 중...'}</span>
+                                              <span className="text-xs text-gray-400 dark:text-gray-500">{savingLabel}</span>
                                             ) : (
                                               <>
                                                 <button
                                                   onClick={() => handleEditComment(reply.id, reply.content)}
                                                   className="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                                 >
-                                                  {tCommon.edit || "수정"}
+                                                  {editLabel}
                                                 </button>
                                                 <span className="text-gray-300 dark:text-gray-600">|</span>
                                                 <button
                                                   onClick={() => handleDeleteComment(reply.id, true, comment.id)}
                                                   className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                                 >
-                                                  {tCommon.delete || "삭제"}
+                                                  {deleteLabel}
                                                 </button>
                                               </>
                                             )}
@@ -2668,7 +2794,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                               className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-1"
                                             >
                                               <Flag className="w-3 h-3" />
-                                              {tCommon.report || "신고"}
+											  {reportLabel}
                                             </button>
                                           )
                                         )}
@@ -2713,7 +2839,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                     )}
 
                                     {!editingCommentId && (
-                                      <Tooltip content={"좋아요"} position="top">
+	                                      <Tooltip content={likeTooltipLabel} position="top">
                                         <button
                                           onClick={() => handleCommentLike(reply.id)}
                                           className={`flex items-center gap-1 text-xs ${
@@ -2729,13 +2855,15 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                     )}
                                   </div>
                                 </div>
-                              ))}
+                              );
+                            })}
                             </div>
                           )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                })}
                 </div>
               ) : (
                 <div className="flex items-center justify-center py-12 text-gray-500 dark:text-gray-400 text-sm">
@@ -2748,7 +2876,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   {commentsInfiniteQuery.isFetchingNextPage ? (
                     <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
                       <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm">{tPost.loading || '로딩 중...'}</span>
+                      <span className="text-sm">{loadingLabel}</span>
                     </div>
                   ) : null}
                 </div>
@@ -2800,6 +2928,54 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             </>
           )}
         </section>
+        {showRecommendations ? (
+          <section className="mt-8 sm:mt-10 space-y-8">
+            {showRelatedSection ? (
+              <div className="space-y-4">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+                  {relatedTitleLabel}
+                </h3>
+                {relatedPostsQuery.isLoading ? (
+                  <div className="flex justify-center py-6">
+                    <div className="h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : relatedPosts.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {relatedPosts.map((item) => (
+                      <PostCard key={item.id} {...mapPostToCardProps(item)} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 text-sm text-gray-500 dark:text-gray-400">
+                    {relatedEmptyLabel}
+                  </div>
+                )}
+              </div>
+            ) : null}
+            {showCategorySection ? (
+              <div className="space-y-4">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+                  {categoryPopularTitleLabel}
+                </h3>
+                {categoryPopularQuery.isLoading ? (
+                  <div className="flex justify-center py-6">
+                    <div className="h-6 w-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : categoryPopularPosts.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {categoryPopularPosts.map((item) => (
+                      <PostCard key={item.id} {...mapPostToCardProps(item)} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 text-sm text-gray-500 dark:text-gray-400">
+                    {categoryPopularEmptyLabel}
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
       </main>
 
       {shareMenuOpen && typeof document !== 'undefined'
@@ -2856,7 +3032,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           >
             <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-                {reportTarget?.type === 'post' ? (tCommon.post || '게시글') : reportTarget?.type === 'answer' ? (tCommon.reply || '답글') : (tCommon.comment || '댓글')} {tCommon.report || '신고'}
+	                {reportTarget?.type === 'post' ? (tCommon.post || '게시글') : reportTarget?.type === 'answer' ? (tCommon.reply || '답글') : (tCommon.comment || '댓글')} {reportLabel}
               </h3>
               <button
                 onClick={() => {

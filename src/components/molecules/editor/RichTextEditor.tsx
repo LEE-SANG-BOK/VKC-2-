@@ -10,6 +10,20 @@ import Tooltip from '@/components/atoms/Tooltip';
 import { toast } from 'sonner';
 import { useLoginPrompt } from '@/providers/LoginPromptProvider';
 
+const CustomImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      'data-thumbnail': {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-thumbnail'),
+        renderHTML: (attributes) =>
+          attributes['data-thumbnail'] ? { 'data-thumbnail': 'true' } : {},
+      },
+    };
+  },
+});
+
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
@@ -18,6 +32,7 @@ interface RichTextEditorProps {
   variant?: 'full' | 'basic';
   tooltipPosition?: 'top' | 'below' | 'right' | 'bottom-right';
   onFocus?: (event: React.FocusEvent<HTMLDivElement>) => void;
+  locale?: 'ko' | 'en' | 'vi';
 }
 
 export default function RichTextEditor({
@@ -28,8 +43,37 @@ export default function RichTextEditor({
   variant = 'full',
   tooltipPosition = 'below',
   onFocus,
+  locale = 'ko',
 }: RichTextEditorProps) {
   const t = translations?.tooltips || {};
+  const fallbackTooltips = {
+    bold: locale === 'vi' ? 'Đậm' : locale === 'en' ? 'Bold' : '굵게',
+    italic: locale === 'vi' ? 'Nghiêng' : locale === 'en' ? 'Italic' : '기울임',
+    heading1: locale === 'vi' ? 'Tiêu đề 1' : locale === 'en' ? 'Heading 1' : '제목1',
+    heading2: locale === 'vi' ? 'Tiêu đề 2' : locale === 'en' ? 'Heading 2' : '제목2',
+    bulletList: locale === 'vi' ? 'Danh sách' : locale === 'en' ? 'Bullet list' : '목록',
+    orderedList: locale === 'vi' ? 'Danh sách số' : locale === 'en' ? 'Numbered list' : '번호 목록',
+    codeBlock: locale === 'vi' ? 'Khối mã' : locale === 'en' ? 'Code block' : '코드 블록',
+    quote: locale === 'vi' ? 'Trích dẫn' : locale === 'en' ? 'Quote' : '인용',
+    addImage: locale === 'vi' ? 'Thêm ảnh' : locale === 'en' ? 'Add image' : '이미지 추가',
+    addLink: locale === 'vi' ? 'Thêm liên kết' : locale === 'en' ? 'Add link' : '링크 추가',
+    uploading: locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Uploading...' : '업로드 중...',
+    undo: locale === 'vi' ? 'Hoàn tác' : locale === 'en' ? 'Undo' : '실행 취소',
+    redo: locale === 'vi' ? 'Làm lại' : locale === 'en' ? 'Redo' : '다시 실행',
+  };
+  const boldLabel = t.bold || fallbackTooltips.bold;
+  const italicLabel = t.italic || fallbackTooltips.italic;
+  const heading1Label = t.heading1 || fallbackTooltips.heading1;
+  const heading2Label = t.heading2 || fallbackTooltips.heading2;
+  const bulletListLabel = t.bulletList || fallbackTooltips.bulletList;
+  const orderedListLabel = t.orderedList || fallbackTooltips.orderedList;
+  const codeBlockLabel = t.codeBlock || fallbackTooltips.codeBlock;
+  const quoteLabel = t.quote || fallbackTooltips.quote;
+  const addImageLabel = t.addImage || fallbackTooltips.addImage;
+  const addLinkLabel = t.addLink || fallbackTooltips.addLink;
+  const uploadingLabel = fallbackTooltips.uploading;
+  const undoLabel = t.undo || fallbackTooltips.undo;
+  const redoLabel = t.redo || fallbackTooltips.redo;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -39,7 +83,7 @@ export default function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Image.configure({
+      CustomImage.configure({
         inline: true,
         allowBase64: true,
       }),
@@ -162,7 +206,7 @@ export default function RichTextEditor({
     <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-700">
       {/* Toolbar */}
       <div className="flex flex-wrap gap-1 p-2 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
-        <Tooltip content={t.bold || '굵게'} position={tooltipPosition}>
+        <Tooltip content={boldLabel} position={tooltipPosition}>
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -176,7 +220,7 @@ export default function RichTextEditor({
         </Tooltip>
 
         {variant === 'full' && (
-          <Tooltip content={t.italic || '기울임'} position={tooltipPosition}>
+          <Tooltip content={italicLabel} position={tooltipPosition}>
             <button
               type="button"
               onClick={() => editor.chain().focus().toggleItalic().run()}
@@ -192,7 +236,7 @@ export default function RichTextEditor({
 
         {variant === 'full' && (
           <>
-            <Tooltip content={t.heading1 || '제목1'} position={tooltipPosition}>
+            <Tooltip content={heading1Label} position={tooltipPosition}>
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -204,7 +248,7 @@ export default function RichTextEditor({
               </button>
             </Tooltip>
 
-            <Tooltip content={t.heading2 || '제목2'} position={tooltipPosition}>
+            <Tooltip content={heading2Label} position={tooltipPosition}>
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
@@ -218,7 +262,7 @@ export default function RichTextEditor({
           </>
         )}
 
-        <Tooltip content={t.bulletList || '목록'} position={tooltipPosition}>
+        <Tooltip content={bulletListLabel} position={tooltipPosition}>
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -231,7 +275,7 @@ export default function RichTextEditor({
         </Tooltip>
 
         {variant === 'full' && (
-          <Tooltip content={t.orderedList || '번호 목록'} position={tooltipPosition}>
+          <Tooltip content={orderedListLabel} position={tooltipPosition}>
             <button
               type="button"
               onClick={() => editor.chain().focus().toggleOrderedList().run()}
@@ -245,7 +289,7 @@ export default function RichTextEditor({
         )}
 
         {variant === 'full' && (
-          <Tooltip content={t.codeBlock || '코드 블록'} position={tooltipPosition}>
+          <Tooltip content={codeBlockLabel} position={tooltipPosition}>
             <button
               type="button"
               onClick={() => editor.chain().focus().toggleCodeBlock().run()}
@@ -259,7 +303,7 @@ export default function RichTextEditor({
         )}
 
         {variant === 'full' && (
-          <Tooltip content={t.quote || '인용'} position={tooltipPosition}>
+          <Tooltip content={quoteLabel} position={tooltipPosition}>
             <button
               type="button"
               onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -274,7 +318,7 @@ export default function RichTextEditor({
 
         <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
 
-        <Tooltip content={isUploading ? '업로드 중...' : (t.addImage || '이미지 추가')} position={tooltipPosition}>
+        <Tooltip content={isUploading ? uploadingLabel : addImageLabel} position={tooltipPosition}>
           <button
             type="button"
             onClick={handleImageUpload}
@@ -290,7 +334,7 @@ export default function RichTextEditor({
         </Tooltip>
 
         {variant === 'full' && (
-          <Tooltip content={t.addLink || '링크 추가'} position={tooltipPosition}>
+          <Tooltip content={addLinkLabel} position={tooltipPosition}>
             <button
               type="button"
               onClick={handleLinkButtonClick}
@@ -307,7 +351,7 @@ export default function RichTextEditor({
           <>
             <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
 
-            <Tooltip content={t.undo || '실행 취소'} position={tooltipPosition}>
+            <Tooltip content={undoLabel} position={tooltipPosition}>
               <button
                 type="button"
                 onClick={() => editor.chain().focus().undo().run()}
@@ -318,7 +362,7 @@ export default function RichTextEditor({
               </button>
             </Tooltip>
 
-            <Tooltip content={t.redo || '다시 실행'} position={tooltipPosition}>
+            <Tooltip content={redoLabel} position={tooltipPosition}>
               <button
                 type="button"
                 onClick={() => editor.chain().focus().redo().run()}

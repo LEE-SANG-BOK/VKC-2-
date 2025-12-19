@@ -4,13 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'nextjs-toploader/app';
 import { useSession } from 'next-auth/react';
-import { ThumbsUp, CheckCircle, ExternalLink } from 'lucide-react';
+import { ThumbsUp, CheckCircle, ExternalLink, BadgeCheck } from 'lucide-react';
 import UserChip from '@/components/molecules/user/UserChip';
-import TrustBadge from '@/components/atoms/TrustBadge';
-import Tooltip from '@/components/atoms/Tooltip';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
 import { useToggleAnswerLike } from '@/repo/answers/mutation';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
+import { useLoginPrompt } from '@/providers/LoginPromptProvider';
 
 export interface AnswerCardProps {
   id: string;
@@ -27,6 +26,8 @@ export interface AnswerCardProps {
   likes: number;
   isLiked?: boolean;
   isAdopted?: boolean;
+  isOfficial?: boolean;
+  reviewStatus?: 'pending' | 'approved' | 'rejected';
   post?: {
     id?: string;
     title?: string;
@@ -43,16 +44,36 @@ export default function AnswerCard({
   likes,
   isLiked = false,
   isAdopted = false,
+  isOfficial = false,
+  reviewStatus,
   post,
   locale = 'ko',
   translations,
 }: AnswerCardProps) {
   const router = useRouter();
   const { data: session } = useSession();
+  const { openLoginPrompt } = useLoginPrompt();
   const postUrl = post?.id ? `/${locale}/posts/${post.id}` : '#';
   
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
+  const originalPostLabel = tCommon.originalPost || (locale === 'vi' ? 'Bài viết gốc' : locale === 'en' ? 'Original post' : '원글');
+  const deletedPostLabel = tCommon.deletedPost || (locale === 'vi' ? 'Bài viết đã bị xóa' : locale === 'en' ? 'Deleted post' : '삭제된 게시글');
+  const noTitleLabel = tCommon.noTitle || (locale === 'vi' ? 'Không có tiêu đề' : locale === 'en' ? 'No title' : '제목 없음');
+  const adoptedLabel = tCommon.adopted || (locale === 'vi' ? 'Đã chọn' : locale === 'en' ? 'Adopted' : '채택됨');
+  const helpfulLabel = tCommon.helpful || (locale === 'vi' ? 'Hữu ích' : locale === 'en' ? 'Helpful' : '도움됨');
+  const answerBadgeFallbacks = locale === 'en'
+    ? { officialAnswer: 'Official answer', reviewedAnswer: 'Reviewed answer' }
+    : locale === 'vi'
+      ? { officialAnswer: 'Câu trả lời chính thức', reviewedAnswer: 'Câu trả lời đã kiểm duyệt' }
+      : { officialAnswer: '공식 답변', reviewedAnswer: '검수 답변' };
+  const officialAnswerLabel = tCommon.officialAnswer || answerBadgeFallbacks.officialAnswer;
+  const reviewedAnswerLabel = tCommon.reviewedAnswer || answerBadgeFallbacks.reviewedAnswer;
+  const showReviewBadge = isOfficial || reviewStatus === 'approved';
+  const reviewBadgeLabel = isOfficial ? officialAnswerLabel : reviewedAnswerLabel;
+  const reviewBadgeClassName = isOfficial
+    ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700'
+    : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700';
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -73,7 +94,7 @@ export default function AnswerCard({
     e.preventDefault();
     
     if (!session?.user) {
-      router.push(`/${locale}/login`);
+      openLoginPrompt();
       return;
     }
 
@@ -99,16 +120,16 @@ export default function AnswerCard({
           href={postUrl}
           className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100 dark:border-gray-700 group"
         >
-          <span className="text-sm text-gray-500 dark:text-gray-400">{tCommon.originalPost || '원글'}:</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{originalPostLabel}:</span>
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-amber-600 dark:group-hover:text-amber-500 truncate flex-1">
-            {post.title || tCommon.noTitle || '제목 없음'}
+            {post.title || noTitleLabel}
           </span>
           <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-amber-600 dark:group-hover:text-amber-500 shrink-0" />
         </Link>
       ) : (
         <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100 dark:border-gray-700">
-          <span className="text-sm text-gray-500 dark:text-gray-400">{tCommon.originalPost || '원글'}:</span>
-          <span className="text-sm text-gray-400 dark:text-gray-500 italic">{tCommon.deletedPost || '삭제된 게시글'}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{originalPostLabel}:</span>
+          <span className="text-sm text-gray-400 dark:text-gray-500 italic">{deletedPostLabel}</span>
         </div>
       )}
 
@@ -119,44 +140,28 @@ export default function AnswerCard({
               <UserChip
                 name={author.name}
                 avatar={author.avatar}
-                isVerified={false}
                 size="md"
                 onClick={() => author.id && router.push(`/${locale}/profile/${author.id}`)}
                 className="hover:opacity-90 transition-all"
+                trustBadgePresentation={trustBadgePresentation}
+                learnMoreLabel={learnMoreLabel}
+                onBadgeClick={() => router.push(trustBadgeGuideHref)}
+                badgeLabelVariant="text"
+                badgeClassName="!px-1.5 !py-0.5"
               />
-              {trustBadgePresentation.show ? (
-                <Tooltip
-                  content={
-                    <div className="space-y-1">
-                      <div>{trustBadgePresentation.tooltip}</div>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          router.push(trustBadgeGuideHref);
-                        }}
-                        className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        {learnMoreLabel}
-                      </button>
-                    </div>
-                  }
-                  position="top"
-                  touchBehavior="longPress"
-                  interactive
-                >
-                  <span className="inline-flex">
-                    <TrustBadge level={trustBadgePresentation.level} label={trustBadgePresentation.label} />
-                  </span>
-                </Tooltip>
-              ) : null}
               <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {publishedAt}
               </span>
+              {showReviewBadge && (
+                <span className={`flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border ${reviewBadgeClassName}`}>
+                  <BadgeCheck className="w-3 h-3" />
+                  {reviewBadgeLabel}
+                </span>
+              )}
               {isAdopted && (
                 <span className="flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-semibold rounded-full border border-green-200 dark:border-green-700">
                   <CheckCircle className="w-3 h-3" />
-                  {tCommon.adopted || '채택됨'}
+                  {adoptedLabel}
                 </span>
               )}
             </div>
@@ -180,7 +185,7 @@ export default function AnswerCard({
               }`}
             >
               <ThumbsUp className={`h-4 w-4 ${localIsLiked ? 'fill-current' : ''}`} />
-              <span className="text-sm font-medium">{tCommon.helpful || '도움됨'} {localLikes}</span>
+              <span className="text-sm font-medium">{helpfulLabel} {localLikes}</span>
             </button>
           </div>
         </div>
