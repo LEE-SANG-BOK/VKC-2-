@@ -3,7 +3,14 @@
  * 순수한 fetch 함수들 (React hooks 없음)
  */
 
-import type { Category, SubscribedCategory, ApiResponse, SubscriptionResponse } from './types';
+import type {
+  Category,
+  SubscribedCategory,
+  ApiResponse,
+  SubscriptionResponse,
+  SubscriptionNotificationSetting,
+  SubscriptionNotificationUpdate,
+} from './types';
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 const withCredentials = typeof window === 'undefined'
@@ -69,6 +76,30 @@ export async function toggleCategorySubscription(categoryId: string): Promise<Su
   const result: ApiResponse<SubscriptionResponse> = await fetchWithAuth(
     `${API_BASE}/api/categories/${categoryId}/subscribe`,
     { method: 'POST' }
+  );
+  return result.data;
+}
+
+export async function fetchSubscriptionSettings(): Promise<SubscriptionNotificationSetting[]> {
+  const result: ApiResponse<SubscriptionNotificationSetting[]> = await fetchWithAuth(
+    `${API_BASE}/api/users/me/subscriptions/settings`
+  );
+  return result.data;
+}
+
+export async function updateSubscriptionSettings(
+  updates: SubscriptionNotificationUpdate[] | SubscriptionNotificationUpdate
+): Promise<SubscriptionNotificationSetting[]> {
+  const payload = Array.isArray(updates) ? { updates } : updates;
+  const result: ApiResponse<SubscriptionNotificationSetting[]> = await fetchWithAuth(
+    `${API_BASE}/api/users/me/subscriptions/settings`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
   );
   return result.data;
 }

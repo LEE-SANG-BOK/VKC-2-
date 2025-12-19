@@ -25,6 +25,29 @@ export interface SubscribedCategory {
   order: number;
 }
 
+export type NotificationChannel = 'in_app' | 'email' | 'push';
+export type NotificationFrequency = 'instant' | 'daily' | 'weekly' | 'off';
+
+export interface SubscriptionNotificationSetting {
+  id: string;
+  categoryId: string;
+  notificationChannel: NotificationChannel;
+  notificationFrequency: NotificationFrequency;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+    parentId?: string | null;
+    order: number;
+  } | null;
+}
+
+export interface SubscriptionNotificationUpdate {
+  categoryId: string;
+  notificationChannel?: NotificationChannel;
+  notificationFrequency?: NotificationFrequency;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;

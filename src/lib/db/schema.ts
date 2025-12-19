@@ -6,10 +6,14 @@ export const postTypeEnum = pgEnum('post_type', ['question', 'share']);
 export const newsTypeEnum = pgEnum('news_type', ['post', 'cardnews', 'shorts']);
 export const verificationStatusEnum = pgEnum('verification_status', ['pending', 'approved', 'rejected']);
 export const notificationTypeEnum = pgEnum('notification_type', ['answer', 'comment', 'reply', 'adoption', 'like', 'follow']);
+export const notificationChannelEnum = pgEnum('notification_channel', ['in_app', 'email', 'push']);
+export const notificationFrequencyEnum = pgEnum('notification_frequency', ['instant', 'daily', 'weekly', 'off']);
 export const reportTypeEnum = pgEnum('report_type', ['spam', 'harassment', 'inappropriate', 'misinformation', 'other']);
 export const reportStatusEnum = pgEnum('report_status', ['pending', 'reviewed', 'resolved', 'dismissed']);
+export const reportActionEnum = pgEnum('report_action', ['none', 'warn', 'hide', 'blind', 'delete']);
 export const fileTypeEnum = pgEnum('file_type', ['image', 'document', 'video']);
 export const contentTargetEnum = pgEnum('content_target', ['post', 'answer', 'comment']);
+export const answerReviewStatusEnum = pgEnum('answer_review_status', ['pending', 'approved', 'rejected']);
 
 // Users Table
 export const users = pgTable('users', {
@@ -120,6 +124,9 @@ export const answers = pgTable('answers', {
   content: text('content').notNull(),
   likes: integer('likes').default(0).notNull(),
   isAdopted: boolean('is_adopted').default(false).notNull(),
+  isOfficial: boolean('is_official').default(false).notNull(),
+  reviewStatus: answerReviewStatusEnum('review_status').default('pending').notNull(),
+  reviewedAt: timestamp('reviewed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -187,6 +194,24 @@ export const bookmarks = pgTable('bookmarks', {
 }, (table) => ({
   userPostIdx: uniqueIndex('bookmarks_user_post_idx').on(table.userId, table.postId),
   userCreatedAtIdx: index('bookmarks_user_created_at_id_idx').on(table.userId, table.createdAt, table.id),
+}));
+
+export const feedbacks = pgTable('feedbacks', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  type: varchar('type', { length: 50 }).default('feedback').notNull(),
+  title: varchar('title', { length: 200 }).notNull(),
+  description: text('description').notNull(),
+  steps: text('steps'),
+  pageUrl: text('page_url'),
+  contactEmail: varchar('contact_email', { length: 255 }),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index('feedbacks_user_idx').on(table.userId),
+  createdAtIdx: index('feedbacks_created_at_idx').on(table.createdAt),
+  ipIdx: index('feedbacks_ip_idx').on(table.ipAddress),
 }));
 
 // Verification Requests Table
@@ -266,6 +291,7 @@ export const reports = pgTable('reports', {
   reporterId: uuid('reporter_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   type: reportTypeEnum('type').notNull(),
   status: reportStatusEnum('status').default('pending').notNull(),
+  action: reportActionEnum('action').default('none').notNull(),
   reason: text('reason').notNull(),
   postId: uuid('post_id').references(() => posts.id, { onDelete: 'cascade' }),
   answerId: uuid('answer_id').references(() => answers.id, { onDelete: 'cascade' }),
@@ -278,12 +304,15 @@ export const reports = pgTable('reports', {
   reporterIdx: index('reports_reporter_idx').on(table.reporterId),
   statusIdx: index('reports_status_idx').on(table.status),
   typeIdx: index('reports_type_idx').on(table.type),
+  actionIdx: index('reports_action_idx').on(table.action),
 }));
 
 export const topicSubscriptions = pgTable('topic_subscriptions', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'cascade' }).notNull(),
+  notificationChannel: notificationChannelEnum('notification_channel').default('in_app').notNull(),
+  notificationFrequency: notificationFrequencyEnum('notification_frequency').default('instant').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   uniqUserCategoryIdx: uniqueIndex('topic_subscriptions_user_category_idx').on(table.userId, table.categoryId),
@@ -398,6 +427,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   comments: many(comments),
   likes: many(likes),
   bookmarks: many(bookmarks),
+  feedbacks: many(feedbacks),
   verificationRequests: many(verificationRequests),
   verifiedRequest: one(verificationRequests, {
     fields: [users.verifiedRequestId],
@@ -495,6 +525,13 @@ export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
   post: one(posts, {
     fields: [bookmarks.postId],
     references: [posts.id],
+  }),
+}));
+
+export const feedbacksRelations = relations(feedbacks, ({ one }) => ({
+  user: one(users, {
+    fields: [feedbacks.userId],
+    references: [users.id],
   }),
 }));
 
@@ -639,6 +676,8 @@ export const news = pgTable('news', {
   content: text('content').default('').notNull(),
   imageUrl: text('image_url'),
   linkUrl: text('link_url'),
+  startAt: timestamp('start_at'),
+  endAt: timestamp('end_at'),
   isActive: boolean('is_active').default(true).notNull(),
   order: integer('order').default(0).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -646,5 +685,7 @@ export const news = pgTable('news', {
 }, (table) => ({
   isActiveIdx: index('news_is_active_idx').on(table.isActive),
   orderIdx: index('news_order_idx').on(table.order),
+  startAtIdx: index('news_start_at_idx').on(table.startAt),
+  endAtIdx: index('news_end_at_idx').on(table.endAt),
   createdAtIdx: index('news_created_at_idx').on(table.createdAt),
 }));
