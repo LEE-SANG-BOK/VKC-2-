@@ -7,7 +7,6 @@ import { useParams } from 'next/navigation';
 import { Bell, Menu, X } from 'lucide-react';
 import Logo from '@/components/atoms/Logo';
 import Button from '@/components/atoms/Button';
-import Tooltip from '@/components/atoms/Tooltip';
 import UserProfile from '@/components/molecules/user/UserProfile';
 import LanguageSwitcher from '@/components/atoms/LanguageSwitcher';
 import { useSession, signOut } from 'next-auth/react';
@@ -151,11 +150,12 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
             </button>
           )}
           <div className="scale-90 sm:scale-100 origin-left">
-            <Tooltip content={tTooltip.brandIntro || brandIntroFallback} position="below" className="vk-tooltip-brand">
-              <div aria-label={tTooltip.brandIntro || brandIntroFallback}>
-                <Logo />
-              </div>
-            </Tooltip>
+            <div className="flex items-center gap-2 min-w-0">
+              <Logo />
+              <span className="inline-block max-w-[90px] sm:max-w-[160px] text-[9px] sm:text-[11px] text-gray-500 dark:text-gray-400 leading-tight line-clamp-2">
+                {tTooltip.brandIntro || brandIntroFallback}
+              </span>
+            </div>
           </div>
         </div>
 

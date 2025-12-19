@@ -241,11 +241,11 @@ export default function RecommendedUsersSection({
 
   return (
     <div className={`rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 ${compact ? 'p-3' : 'p-4'}`}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <div className="flex items-center justify-between gap-2 mb-3 min-h-[32px]">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate min-w-0 flex-1">
           {title}
         </h3>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={() => scrollCarousel(-1)}

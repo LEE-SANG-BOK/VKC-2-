@@ -7,6 +7,8 @@
 - [LEAD] 좌측 사이드바 sticky 래핑 적용: 메인 스크롤과 분리된 내부 스크롤 유지(MainLayout/CategorySidebar)
 - [LEAD] UserTrustBadge 공통 컴포넌트 추가 + PostCard/Detail/Profile/Answer/Comment/추천·팔로잉에서 인증 배지 위치 통일(닉네임 옆)
 - [LEAD] Leaderboard/인증 신청 미리보기의 신뢰 배지 표시를 UserTrustBadge로 통일(툴팁/패딩 일관화)
+- [LEAD] 헤더 브랜드 문구를 Tooltip 대신 로고 옆 텍스트로 상시 노출
+- [LEAD] 모바일 헤더/카드 밀도 개선: 로고 문구 line-clamp, 인증 응답 라벨 `+N` 축약, 태그 영역 높이 제한, 추천 섹션 헤더 높이 고정
 - [LEAD] 모바일 홈 필터(인기/최신) 알약 투명도 미세 조정
 - [FE] 헤더 우측 액션 순서 변경(언어 스위치 → 알림) + 공유 CTA(ko) 문구 업데이트 + 사이드바 피드백 라벨을 “Feedback”으로 고정(텍스트 축소/아이콘 들여쓰기)
 - [FE] PostCard 모바일 해결/미해결 아이콘 shrink-0 보강 + PostDetail 답글/댓글 렌더 블록 괄호 정리로 lint 파서 오류 해소
