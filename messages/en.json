@@ -28,6 +28,9 @@
     "following": "Following",
     "adoptionRate": "Adoption rate",
     "interestMatchRate": "Interest match rate",
+    "officialAnswer": "Official answer",
+    "reviewedAnswer": "Reviewed answer",
+    "source": "Source",
     "question": "Question",
     "verifiedUser": "Verified user",
     "guidelineTooltip": "Be respectful, no hate; ads/contact links may be restricted; violations can be limited or penalized"

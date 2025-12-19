@@ -167,7 +167,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const shouldComputeResponderCounts = !useCursorPagination;
     const emptyResponderRows: Array<{ postId: string | null; authorId: string | null }> = [];
 
-    const [answerCounts, commentCounts, likedRows, answerResponders, commentResponders] =
+    const [
+      answerCounts,
+      commentCounts,
+      officialAnswerCounts,
+      reviewedAnswerCounts,
+      likedRows,
+      answerResponders,
+      commentResponders,
+    ] =
       postIds.length > 0
         ? await Promise.all([
             db
@@ -180,6 +188,22 @@ export async function GET(request: NextRequest, context: RouteContext) {
               .from(comments)
               .where(and(inArray(comments.postId, postIds), isNull(comments.parentId)))
               .groupBy(comments.postId),
+            db
+              .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
+              .from(answers)
+              .where(and(inArray(answers.postId, postIds), eq(answers.isOfficial, true)))
+              .groupBy(answers.postId),
+            db
+              .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
+              .from(answers)
+              .where(
+                and(
+                  inArray(answers.postId, postIds),
+                  eq(answers.reviewStatus, 'approved'),
+                  eq(answers.isOfficial, false)
+                )
+              )
+              .groupBy(answers.postId),
             db
               .select({ postId: likes.postId })
               .from(likes)
@@ -199,7 +223,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
                   .groupBy(comments.postId, comments.authorId)
               : Promise.resolve(emptyResponderRows),
           ])
-        : [[], [], [], [], []];
+        : [[], [], [], [], [], [], []];
 
     const answerCountMap = new Map<string, number>();
     answerCounts.forEach((row) => {
@@ -209,6 +233,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const commentCountMap = new Map<string, number>();
     commentCounts.forEach((row) => {
       if (row.postId) commentCountMap.set(row.postId, row.count);
+    });
+
+    const officialAnswerCountMap = new Map<string, number>();
+    officialAnswerCounts.forEach((row) => {
+      if (row.postId) officialAnswerCountMap.set(row.postId, row.count);
+    });
+
+    const reviewedAnswerCountMap = new Map<string, number>();
+    reviewedAnswerCounts.forEach((row) => {
+      if (row.postId) reviewedAnswerCountMap.set(row.postId, row.count);
     });
 
     const likedPostIds = new Set<string>();
@@ -280,6 +314,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       const answersCount = postId ? (answerCountMap.get(postId) ?? 0) : 0;
       const postCommentsCount = postId ? (commentCountMap.get(postId) ?? 0) : 0;
       const commentsCount = answersCount + postCommentsCount;
+      const officialAnswerCount = postId ? (officialAnswerCountMap.get(postId) ?? 0) : 0;
+      const reviewedAnswerCount = postId ? (reviewedAnswerCountMap.get(postId) ?? 0) : 0;
       
       return {
         id: bookmark.id,
@@ -317,6 +353,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         },
         certifiedResponderCount: postId ? (certifiedRespondersByPost.get(postId)?.size ?? 0) : 0,
         otherResponderCount: postId ? (otherRespondersByPost.get(postId)?.size ?? 0) : 0,
+        officialAnswerCount,
+        reviewedAnswerCount,
         isLiked: postId ? likedPostIds.has(postId) : false,
         isBookmarked: true,
         isQuestion: bookmark.type === 'question',

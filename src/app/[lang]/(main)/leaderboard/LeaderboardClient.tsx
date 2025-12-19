@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Flame, Medal, Sparkles, Trophy } from 'lucide-react';
 import Avatar from '@/components/atoms/Avatar';
-import Tooltip from '@/components/atoms/Tooltip';
-import TrustBadge from '@/components/atoms/TrustBadge';
+import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
 import { useUserLeaderboard } from '@/repo/users/query';
 import type { UserLeaderboardEntry } from '@/repo/users/types';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
@@ -239,13 +238,12 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
                         </Link>
                       </div>
                     </div>
-                    {badge.show ? (
-                      <Tooltip content={badge.tooltip} position="top" touchBehavior="longPress" interactive>
-                        <span>
-                          <TrustBadge level={badge.level} label={badge.label} />
-                        </span>
-                      </Tooltip>
-                    ) : null}
+                    <UserTrustBadge
+                      presentation={badge}
+                      labelVariant="badge"
+                      className="shrink-0"
+                      badgeClassName="!px-1.5 !py-0.5"
+                    />
                   </div>
                   <div className="flex items-center gap-3">
                     <Avatar name={displayName} imageUrl={avatarSrc} size="lg" />
@@ -316,13 +314,11 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
                         >
                           {displayName}
                         </Link>
-                        {badge.show ? (
-                          <Tooltip content={badge.tooltip} position="top" touchBehavior="longPress" interactive>
-                            <span>
-                              <TrustBadge level={badge.level} label={badge.label} />
-                            </span>
-                          </Tooltip>
-                        ) : null}
+                        <UserTrustBadge
+                          presentation={badge}
+                          labelVariant="badge"
+                          badgeClassName="!px-1.5 !py-0.5"
+                        />
                       </div>
                       <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         {copy.levelLabel} {entry.level} · {copy.temperatureLabel} {numberFormatter.format(entry.score)}

@@ -72,6 +72,8 @@ export interface PostListItem {
   commentsCount?: number;
   certifiedResponderCount?: number;
   otherResponderCount?: number;
+  officialAnswerCount?: number;
+  reviewedAnswerCount?: number;
   author?: {
     id: string;
     displayName?: string | null;

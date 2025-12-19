@@ -28,6 +28,9 @@
     "following": "팔로잉",
     "adoptionRate": "채택률",
     "interestMatchRate": "관심사 일치율",
+    "officialAnswer": "공식 답변",
+    "reviewedAnswer": "검수 답변",
+    "source": "출처",
     "question": "질문",
     "verifiedUser": "인증된 사용자",
     "guidelineTooltip": "예의·혐오 금지, 광고/연락처 제한, 위반 시 게시 제한/제재"

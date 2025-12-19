@@ -488,6 +488,8 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     imageCount: item.imageCount,
     certifiedResponderCount: item.certifiedResponderCount,
     otherResponderCount: item.otherResponderCount,
+    officialAnswerCount: item.officialAnswerCount,
+    reviewedAnswerCount: item.reviewedAnswerCount,
     trustBadge: item.trustBadge,
     trustWeight: item.trustWeight,
     translations: translations || {},

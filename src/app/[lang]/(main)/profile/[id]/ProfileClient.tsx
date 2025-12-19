@@ -72,6 +72,8 @@ interface PostItem {
   isBookmarked?: boolean;
   certifiedResponderCount?: number;
   otherResponderCount?: number;
+  officialAnswerCount?: number;
+  reviewedAnswerCount?: number;
 }
 
 interface AnswerItem {
@@ -759,6 +761,8 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                         imageCount={post.imageCount}
                         certifiedResponderCount={post.certifiedResponderCount}
                         otherResponderCount={post.otherResponderCount}
+                        officialAnswerCount={post.officialAnswerCount}
+                        reviewedAnswerCount={post.reviewedAnswerCount}
                         publishedAt={formatDate(post.publishedAt)}
                         isQuestion={post.isQuestion}
 	                      isAdopted={post.isAdopted}
@@ -897,6 +901,8 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                         imageCount={bookmark.imageCount}
                         certifiedResponderCount={bookmark.certifiedResponderCount}
                         otherResponderCount={bookmark.otherResponderCount}
+                        officialAnswerCount={bookmark.officialAnswerCount}
+                        reviewedAnswerCount={bookmark.reviewedAnswerCount}
                         publishedAt={formatDate(bookmark.publishedAt)}
                         isQuestion={bookmark.isQuestion}
 	                      isAdopted={bookmark.isAdopted}

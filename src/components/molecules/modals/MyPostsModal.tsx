@@ -158,6 +158,8 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
                     imageCount={post.imageCount}
                     certifiedResponderCount={(post as any).certifiedResponderCount}
                     otherResponderCount={(post as any).otherResponderCount}
+                    officialAnswerCount={(post as any).officialAnswerCount}
+                    reviewedAnswerCount={(post as any).reviewedAnswerCount}
                     publishedAt={formatDate(post.publishedAt || post.createdAt)}
                     isQuestion={post.type === 'question' || post.isQuestion}
                     isAdopted={post.isResolved || post.isAdopted}

@@ -377,6 +377,8 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                     imageCount={(post as any).imageCount}
                     certifiedResponderCount={(post as any).certifiedResponderCount}
                     otherResponderCount={(post as any).otherResponderCount}
+                    officialAnswerCount={(post as any).officialAnswerCount}
+                    reviewedAnswerCount={(post as any).reviewedAnswerCount}
                     trustBadge={(post as any).trustBadge}
                     trustWeight={(post as any).trustWeight}
                     translations={translations}
