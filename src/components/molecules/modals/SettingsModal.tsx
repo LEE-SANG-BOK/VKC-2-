@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Bell, MessageCircle, Lightbulb, MessageSquare, Award, Users, Save } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'nextjs-toploader/app';
+import { useParams } from 'next/navigation';
+import { X, Bell, MessageCircle, Lightbulb, MessageSquare, Award, Users, Save, Rss } from 'lucide-react';
 import Modal from '@/components/atoms/Modal';
 import { useSession } from 'next-auth/react';
 import { useUserProfile } from '@/repo/users/query';
@@ -24,6 +26,9 @@ interface NotificationSettings {
 
 export default function SettingsModal({ isOpen, onClose, translations = {} }: SettingsModalProps) {
   const t = translations;
+  const router = useRouter();
+  const params = useParams();
+  const locale = params.lang as string || 'ko';
   const { data: session } = useSession();
   const user = session?.user;
   const { data: profile, isLoading: profileLoading } = useUserProfile(user?.id || '', {
@@ -34,6 +39,100 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
     refetchOnReconnect: false,
   });
   const updateProfile = useUpdateMyProfile();
+  const settingsFallbacks = useMemo(() => {
+    if (locale === 'en') {
+      return {
+        notificationSettings: 'Notification Settings',
+        webNotifications: 'Web notifications',
+        notificationCategories: 'Notifications to receive',
+        selectFew: 'Choose only what you need',
+        save: 'Save',
+        saveSuccess: 'Notification settings saved.',
+        saveError: 'Failed to save notification settings.',
+        newAnswer: 'New answer',
+        newAnswerDesc: 'Get notified when someone answers your question.',
+        questionComment: 'Question comments',
+        questionCommentDesc: 'Quickly check comments on your questions.',
+        answerComment: 'Answer comments',
+        answerCommentDesc: 'Never miss feedback on your answers.',
+        adoption: 'Answer adopted',
+        adoptionDesc: 'Get notified when your answer is adopted.',
+        newFollower: 'New follower',
+        newFollowerDesc: 'Get notified when someone follows you.',
+        subscriptionSettings: 'Subscription settings',
+        subscriptionSettingsDesc: 'Manage category and topic subscriptions plus notification frequency.',
+        manageSubscriptions: 'Manage subscriptions',
+      };
+    }
+    if (locale === 'vi') {
+      return {
+        notificationSettings: 'Cài đặt thông báo',
+        webNotifications: 'Thông báo web',
+        notificationCategories: 'Chọn thông báo muốn nhận',
+        selectFew: 'Chỉ chọn mục cần thiết',
+        save: 'Lưu',
+        saveSuccess: 'Đã lưu cài đặt thông báo.',
+        saveError: 'Không thể lưu cài đặt thông báo.',
+        newAnswer: 'Có câu trả lời mới',
+        newAnswerDesc: 'Nhận thông báo khi ai đó trả lời câu hỏi của bạn.',
+        questionComment: 'Bình luận câu hỏi',
+        questionCommentDesc: 'Theo dõi nhanh bình luận trên câu hỏi của bạn.',
+        answerComment: 'Bình luận câu trả lời',
+        answerCommentDesc: 'Không bỏ lỡ phản hồi cho câu trả lời của bạn.',
+        adoption: 'Câu trả lời được chọn',
+        adoptionDesc: 'Nhận thông báo khi câu trả lời của bạn được chọn.',
+        newFollower: 'Người theo dõi mới',
+        newFollowerDesc: 'Nhận thông báo khi có người theo dõi bạn.',
+        subscriptionSettings: 'Cài đặt theo dõi',
+        subscriptionSettingsDesc: 'Quản lý danh mục/chủ đề theo dõi và tần suất nhận thông báo.',
+        manageSubscriptions: 'Quản lý theo dõi',
+      };
+    }
+    return {
+      notificationSettings: '알림 설정',
+      webNotifications: '웹 알림',
+      notificationCategories: '알림 받을 항목',
+      selectFew: '필요한 것만 선택',
+      save: '저장하기',
+      saveSuccess: '알림 설정이 저장되었습니다.',
+      saveError: '알림 설정 저장에 실패했습니다.',
+      newAnswer: '새 답변 등록',
+      newAnswerDesc: '내 질문에 새로운 답변이 달리면 바로 알려드려요.',
+      questionComment: '질문 댓글',
+      questionCommentDesc: '질문에 달린 댓글을 빠르게 확인할 수 있어요.',
+      answerComment: '답변 댓글',
+      answerCommentDesc: '내 답변에 달린 피드백을 놓치지 않게 도와줘요.',
+      adoption: '답변 채택',
+      adoptionDesc: '내 답변이 채택되면 바로 알려드려요.',
+      newFollower: '새 팔로워',
+      newFollowerDesc: '누군가 나를 팔로우하면 알려드려요.',
+      subscriptionSettings: '구독 설정',
+      subscriptionSettingsDesc: '카테고리/토픽 구독과 알림 빈도를 관리할 수 있어요.',
+      manageSubscriptions: '구독 관리',
+    };
+  }, [locale]);
+  const settingsLabels = {
+    notificationSettings: t.notificationSettings || settingsFallbacks.notificationSettings,
+    webNotifications: t.webNotifications || settingsFallbacks.webNotifications,
+    notificationCategories: t.notificationCategories || settingsFallbacks.notificationCategories,
+    selectFew: t.selectFew || settingsFallbacks.selectFew,
+    save: t.save || settingsFallbacks.save,
+    saveSuccess: t.saveSuccess || settingsFallbacks.saveSuccess,
+    saveError: t.saveError || settingsFallbacks.saveError,
+    newAnswer: t.newAnswer || settingsFallbacks.newAnswer,
+    newAnswerDesc: t.newAnswerDesc || settingsFallbacks.newAnswerDesc,
+    questionComment: t.questionComment || settingsFallbacks.questionComment,
+    questionCommentDesc: t.questionCommentDesc || settingsFallbacks.questionCommentDesc,
+    answerComment: t.answerComment || settingsFallbacks.answerComment,
+    answerCommentDesc: t.answerCommentDesc || settingsFallbacks.answerCommentDesc,
+    adoption: t.adoption || settingsFallbacks.adoption,
+    adoptionDesc: t.adoptionDesc || settingsFallbacks.adoptionDesc,
+    newFollower: t.newFollower || settingsFallbacks.newFollower,
+    newFollowerDesc: t.newFollowerDesc || settingsFallbacks.newFollowerDesc,
+    subscriptionSettings: t.subscriptionSettings || settingsFallbacks.subscriptionSettings,
+    subscriptionSettingsDesc: t.subscriptionSettingsDesc || settingsFallbacks.subscriptionSettingsDesc,
+    manageSubscriptions: t.manageSubscriptions || settingsFallbacks.manageSubscriptions,
+  };
 
   const [webNotificationsEnabled, setWebNotificationsEnabled] = useState(true);
   const [notifications, setNotifications] = useState<NotificationSettings>({
@@ -109,12 +208,12 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
         notifyAdoptions: notifications.adoptions,
         notifyFollows: notifications.follows,
       });
-      toast.success(t.saveSuccess || '알림 설정이 저장되었습니다.');
+      toast.success(settingsLabels.saveSuccess);
       onClose();
     } catch (error) {
       console.error('Failed to update notification settings:', error);
       setNotifications(originalNotifications);
-      toast.error('알림 설정 저장에 실패했습니다.');
+      toast.error(settingsLabels.saveError);
     } finally {
       setIsSaving(false);
     }
@@ -124,32 +223,32 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
     {
       key: 'answers' as const,
       icon: <MessageCircle className="w-5 h-5 text-blue-500" />,
-      title: t.newAnswer || '새 답변 등록',
-      description: t.newAnswerDesc || '내 질문에 새로운 답변이 달리면 바로 알려드려요.',
+      title: settingsLabels.newAnswer,
+      description: settingsLabels.newAnswerDesc,
     },
     {
       key: 'comments' as const,
       icon: <Lightbulb className="w-5 h-5 text-amber-500" />,
-      title: t.questionComment || '질문 댓글',
-      description: t.questionCommentDesc || '질문에 달린 댓글을 빠르게 확인할 수 있어요.',
+      title: settingsLabels.questionComment,
+      description: settingsLabels.questionCommentDesc,
     },
     {
       key: 'replies' as const,
       icon: <MessageSquare className="w-5 h-5 text-purple-500" />,
-      title: t.answerComment || '답변 댓글',
-      description: t.answerCommentDesc || '내 답변에 달린 피드백을 놓치지 않게 도와줘요.',
+      title: settingsLabels.answerComment,
+      description: settingsLabels.answerCommentDesc,
     },
     {
       key: 'adoptions' as const,
       icon: <Award className="w-5 h-5 text-green-500" />,
-      title: t.adoption || '답변 채택',
-      description: t.adoptionDesc || '내 답변이 채택되면 바로 알려드려요.',
+      title: settingsLabels.adoption,
+      description: settingsLabels.adoptionDesc,
     },
     {
       key: 'follows' as const,
       icon: <Users className="w-5 h-5 text-pink-500" />,
-      title: t.newFollower || '새 팔로워',
-      description: t.newFollowerDesc || '누군가 나를 팔로우하면 알려드려요.',
+      title: settingsLabels.newFollower,
+      description: settingsLabels.newFollowerDesc,
     },
   ];
 
@@ -167,7 +266,7 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
         {/* Header */}
         <div className="px-5 py-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {t.notificationSettings || '알림 설정'}
+            {settingsLabels.notificationSettings}
           </h2>
         </div>
 
@@ -185,7 +284,7 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
                   <div className="flex items-center gap-2">
                     <Bell className="w-5 h-5 text-amber-500" />
                     <h3 className="font-medium text-gray-900 dark:text-white">
-                      {t.webNotifications || '웹 알림'}
+                      {settingsLabels.webNotifications}
                     </h3>
                   </div>
                   <button
@@ -209,10 +308,10 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
               <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium text-gray-900 dark:text-white">
-                    {t.notificationCategories || '알림 받을 항목'}
+                    {settingsLabels.notificationCategories}
                   </h3>
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {t.selectFew || '필요한 것만 선택'}
+                    {settingsLabels.selectFew}
                   </span>
                 </div>
 
@@ -268,6 +367,32 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
                   ))}
                 </div>
               </div>
+
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2">
+                    <Rss className="w-5 h-5 text-blue-500 mt-0.5" />
+                    <div>
+                      <h3 className="font-medium text-gray-900 dark:text-white">
+                        {settingsLabels.subscriptionSettings}
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {settingsLabels.subscriptionSettingsDesc}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      router.push(`/${locale}/subscriptions`);
+                    }}
+                    className="px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                  >
+                    {settingsLabels.manageSubscriptions}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Footer with Save Button */}
@@ -282,7 +407,7 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    {t.save || '저장하기'}
+                    {settingsLabels.save}
                   </>
                 )}
               </button>

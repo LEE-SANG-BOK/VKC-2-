@@ -1008,6 +1008,30 @@
 - 다음 액션/의존성
   - 없음
 
+#### (2025-12-19) [FE] 공식/검수 답변 배지 노출 (P0)
+
+- 플랜(체크리스트)
+  - [x] PostDetail 답변 헤더에 공식/검수 배지 표시
+  - [x] Profile 답변 카드에 공식/검수 배지 반영
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 답변의 `isOfficial`/`reviewStatus`가 상세/프로필 UI에서 노출되지 않아 신뢰 상태 인지가 어려움
+- 변경 내용(why/what)
+  - why: 공식/검수 답변 가시성 강화
+  - what: 상세/프로필 답변 헤더에 배지 추가, 신규 답변 optimistic 상태에 공식/검수 값 반영
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - docs/EXECUTION_PLAN.md
+- i18n
+  - 신규 키 요청: common.officialAnswer, common.reviewedAnswer (또는 postDetail.officialAnswer/reviewedAnswer)
+- 다음 액션/의존성
+  - 피드(PostCard)는 인증 답변 요약 배지로 유지 중이며, 공식/검수 여부를 별도 노출하려면 list API에 필드 추가 필요
+
 ### 0.6.2 [WEB] Web Feature Agent
 
 #### (2025-12-18) [WEB] 헤더/프로필 모달 성능 최적화 (P0)
@@ -1760,6 +1784,29 @@
 - 다음 액션/의존성
   - 없음
 
+#### (2025-12-19) [WEB] 구독/알림 설정 UX 확장 (P0)
+
+- 플랜(체크리스트)
+  - [x] 구독 관리 화면 구성(카테고리/토픽 토글)
+  - [x] 구독 알림 채널/빈도 UI 연결
+  - [x] 설정 모달에서 구독 관리 진입 동선 추가
+  - [x] lint/build 재검증
+- 현황 분석(코드 기준)
+  - 구독/알림 설정 API는 있으나 사용자 관리 UI가 부재
+- 변경 내용(why/what)
+  - why: 구독 흐름의 가시성과 알림 설정 제어를 제공해 사용성/재방문을 강화
+  - what: `/[lang]/subscriptions` 관리 화면 추가 + SettingsModal에 진입 CTA 연결, 구독 토글 시 설정 캐시 invalidation
+- 검증
+  - [x] npm run lint (pass)
+  - [x] npm run build (pass)
+- 변경 파일
+  - src/app/[lang]/(main)/subscriptions/page.tsx
+  - src/app/[lang]/(main)/subscriptions/SubscriptionsClient.tsx
+  - src/components/molecules/modals/SettingsModal.tsx
+  - src/repo/categories/mutation.ts
+- 다음 액션/의존성
+  - DB 마이그레이션 적용 필요(0032_topic_subscription_notifications.sql)
+
 ### 0.6.3 [BE] Backend Agent
 
 #### (2025-12-18) [BE] 추천 사용자 API 보강 + 과부하 방지 (P0)
@@ -2167,6 +2214,42 @@
   - docs/EXECUTION_PLAN.md
 - 다음 액션/의존성
   - 인덱스는 현 시점 필수 아님(필요 시 `posts.author_id/created_at/id` 복합 인덱스 검토)
+
+#### (2025-12-19) [BE] 리스트 API 재점검/수동 호출 환경 확인 (P1)
+
+- 플랜(체크리스트)
+  - [x] list API `author.isFollowing` 배치 적용 재확인
+  - [x] cursor pagination/limit clamp 재확인
+  - [x] sandbox dev 서버 바인딩 재시도(3015/3025)
+- 현황 분석(코드 기준)
+  - `/api/posts`, `/api/posts/trending`, `/api/users/[id]/posts`, `/api/users/[id]/bookmarks`, `/api/search`에서 `getFollowingIdSet`으로 배치 처리
+  - 각 리스트 API는 limit max 50, cursor decode 안전 처리
+  - Codex sandbox에서 `next dev` listen EPERM 지속 발생
+- 변경 내용(why/what)
+  - why: follow 상태/페이징 보장과 수동 호출 가능 여부 재점검 필요
+  - what: 코드 점검만 수행(코드 변경 없음), dev 서버 바인딩 재시도 실패 기록
+- 검증
+  - [ ] API 수동 호출(실패: listen EPERM 0.0.0.0:3025, 127.0.0.1:3015)
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 로컬 환경에서 dev 서버 바인딩 가능 시 API 수동 호출 재검증 필요
+
+#### (2025-12-19) [BE] 배포본 수동 호출 재시도(DNS 확인) (P1)
+
+- 플랜(체크리스트)
+  - [x] Vercel 배포본 API 연결 확인
+- 현황 분석(코드 기준)
+  - Codex sandbox에서 외부 도메인 DNS 해석 실패(`Could not resolve host`)
+- 변경 내용(why/what)
+  - why: 배포본으로라도 리스트 API 응답 확인 필요
+  - what: `https://vkc-2.vercel.app` 호출 재시도(코드 변경 없음)
+- 검증
+  - [ ] curl https://vkc-2.vercel.app/api/posts?limit=1 (실패: Could not resolve host)
+- 변경 파일
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 로컬/리드 환경에서 DNS 가능한 네트워크로 재검증 필요
 
 ---
 
@@ -2588,7 +2671,7 @@
 - [x] (2025-12-18) [WEB] 프로필 설정: 온보딩 값 자동 반영 여부 점검 + 닉네임 자동 부여 규칙 적절성 점검/개선
 - [x] (2025-12-18) [WEB] 배지 안내(가이드) 페이지 추가: 뱃지 타입/의미/획득 방법/신뢰 신호 설명(ko/en/vi) + PostCard/프로필에서 진입 동선 연결 (메모: SEO/SSR 여부 결정)
 - [x] (2025-12-18) [WEB] 랭킹/칭호(리더보드) UI/IA 설계(프로필 “신뢰/레벨/온도” 시각화 포함) (메모: BE 점수 규칙/API 선행)
-- [ ] (2025-12-18) [WEB] 구독/알림 설정 UX 확장: 구독 관리 화면(카테고리/토픽) + 알림 수신/빈도 UI (메모: P1‑6 Stream‑E 연결)
+- [x] (2025-12-18) [WEB] 구독/알림 설정 UX 확장: 구독 관리 화면(카테고리/토픽) + 알림 수신/빈도 UI (메모: P1‑6 Stream‑E 연결)
 
 **백엔드 기반(성능/규칙/데이터)**
 - [x] (2025-12-18) [BE] 인기글(trending) 규칙 현황 분석 + 개선안(점수/기간/캐시/부하) 제시

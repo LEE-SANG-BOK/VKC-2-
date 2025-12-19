@@ -61,6 +61,7 @@ export const queryKeys = {
     details: () => [...queryKeys.users.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.users.details(), id] as const,
     me: () => [...queryKeys.users.all, 'me'] as const,
+    score: (id: string) => [...queryKeys.users.detail(id), 'score'] as const,
     posts: (userId: string, filters?: { page?: number; limit?: number; type?: string; cursor?: string }) =>
       [...queryKeys.users.detail(userId), 'posts', filters] as const,
     answers: (userId: string, filters?: { page?: number; limit?: number; adoptedOnly?: boolean; cursor?: string }) =>
@@ -73,6 +74,8 @@ export const queryKeys = {
       [...queryKeys.users.detail(userId), 'followers', filters] as const,
     following: (userId: string, filters?: { page?: number; limit?: number; cursor?: string }) =>
       [...queryKeys.users.detail(userId), 'following', filters] as const,
+    leaderboard: (filters?: { page?: number; limit?: number }) =>
+      [...queryKeys.users.all, 'leaderboard', filters] as const,
     recommended: () => [...queryKeys.users.all, 'recommended'] as const,
     recommendedInfinite: () => [...queryKeys.users.all, 'recommended', 'infinite'] as const,
   },
@@ -95,6 +98,8 @@ export const queryKeys = {
       [...queryKeys.search.all, 'posts', query, filters] as const,
     users: (query: string) => [...queryKeys.search.all, 'users', query] as const,
     tags: (query: string) => [...queryKeys.search.all, 'tags', query] as const,
+    keywords: (query: string, filters?: { limit?: number }) =>
+      [...queryKeys.search.all, 'keywords', query, filters] as const,
     examples: (filters?: { limit?: number; period?: 'day' | 'week' | 'month' }) =>
       [...queryKeys.search.all, 'examples', filters] as const,
   },
@@ -111,11 +116,16 @@ export const queryKeys = {
   categories: {
     all: ['categories'] as const,
     subscriptions: () => ['categories', 'subscriptions'] as const,
+    subscriptionSettings: () => ['categories', 'subscription-settings'] as const,
   },
 
   // News
   news: {
     all: ['news'] as const,
     byLang: (lang?: string) => [...queryKeys.news.all, lang || 'vi'] as const,
+  },
+
+  feedback: {
+    all: ['feedback'] as const,
   },
 } as const;

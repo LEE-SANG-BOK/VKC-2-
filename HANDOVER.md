@@ -4,6 +4,21 @@
 
 ## 최근 주요 변경 사항
 
+- [WEB] 리더보드 UI/IA 추가: `/[lang]/leaderboard` SSR + HydrationBoundary, Top3 강조 카드/전체 랭킹 리스트/페이지네이션 구성
+- [WEB] 구독/알림 설정 UX 확장: `/[lang]/subscriptions` 구독 관리 화면(카테고리/토픽 토글) + 채널/빈도 설정, Settings 모달에서 진입 CTA 추가
+- [WEB] 구독 토글 후 알림 설정 캐시 invalidation 추가로 설정 목록 동기화
+- [BE] 리스트 API follow 상태/페이징 재점검(코드 변경 없음) + `getFollowingIdSet` 배치 처리 확인
+- [BE] Codex sandbox에서 `next dev` 포트 바인딩 EPERM 지속 발생으로 수동 API 호출은 로컬 환경 재검증 필요
+- [BE] 배포본 API 수동 호출 재시도 시 DNS 해석 실패(`vkc-2.vercel.app`), 외부 네트워크 확인 필요
+- [LEAD] HeaderSearch 예시 placeholder 전환 + 저품질 필터 강화로 검색창에 이상한 문자열이 자동 입력되지 않도록 조정
+- [LEAD] Header 2xl 센터 폭 1040 확장으로 검색 바 가로 폭 확대
+- [LEAD] 추천 사용자 메타를 온보딩 정보(userType/koreanLevel/interest) 기반으로 전환하고 숫자/퍼센트 지표 제거
+- [LEAD] 추천 사용자 메타에 비자 타입 포함(숫자 허용) + 표시값 대문자 정규화
+- [LEAD] README 최신화: 프로젝트 개요/명령어/구조/SEO 규칙 요약
+- [LEAD] MainLayout 2xl 그리드 폭을 Header와 정렬해 좌/우 레일이 헤더와 맞물리도록 정렬
+- [LEAD] 구독 피드 상단 필터 버튼 크기 확대 + CategorySidebar 구독 버튼 폭/라인높이 개선(vi 텍스트 잘림 해소)
+- [LEAD] 모바일 홈 필터(인기/최신) 알약 투명도 추가 조정
+- [LEAD] 추천 사용자 메타 문자열 ordinal prefix 제거 유틸 적용
 - [FE] 모바일 헤더/사이드바 툴팁 정리: 모바일 메뉴 버튼 테두리 강조, 헤더는 브랜드 툴팁만 유지, 사이드바 아이콘 툴팁은 모바일에서 비활성화
 - [FE] 사이드바 폭 정렬: 데스크톱 CategorySidebar 폭을 우측 레일과 동일한 320px로 맞춤
 - [FE] Desktop “바깥 여백만” 회색 분리: MainLayout에서 데스크톱 배경을 회색으로, 콘텐츠 영역은 기존 배경 유지
@@ -13,7 +28,16 @@
 - [LEAD] 피드 중간 추천: 인기/최신 피드에서 게시글 5개 이후 “추천 사용자” 섹션을 인서트(로그인 시만 fetch)
 - [LEAD] 추천 사용자 섹션 리팩토링: `RecommendedUsersSection`로 분리 + 모바일은 2개씩 가로 캐러셀(좌/우 이동)로 노출
 - [LEAD] 추천 사용자 메타 개선: recommendationMeta 기반 #1~#3 표시 + 인증 사용자는 닉네임 상단 라벨 노출(없으면 팔로워/게시글/팔로잉 fallback)
+- [LEAD] 추천 사용자 메타 공통 유틸: `formatRecommendationMetaItems`로 추천 섹션/팔로잉 모달의 #1~#3 라벨 규칙 통일
+- [LEAD] userType 라벨 유틸 통합: ProfileClient/ProfileModal/FollowingModal의 사용자 타입 표기 중복 제거
 - [LEAD] 팔로잉 모달 추천 탭도 recommendationMeta 우선 적용 + 인증 라벨 노출로 추천 UX 일관화
+- [LEAD] 컴포넌트 구조 점검: atoms/ui 중복 후보(Button/Badge/Avatar) Phase‑2 통합 대상으로 분류, 미사용 컴포넌트 삭제 대상 없음
+- [LEAD] 홈 추천 사용자 섹션 컴팩트화: 웹에서도 카드 높이 축소(Avatar/FollowButton/패딩 축소)
+- [LEAD] 레이아웃 정렬 보강: Header 2xl 그리드 중앙 정렬 + 좌/우 레일 정렬 일치
+- [LEAD] 모바일 홈 필터 알약 반투명도 조정(인기/최신 토글)
+- [LEAD] 추천 사용자 섹션 데스크톱 가로 캐러셀 전환 + 메타 #번호 제거 + 헤더 검색 폭 확장
+- [LEAD] 헤더 검색 예시 필터링: 저품질/반복 텍스트를 예시 풀에서 제외해 이상한 검색어 노출 방지
+- [LEAD] PostCard 모바일 하단 개선: 인증 응답 라벨을 `+N 답변/댓글` 형태로 축약해 1줄 정리
 - [LEAD] 구독 피드 필터/카피 정합화: 구독 카테고리 가로 필터를 데스크톱에도 노출 + HeaderSearch select 폭 조정 + 사이드바 구독 버튼 폭/폰트 축소 + 헤더 signup 카피 “시작하기/ Get started / Bắt đầu” 통일
 - [LEAD] 모바일/태블릿 잘림 보강: CategorySidebar 구독 버튼 클립 방지(카테고리 행 width 규칙 수정) + PostCard 태그/액션이 `sm~md` 구간에서도 wrap/표시되도록 breakpoint 조정
 - [FE] PostCard 작성자 라인: 이름 옆에 `· Follow` / `· Following` 텍스트 CTA 표시 + 카드 클릭과 분리(클릭 stopPropagation)
