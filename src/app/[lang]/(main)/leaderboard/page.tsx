@@ -5,6 +5,7 @@ import type { Locale } from '@/i18n/config';
 import MainLayout from '@/components/templates/MainLayout';
 import { queryKeys } from '@/repo/keys';
 import { fetchUserLeaderboard } from '@/repo/users/fetch';
+import { SITE_URL } from '@/lib/siteUrl';
 import LeaderboardClient from './LeaderboardClient';
 
 export const dynamic = 'force-dynamic';
@@ -50,13 +51,10 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const title = t.title || fallback.title;
   const description = t.description || fallback.description;
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    'https://vietkconnect.com';
+  const baseUrl = SITE_URL;
 
   const buildUrl = (locale: string) => {
-    const url = new URL(`${baseUrl}/${locale}/leaderboard`);
+    const url = new URL(`/${locale}/leaderboard`, baseUrl);
     if (currentPage > 1) {
       url.searchParams.set('page', String(currentPage));
     }
