@@ -132,37 +132,160 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
   const avatarBlobUrlRef = useRef<string | null>(null);
 
   const t = (translations?.profileEdit || {}) as Record<string, string>;
-  const avatarChangeLabel = t.avatarChange || (lang === 'vi' ? 'Thay ảnh đại diện' : lang === 'en' ? 'Change avatar' : '프로필 사진 변경');
-  const avatarTooltipText = t.avatarTooltip || (lang === 'vi'
-    ? 'Bạn có thể dùng ảnh bất kỳ để dễ nhận diện.'
-    : lang === 'en'
-      ? 'Upload any image that helps others recognize you.'
-      : '식별 가능한 이미지를 업로드해 주세요.');
-  const nameTooltipText = t.nameTooltip || (lang === 'vi'
-    ? 'Tên này sẽ được hiển thị công khai trên hồ sơ và bài viết.'
-    : lang === 'en'
-      ? 'This name will be shown publicly on your profile and posts.'
-      : '프로필과 게시글에 공개로 표시되는 이름입니다.');
-  const bioTooltipText = t.bioTooltip || (lang === 'vi'
-    ? 'Giới thiệu ngắn giúp mọi người hiểu bạn tốt hơn.'
-    : lang === 'en'
-      ? 'A short intro helps others understand you.'
-      : '간단한 소개를 적으면 신뢰도와 소통이 좋아져요.');
-  const genderTooltipText = t.genderTooltip || (lang === 'vi'
-    ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
-    : lang === 'en'
-      ? 'Optional. Used to personalize recommendations.'
-      : '선택 사항입니다. 맞춤 추천에 활용됩니다.');
-  const ageGroupTooltipText = t.ageGroupTooltip || (lang === 'vi'
-    ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
-    : lang === 'en'
-      ? 'Optional. Used to personalize recommendations.'
-      : '선택 사항입니다. 맞춤 추천에 활용됩니다.');
-  const userTypeTooltipText = t.userTypeTooltip || t.statusTooltip || (lang === 'vi'
-    ? 'Không bắt buộc. Chọn loại người dùng của bạn.'
-    : lang === 'en'
-      ? 'Optional. Choose your user type.'
-      : '선택 사항입니다. 사용자 유형을 선택해 주세요.');
+  const tCommon = (translations?.common || {}) as Record<string, string>;
+  const copy = useMemo(() => {
+    const isVi = lang === 'vi';
+    const isEn = lang === 'en';
+    const selectLabel = t.genderSelect || (isVi ? 'Chọn' : isEn ? 'Select' : '선택');
+
+    return {
+      avatarChange: t.avatarChange || (isVi ? 'Thay đổi ảnh đại diện' : isEn ? 'Change profile photo' : '프로필 사진 변경'),
+      avatarTooltip:
+        t.avatarTooltip ||
+        (isVi
+          ? 'Bạn có thể dùng ảnh bất kỳ để dễ nhận diện.'
+          : isEn
+            ? 'Upload any image that helps others recognize you.'
+            : '식별 가능한 이미지를 업로드해 주세요.'),
+      nameTooltip:
+        t.nameTooltip ||
+        (isVi
+          ? 'Tên này sẽ được hiển thị công khai trên hồ sơ và bài viết.'
+          : isEn
+            ? 'This name will be shown publicly on your profile and posts.'
+            : '프로필과 게시글에 공개로 표시되는 이름입니다.'),
+      bioTooltip:
+        t.bioTooltip ||
+        (isVi
+          ? 'Giới thiệu ngắn giúp mọi người hiểu bạn tốt hơn.'
+          : isEn
+            ? 'A short intro helps others understand you.'
+            : '간단한 소개를 적으면 신뢰도와 소통이 좋아져요.'),
+      genderTooltip:
+        t.genderTooltip ||
+        (isVi
+          ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
+          : isEn
+            ? 'Optional. Used to personalize recommendations.'
+            : '선택 사항입니다. 맞춤 추천에 활용됩니다.'),
+      ageGroupTooltip:
+        t.ageGroupTooltip ||
+        (isVi
+          ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
+          : isEn
+            ? 'Optional. Used to personalize recommendations.'
+            : '선택 사항입니다. 맞춤 추천에 활용됩니다.'),
+      userTypeTooltip:
+        t.userTypeTooltip ||
+        t.statusTooltip ||
+        (isVi
+          ? 'Không bắt buộc. Chọn loại người dùng của bạn.'
+          : isEn
+            ? 'Optional. Choose your user type.'
+            : '선택 사항입니다. 사용자 유형을 선택해 주세요.'),
+      nameValidationError:
+        t.nameValidationError ||
+        (isVi
+          ? `Biệt danh phải từ ${DISPLAY_NAME_MIN_LENGTH}–${DISPLAY_NAME_MAX_LENGTH} ký tự.`
+          : isEn
+            ? `Nickname must be ${DISPLAY_NAME_MIN_LENGTH}–${DISPLAY_NAME_MAX_LENGTH} characters.`
+            : `닉네임은 ${DISPLAY_NAME_MIN_LENGTH}~${DISPLAY_NAME_MAX_LENGTH}자여야 합니다.`),
+      updateSuccess: t.updateSuccess || (isVi ? 'Hồ sơ đã được cập nhật.' : isEn ? 'Profile updated.' : '프로필이 업데이트되었습니다.'),
+      updateFailed: t.updateFailed || (isVi ? 'Không thể cập nhật hồ sơ.' : isEn ? 'Failed to update profile.' : '프로필 업데이트에 실패했습니다.'),
+      avatarOnlyImages: t.avatarOnlyImages || (isVi ? 'Chỉ cho phép tệp ảnh.' : isEn ? 'Only image files are allowed.' : '이미지 파일만 업로드할 수 있습니다.'),
+      avatarTooLarge: t.avatarTooLarge || (isVi ? 'Kích thước ảnh phải ≤ 20MB.' : isEn ? 'Image must be 20MB or less.' : '이미지 크기는 20MB 이하여야 합니다.'),
+      avatarUploadFailed: t.avatarUploadFailed || (isVi ? 'Tải ảnh đại diện thất bại.' : isEn ? 'Failed to upload profile photo.' : '프로필 사진 업로드에 실패했습니다.'),
+      avatarUploadSuccess: t.avatarUploadSuccess || (isVi ? 'Đã cập nhật ảnh đại diện.' : isEn ? 'Profile photo updated.' : '프로필 사진이 업데이트되었습니다.'),
+      avatarDecodeFailed:
+        t.avatarDecodeFailed ||
+        (isVi
+          ? 'Không thể xử lý ảnh. Vui lòng chọn ảnh JPG/PNG.'
+          : isEn
+            ? 'Failed to process image. Please choose a JPG/PNG.'
+            : '이미지를 처리할 수 없습니다. JPG/PNG 이미지를 선택해주세요.'),
+      avatarHeicUnsupported:
+        t.avatarHeicUnsupported ||
+        (isVi
+          ? 'Ảnh HEIC/HEIF chưa được hỗ trợ. Vui lòng chọn JPG/PNG.'
+          : isEn
+            ? 'HEIC/HEIF is not supported. Please choose a JPG/PNG.'
+            : 'HEIC/HEIF 형식은 아직 지원되지 않습니다. JPG/PNG 이미지를 선택해주세요.'),
+      backButton: t.backButton || (isVi ? 'Quay lại' : isEn ? 'Go back' : '뒤로 가기'),
+      pageTitle: t.pageTitle || (isVi ? 'Chỉnh sửa hồ sơ' : isEn ? 'Edit Profile' : '프로필 수정'),
+      profileAlt: t.profileAlt || (isVi ? 'Hồ sơ' : isEn ? 'Profile' : '프로필'),
+      nameLabel: t.nameLabel || (isVi ? 'Tên' : isEn ? 'Name' : '이름'),
+      namePlaceholder: t.namePlaceholder || (isVi ? 'Nhập tên của bạn' : isEn ? 'Enter your name' : '이름을 입력하세요'),
+      bioLabel: t.bioLabel || (isVi ? 'Giới thiệu' : isEn ? 'Bio' : '자기소개'),
+      bioPlaceholder: t.bioPlaceholder || (isVi ? 'Nhập giới thiệu về bản thân' : isEn ? 'Enter your bio' : '자기소개를 입력하세요'),
+      genderLabel: t.genderLabel || (isVi ? 'Giới tính' : isEn ? 'Gender' : '성별'),
+      selectLabel,
+      genderMale: t.genderMale || (isVi ? 'Nam' : isEn ? 'Male' : '남성'),
+      genderFemale: t.genderFemale || (isVi ? 'Nữ' : isEn ? 'Female' : '여성'),
+      genderOther: t.genderOther || (isVi ? 'Khác' : isEn ? 'Other' : '기타'),
+      ageGroupLabel: t.ageGroupLabel || (isVi ? 'Độ tuổi' : isEn ? 'Age Group' : '연령대'),
+      ageGroup10s: t.ageGroup10s || (isVi ? '10-19' : isEn ? '10s' : '10대'),
+      ageGroup20s: t.ageGroup20s || (isVi ? '20-29' : isEn ? '20s' : '20대'),
+      ageGroup30s: t.ageGroup30s || (isVi ? '30-39' : isEn ? '30s' : '30대'),
+      ageGroup40s: t.ageGroup40s || (isVi ? '40-49' : isEn ? '40s' : '40대'),
+      ageGroup50s: t.ageGroup50s || (isVi ? '50-59' : isEn ? '50s' : '50대'),
+      ageGroup60plus: t.ageGroup60plus || (isVi ? '60+' : isEn ? '60+' : '60대+'),
+      userTypeLabel: t.userTypeLabel || t.statusLabel || (isVi ? 'Trạng thái' : isEn ? 'Status' : '사용자 유형'),
+      userTypeStudent: t.userTypeStudent || t.statusStudent || (isVi ? 'Sinh viên' : isEn ? 'Student' : '학생'),
+      userTypeWorker: t.userTypeWorker || t.statusWorker || (isVi ? 'Nhân viên' : isEn ? 'Worker' : '근로자'),
+      userTypeResident: t.userTypeResident || (isVi ? 'Cư dân' : isEn ? 'Resident' : '거주자'),
+      notificationTitle: t.notificationTitle || (isVi ? 'Cài đặt thông báo' : isEn ? 'Notification Settings' : '알림 설정'),
+      notifyAll: t.notifyAll || (isVi ? 'Tất cả thông báo' : isEn ? 'All notifications' : '전체 알림'),
+      notifyAnswers: t.notifyAnswers || (isVi ? 'Thông báo câu trả lời' : isEn ? 'Answer notifications' : '답변 알림'),
+      notifyComments: t.notifyComments || (isVi ? 'Thông báo bình luận' : isEn ? 'Comment notifications' : '댓글 알림'),
+      notifyReplies: t.notifyReplies || (isVi ? 'Thông báo phản hồi' : isEn ? 'Reply notifications' : '대댓글 알림'),
+      notifyAdoptions: t.notifyAdoptions || (isVi ? 'Thông báo chấp nhận' : isEn ? 'Adoption notifications' : '채택 알림'),
+      notifyFollows: t.notifyFollows || (isVi ? 'Thông báo theo dõi' : isEn ? 'Follow notifications' : '팔로우 알림'),
+      notifyAllDesc:
+        t.notifyAllDesc ||
+        (isVi
+          ? 'Bật hoặc tắt tất cả thông báo cùng lúc'
+          : isEn
+            ? 'Turn on or off all notifications at once'
+            : '모든 알림을 한 번에 켜거나 끕니다'),
+      notifyAnswersDesc:
+        t.notifyAnswersDesc ||
+        (isVi
+          ? 'Nhận thông báo khi có người trả lời câu hỏi của bạn'
+          : isEn
+            ? 'Get notified when someone answers your question'
+            : '내 질문에 새 답변이 달릴 때 알림을 받습니다'),
+      notifyCommentsDesc:
+        t.notifyCommentsDesc ||
+        (isVi
+          ? 'Nhận thông báo khi có người bình luận bài viết của bạn'
+          : isEn
+            ? 'Get notified when someone comments on your post'
+            : '내 게시글에 새 댓글이 달릴 때 알림을 받습니다'),
+      notifyRepliesDesc:
+        t.notifyRepliesDesc ||
+        (isVi
+          ? 'Nhận thông báo khi có người phản hồi bình luận của bạn'
+          : isEn
+            ? 'Get notified when someone replies to your comment'
+            : '내 댓글에 답글이 달릴 때 알림을 받습니다'),
+      notifyAdoptionsDesc:
+        t.notifyAdoptionsDesc ||
+        (isVi
+          ? 'Nhận thông báo khi câu trả lời của bạn được chấp nhận'
+          : isEn
+            ? 'Get notified when your answer is adopted'
+            : '내 답변이 채택되었을 때 알림을 받습니다'),
+      notifyFollowsDesc:
+        t.notifyFollowsDesc ||
+        (isVi
+          ? 'Nhận thông báo khi có người theo dõi mới'
+          : isEn
+            ? 'Get notified when you have a new follower'
+            : '새로운 팔로워가 생길 때 알림을 받습니다'),
+      saveButton: t.saveButton || (isVi ? 'Lưu' : isEn ? 'Save' : '저장하기'),
+      cancelButton: t.cancelButton || tCommon.cancel || (isVi ? 'Huỷ' : isEn ? 'Cancel' : '취소'),
+    };
+  }, [lang, t, tCommon]);
 
   const { data: profile, isLoading: profileLoading } = useMyProfile({
     enabled: !!user?.id,
@@ -282,13 +405,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
 
     try {
       const normalizedName = normalizeDisplayName(formData.name);
-      const invalidNameLabel =
-        t.nameValidationError ||
-        (lang === 'vi'
-          ? `Biệt danh phải từ ${DISPLAY_NAME_MIN_LENGTH}–${DISPLAY_NAME_MAX_LENGTH} ký tự.`
-          : lang === 'en'
-            ? `Nickname must be ${DISPLAY_NAME_MIN_LENGTH}–${DISPLAY_NAME_MAX_LENGTH} characters.`
-            : `닉네임은 ${DISPLAY_NAME_MIN_LENGTH}~${DISPLAY_NAME_MAX_LENGTH}자여야 합니다.`);
+      const invalidNameLabel = copy.nameValidationError;
 
       if (normalizedName.length < DISPLAY_NAME_MIN_LENGTH) {
         toast.error(invalidNameLabel);
@@ -314,11 +431,11 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
 
       await updateSession({ name: normalizedName });
 
-      toast.success(t.updateSuccess || '프로필이 업데이트되었습니다.');
+      toast.success(copy.updateSuccess);
       router.push(`/${lang}/profile/${user?.id}`);
     } catch (error) {
       console.error('Failed to update profile:', error);
-      toast.error(t.updateFailed || '프로필 업데이트에 실패했습니다.');
+      toast.error(copy.updateFailed);
     } finally {
       setIsSubmitting(false);
     }
@@ -350,36 +467,15 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
     if (!file || !user?.id) return;
     const previousAvatar = avatarPreviewOverride || profile?.avatar || user?.image || null;
 
-    const onlyImagesLabel =
-      lang === 'vi' ? 'Chỉ cho phép tệp ảnh.' : lang === 'en' ? 'Only image files are allowed.' : '이미지 파일만 업로드할 수 있습니다.';
-    const tooLargeLabel =
-      lang === 'vi' ? 'Kích thước ảnh phải ≤ 20MB.' : lang === 'en' ? 'Image must be 20MB or less.' : '이미지 크기는 20MB 이하여야 합니다.';
-    const uploadFailedLabel =
-      lang === 'vi' ? 'Tải ảnh đại diện thất bại.' : lang === 'en' ? 'Failed to upload profile photo.' : '프로필 사진 업로드에 실패했습니다.';
-    const uploadSuccessLabel =
-      lang === 'vi' ? 'Đã cập nhật ảnh đại diện.' : lang === 'en' ? 'Profile photo updated.' : '프로필 사진이 업데이트되었습니다.';
-    const decodeFailedLabel =
-      lang === 'vi'
-        ? 'Không thể xử lý ảnh. Vui lòng chọn ảnh JPG/PNG.'
-        : lang === 'en'
-          ? 'Failed to process image. Please choose a JPG/PNG.'
-          : '이미지를 처리할 수 없습니다. JPG/PNG 이미지를 선택해주세요.';
-    const heicUnsupportedLabel =
-      lang === 'vi'
-        ? 'Ảnh HEIC/HEIF chưa được hỗ trợ. Vui lòng chọn JPG/PNG.'
-        : lang === 'en'
-          ? 'HEIC/HEIF is not supported. Please choose a JPG/PNG.'
-          : 'HEIC/HEIF 형식은 아직 지원되지 않습니다. JPG/PNG 이미지를 선택해주세요.';
-
     const isImageFile = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|heic|heif)$/i.test(file.name || '');
     if (!isImageFile) {
-      toast.error(onlyImagesLabel);
+      toast.error(copy.avatarOnlyImages);
       event.target.value = '';
       return;
     }
 
     if (file.size > 20 * 1024 * 1024) {
-      toast.error(tooLargeLabel);
+      toast.error(copy.avatarTooLarge);
       event.target.value = '';
       return;
     }
@@ -396,7 +492,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
       try {
         normalizedFile = await normalizeAvatarImage(file);
       } catch {
-        toast.error(isHeicImage(file) ? heicUnsupportedLabel : decodeFailedLabel);
+        toast.error(isHeicImage(file) ? copy.avatarHeicUnsupported : copy.avatarDecodeFailed);
         setIsAvatarUploading(false);
         event.target.value = '';
         return;
@@ -418,7 +514,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
       const result = await res.json();
 
       if (!res.ok || !result?.success || !result?.data?.url) {
-        throw new Error(result?.error || uploadFailedLabel);
+        throw new Error(result?.error || copy.avatarUploadFailed);
       }
 
       const uploadedUrl = String(result.data.url);
@@ -439,7 +535,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
       queryClient.invalidateQueries({ queryKey: queryKeys.users.me() });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(user.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
-      toast.success(t.avatarUploadSuccess || uploadSuccessLabel);
+      toast.success(copy.avatarUploadSuccess);
     } catch (error) {
       console.error('Failed to upload avatar:', error);
       if (avatarBlobUrlRef.current) {
@@ -447,7 +543,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
         avatarBlobUrlRef.current = null;
       }
       setAvatarPreviewOverride(previousAvatar);
-      toast.error((error instanceof Error ? error.message : '') || t.avatarUploadFailed || uploadFailedLabel);
+      toast.error((error instanceof Error ? error.message : '') || copy.avatarUploadFailed);
     } finally {
       setIsAvatarUploading(false);
       event.target.value = '';
@@ -463,7 +559,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
             className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            {t.backButton || '뒤로 가기'}
+            {copy.backButton}
           </button>
         </div>
       </div>
@@ -471,14 +567,14 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200/50 dark:border-gray-700/50 p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t.pageTitle || '프로필 수정'}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{copy.pageTitle}</h1>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="flex flex-col items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="relative group">
                   <Image
                     src={avatarPreview}
-                    alt={formData.name || 'Profile'}
+                    alt={formData.name || copy.profileAlt}
                     width={128}
                     height={128}
                     unoptimized={avatarUnoptimized}
@@ -495,7 +591,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     type="button"
                     onClick={handleAvatarPick}
                     disabled={!user?.id || isAvatarUploading}
-                    aria-label={avatarChangeLabel}
+                    aria-label={copy.avatarChange}
                     className="absolute bottom-0 right-0 bg-gradient-to-r from-red-600 to-amber-500 text-white rounded-full p-2.5 hover:from-red-700 hover:to-amber-600 transition-all duration-300 shadow-lg"
                   >
                     {isAvatarUploading ? (
@@ -506,14 +602,14 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                   </button>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                  <span>{avatarChangeLabel}</span>
+                  <span>{copy.avatarChange}</span>
                   <Tooltip
-                    content={avatarTooltipText}
+                    content={copy.avatarTooltip}
                     position="top"
                   >
                     <button
                       type="button"
-                      aria-label={avatarTooltipText}
+                      aria-label={copy.avatarTooltip}
                       className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                     >
                       <Info className="h-4 w-4" />
@@ -525,15 +621,15 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <label htmlFor="name" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    {t.nameLabel || '이름'}
+                    {copy.nameLabel}
                   </label>
                   <Tooltip
-                    content={nameTooltipText}
+                    content={copy.nameTooltip}
                     position="top"
                   >
                     <button
                       type="button"
-                      aria-label={nameTooltipText}
+                      aria-label={copy.nameTooltip}
                       className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                     >
                       <Info className="h-4 w-4" />
@@ -547,22 +643,22 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   maxLength={DISPLAY_NAME_MAX_LENGTH}
                   className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                  placeholder={t.namePlaceholder || '이름을 입력하세요'}
+                  placeholder={copy.namePlaceholder}
                 />
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <label htmlFor="bio" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    {t.bioLabel || '자기소개'}
+                    {copy.bioLabel}
                   </label>
                   <Tooltip
-                    content={bioTooltipText}
+                    content={copy.bioTooltip}
                     position="top"
                   >
                     <button
                       type="button"
-                      aria-label={bioTooltipText}
+                      aria-label={copy.bioTooltip}
                       className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                     >
                       <Info className="h-4 w-4" />
@@ -575,7 +671,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   rows={4}
                   className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none transition-all"
-                  placeholder={t.bioPlaceholder || '자기소개를 입력하세요'}
+                  placeholder={copy.bioPlaceholder}
                 />
               </div>
 
@@ -583,15 +679,15 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {t.genderLabel || '성별'}
+                      {copy.genderLabel}
                     </label>
                     <Tooltip
-                      content={genderTooltipText}
+                      content={copy.genderTooltip}
                       position="top"
                     >
                       <button
                         type="button"
-                        aria-label={genderTooltipText}
+                        aria-label={copy.genderTooltip}
                         className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                       >
                         <Info className="h-4 w-4" />
@@ -604,25 +700,25 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                     className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   >
-                    <option value="">{t.genderSelect || '선택'}</option>
-                    <option value="male">{t.genderMale || '남성'}</option>
-                    <option value="female">{t.genderFemale || '여성'}</option>
-                    <option value="other">{t.genderOther || '기타'}</option>
+                    <option value="">{copy.selectLabel}</option>
+                    <option value="male">{copy.genderMale}</option>
+                    <option value="female">{copy.genderFemale}</option>
+                    <option value="other">{copy.genderOther}</option>
                   </select>
                 </div>
 
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <label htmlFor="ageGroup" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {t.ageGroupLabel || '연령대'}
+                      {copy.ageGroupLabel}
                     </label>
                     <Tooltip
-                      content={ageGroupTooltipText}
+                      content={copy.ageGroupTooltip}
                       position="top"
                     >
                       <button
                         type="button"
-                        aria-label={ageGroupTooltipText}
+                        aria-label={copy.ageGroupTooltip}
                         className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                       >
                         <Info className="h-4 w-4" />
@@ -635,28 +731,28 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     onChange={(e) => setFormData({ ...formData, ageGroup: e.target.value })}
                     className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   >
-                    <option value="">{t.genderSelect || '선택'}</option>
-                    <option value="10s">{t.ageGroup10s || '10대'}</option>
-                    <option value="20s">{t.ageGroup20s || '20대'}</option>
-                    <option value="30s">{t.ageGroup30s || '30대'}</option>
-                    <option value="40s">{t.ageGroup40s || '40대'}</option>
-                    <option value="50s">{t.ageGroup50s || '50대'}</option>
-                    <option value="60plus">{t.ageGroup60plus || '60대+'}</option>
+                    <option value="">{copy.selectLabel}</option>
+                    <option value="10s">{copy.ageGroup10s}</option>
+                    <option value="20s">{copy.ageGroup20s}</option>
+                    <option value="30s">{copy.ageGroup30s}</option>
+                    <option value="40s">{copy.ageGroup40s}</option>
+                    <option value="50s">{copy.ageGroup50s}</option>
+                    <option value="60plus">{copy.ageGroup60plus}</option>
                   </select>
                 </div>
 
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <label htmlFor="userType" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {t.userTypeLabel || t.statusLabel || (lang === 'vi' ? 'Loại người dùng' : lang === 'en' ? 'User type' : '사용자 유형')}
+                      {copy.userTypeLabel}
                     </label>
                     <Tooltip
-                      content={userTypeTooltipText}
+                      content={copy.userTypeTooltip}
                       position="top"
                     >
                       <button
                         type="button"
-                        aria-label={userTypeTooltipText}
+                        aria-label={copy.userTypeTooltip}
                         className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
                       >
                         <Info className="h-4 w-4" />
@@ -669,10 +765,10 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     onChange={(e) => setFormData({ ...formData, userType: e.target.value })}
                     className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   >
-                    <option value="">{t.genderSelect || '선택'}</option>
-                    <option value="student">{t.userTypeStudent || t.statusStudent || (lang === 'vi' ? 'Sinh viên' : lang === 'en' ? 'Student' : '학생')}</option>
-                    <option value="worker">{t.userTypeWorker || t.statusWorker || (lang === 'vi' ? 'Người lao động' : lang === 'en' ? 'Worker' : '근로자')}</option>
-                    <option value="resident">{t.userTypeResident || (lang === 'vi' ? 'Cư dân' : lang === 'en' ? 'Resident' : '거주자')}</option>
+                    <option value="">{copy.selectLabel}</option>
+                    <option value="student">{copy.userTypeStudent}</option>
+                    <option value="worker">{copy.userTypeWorker}</option>
+                    <option value="resident">{copy.userTypeResident}</option>
                   </select>
                 </div>
               </div>
@@ -680,26 +776,26 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
               <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-4">
                   <Bell className="w-5 h-5 text-red-600 dark:text-red-400" />
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t.notificationTitle || '알림 설정'}</h2>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">{copy.notificationTitle}</h2>
                 </div>
 
                 <div className="space-y-4">
                   {(['all', 'answers', 'comments', 'replies', 'adoptions', 'follows'] as const).map((key) => {
                     const labels = {
-                      all: t.notifyAll || '전체 알림',
-                      answers: t.notifyAnswers || '답변 알림',
-                      comments: t.notifyComments || '댓글 알림',
-                      replies: t.notifyReplies || '대댓글 알림',
-                      adoptions: t.notifyAdoptions || '채택 알림',
-                      follows: t.notifyFollows || '팔로우 알림',
+                      all: copy.notifyAll,
+                      answers: copy.notifyAnswers,
+                      comments: copy.notifyComments,
+                      replies: copy.notifyReplies,
+                      adoptions: copy.notifyAdoptions,
+                      follows: copy.notifyFollows,
                     };
                     const descs = {
-                      all: t.notifyAllDesc || '모든 알림을 한 번에 켜거나 끕니다',
-                      answers: t.notifyAnswersDesc || '내 질문에 새 답변이 달릴 때 알림을 받습니다',
-                      comments: t.notifyCommentsDesc || '내 게시글에 새 댓글이 달릴 때 알림을 받습니다',
-                      replies: t.notifyRepliesDesc || '내 댓글에 답글이 달릴 때 알림을 받습니다',
-                      adoptions: t.notifyAdoptionsDesc || '내 답변이 채택되었을 때 알림을 받습니다',
-                      follows: t.notifyFollowsDesc || '새로운 팔로워가 생길 때 알림을 받습니다',
+                      all: copy.notifyAllDesc,
+                      answers: copy.notifyAnswersDesc,
+                      comments: copy.notifyCommentsDesc,
+                      replies: copy.notifyRepliesDesc,
+                      adoptions: copy.notifyAdoptionsDesc,
+                      follows: copy.notifyFollowsDesc,
                     };
                     return (
                     <div
@@ -750,7 +846,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                   ) : (
                     <>
                       <Save className="w-5 h-5" />
-                      {t.saveButton || '저장하기'}
+                      {copy.saveButton}
                     </>
                   )}
                 </button>
@@ -760,7 +856,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                   disabled={isSubmitting}
                   className="flex-1 px-6 py-3 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-300 disabled:opacity-50"
                 >
-                  {t.cancelButton || '취소'}
+                  {copy.cancelButton}
                 </button>
               </div>
             </form>

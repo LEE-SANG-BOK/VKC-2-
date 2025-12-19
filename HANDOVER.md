@@ -1,20 +1,39 @@
-# VietHub (Viet K-Connect) 프로젝트 인수인계 문서
+# VietHub (Viet K-Connect) 프로젝트 문서
 
 ---
 
 ## 최근 주요 변경 사항
 
+- [FE] Header signup CTA를 “바로 시작하기” 계열로 정리 + 공유하기 CTA 설명 문구 업데이트
+- [FE] 온보딩 가이드/FAQ locale fallback 맵 정리 + 글쓰기 기본 태그 fallback locale 분리
+- [FE] 알림/피드백/프로필 편집/에디터 i18n fallback 보강(링크 모달/오류 메시지 포함)
+- [FE] 홈/프로필 메타데이터 locale fallback 분리 + Vercel/CI 빌드 환경에서 DATABASE_URL 누락 시 DB 초기화 프록시 허용
+- [FE] 온보딩 화면 locale fallback 보강(라벨/저장 오류 메시지)
+- [FE] 인증 신청 화면 라벨/상태/토스트 locale fallback 보강(ko/en/vi)
+- [FE] 인증 신청 내역 화면 라벨/혜택 안내 locale fallback 보강(ko/en/vi)
+- [FE] 글쓰기 화면 라벨/검증/버튼 locale fallback 보강(ko/en/vi)
+- [FE] Sidebar/공지 배너/숏폼 리스트 locale fallback 보강(ko/en/vi)
+- [FE] 글쓰기 페이지 metadata title/description locale fallback 보강(ko/en/vi)
+- [FE] 글쓰기 템플릿 라벨/placeholder locale fallback 보강(ko/en/vi)
+- [FE] 홈/검색/알림/피드백 metadata locale fallback 보강(ko/en/vi)
+- [FE] CategorySidebar/글쓰기 카테고리 라벨 locale fallback 보강(툴팁/구독 버튼 포함)
+- [FE] PostCard 모바일 신뢰 배지 라벨에 truncate 적용(vi 길이 이슈 대응)
+- [FE] 빌드 단계에서 DATABASE_URL 누락 시 DB 초기화 스텁으로 전환해 Vercel 빌드 크래시 방지(런타임은 환경변수 필요)
+- [WEB] 게시글 상세 공유 CTA 확장: 공유 블록 추가 + Share 라벨 정합화, 소셜 로그인 범위 Google only로 명확화(Facebook 제외)
+- [WEB] 피드백 페이지 설문형 UI 전환: 만족도 선택 + 개선요청/버그 상세 입력, 요약/이메일 입력 제거, 제출 제목 자동 생성
+- [BE] 피드백/검색 키워드/리더보드·점수/구독 알림 설정 API 및 UGC allowlist·뉴스 노출 기간·신고 액션 확장 반영(마이그레이션 0029/0030/0031/0032 필요)
 - [LEAD] 좌측 사이드바 sticky 래핑 적용: 메인 스크롤과 분리된 내부 스크롤 유지(MainLayout/CategorySidebar)
 - [LEAD] UserTrustBadge 공통 컴포넌트 추가 + PostCard/Detail/Profile/Answer/Comment/추천·팔로잉에서 인증 배지 위치 통일(닉네임 옆)
-- [LEAD] Leaderboard/인증 신청 미리보기의 신뢰 배지 표시를 UserTrustBadge로 통일(툴팁/패딩 일관화)
-- [LEAD] 헤더 브랜드 문구를 Tooltip 대신 로고 옆 텍스트로 상시 노출
-- [LEAD] 모바일 헤더/카드 밀도 개선: 로고 문구 line-clamp, 인증 응답 라벨 `+N` 축약, 태그 영역 높이 제한, 추천 섹션 헤더 높이 고정
 - [LEAD] 모바일 홈 필터(인기/최신) 알약 투명도 미세 조정
 - [FE] 헤더 우측 액션 순서 변경(언어 스위치 → 알림) + 공유 CTA(ko) 문구 업데이트 + 사이드바 피드백 라벨을 “Feedback”으로 고정(텍스트 축소/아이콘 들여쓰기)
 - [FE] PostCard 모바일 해결/미해결 아이콘 shrink-0 보강 + PostDetail 답글/댓글 렌더 블록 괄호 정리로 lint 파서 오류 해소
 - [FE] PostDetail/Search/ProfileEdit 툴팁·카테고리 locale fallback 보강(미지정/익명/툴팁 aria-label 정리)
 - [FE] PostCard 인증 응답 요약 라벨 모바일 flex-wrap 보강(vi 줄바꿈 대응)
-- [FE] 피드 PostCard에 공식/검수 답변 배지 표시 + posts/trending/users posts/bookmarks API에 공식/검수 카운트 추가
+- [FE] PostCard 공식/검수 답변 배지 노출 + 게시글 리스트/프로필/북마크/트렌딩 API에 공식·검수 카운트 추가
+- [FE] PostDetail report/경고/공유 라벨 locale fallback 통일 + PostCard 공식/검수 배지 모바일 텍스트 축소
+- [FE] Search i18n fallback 통일(placeholder/필터/페이지네이션/자동완성 라벨) + CategorySidebar 구독 섹션 locale fallback 보강
+- [FE] PostDetail SSR 메타/author fallback locale 기준으로 정리
+- [FE] PostList/추천/모달/리더보드/구독 설정 unknown fallback 공통화(anonymous/uncategorized)
 - [WEB] 온보딩 가이드 추가: Onboarding 화면에 첫 질문/첫 답변/카테고리 탐색 카드 + 툴팁 + FAQ 섹션 구성
 - [WEB] 검색 UX 보강: 검색 입력 자동완성 드롭다운 + `/api/search/keywords` 기반 추천 키워드 칩 노출
 - [WEB] 리더보드 UI/IA 추가: `/[lang]/leaderboard` SSR + HydrationBoundary, Top3 강조 카드/전체 랭킹 리스트/페이지네이션 구성
@@ -1101,6 +1120,33 @@ export async function GET(request: NextRequest) {
 
 ---
 
+### Codex CLI 스킬 프롬프트 (GitHub PR/CI)
+
+- 스킬 호출: 프롬프트에 `$<skill-name>`을 포함해 스킬을 강제 사용합니다(가능하면 상단에 배치).
+- 스킬 설치 후 인식: Codex는 시작 시 스킬을 로드하므로, 설치 직후에는 **Codex CLI를 종료 후 다시 실행**해야 합니다.
+
+#### PR CI 깨짐 분석/수정: `gh-fix-ci`
+```
+$gh-fix-ci
+
+repo: .
+pr: <PR 번호 또는 URL> (없으면 현재 브랜치 PR 자동 탐지)
+
+목표: GitHub Actions 실패 원인 요약 → 수정 플랜 작성 → (승인 후) 코드 수정
+주의: gh 인증이 안 되어 있으면 `oai_gh` 후 `gh auth status`부터 진행
+```
+
+#### PR 리뷰 코멘트 대응: `gh-address-comments`
+```
+$gh-address-comments
+
+repo: .
+pr: <PR 번호 또는 URL> (없으면 현재 브랜치 PR 자동 탐지)
+
+목표: 리뷰 코멘트를 항목별로 처리(수정 반영 + 답글)하고 남은 액션 정리
+주의: gh 인증이 안 되어 있으면 `oai_gh` 후 `gh auth status`부터 진행
+```
+
 ### 신규 기능 개발 프롬프트
 
 #### 기본 템플릿
@@ -1497,3 +1543,14 @@ Post 관련 타입을 정리해줘.
 **궁금한 점이 있으면 코드를 직접 살펴보세요. 파일 이름과 폴더 구조가 직관적이라 찾기 쉬울 거예요.**
 
 작성일: 2025년 12월
+
+---
+
+## 최근 브랜치/워킹트리 현황 메모 (2025-12-19)
+
+- `/Users/bk/Desktop/VKC-2-`
+  - 브랜치: `codex-lead-refactor` (PR #9는 원격 main에 머지됨). 로컬 `main`은 `origin/main` 최신 커밋(merge #9) 반영 필요.
+  - 미커밋 변경: `HANDOVER.md`, `docs/EXECUTION_PLAN.md`, `src/components/molecules/cards/PostCard.tsx`, `src/components/organisms/Header.tsx`, `src/components/organisms/RecommendedUsersSection.tsx`.
+- `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2`
+  - 브랜치: `codex-subscriptions` (dirty). 대량 수정/신규 파일 존재 → 백업 전용, 선별 이관 전까지 커밋 금지.
+- 머지 상태: PR #6/#7/#8/#9는 원격 `main`에 머지 완료. 로컬 워크트리는 `git pull origin main`으로 동기화 필요.

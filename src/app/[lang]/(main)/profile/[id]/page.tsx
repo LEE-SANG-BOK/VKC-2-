@@ -45,12 +45,36 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang, id } = await params;
   const dict = await getDictionary(lang);
   const t = (dict?.metadata?.profile || {}) as Record<string, string>;
+  const metaFallbacks = {
+    ko: {
+      notFoundTitle: '프로필을 찾을 수 없습니다',
+      notFoundDescription: '요청하신 프로필을 찾을 수 없습니다',
+      title: '{name} - 프로필 | viet kconnect',
+      description: '{name}님의 viet kconnect 커뮤니티 프로필. 게시글 {posts}개, 채택 {accepted}개, 댓글 {comments}개.',
+      siteName: 'viet kconnect',
+    },
+    en: {
+      notFoundTitle: 'Profile not found',
+      notFoundDescription: 'The requested profile could not be found',
+      title: '{name} - Profile | viet kconnect',
+      description: "{name}'s viet kconnect community profile. {posts} posts, {accepted} accepted answers, {comments} comments.",
+      siteName: 'viet kconnect',
+    },
+    vi: {
+      notFoundTitle: 'Không tìm thấy hồ sơ',
+      notFoundDescription: 'Không tìm thấy hồ sơ bạn yêu cầu',
+      title: '{name} - Hồ sơ | viet kconnect',
+      description: 'Hồ sơ cộng đồng viet kconnect của {name}. {posts} bài viết, {accepted} câu trả lời được chấp nhận, {comments} bình luận.',
+      siteName: 'viet kconnect',
+    },
+  };
+  const metaFallback = metaFallbacks[lang] ?? metaFallbacks.ko;
   const profile = await getProfileById(id);
 
   if (!profile) {
     return {
-      title: t.notFoundTitle || '프로필을 찾을 수 없습니다',
-      description: t.notFoundDescription || '요청하신 프로필을 찾을 수 없습니다',
+      title: t.notFoundTitle || metaFallback.notFoundTitle,
+      description: t.notFoundDescription || metaFallback.notFoundDescription,
     };
   }
 
@@ -64,10 +88,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : avatarSrc
     : `${baseUrl}/brand-logo.png`;
 
-  const title = (t.title || '{name} - 프로필 | viet kconnect').replace('{name}', profile.displayName);
+  const title = (t.title || metaFallback.title).replace('{name}', profile.displayName);
   const description =
     profile.bio ||
-    (t.description || "{name}님의 viet kconnect 커뮤니티 프로필. 게시글 {posts}개, 채택 {accepted}개, 댓글 {comments}개.")
+    (t.description || metaFallback.description)
       .replace('{name}', profile.displayName)
       .replace('{posts}', String(profile.stats.posts))
       .replace('{accepted}', String(profile.stats.accepted))
@@ -93,7 +117,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       url: currentUrl,
-      siteName: t.siteName || 'viet kconnect',
+      siteName: t.siteName || metaFallback.siteName,
       images: [
         {
           url: ogImage,
