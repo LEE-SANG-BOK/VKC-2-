@@ -1,20 +1,18 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Avatar from '@/components/atoms/Avatar';
 import FollowButton from '@/components/atoms/FollowButton';
+import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
+import { formatRecommendationMetaItems, localizeRecommendationMetaItems, type RecommendationMetaItem } from '@/utils/recommendationMeta';
+import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 
 interface RecommendedUserStats {
   followers?: number;
   posts?: number;
   following?: number;
-}
-
-interface RecommendationMetaItem {
-  key: string;
-  value: string | number;
 }
 
 interface RecommendedUser {
@@ -39,9 +37,15 @@ interface RecommendedUsersSectionProps {
   followingLabel: string;
   metaLabels?: Record<string, string>;
   verifiedLabel?: string;
+  trustBadgeTranslations?: Record<string, string>;
   badgeLabels?: Record<string, string>;
   previousLabel?: string;
   nextLabel?: string;
+  compact?: boolean;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onLoadMore?: () => void;
+  onboardingLabels?: Record<string, string>;
 }
 
 export default function RecommendedUsersSection({
@@ -54,15 +58,29 @@ export default function RecommendedUsersSection({
   followingLabel,
   metaLabels,
   verifiedLabel,
+  trustBadgeTranslations,
   badgeLabels,
   previousLabel,
   nextLabel,
+  compact = false,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
+  onboardingLabels,
 }: RecommendedUsersSectionProps) {
   const router = useRouter();
   const carouselRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
+  const cardPaddingClass = compact ? 'px-2.5 py-2' : 'px-3 py-3';
+  const cardGapClass = compact ? 'gap-2' : 'gap-3';
+  const cardNameClass = compact ? 'text-[13px]' : 'text-sm';
+  const cardMetaClass = compact ? 'text-[10px]' : 'text-[11px]';
+  const badgeLabelClass = compact ? 'text-[10px] text-gray-500 dark:text-gray-400' : 'text-[11px] text-gray-500 dark:text-gray-400';
+  const avatarSize = compact ? 'md' : 'lg';
+  const followButtonSize = compact ? 'xs' : 'sm';
 
-  const metaLabelMap = useMemo<Record<string, string>>(() => ({
+  const mergedMetaLabels = useMemo<Record<string, string>>(() => ({
     followers: followerLabel,
     posts: postsLabel,
     following: followingLabel,
@@ -79,42 +97,52 @@ export default function RecommendedUsersSection({
     el.scrollBy({ left: direction * delta, behavior: 'smooth' });
   }, []);
 
+  const mergedTrustTranslations = useMemo(() => {
+    const base = trustBadgeTranslations || {};
+    if (!verifiedLabel) return base;
+    return {
+      ...base,
+      verifiedLabel: base.verifiedLabel || verifiedLabel,
+      verifiedUserLabel: base.verifiedUserLabel || verifiedLabel,
+    };
+  }, [trustBadgeTranslations, verifiedLabel]);
+
   const ariaPrev = previousLabel || (locale === 'vi' ? 'Trước' : locale === 'en' ? 'Previous' : '이전');
   const ariaNext = nextLabel || (locale === 'vi' ? 'Tiếp' : locale === 'en' ? 'Next' : '다음');
-  const verifiedLabelText = verifiedLabel || (locale === 'vi' ? 'Đã xác minh' : locale === 'en' ? 'Verified' : '인증됨');
 
-  const formatMetaValue = useCallback((item: RecommendationMetaItem) => {
-    if (item.value === null || item.value === undefined || item.value === '') return '';
-    if (item.key === 'badge' && typeof item.value === 'string') {
-      const normalized = item.value.toLowerCase();
-      const label = badgeLabels?.[normalized];
-      if (label) return label;
-      if (normalized === 'expert') return locale === 'vi' ? 'Chuyên gia' : locale === 'en' ? 'Expert' : '전문가';
-      if (normalized === 'community') return locale === 'vi' ? 'Cộng đồng' : locale === 'en' ? 'Community' : '커뮤니티';
-      if (normalized === 'verified') return verifiedLabelText;
-      return item.value;
-    }
-    if (typeof item.value === 'string') return item.value;
-    const label = metaLabelMap[item.key] || item.key;
-    const suffix = item.key.toLowerCase().includes('rate') ? '%' : '';
-    return `${label} ${item.value}${suffix}`.trim();
-  }, [badgeLabels, locale, metaLabelMap, verifiedLabelText]);
+  useEffect(() => {
+    if (!onLoadMore || !hasNextPage || isFetchingNextPage) return;
+    const root = carouselRef.current;
+    const target = sentinelRef.current;
+    if (!root || !target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          onLoadMore();
+        }
+      },
+      { root, threshold: 0.6 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, onLoadMore]);
 
   const skeletonCards = (
     <>
       {Array.from({ length: 4 }).map((_, idx) => (
         <div
           key={idx}
-          className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-3 w-full snap-start"
+          className={`flex items-center ${cardGapClass} rounded-lg border border-gray-200 dark:border-gray-800 ${cardPaddingClass} w-full snap-start`}
         >
-          <div className="flex items-center gap-3 w-full animate-pulse">
+          <div className={`flex items-center ${cardGapClass} w-full animate-pulse`}>
             <div className="flex flex-col items-center gap-2">
-              <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-800" />
-              <div className="h-8 w-20 rounded-md bg-gray-200 dark:bg-gray-800" />
+              <div className={`${compact ? 'h-8 w-8' : 'h-12 w-12'} rounded-full bg-gray-200 dark:bg-gray-800`} />
+              <div className={`${compact ? 'h-6 w-16' : 'h-8 w-20'} rounded-md bg-gray-200 dark:bg-gray-800`} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="h-4 w-36 rounded bg-gray-200 dark:bg-gray-800" />
-              <div className="mt-2 h-3 w-48 rounded bg-gray-200 dark:bg-gray-800" />
+              <div className={`${compact ? 'h-3 w-28' : 'h-4 w-36'} rounded bg-gray-200 dark:bg-gray-800`} />
+              <div className={`${compact ? 'mt-1.5 h-2.5 w-36' : 'mt-2 h-3 w-48'} rounded bg-gray-200 dark:bg-gray-800`} />
             </div>
           </div>
         </div>
@@ -127,34 +155,44 @@ export default function RecommendedUsersSection({
       {safeUsers.map((user) => {
         const userId = String(user.id);
         const displayName = user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음');
-        const isVerified = Boolean(user.isVerified || user.badgeType);
-        const userMetaItems = Array.isArray(user.recommendationMeta)
-          ? user.recommendationMeta.filter((item) => item?.value !== undefined && item?.value !== null && item?.value !== '').slice(0, 3)
-          : [];
-        const fallbackMetaItems: RecommendationMetaItem[] = [
-          { key: 'followers', value: user.stats?.followers ?? 0 },
-          { key: 'posts', value: user.stats?.posts ?? 0 },
-          { key: 'following', value: user.stats?.following ?? 0 },
-        ];
-        const resolvedMetaItems = userMetaItems.length > 0 ? userMetaItems : fallbackMetaItems;
+        const trustBadgePresentation = getTrustBadgePresentation({
+          locale,
+          author: {
+            isVerified: user.isVerified,
+            badgeType: user.badgeType,
+          },
+          translations: mergedTrustTranslations,
+        });
+        const localizedMetaItems = localizeRecommendationMetaItems({
+          items: user.recommendationMeta,
+          locale: locale as 'ko' | 'en' | 'vi',
+          onboardingLabels,
+        });
+        const resolvedMetaItems: RecommendationMetaItem[] = localizedMetaItems.length > 0 ? localizedMetaItems : [];
+        const metaTexts: string[] = formatRecommendationMetaItems({
+          items: resolvedMetaItems,
+          fallback: resolvedMetaItems,
+          metaLabels: mergedMetaLabels,
+          badgeLabels,
+        });
         return (
           <div
             key={userId}
-            className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-3 w-full snap-start"
+            className={`flex items-center ${cardGapClass} rounded-lg border border-gray-200 dark:border-gray-800 ${cardPaddingClass} w-full snap-start`}
           >
-            <div className="flex items-center gap-3 w-full">
+            <div className={`flex items-center ${cardGapClass} w-full`}>
               <div className="flex flex-col items-center gap-2">
                 <Avatar
                   name={displayName}
                   imageUrl={user.image || undefined}
-                  size="lg"
+                  size={avatarSize}
                   hoverHighlight
                 />
                 <FollowButton
                   userId={userId}
                   userName={displayName}
                   isFollowing={followStates[userId] ?? user.isFollowing ?? false}
-                  size="sm"
+                  size={followButtonSize}
                   onToggle={(next) =>
                     setFollowStates((prev) => ({
                       ...prev,
@@ -169,25 +207,27 @@ export default function RecommendedUsersSection({
                   onClick={() => router.push(`/${locale}/profile/${userId}`)}
                   className="text-left"
                 >
-                  {isVerified ? (
-                    <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-300">
-                      {verifiedLabelText}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div className={`${cardNameClass} font-semibold text-gray-900 dark:text-gray-100 truncate`}>
+                      {displayName}
+                    </div>
+                    <UserTrustBadge
+                      presentation={trustBadgePresentation}
+                      labelVariant="text"
+                      badgeClassName="!px-1.5 !py-0.5"
+                      labelClassName={badgeLabelClass}
+                      tooltipPosition="top"
+                    />
+                  </div>
+                  {metaTexts.length > 0 ? (
+                    <div className={`${cardMetaClass} text-gray-500 dark:text-gray-400 flex flex-wrap gap-1`}>
+                      {metaTexts.map((text, index) => (
+                        <span key={`${userId}-meta-${index}`} className="inline-flex">
+                          # {text}
+                        </span>
+                      ))}
                     </div>
                   ) : null}
-                  <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                    {displayName}
-                  </div>
-                  <div className="text-[11px] text-gray-500 dark:text-gray-400 flex flex-wrap gap-1">
-                    {resolvedMetaItems.map((item, index) => {
-                      const text = formatMetaValue(item);
-                      if (!text) return null;
-                      return (
-                        <span key={`${userId}-${item.key}-${index}`} className="inline-flex">
-                          #{index + 1}: {text}
-                        </span>
-                      );
-                    })}
-                  </div>
                 </button>
               </div>
             </div>
@@ -200,12 +240,12 @@ export default function RecommendedUsersSection({
   if (!isLoading && !hasUsers) return null;
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+    <div className={`rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 ${compact ? 'p-3' : 'p-4'}`}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           {title}
         </h3>
-        <div className="sm:hidden flex items-center gap-1">
+        <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => scrollCarousel(-1)}
@@ -225,17 +265,19 @@ export default function RecommendedUsersSection({
         </div>
       </div>
 
-      <div className="sm:hidden">
-        <div
-          ref={carouselRef}
-          className="grid grid-flow-col auto-cols-[calc(50%-0.375rem)] gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1"
-        >
-          {isLoading ? skeletonCards : userCards}
-        </div>
-      </div>
-
-      <div className="hidden sm:grid sm:grid-cols-2 gap-3">
+      <div
+        ref={carouselRef}
+        className={`grid grid-flow-col ${compact ? 'auto-cols-[minmax(200px,1fr)]' : 'auto-cols-[minmax(220px,1fr)]'} sm:auto-cols-[minmax(240px,1fr)] lg:auto-cols-[minmax(260px,1fr)] ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1`}
+      >
         {isLoading ? skeletonCards : userCards}
+        {hasNextPage ? (
+          <div ref={sentinelRef} className="w-px" />
+        ) : null}
+        {isFetchingNextPage ? (
+          <div className="flex items-center justify-center rounded-lg border border-dashed border-gray-200 dark:border-gray-800 px-3 py-3 text-xs text-gray-400">
+            <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : null}
       </div>
     </div>
   );

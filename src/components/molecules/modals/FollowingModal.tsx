@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { X, Users, Sparkles, Rss } from 'lucide-react';
@@ -9,9 +9,13 @@ import Modal from '@/components/atoms/Modal';
 import PostCard from '@/components/molecules/cards/PostCard';
 import Avatar from '@/components/atoms/Avatar';
 import FollowButton from '@/components/atoms/FollowButton';
+import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
 import { useInfiniteFollowing, useInfiniteRecommendedUsers } from '@/repo/users/query';
 import { useInfinitePosts } from '@/repo/posts/query';
 import useProgressiveList from '@/lib/hooks/useProgressiveList';
+import { formatRecommendationMetaItems, localizeRecommendationMetaItems, type RecommendationMetaItem } from '@/utils/recommendationMeta';
+import { getUserTypeLabel } from '@/utils/userTypeLabel';
+import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 
 interface FollowingModalProps {
   isOpen: boolean;
@@ -34,7 +38,7 @@ interface UserItem {
   isFollowing?: boolean;
   status?: string;
   userType?: string | null;
-  recommendationMeta?: Array<{ key: string; value: string | number }>;
+  recommendationMeta?: RecommendationMetaItem[];
   stats?: {
     followers?: number;
     following?: number;
@@ -52,45 +56,143 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   const t = translations;
   const tCommon = (translations as any)?.common || {};
   const tTrust = (translations as any)?.trustBadges || {};
+  const tOnboarding = (translations as any)?.onboarding || {};
+  const modalFallbacks = useMemo(() => {
+    if (locale === 'en') {
+      return {
+        followers: 'Followers',
+        posts: 'Posts',
+        following: 'Following',
+        adoptionRate: 'Adoption rate',
+        interestMatchRate: 'Interest match rate',
+        verifiedUser: 'Verified',
+        loading: 'Loading...',
+        noRecommendations: 'No recommendations yet.',
+        noFollowing: 'You are not following anyone yet.',
+        noFeed: 'No posts from people you follow yet.',
+        followingTitle: 'Following',
+        recommend: 'Recommended',
+        followingTab: 'Following',
+        feed: 'Feed',
+        expertBadge: 'Expert',
+        communityBadge: 'Community',
+        verifiedBadge: 'Verified',
+        unknownUser: 'Unknown',
+        student: 'Student',
+        worker: 'Worker',
+        resident: 'Resident',
+        business: 'Business Owner',
+        homemaker: 'Homemaker',
+      };
+    }
+    if (locale === 'vi') {
+      return {
+        followers: 'Người theo dõi',
+        posts: 'Bài viết',
+        following: 'Đang theo dõi',
+        adoptionRate: 'Tỷ lệ được chấp nhận',
+        interestMatchRate: 'Tỷ lệ khớp sở thích',
+        verifiedUser: 'Đã xác minh',
+        loading: 'Đang tải...',
+        noRecommendations: 'Chưa có gợi ý người dùng.',
+        noFollowing: 'Chưa theo dõi ai.',
+        noFeed: 'Chưa có bài từ người bạn theo dõi.',
+        followingTitle: 'Đang theo dõi',
+        recommend: 'Gợi ý',
+        followingTab: 'Đang theo dõi',
+        feed: 'Bảng tin',
+        expertBadge: 'Chuyên gia',
+        communityBadge: 'Cộng đồng',
+        verifiedBadge: 'Đã xác minh',
+        unknownUser: 'Không rõ',
+        student: 'Sinh viên',
+        worker: 'Người lao động',
+        resident: 'Cư dân',
+        business: 'Chủ doanh nghiệp',
+        homemaker: 'Nội trợ',
+      };
+    }
+    return {
+      followers: '팔로워',
+      posts: '게시글',
+      following: '팔로잉',
+      adoptionRate: '채택률',
+      interestMatchRate: '관심사 일치율',
+      verifiedUser: '인증됨',
+      loading: '로딩 중...',
+      noRecommendations: '추천할 사용자가 없습니다.',
+      noFollowing: '아직 팔로잉하는 사용자가 없습니다.',
+      noFeed: '팔로우한 사용자의 게시글이 없습니다.',
+      followingTitle: '팔로우',
+      recommend: '추천',
+      followingTab: '팔로잉',
+      feed: '피드',
+      expertBadge: '전문가',
+      communityBadge: '커뮤니티',
+      verifiedBadge: '인증됨',
+      unknownUser: '알 수 없음',
+      student: '학생',
+      worker: '근로자',
+      resident: '거주자',
+      business: '사업자',
+      homemaker: '주부',
+    };
+  }, [locale]);
+  const modalLabels = {
+    followers: tCommon.followers || modalFallbacks.followers,
+    posts: tCommon.posts || modalFallbacks.posts,
+    following: tCommon.following || modalFallbacks.following,
+    adoptionRate: tCommon.adoptionRate || modalFallbacks.adoptionRate,
+    interestMatchRate: tCommon.interestMatchRate || modalFallbacks.interestMatchRate,
+    verifiedUser: tCommon.verifiedUser || modalFallbacks.verifiedUser,
+    loading: (t as any).loading || modalFallbacks.loading,
+    noRecommendations: (t as any).noRecommendations || modalFallbacks.noRecommendations,
+    noFollowing: (t as any).noFollowing || modalFallbacks.noFollowing,
+    noFeed: (t as any).noFeed || modalFallbacks.noFeed,
+    followingTitle: (t as any).followingTitle || modalFallbacks.followingTitle,
+    recommend: (t as any).recommend || modalFallbacks.recommend,
+    followingTab: (t as any).following || modalFallbacks.followingTab,
+    feed: (t as any).feed || modalFallbacks.feed,
+    expertBadge: tTrust.expertLabel || modalFallbacks.expertBadge,
+    communityBadge: tTrust.communityLabel || modalFallbacks.communityBadge,
+    verifiedBadge: tTrust.verifiedUserLabel || modalFallbacks.verifiedBadge,
+    unknownUser: modalFallbacks.unknownUser,
+    student: t.student || modalFallbacks.student,
+    worker: t.worker || modalFallbacks.worker,
+    resident: t.resident || modalFallbacks.resident,
+    business: t.business || modalFallbacks.business,
+    homemaker: t.homemaker || modalFallbacks.homemaker,
+  };
   const [activeTab, setActiveTab] = useState<TabType>('recommend');
   const modalBodyRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recommendedObserverRef = useRef<HTMLDivElement>(null);
   const followingObserverRef = useRef<HTMLDivElement>(null);
   const feedObserverRef = useRef<HTMLDivElement>(null);
-  const adoptionRateLabel = tCommon.adoptionRate || (locale === 'vi' ? 'Tỷ lệ được chấp nhận' : locale === 'en' ? 'Adoption rate' : '채택률');
-  const interestMatchRateLabel = tCommon.interestMatchRate || (locale === 'vi' ? 'Tỷ lệ khớp sở thích' : locale === 'en' ? 'Interest match rate' : '관심사 일치율');
-  const verifiedLabelText = tCommon.verifiedUser || (locale === 'vi' ? 'Đã xác minh' : locale === 'en' ? 'Verified' : '인증됨');
+  const followerLabel = modalLabels.followers;
+  const postsLabel = modalLabels.posts;
+  const followingLabel = modalLabels.following;
   const metaLabels = {
-    adoptionRate: adoptionRateLabel,
-    interestMatchRate: interestMatchRateLabel,
-    badge: verifiedLabelText,
+    followers: followerLabel,
+    posts: postsLabel,
+    following: followingLabel,
+    adoptionRate: modalLabels.adoptionRate,
+    interestMatchRate: modalLabels.interestMatchRate,
+    badge: modalLabels.verifiedUser,
   };
   const badgeLabels = {
-    expert: tTrust.expertLabel || (locale === 'vi' ? 'Chuyên gia' : locale === 'en' ? 'Expert' : '전문가'),
-    community: tTrust.communityLabel || (locale === 'vi' ? 'Cộng đồng' : locale === 'en' ? 'Community' : '커뮤니티'),
-    verified: tTrust.verifiedUserLabel || verifiedLabelText,
+    expert: modalLabels.expertBadge,
+    community: modalLabels.communityBadge,
+    verified: modalLabels.verifiedBadge,
   };
-  const loadingLabel = (t as any).loading || (locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...');
-  const noRecommendationsLabel = (t as any).noRecommendations || (locale === 'vi' ? 'Chưa có gợi ý người dùng.' : locale === 'en' ? 'No recommendations yet.' : '추천할 사용자가 없습니다.');
-  const noFollowingLabel = (t as any).noFollowing || (locale === 'vi' ? 'Chưa theo dõi ai.' : locale === 'en' ? 'You are not following anyone yet.' : '아직 팔로잉하는 사용자가 없습니다.');
-  const noFeedLabel = (t as any).noFeed || (locale === 'vi' ? 'Chưa có bài từ người bạn theo dõi.' : locale === 'en' ? 'No posts from people you follow yet.' : '팔로우한 사용자의 게시글이 없습니다.');
-  const followingTitleLabel = (t as any).followingTitle || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로우');
-  const recommendLabel = (t as any).recommend || (locale === 'vi' ? 'Gợi ý' : locale === 'en' ? 'Recommended' : '추천');
-  const followingTabLabel = (t as any).following || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로잉');
-  const feedLabel = (t as any).feed || (locale === 'vi' ? 'Bảng tin' : locale === 'en' ? 'Feed' : '피드');
-
-  const formatMetaValue = useCallback((item: { key: string; value: string | number }) => {
-    if (item.value === null || item.value === undefined || item.value === '') return '';
-    if (item.key === 'badge' && typeof item.value === 'string') {
-      const normalized = item.value.toLowerCase();
-      return badgeLabels[normalized as keyof typeof badgeLabels] || item.value;
-    }
-    if (typeof item.value === 'string') return item.value;
-    const label = metaLabels[item.key as keyof typeof metaLabels] || item.key;
-    const suffix = item.key.toLowerCase().includes('rate') ? '%' : '';
-    return `${label} ${item.value}${suffix}`.trim();
-  }, [badgeLabels, metaLabels]);
+  const loadingLabel = modalLabels.loading;
+  const noRecommendationsLabel = modalLabels.noRecommendations;
+  const noFollowingLabel = modalLabels.noFollowing;
+  const noFeedLabel = modalLabels.noFeed;
+  const followingTitleLabel = modalLabels.followingTitle;
+  const recommendLabel = modalLabels.recommend;
+  const followingTabLabel = modalLabels.followingTab;
+  const feedLabel = modalLabels.feed;
 
   const {
     data: recommendedData,
@@ -212,27 +314,12 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
     setActiveTab(tab);
   };
 
-  const getUserTypeLabel = (value: string) => {
-    switch (value) {
-      case 'student':
-      case '학생':
-        return t.student || '학생';
-      case 'worker':
-      case '직장인':
-      case '근로자':
-        return t.worker || '근로자';
-      case 'resident':
-      case '거주자':
-        return t.resident || (locale === 'vi' ? 'Cư dân' : locale === 'en' ? 'Resident' : '거주자');
-      case 'business':
-      case '사업자':
-        return t.business || '사업자';
-      case 'homemaker':
-      case '주부':
-        return t.homemaker || '주부';
-      default:
-        return value;
-    }
+  const userTypeLabels = {
+    student: modalLabels.student,
+    worker: modalLabels.worker,
+    resident: modalLabels.resident,
+    business: modalLabels.business,
+    homemaker: modalLabels.homemaker,
   };
 
   const formatDateTime = (value: string) => {
@@ -315,8 +402,19 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   }, [activeTab, feedPosts.length, fetchNextFeedPage, hasNextFeedPage, isFetchingNextFeedPage, isOpen, visibleFeedCount]);
 
   const renderUserCard = (userItem: UserItem, isFollowingTab: boolean = false) => {
-    const displayName = userItem.displayName || userItem.name || '알 수 없음';
+    const displayName = userItem.displayName || userItem.name || modalLabels.unknownUser;
     const isFollowing = followStates[userItem.id] ?? (isFollowingTab ? true : (userItem.isFollowing ?? false));
+    const localizedMetaItems = localizeRecommendationMetaItems({
+      items: userItem.recommendationMeta,
+      locale: locale as 'ko' | 'en' | 'vi',
+      onboardingLabels: tOnboarding,
+    });
+    const metaTexts: string[] = formatRecommendationMetaItems({
+      items: localizedMetaItems,
+      fallback: localizedMetaItems,
+      metaLabels,
+      badgeLabels,
+    });
 
     return (
       <div
@@ -351,16 +449,29 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
               onClick={() => handleUserClick(userItem.id)}
               className="w-full text-left"
             >
-              {userItem.isVerified || userItem.badgeType ? (
-                <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-300">
-                  {verifiedLabelText}
-                </div>
-              ) : null}
-              <div className="flex items-center gap-1.5 mb-1">
+              {(() => {
+                const trustBadgePresentation = getTrustBadgePresentation({
+                  locale,
+                  author: {
+                    isVerified: userItem.isVerified,
+                    badgeType: userItem.badgeType,
+                  },
+                  translations: tTrust,
+                });
+                return (
+                  <div className="flex items-center gap-1.5 mb-1">
                 <h4 className="font-semibold text-gray-900 dark:text-white truncate">
                   {displayName}
                 </h4>
-              </div>
+                    <UserTrustBadge
+                      presentation={trustBadgePresentation}
+                      labelVariant="text"
+                      badgeClassName="!px-1.5 !py-0.5"
+                      labelClassName="text-[11px] text-gray-500 dark:text-gray-400"
+                    />
+                  </div>
+                );
+              })()}
               {userItem.username && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
                   @{userItem.username}
@@ -374,7 +485,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                 if (!effectiveUserType) return null;
                 return (
                   <span className="inline-block px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full mb-2">
-                    #{getUserTypeLabel(effectiveUserType)}
+                    #{getUserTypeLabel(effectiveUserType, userTypeLabels)}
                   </span>
                 );
               })()}
@@ -384,25 +495,11 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                 </p>
               )}
               <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-1">
-                {(userItem.recommendationMeta && userItem.recommendationMeta.length > 0
-                  ? userItem.recommendationMeta
-                  : [
-                      { key: 'followers', value: userItem.stats?.followers || 0 },
-                      { key: 'posts', value: userItem.stats?.posts || 0 },
-                      { key: 'following', value: userItem.stats?.following || 0 },
-                    ]
-                )
-                  .filter((item) => item.value !== undefined && item.value !== null && item.value !== '')
-                  .slice(0, 3)
-                  .map((item, index) => {
-                    const text = formatMetaValue(item);
-                    if (!text) return null;
-                    return (
-                      <span key={`${userItem.id}-${item.key}-${index}`} className="inline-flex">
-                        #{index + 1}: {text}
-                      </span>
-                    );
-                  })}
+                {metaTexts.map((text, index) => (
+                  <span key={`${userItem.id}-meta-${index}`} className="inline-flex">
+                    # {text}
+                  </span>
+                ))}
               </div>
             </button>
           </div>
@@ -614,7 +711,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                       id={post.id}
                       author={{
                         id: post.author?.id,
-                        name: post.author?.displayName || post.author?.name || '알 수 없음',
+                        name: post.author?.displayName || post.author?.name || modalLabels.unknownUser,
                         avatar: post.author?.image || post.author?.avatar || '/default-avatar.jpg',
                         followers: 0,
                         isVerified: post.author?.isVerified || false,
@@ -663,7 +760,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                       {isFetchingNextFeedPage && (
                         <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
                           <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                          <span className="text-sm">{t.loading || '로딩 중...'}</span>
+                          <span className="text-sm">{loadingLabel}</span>
                         </div>
                       )}
                     </div>
