@@ -2679,6 +2679,34 @@ $gh-address-comments
 - 다음 액션/의존성
   - 공유 채널 정의 확장 여부는 운영 지표 정의 후 결정
 
+#### (2025-12-19) [WEB] 사이드바 리더보드 메뉴 정리 + 프리뷰 제거 (P0)
+
+- 플랜(체크리스트)
+  - [x] 홈 피드 상단 리더보드 프리뷰 제거
+  - [x] 좌측 사이드바에 “상위 기여자” 메뉴 추가(Feedback 상단)
+  - [x] 리더보드 메뉴 클릭 시 `/[lang]/leaderboard` 이동
+  - [x] i18n 라벨/툴팁 추가(ko/en/vi)
+  - [x] 리더보드 페이지에서 사이드바 active 상태 정합성 보강
+- 현황 분석(코드 기준)
+  - 홈 피드 상단 프리뷰는 레이아웃 시선 분산 우려
+  - 사이드바에서 바로 접근 가능한 메뉴가 필요
+- 변경 내용(why/what)
+  - why: 피드 집중도 유지 + 네비게이션 일관성 확보
+  - what: 홈 프리뷰 제거, 사이드바 메뉴 추가 및 active 처리, i18n 보강
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/organisms/LeaderboardPreview.tsx
+  - messages/ko.json
+  - messages/en.json
+  - messages/vi.json
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
 ### 0.6.3 [BE] Backend Agent
 
 #### (2025-12-18) [BE] 추천 사용자 API 보강 + 과부하 방지 (P0)
@@ -3769,6 +3797,8 @@ $gh-address-comments
 - [x] (2025-12-19) [LEAD] 좌측 사이드바 sticky 래핑 + 내부 스크롤 분리(메인 스크롤과 분리)
 - [x] (2025-12-19) [LEAD] UserTrustBadge 공통 컴포넌트 추가 + PostCard/Detail/Profile/Answer/Comment/추천·팔로잉 배지 위치 통일
 - [x] (2025-12-19) [FE] 헤더 우측 액션 순서 변경(알림/언어 스위치 위치 조정)
+- [x] (2025-12-20) [FE] 헤더 로고 툴팁 제거 + 로고 우측 브랜드 문구 상시 노출(모바일 포함)
+- [x] (2025-12-20) [FE] LanguageSwitcher 영어 옵션 숨김(ko/vi만 노출, en 라우팅은 유지)
 - [x] (2025-12-19) [FE] 공유하기 CTA 설명 문구 업데이트: “내 경험과 지식을 모두와 함께 공유해봅시다.”
 - [x] (2025-12-19) [FE] Sidebar 피드백 라벨 고정: “Feedback” (언어 무관) + 글자 크기 축소/아이콘 들여쓰기
 - [x] (2025-12-19) [WEB] 피드백 페이지 설문형 UI로 개편(만족도/개선요청) + 요약/이메일 입력 제거
