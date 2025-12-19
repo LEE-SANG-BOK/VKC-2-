@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, varchar, uuid, pgEnum, index, uniqueIndex, numeric } from 'drizzle-orm/pg-core';
+import { pgTable, text, jsonb, timestamp, integer, boolean, varchar, uuid, pgEnum, index, uniqueIndex, numeric } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Enums
@@ -212,6 +212,23 @@ export const feedbacks = pgTable('feedbacks', {
   userIdx: index('feedbacks_user_idx').on(table.userId),
   createdAtIdx: index('feedbacks_created_at_idx').on(table.createdAt),
   ipIdx: index('feedbacks_ip_idx').on(table.ipAddress),
+}));
+
+export const eventLogs = pgTable('event_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  eventType: varchar('event_type', { length: 50 }).notNull(),
+  entityType: varchar('entity_type', { length: 50 }).notNull(),
+  entityId: uuid('entity_id'),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  sessionId: varchar('session_id', { length: 100 }),
+  ipHash: varchar('ip_hash', { length: 128 }),
+  locale: varchar('locale', { length: 10 }),
+  referrer: text('referrer'),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  eventEntityIdx: index('event_logs_event_entity_idx').on(table.eventType, table.entityType, table.entityId, table.createdAt),
+  userCreatedIdx: index('event_logs_user_created_idx').on(table.userId, table.createdAt),
 }));
 
 // Verification Requests Table
@@ -428,6 +445,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   likes: many(likes),
   bookmarks: many(bookmarks),
   feedbacks: many(feedbacks),
+  eventLogs: many(eventLogs),
   verificationRequests: many(verificationRequests),
   verifiedRequest: one(verificationRequests, {
     fields: [users.verifiedRequestId],
@@ -531,6 +549,13 @@ export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
 export const feedbacksRelations = relations(feedbacks, ({ one }) => ({
   user: one(users, {
     fields: [feedbacks.userId],
+    references: [users.id],
+  }),
+}));
+
+export const eventLogsRelations = relations(eventLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [eventLogs.userId],
     references: [users.id],
   }),
 }));
