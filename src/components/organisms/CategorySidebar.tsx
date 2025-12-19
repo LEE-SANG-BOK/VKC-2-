@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
-import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Bug } from 'lucide-react';
+import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Bug, Trophy } from 'lucide-react';
 import { LEGACY_CATEGORIES, getCategoryName, CATEGORY_GROUPS } from '@/lib/constants/categories';
 import CategoryItem from '@/components/molecules/categories/CategoryItem';
 import { useSession } from 'next-auth/react';
@@ -102,6 +102,7 @@ export default function CategorySidebar({
         latest: 'Browse the newest posts by time.',
         following: 'See posts from people you follow.',
         subscribed: 'See posts from categories you follow.',
+        leaderboard: 'See top contributors based on trust and helpful answers.',
         feedback: 'Send feedback or report a bug.',
       };
     }
@@ -111,6 +112,7 @@ export default function CategorySidebar({
         latest: 'Xem bài mới nhất theo thời gian.',
         following: 'Chỉ xem bài từ người bạn đang theo dõi.',
         subscribed: 'Xem bài theo danh mục bạn đã đăng ký.',
+        leaderboard: 'Xem top người đóng góp dựa trên độ tin cậy và câu trả lời hữu ích.',
         feedback: 'Gửi phản hồi hoặc báo lỗi cho đội ngũ.',
       };
     }
@@ -119,6 +121,7 @@ export default function CategorySidebar({
       latest: '최신 글을 시간순으로 보여줘요.',
       following: '팔로우한 사람들의 글만 모아볼 수 있어요.',
       subscribed: '구독한 카테고리 글만 모아볼 수 있어요.',
+      leaderboard: '신뢰/도움 점수 기준 상위 기여자를 확인하세요.',
       feedback: '피드백이나 버그를 제보할 수 있어요.',
     };
   }, [locale]);
@@ -223,9 +226,17 @@ export default function CategorySidebar({
     latest: t.latestTooltip || tooltipFallbacks.latest,
     following: t.followingTooltip || tooltipFallbacks.following,
     subscribed: t.subscribedTooltip || tooltipFallbacks.subscribed,
+    leaderboard: t.leaderboardTooltip || tooltipFallbacks.leaderboard,
     feedback: t.feedbackTooltip || tooltipFallbacks.feedback,
   };
 
+  const leaderboardLabel =
+    t.leaderboard ||
+    (locale === 'vi'
+      ? 'Top người đóng góp'
+      : locale === 'en'
+        ? 'Top Contributors'
+        : '상위 기여자');
   const feedbackLabel = 'Feedback';
 
   const menuCategories = [
@@ -233,6 +244,7 @@ export default function CategorySidebar({
     { id: 'latest', icon: Sparkles, count: 0 },
     { id: 'following', icon: Users, count: 0 },
     { id: 'subscribed', icon: HeartHandshake, count: 0 },
+    { id: 'leaderboard', icon: Trophy, count: 0, label: leaderboardLabel },
     { id: 'feedback', icon: Bug, count: 0, label: feedbackLabel, className: 'px-5 text-xs gap-2' },
     // { id: 'media', icon: Film, count: 0 }, // 미디어 전용 페이지 (숨김 상태)
   ];
@@ -327,6 +339,12 @@ export default function CategorySidebar({
 
     if (categoryId === 'feedback') {
       router.push(`/${locale}/feedback`);
+      setIsMobileMenuOpen(false);
+      return;
+    }
+
+    if (categoryId === 'leaderboard') {
+      router.push(`/${locale}/leaderboard`);
       setIsMobileMenuOpen(false);
       return;
     }
