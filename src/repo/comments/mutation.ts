@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../keys';
 import { createPostComment, updateComment, deleteComment, toggleCommentLike } from './fetch';
 import type { CreateCommentRequest, UpdateCommentRequest } from './types';
+import { logEvent } from '@/repo/events/mutation';
 
 export function useCreatePostComment() {
   const queryClient = useQueryClient();
@@ -11,9 +12,17 @@ export function useCreatePostComment() {
   return useMutation({
     mutationFn: ({ postId, data }: { postId: string; data: CreateCommentRequest }) =>
       createPostComment(postId, data),
-    onSuccess: (_, { postId }) => {
+    onSuccess: (response, { postId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.comments.list(postId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(postId) });
+      if (response?.data?.id) {
+        logEvent({
+          eventType: 'comment',
+          entityType: 'comment',
+          entityId: response.data.id,
+          metadata: { postId },
+        });
+      }
     },
   });
 }
@@ -52,7 +61,7 @@ export function useToggleCommentLike() {
 
   return useMutation({
     mutationFn: ({ commentId, postId }: { commentId: string; postId?: string }) => toggleCommentLike(commentId),
-    onSuccess: (_, { postId }) => {
+    onSuccess: (response, { commentId, postId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.comments.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
@@ -62,6 +71,14 @@ export function useToggleCommentLike() {
       queryClient.refetchQueries({ queryKey: queryKeys.comments.all, type: 'all' });
       queryClient.refetchQueries({ queryKey: queryKeys.posts.all, type: 'all' });
       queryClient.refetchQueries({ queryKey: queryKeys.users.all, type: 'all' });
+      if (response?.data?.isLiked) {
+        logEvent({
+          eventType: 'like',
+          entityType: 'comment',
+          entityId: commentId,
+          metadata: { postId: postId || null },
+        });
+      }
     },
     onMutate: async ({ commentId, postId }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.comments.all });

@@ -51,6 +51,8 @@ interface NewsFormData {
   linkUrl: string;
   order: number;
   isActive: boolean;
+  startAt: string;
+  endAt: string;
 }
 
 const CATEGORY_OPTIONS = [
@@ -87,6 +89,16 @@ const initialFormData: NewsFormData = {
   linkUrl: '',
   order: 0,
   isActive: true,
+  startAt: '',
+  endAt: '',
+};
+
+const formatDateTimeInput = (value?: string | null) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (input: number) => String(input).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
 export default function AdminNewsPage() {
@@ -179,6 +191,8 @@ export default function AdminNewsPage() {
         linkUrl: newsItem.linkUrl || '',
         order: newsItem.order,
         isActive: newsItem.isActive,
+        startAt: formatDateTimeInput(newsItem.startAt),
+        endAt: formatDateTimeInput(newsItem.endAt),
       });
     } else {
       setEditingNews(null);
@@ -205,6 +219,8 @@ export default function AdminNewsPage() {
             content: formData.content || '',
             imageUrl: formData.imageUrl || null,
             linkUrl: formData.linkUrl || null,
+            startAt: formData.startAt,
+            endAt: formData.endAt,
           },
         });
         toast.success('뉴스가 업데이트되었습니다.');
@@ -215,6 +231,8 @@ export default function AdminNewsPage() {
           content: formData.content || '',
           imageUrl: formData.imageUrl || undefined,
           linkUrl: formData.linkUrl || undefined,
+          startAt: formData.startAt,
+          endAt: formData.endAt,
         });
         toast.success('뉴스가 생성되었습니다.');
       }
@@ -240,16 +258,16 @@ export default function AdminNewsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">관리자 게시글</h1>
+        <h1 className="text-3xl font-bold">공지/배너 관리</h1>
         <Button onClick={() => handleOpenDialog()}>
           <Plus className="h-4 w-4 mr-2" />
-          게시글 추가
+          공지/배너 추가
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>게시글 목록</CardTitle>
+          <CardTitle>공지/배너 목록</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
@@ -424,10 +442,10 @@ export default function AdminNewsPage() {
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingNews ? '게시글 수정' : '게시글 추가'}
+              {editingNews ? '공지/배너 수정' : '공지/배너 추가'}
             </DialogTitle>
             <DialogDescription>
-              {editingNews ? '게시글 정보를 수정합니다' : '새 게시글을 추가합니다'}
+              {editingNews ? '공지/배너 정보를 수정합니다' : '새 공지/배너를 추가합니다'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -570,6 +588,26 @@ export default function AdminNewsPage() {
                 onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
                 placeholder="https://example.com/news"
               />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="startAt">노출 시작</Label>
+                <Input
+                  id="startAt"
+                  type="datetime-local"
+                  value={formData.startAt}
+                  onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endAt">노출 종료</Label>
+                <Input
+                  id="endAt"
+                  type="datetime-local"
+                  value={formData.endAt}
+                  onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="order">순서</Label>

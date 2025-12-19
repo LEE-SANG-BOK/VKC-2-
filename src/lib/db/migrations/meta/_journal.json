@@ -232,6 +232,13 @@
       "when": 1766098539242,
       "tag": "0032_topic_subscription_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1766125101504,
+      "tag": "0033_event_logs",
+      "breakpoints": true
     }
   ]
 }

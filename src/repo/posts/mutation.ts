@@ -10,6 +10,7 @@ import {
   togglePostBookmark,
   incrementPostView,
 } from './fetch';
+import { logEvent } from '@/repo/events/mutation';
 import type {
   CreatePostRequest,
   UpdatePostRequest,
@@ -75,12 +76,19 @@ export function useTogglePostLike() {
 
   return useMutation({
     mutationFn: (postId: string) => togglePostLike(postId),
-    onSuccess: (_, postId) => {
+    onSuccess: (response, postId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(postId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       queryClient.refetchQueries({ queryKey: queryKeys.posts.all, type: 'all' });
       queryClient.refetchQueries({ queryKey: queryKeys.users.all, type: 'all' });
+      if (response?.data?.isLiked) {
+        logEvent({
+          eventType: 'like',
+          entityType: 'post',
+          entityId: postId,
+        });
+      }
     },
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.posts.all });
@@ -184,12 +192,19 @@ export function useTogglePostBookmark() {
 
   return useMutation({
     mutationFn: (postId: string) => togglePostBookmark(postId),
-    onSuccess: (_, postId) => {
+    onSuccess: (response, postId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(postId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       queryClient.refetchQueries({ queryKey: queryKeys.posts.all, type: 'all' });
       queryClient.refetchQueries({ queryKey: queryKeys.users.all, type: 'all' });
+      if (response?.data?.isBookmarked) {
+        logEvent({
+          eventType: 'bookmark',
+          entityType: 'post',
+          entityId: postId,
+        });
+      }
     },
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.posts.all });

@@ -60,7 +60,7 @@ export default function SubscriptionsClient({ translations, lang }: Subscription
       frequencyOff: 'Off',
       loading: tCommon.loading || 'Loading...',
       updateError: 'Failed to update subscription settings.',
-      unknownCategory: 'Unknown category',
+      unknownCategory: tCommon.uncategorized || (lang === 'vi' ? 'Chưa phân loại' : lang === 'en' ? 'Uncategorized' : '미지정'),
     };
   }, [tSubscription, tSidebar, tCommon]);
 

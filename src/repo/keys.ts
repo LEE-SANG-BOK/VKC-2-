@@ -76,8 +76,8 @@ export const queryKeys = {
       [...queryKeys.users.detail(userId), 'following', filters] as const,
     leaderboard: (filters?: { page?: number; limit?: number }) =>
       [...queryKeys.users.all, 'leaderboard', filters] as const,
-    recommended: () => [...queryKeys.users.all, 'recommended'] as const,
-    recommendedInfinite: () => [...queryKeys.users.all, 'recommended', 'infinite'] as const,
+    recommended: (filters?: { mode?: 'list' | 'infinite'; limit?: number }) =>
+      [...queryKeys.users.all, 'recommended', filters] as const,
   },
 
   // Notifications
@@ -115,8 +115,8 @@ export const queryKeys = {
   // Categories
   categories: {
     all: ['categories'] as const,
-    subscriptions: () => ['categories', 'subscriptions'] as const,
-    subscriptionSettings: () => ['categories', 'subscription-settings'] as const,
+    subscriptions: () => [...queryKeys.categories.all, 'subscriptions'] as const,
+    subscriptionSettings: () => [...queryKeys.categories.all, 'subscription-settings'] as const,
   },
 
   // News

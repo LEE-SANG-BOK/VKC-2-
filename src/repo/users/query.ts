@@ -263,7 +263,7 @@ export function useRecommendedUsers(
   options?: Omit<UseQueryOptions<PaginatedResponse<User>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
-    queryKey: queryKeys.users.recommended(),
+    queryKey: queryKeys.users.recommended({ mode: 'list', limit: 12 }),
     queryFn: ({ signal }) => fetchRecommendedUsers({ page: 1, limit: 12 }, { signal }),
     staleTime: 1000 * 60 * 5,
     ...options,
@@ -332,7 +332,7 @@ export function useInfiniteRecommendedUsers(
   options?: Record<string, unknown>
 ) {
   return useInfiniteQuery({
-    queryKey: queryKeys.users.recommendedInfinite(),
+    queryKey: queryKeys.users.recommended({ mode: 'infinite', limit: 6 }),
     queryFn: async ({ pageParam = 1, signal }) => {
       const page = pageParam as number;
       return fetchRecommendedUsers({

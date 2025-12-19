@@ -11,6 +11,7 @@ import {
   unadoptAnswer,
   createAnswerComment,
 } from './fetch';
+import { logEvent } from '@/repo/events/mutation';
 import type { CreateAnswerRequest, UpdateAnswerRequest, CreateCommentRequest } from './types';
 
 export function useCreateAnswer() {
@@ -19,9 +20,17 @@ export function useCreateAnswer() {
   return useMutation({
     mutationFn: ({ postId, data }: { postId: string; data: CreateAnswerRequest }) =>
       createAnswer(postId, data),
-    onSuccess: (_, { postId }) => {
+    onSuccess: (response, { postId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.answers.list(postId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(postId) });
+      if (response?.data?.id) {
+        logEvent({
+          eventType: 'answer',
+          entityType: 'answer',
+          entityId: response.data.id,
+          metadata: { postId },
+        });
+      }
     },
   });
 }
@@ -60,7 +69,7 @@ export function useToggleAnswerLike() {
 
   return useMutation({
     mutationFn: ({ answerId, postId }: { answerId: string; postId?: string }) => toggleAnswerLike(answerId),
-    onSuccess: (_, { postId }) => {
+    onSuccess: (response, { answerId, postId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.answers.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
@@ -70,6 +79,14 @@ export function useToggleAnswerLike() {
       queryClient.refetchQueries({ queryKey: queryKeys.answers.all, type: 'all' });
       queryClient.refetchQueries({ queryKey: queryKeys.posts.all, type: 'all' });
       queryClient.refetchQueries({ queryKey: queryKeys.users.all, type: 'all' });
+      if (response?.data?.isLiked) {
+        logEvent({
+          eventType: 'like',
+          entityType: 'answer',
+          entityId: answerId,
+          metadata: { postId: postId || null },
+        });
+      }
     },
     onMutate: async ({ answerId, postId }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.answers.all });
@@ -196,10 +213,18 @@ export function useCreateAnswerComment() {
   return useMutation({
     mutationFn: ({ answerId, data, postId }: { answerId: string; data: CreateCommentRequest; postId?: string }) =>
       createAnswerComment(answerId, data),
-    onSuccess: (_, { answerId, postId }) => {
+    onSuccess: (response, { answerId, postId }) => {
       queryClient.invalidateQueries({ queryKey: [...queryKeys.answers.list(answerId), 'comments'] });
       if (postId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(postId) });
+      }
+      if (response?.data?.id) {
+        logEvent({
+          eventType: 'comment',
+          entityType: 'comment',
+          entityId: response.data.id,
+          metadata: { postId: postId || null, answerId },
+        });
       }
     },
   });

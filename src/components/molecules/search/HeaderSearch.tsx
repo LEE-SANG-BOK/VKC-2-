@@ -22,11 +22,52 @@ type CategoryLike = {
 };
 
 const MIN_SEARCH_QUERY_LENGTH = 2;
+const isLowQualityExample = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  const normalized = trimmed.replace(/[\s\p{P}\p{S}]/gu, '');
+  if (normalized.length < 6) return true;
+  if (normalized.length > 80) return true;
+  if (/(.)\1{4,}/u.test(normalized)) return true;
+  if (/(.{1,3})\1{3,}/u.test(normalized)) return true;
+  const uniqueCount = new Set(normalized).size;
+  return uniqueCount <= Math.max(2, Math.floor(normalized.length * 0.2));
+};
 
 export default function HeaderSearch({ locale, translations }: HeaderSearchProps) {
   const tSearch = (translations?.search || {}) as Record<string, string>;
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchFallbacks = useMemo(() => {
+    if (locale === 'en') {
+      return {
+        categoryLabel: 'Categories',
+        subCategoryLabel: 'Subcategory',
+        searchPlaceholder: 'Search for anything',
+        searchButton: 'Search',
+      };
+    }
+    if (locale === 'vi') {
+      return {
+        categoryLabel: 'Danh mục',
+        subCategoryLabel: 'Danh mục con',
+        searchPlaceholder: 'Nhập từ khóa tìm kiếm',
+        searchButton: 'Tìm kiếm',
+      };
+    }
+    return {
+      categoryLabel: '분류',
+      subCategoryLabel: '하위 카테고리',
+      searchPlaceholder: '검색어를 입력하세요',
+      searchButton: '검색',
+    };
+  }, [locale]);
+  const searchLabels = {
+    category: tSearch.categoryLabel || searchFallbacks.categoryLabel,
+    subCategory: tSearch.subCategoryLabel || searchFallbacks.subCategoryLabel,
+    placeholder: tSearch.searchPlaceholder || searchFallbacks.searchPlaceholder,
+    button: tSearch.searchButton || searchFallbacks.searchButton,
+  };
 
   const [exampleText, setExampleText] = useState('');
   const [searchKeyword, setSearchKeyword] = useState(searchParams.get('q') || searchParams.get('s') || '');
@@ -120,6 +161,8 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchKeyword(value);
+    setIsExampleActive(false);
+    setHasSearchFocused(true);
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -131,7 +174,9 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
 
   const dynamicExamples = useMemo(() => {
     const examples = exampleData?.data?.examples || [];
-    return examples.map((example) => example.title).filter(Boolean);
+    return examples
+      .map((example) => example.title)
+      .filter((title): title is string => Boolean(title) && !isLowQualityExample(title));
   }, [exampleData]);
 
   const examplePool = useMemo(() => {
@@ -144,7 +189,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
       tSearch.popularExample1,
       tSearch.popularExample2,
       tSearch.popularExample3,
-    ].filter(Boolean) as string[];
+    ].filter((value): value is string => Boolean(value) && !isLowQualityExample(value));
     return pool.length > 0 ? pool : null;
   }, [
     dynamicExamples,
@@ -160,8 +205,8 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
     if (examplePool && examplePool.length > 0) {
       return examplePool[Math.floor(Math.random() * examplePool.length)];
     }
-    return tSearch.searchPlaceholder || '검색어를 입력하세요';
-  }, [examplePool, tSearch.searchPlaceholder]);
+    return searchLabels.placeholder;
+  }, [examplePool, searchLabels.placeholder]);
 
   useEffect(() => {
     const urlKeyword = searchParams.get('q') || searchParams.get('s');
@@ -197,68 +242,29 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
     };
 
     const categorySlug = resolveSlug();
+    const categoryExample = categorySlug ? pickExampleQuestion(categorySlug, locale) : '';
+    const fallbackExample = categoryExample && !isLowQualityExample(categoryExample) ? categoryExample : pickFallbackExample();
+    const example = dynamicExamples.length > 0 ? pickFallbackExample() : fallbackExample;
 
-    if (!categorySlug) {
-      const fallback = pickFallbackExample();
-      if (!hasSearchFocused && fallback) {
-        setSearchKeyword(fallback);
-        setIsExampleActive(true);
-        setExampleText(fallback);
-      }
-      if (exampleCategory) setExampleCategory('');
-      return;
-    }
-
-    const example = pickExampleQuestion(categorySlug, locale) || pickFallbackExample();
-    const isNewCategory = exampleCategory !== categorySlug;
-
-    if (isNewCategory) {
-      setHasSearchFocused(false);
-      setExampleText(example || '');
-    }
-
-    if (!example) {
-      if (isExampleActive) {
-        setIsExampleActive(false);
-      }
-      if (isNewCategory) {
-        setExampleCategory(categorySlug);
-      }
-      return;
-    }
-
-    if (!isNewCategory && (!isExampleActive || hasSearchFocused) && searchKeyword.trim().length > 0) {
-      return;
-    }
-
-    if (!hasSearchFocused && searchKeyword !== example) {
-      setSearchKeyword(example);
-      setIsExampleActive(true);
-      setExampleText(example || '');
-    }
     if (exampleCategory !== categorySlug) {
       setExampleCategory(categorySlug);
     }
-  }, [parentCategory, childCategory, searchKeyword, isExampleActive, exampleCategory, hasSearchFocused]);
+    if (exampleText !== (example || '')) {
+      setExampleText(example || '');
+    }
+  }, [parentCategory, childCategory, exampleCategory, exampleText, getRandomExample, locale, groupDefaultSlug, dynamicExamples.length]);
 
   useEffect(() => {
-    if (!searchKeyword && !hasSearchFocused) {
-      const fallback = getRandomExample();
-      if (fallback) {
-        setSearchKeyword(fallback);
-        setIsExampleActive(true);
-        setExampleText(fallback);
-      }
+    if (hasSearchFocused || searchKeyword.trim().length > 0) {
+      if (isExampleActive) setIsExampleActive(false);
+      return;
     }
-  }, [getRandomExample, hasSearchFocused, searchKeyword]);
+    setIsExampleActive(Boolean(exampleText));
+  }, [exampleText, hasSearchFocused, isExampleActive, searchKeyword]);
 
   const handleSearchFocus = () => {
     setHasSearchFocused(true);
-    if (isExampleActive || (exampleText && searchKeyword === exampleText)) {
-      setSearchKeyword('');
-      setIsExampleActive(false);
-      setExampleText('');
-    }
+    setIsExampleActive(false);
   };
 
   const handleSearchActivate = () => {
@@ -266,14 +272,18 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
   };
 
   const handleSearchBlur = () => {
+    setHasSearchFocused(false);
     if (searchKeyword.trim().length === 0) {
-      const fallback = getRandomExample();
-      setSearchKeyword(fallback);
-      setExampleText(fallback);
-      setIsExampleActive(true);
-      setHasSearchFocused(false);
+      setIsExampleActive(Boolean(exampleText));
     }
   };
+
+  const placeholderText = useMemo(() => {
+    if (!hasSearchFocused && isExampleActive && exampleText) {
+      return exampleText;
+    }
+    return searchLabels.placeholder;
+  }, [exampleText, hasSearchFocused, isExampleActive, searchLabels.placeholder]);
 
   return (
     <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-2 sm:px-3 py-1.5 w-full shadow-sm">
@@ -283,7 +293,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
           onChange={(e) => handleParentCategoryChange(e.target.value)}
           className="w-full truncate appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
         >
-          <option value="all">{tSearch.categoryLabel || '분류'}</option>
+          <option value="all">{searchLabels.category}</option>
           {parentOptions.map((cat) => (
             <option key={cat.id} value={cat.id}>{cat.label}</option>
           ))}
@@ -303,7 +313,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
               onChange={(e) => setChildCategory(e.target.value)}
               className="w-full truncate appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
             >
-              <option value="">{tSearch.subCategoryLabel || '하위 카테고리'}</option>
+              <option value="">{searchLabels.subCategory}</option>
               {childCategories.map((child) => (
                 <option key={child.slug} value={child.slug}>{getCategoryLabel(child)}</option>
               ))}
@@ -329,10 +339,8 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
           onBlur={handleSearchBlur}
           onClick={handleSearchActivate}
           onMouseDown={handleSearchActivate}
-          placeholder={tSearch.searchPlaceholder || '검색어를 입력하세요'}
-          className={`flex-1 bg-transparent text-sm outline-none min-w-0 placeholder-gray-400 dark:placeholder-gray-500 ${
-            isExampleActive && !hasSearchFocused ? 'text-gray-400 dark:text-gray-400' : 'text-gray-900 dark:text-white'
-          }`}
+          placeholder={placeholderText}
+          className="flex-1 bg-transparent text-sm outline-none min-w-0 placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white"
         />
       </div>
 
@@ -340,7 +348,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
         onClick={executeSearch}
         className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-full transition-colors flex-shrink-0"
       >
-        {tSearch.searchButton || '검색'}
+        {searchLabels.button}
       </button>
     </div>
   );

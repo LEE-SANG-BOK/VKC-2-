@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1', 10) || 1);
+    const pageCandidate = Number.parseInt(searchParams.get('page') || '1', 10);
+    const page = Math.min(100, Math.max(1, Number.isNaN(pageCandidate) ? 1 : pageCandidate));
     const limitCandidate = Number.parseInt(searchParams.get('limit') || '8', 10) || 8;
     const limit = Math.min(12, Math.max(1, limitCandidate));
     const offset = (page - 1) * limit;
