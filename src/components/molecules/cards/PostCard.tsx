@@ -90,8 +90,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const sourcePrefix = tCommon.source || (locale === 'vi' ? 'Nguồn' : locale === 'en' ? 'Source' : '출처');
   const hideLabel = tCommon.hide || (locale === 'vi' ? 'Ẩn' : locale === 'en' ? 'Hide' : '안보기');
   const unhideLabel = tCommon.unhide || (locale === 'vi' ? 'Bỏ ẩn' : locale === 'en' ? 'Unhide' : '숨김 해제');
-  const hideActionLabel = isHidden ? unhideLabel : hideLabel;
-  const hideEmoji = isHidden ? '👀' : '🙈';
   const hiddenPostLabel = tCommon.hiddenPost || (locale === 'vi' ? 'Bài viết đã được ẩn.' : locale === 'en' ? 'This post is hidden.' : '숨긴 게시글입니다.');
   const hideFailedLabel = tCommon.hideFailed || (locale === 'vi' ? 'Không thể ẩn bài viết.' : locale === 'en' ? 'Failed to hide the post.' : '게시글을 숨길 수 없습니다.');
   const unhideFailedLabel = tCommon.unhideFailed || (locale === 'vi' ? 'Không thể bỏ ẩn.' : locale === 'en' ? 'Failed to unhide.' : '숨김 해제에 실패했습니다.');
@@ -196,6 +194,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const [localLikes, setLocalLikes] = useState(stats.likes);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const isHidden = hiddenPostIds.has(String(id));
+  const hideActionLabel = isHidden ? unhideLabel : hideLabel;
+  const hideEmoji = isHidden ? '👀' : '🙈';
   const localizeTag = (tag: string) => {
     const raw = tag?.replace(/^#/, '').trim();
     if (!raw) return '';
