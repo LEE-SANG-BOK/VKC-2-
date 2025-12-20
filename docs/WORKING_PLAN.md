@@ -407,7 +407,7 @@ $gh-address-comments
 - [ ] P1-10 (WEB: 튜토리얼/리마인드)
 - [ ] P1-11 (WEB/FE: 저속·오프라인 UX/PWA 폴백 v1)
 - [x] P1-12 (LEAD/WEB: 성능·접근성 감사 스크립트 정렬)
-- [ ] P1-13 (WEB/BE/FE: 추천 사용자 개인화/표시 규칙 정리)
+- [x] P1-13 (WEB/BE/FE: 추천 사용자 개인화/표시 규칙 정리)
 - [ ] P1-14 (LEAD/BE/WEB: 인증/배지 taxonomy + 운영 workflow 정리)
 - [ ] P1-15 (LEAD/WEB: AI 검색/요약 대비 SEO 구조화)
 - [ ] P1-16 (LEAD: SEO KPI/리뷰 리듬(GSC/GA4))
@@ -1600,10 +1600,11 @@ $gh-address-comments
 
 - 목표: 추천 사용자 섹션을 온보딩 기반으로 개인화하고, 배지/메타 노출을 “강조 1~2개” 원칙으로 통일한다
 - 현황(코드 근거)
-  - 추천 API는 `isVerified desc` + 팔로워 수 desc 정렬로만 추천되고, viewer 기반 매칭이 없음(`src/app/api/users/recommended/route.ts:87`)
-  - API가 `isExpert/badgeType`을 조회하지만 응답에 포함하지 않아 UI에서 상세 배지가 사라짐(`src/app/api/users/recommended/route.ts:54`, `src/app/api/users/recommended/route.ts:111`)
-  - 온보딩은 관심사를 category `id(UUID)`로 저장하고(`src/app/[lang]/(main)/onboarding/OnboardingClient.tsx:321`), 추천 메타는 숫자 포함 값을 제거해 관심사가 누락됨(`src/app/api/users/recommended/route.ts:107`)
-  - 추천 카드 메타가 `# {text}` 나열로 표시되어 강조 규칙과 충돌(`src/components/organisms/RecommendedUsersSection.tsx:232`)
+  - 추천 API는 viewer 기반 `matchScore(userType/visaType/koreanLevel/interests)`로 우선 정렬하고, 활동/팔로워로 tie-break(`src/app/api/users/recommended/route.ts:87`)
+  - 응답에 `isExpert/badgeType/(선택)badgeExpiresAt`을 포함하여 UI에서 상세 배지가 유지됨(`src/app/api/users/recommended/route.ts:54`, `src/app/api/users/recommended/route.ts:111`)
+  - interests(UUID)는 카테고리 `slug`로 매핑되어 노출되며, 추천 메타는 2개까지로 제한(`src/app/api/users/recommended/route.ts:121`)
+  - 추천 카드 메타는 `# 나열` 대신 chip 형태로 1~2개만 강조(`src/components/organisms/RecommendedUsersSection.tsx:235`)
+  - PostList에서 추천 유저를 follower 기준으로 재정렬하지 않고 API 정렬을 그대로 사용(`src/components/organisms/PostList.tsx:223`)
 - 작업(권장)
   - 데이터/표시 계약 정리
     - `/api/users/recommended` 응답에 `badgeType`, `isExpert` 포함(필요 시 `badgeExpiresAt`도 포함)
