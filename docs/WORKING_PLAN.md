@@ -379,6 +379,59 @@
 - 다음 액션/의존성
   - 모바일 프로필 통계 가로 스크롤 UX 확인 필요
 
+#### (2025-12-20) [LEAD] 카드 정렬/폭 축소 + 좌측 사이드바 고정 (P0-16/P0-17)
+
+- 플랜(체크리스트)
+  - [x] [FE] PostCard 제목/본문/태그/액션을 닉네임 기준으로 정렬(lg 이상)
+  - [x] [LEAD] 데스크톱 메인 컬럼 폭 축소(1040px → 960px) + 헤더 정렬
+  - [x] [LEAD] 좌측 사이드바 sticky 고정 + 독립 스크롤 보강
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/molecules/cards/PostCard.tsx`, `src/components/templates/MainLayout.tsx`, `src/components/organisms/Header.tsx`, `src/components/organisms/CategorySidebar.tsx`
+  - 재현/리스크: 데스크톱에서 카드 가로 길이 과도 + 제목/본문이 아바타 아래로 밀림, 좌측 사이드바 스크롤이 메인과 분리되지 않음
+- 변경 내용(why/what)
+  - why: 데스크톱 가독성/정렬 개선 + 좌측 사이드바 고정성 확보
+  - what: 카드 본문/태그/액션에 `lg:pl-12` 적용, 2xl 메인 폭 960px로 축소, 좌측 레일 sticky 적용/overscroll 보강
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/templates/MainLayout.tsx
+  - src/components/organisms/Header.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-16/17 카드 정렬/폭 축소 + 좌측 사이드바 고정
+  - 필요한 파일 목록: 위 변경 파일 전체
+  - 필요 검증(lint/type-check/build/기타): lint/build 권장
+  - 의존성/선행 작업: 없음(Hot File)
+  - 커밋 메시지 제안: `[LEAD] align card content + fix sidebar sticky`
+- 다음 액션/의존성
+  - 데스크톱/태블릿에서 카드 폭/정렬 체감 확인
+  - 좌측 사이드바 스크롤 분리 동작 확인
+
+#### (2025-12-20) [FE] 게시글 안보기 아이콘화 + 우상단 배치 (P0-13)
+
+- 플랜(체크리스트)
+  - [x] 하단 텍스트 버튼 제거
+  - [x] 우상단 이모지 버튼으로 전환 + Tooltip 제공
+  - [x] 숨김 상태에서도 동일 UI로 토글
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/molecules/cards/PostCard.tsx`
+  - 재현/리스크: 하단 액션 행에 “안보기” 텍스트가 섞여 시각적 균형이 깨짐
+- 변경 내용(why/what)
+  - why: 카드 하단 액션은 통일된 아이콘 행으로 유지하고, 숨김 동선은 상단 보조 액션으로 분리
+  - what: 상단 우측에 이모지 버튼(tooltip/aria-label) 배치, 하단 텍스트 버튼 제거
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+- 다음 액션/의존성
+  - 카드 상단 여백과 겹침 여부 확인 필요
+
 #### (2025-12-20) [WEB/BE] 맞춤 숨김 v1 + 신고 즉시 숨김 (P0-11)
 
 - 플랜(체크리스트)
