@@ -4,6 +4,7 @@
 
 ## 최근 주요 변경 사항
 
+- [BE] `/api/users/[id]/score` route 복원으로 빌드 타입 오류 해결
 - [LEAD] `common.share` i18n 키 추가(ko/en/vi)
 - [LEAD] DB migrate statement_timeout 우회: `PGOPTIONS='-c statement_timeout=0' npm run db:migrate`로 성공
 - [WEB] posts/trending/users posts/bookmarks API 응답을 post-list serializer로 통일(썸네일/요약/작성자 포맷 일관화)
