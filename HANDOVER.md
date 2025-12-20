@@ -12,6 +12,12 @@
 - [FE] PostDetail/VerificationRequest fallback 보강 + 공유 CTA/로그 이벤트 보완, 팔로잉 모달에 공식/검수 카운트 전달
 - [BE] 배지 만료 컬럼 마이그레이션 `0034_badge_expires_at` 추가(_journal 반영)
 - [DOC] `docs/WORKING_PLAN.md` 추가(요약 실행 플랜)
+- [BE] 맞춤 숨김 API `/api/hides` 추가(게시글/답변/댓글)
+- [WEB] hides repo hooks 추가 + 신고 시 즉시 숨김 캐시 반영
+- [FE] 게시글/답변/댓글 숨김/해제 UI 적용(PostCard/AnswerCard/CommentCard/PostDetail)
+- [FE] 질문 템플릿 라벨 제거(조건/목표/배경) + 값 강조 표시, 피드백 폼 간소화, 사이드바 피드백 이모지+툴팁 전환
+- [FE] PostCard 인증 요약 라벨을 클릭형 CTA(hover 강조)로 전환 + 답변/댓글 앵커 이동, 모바일 액션 행 1줄 유지
+- [FE] 질문 템플릿 입력 영역 컴팩트화(행 수 축소/패딩 축소) + 사이드바 피드백 메뉴 텍스트 버튼화
 - [FE] 우측 레일 sticky 제거로 추천 콘텐츠가 본문과 함께 스크롤되도록 정렬
 - [FE] PostCard 모바일 하단 액션/카운트 한 줄 정렬 + 인증 사용자 요약 라벨 Tooltip 보강
 - [FE] 프로필 통계 5개 항목 1행 정렬 + 프로필 설정 화면 헤더를 메인 헤더와 통일
@@ -1574,4 +1580,5 @@ Post 관련 타입을 정리해줘.
 - 헤더 로고 툴팁 제거, 로고 우측에 브랜드 문구 상시 노출(모바일 포함).
 - LanguageSwitcher에서 영어 옵션 숨김(ko/vi만 노출), en 라우팅은 유지.
 - 홈 “신규 유저 빠른 팁” 안내 제거.
+- 공식/검수 답변 배지 노출 제거(PostCard/AnswerCard/PostDetail).
 - 사이드바에 “상위 기여자” 메뉴 추가(Feedback 상단) + 홈 상단 리더보드 프리뷰 제거.

@@ -1653,6 +1653,37 @@ $gh-address-comments
 - 다음 액션/의존성
   - 없음
 
+#### (2025-12-20) [FE] 요청 단위 커밋 준비: 인증 요약 CTA/템플릿 컴팩트/피드백 버튼 (P0-13/P0-14)
+
+- 플랜(체크리스트)
+  - [ ] PostCard 인증 요약 CTA 버튼화 + hover 강조 + 답변/댓글 앵커 이동
+  - [ ] 질문 템플릿 입력 영역 컴팩트화(행/패딩 축소)
+  - [ ] 사이드바 피드백 메뉴 텍스트 버튼화
+- 커밋 분리(요청 단위)
+  - [ ] Commit A: `[FE] PostCard 인증 요약 CTA 버튼화` → `src/components/molecules/cards/PostCard.tsx`
+  - [ ] Commit B: `[FE] 질문 템플릿 입력 컴팩트화` → `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
+  - [ ] Commit C: `[FE] 사이드바 피드백 버튼화` → `src/components/organisms/CategorySidebar.tsx`
+  - [ ] Commit D: `[DOC] FE 작업 기록` → `docs/WORKING_PLAN.md`, `HANDOVER.md`, `docs/EXECUTION_PLAN.md`
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/molecules/cards/PostCard.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`, `src/components/organisms/CategorySidebar.tsx`
+  - 재현/리스크: 모바일에서 인증 요약 라벨이 길면 액션 행이 줄바꿈되며 균형이 깨짐
+- 변경 내용(why/what)
+  - why: 인증 요약 설명을 클릭 가능한 CTA로 노출해 의미를 명확히 하고, 모바일에서도 액션 행을 한 줄로 유지
+  - what: 인증 요약 라벨을 Tooltip+버튼으로 재구성, 액션 행은 nowrap/auto 폭으로 정렬, 템플릿 입력 패딩/행 수 축소
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - docs/WORKING_PLAN.md
+  - HANDOVER.md
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - Lead가 커밋 분리 기준대로 add/commit 필요
+
 ### 0.6.2 [WEB] Web Feature Agent
 
 #### (2025-12-18) [WEB] 헤더/프로필 모달 성능 최적화 (P0)
@@ -3911,9 +3942,11 @@ $gh-address-comments
 - [x] (2025-12-19) [LEAD] 좌측 사이드바 sticky 래핑 + 내부 스크롤 분리(메인 스크롤과 분리)
 - [x] (2025-12-19) [LEAD] UserTrustBadge 공통 컴포넌트 추가 + PostCard/Detail/Profile/Answer/Comment/추천·팔로잉 배지 위치 통일
 - [x] (2025-12-20) [LEAD] 홈 “신규 유저 빠른 팁” 안내 제거 (HomeClient)
+- [x] (2025-12-20) [LEAD] 공식/검수 답변 배지 노출 제거(PostCard/AnswerCard/PostDetail)
 - [x] (2025-12-19) [FE] 헤더 우측 액션 순서 변경(알림/언어 스위치 위치 조정)
 - [x] (2025-12-20) [FE] 헤더 로고 툴팁 제거 + 로고 우측 브랜드 문구 상시 노출(모바일 포함)
 - [x] (2025-12-20) [FE] LanguageSwitcher 영어 옵션 숨김(ko/vi만 노출, en 라우팅은 유지)
+- [x] (2025-12-20) [FE] 질문 템플릿 라벨 제거(조건/목표/배경) + 값 강조 표시, 피드백 폼 간소화, 사이드바 피드백 이모지+툴팁 전환
 - [x] (2025-12-19) [FE] 공유하기 CTA 설명 문구 업데이트: “내 경험과 지식을 모두와 함께 공유해봅시다.”
 - [x] (2025-12-19) [FE] Sidebar 피드백 라벨 고정: “Feedback” (언어 무관) + 글자 크기 축소/아이콘 들여쓰기
 - [x] (2025-12-19) [WEB] 피드백 페이지 설문형 UI로 개편(만족도/개선요청) + 요약/이메일 입력 제거
@@ -3987,3 +4020,61 @@ $gh-address-comments
   - messages/ko.json
   - messages/en.json
   - messages/vi.json
+
+#### (2025-12-20) [BE] 쓰기 API rate limit 적용 + 429 통일 (P0)
+
+- 플랜(체크리스트)
+  - [x] rate limit 유틸/응답 헬퍼 추가
+  - [x] 게시글/답변/댓글 작성 rate limit 적용
+  - [x] 신고/인증 요청 rate limit + 429/Retry-After 통일
+- 현황 분석(코드 기준)
+  - 피드백 외 주요 쓰기 API는 rate limit 부재
+  - 신고 rate limit 응답이 429가 아님
+- 변경 내용(why/what)
+  - why: P0-6 방어 기준 충족 및 429 규격 통일
+  - what: rateLimit helper 추가, 작성/신고/인증 API에 rate limit 적용
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/lib/api/response.ts
+  - src/lib/api/rateLimit.ts
+  - src/app/api/posts/route.ts
+  - src/app/api/posts/[id]/answers/route.ts
+  - src/app/api/posts/[id]/comments/route.ts
+  - src/app/api/answers/[id]/comments/route.ts
+  - src/app/api/verification/request/route.ts
+  - src/app/api/reports/route.ts
+  - src/app/api/posts/[id]/report/route.ts
+  - src/app/api/answers/[id]/report/route.ts
+  - src/app/api/comments/[id]/report/route.ts
+  - docs/EXECUTION_PLAN.md
+
+#### (2025-12-20) [WEB] 맞춤 숨김(안보기) v1 + 신고 즉시 숨김 (P0)
+
+- 플랜(체크리스트)
+  - [x] `/api/hides` API 추가(GET/POST/DELETE)
+  - [x] hides repo hooks/query keys 추가
+  - [x] 신고 성공 시 즉시 숨김 캐시 반영
+  - [x] PostCard/AnswerCard/CommentCard/상세 답변·댓글 숨김 UI 적용
+- 현황 분석(코드 기준)
+  - 신고 후에도 본인 피드/상세에서 즉시 숨김이 되지 않아 재노출됨
+- 변경 내용(why/what)
+  - why: 신고/숨김 UX를 즉시 반영해 노이즈를 줄이고 사용자 신뢰를 확보
+  - what: hides API + repo hooks + UI 숨김/해제 버튼 + 신고 성공 시 숨김 캐시 반영
+- 검증
+  - [ ] npm run lint
+  - [ ] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/api/hides/route.ts
+  - src/repo/hides/fetch.ts
+  - src/repo/hides/query.ts
+  - src/repo/hides/mutation.ts
+  - src/repo/hides/types.ts
+  - src/repo/keys.ts
+  - src/repo/reports/mutation.ts
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/components/molecules/cards/CommentCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - docs/EXECUTION_PLAN.md
