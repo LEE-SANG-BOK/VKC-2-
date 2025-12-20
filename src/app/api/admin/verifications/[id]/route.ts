@@ -41,6 +41,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
           displayName: users.displayName,
           email: users.email,
           image: users.image,
+          badgeExpiresAt: users.badgeExpiresAt,
         },
       })
       .from(verificationRequests)
@@ -87,7 +88,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     const { id } = await context.params;
     const body = await request.json();
-    const { status, reason, verifiedProfileSummary, verifiedProfileKeywords } = body;
+    const { status, reason, verifiedProfileSummary, verifiedProfileKeywords, badgeExpiresAt } = body;
 
     const [verification] = await db
       .select()
@@ -149,6 +150,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
         const unique = Array.from(new Set(normalizedKeywords)).slice(0, 20);
         userUpdate.verifiedProfileKeywords = unique.length ? unique : null;
+      }
+      if (Object.prototype.hasOwnProperty.call(body, 'badgeExpiresAt')) {
+        const normalized =
+          typeof badgeExpiresAt === 'string' && badgeExpiresAt
+            ? new Date(badgeExpiresAt)
+            : null;
+        userUpdate.badgeExpiresAt =
+          normalized && !Number.isNaN(normalized.getTime()) ? normalized : null;
       }
       userUpdate.badgeType = resolvedBadgeType;
       userUpdate.isExpert = isExpertBadgeType(resolvedBadgeType);

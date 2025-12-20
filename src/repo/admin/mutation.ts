@@ -105,6 +105,7 @@ export function useUpdateVerificationStatus() {
         status: string;
         reason?: string;
         badgeType?: string;
+        badgeExpiresAt?: string | null;
         verifiedProfileSummary?: string | null;
         verifiedProfileKeywords?: string[] | null;
       };

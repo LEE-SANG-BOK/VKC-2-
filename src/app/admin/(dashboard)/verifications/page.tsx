@@ -132,6 +132,7 @@ export default function AdminVerificationsPage() {
   const [verifiedProfileSummary, setVerifiedProfileSummary] = useState('');
   const [verifiedProfileKeywordsInput, setVerifiedProfileKeywordsInput] = useState('');
   const [badgeType, setBadgeType] = useState<BadgeType>('verified_user');
+  const [badgeExpiresAt, setBadgeExpiresAt] = useState('');
   const [validationError, setValidationError] = useState('');
 
   const { data, isLoading } = useAdminVerifications({
@@ -156,12 +157,20 @@ export default function AdminVerificationsPage() {
     setBadgeType(suggestedBadgeType);
   };
 
+  const formatDateInput = (value?: string | null) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().slice(0, 10);
+  };
+
   useEffect(() => {
     if (!selectedVerification) {
       setReason('');
       setVerifiedProfileSummary('');
       setVerifiedProfileKeywordsInput('');
       setBadgeType('verified_user');
+      setBadgeExpiresAt('');
       setValidationError('');
       return;
     }
@@ -179,6 +188,7 @@ export default function AdminVerificationsPage() {
     setVerifiedProfileSummary(suggestion.summary);
     setVerifiedProfileKeywordsInput(suggestion.keywords.map((keyword) => `#${keyword}`).join(' '));
     setBadgeType(suggestedBadgeType);
+    setBadgeExpiresAt(formatDateInput(selectedVerification.user?.badgeExpiresAt));
   }, [selectedVerification?.id]);
 
   const parsedKeywords = parseVerifiedProfileKeywords(verifiedProfileKeywordsInput);
@@ -188,6 +198,9 @@ export default function AdminVerificationsPage() {
     try {
       const normalizedSummary = verifiedProfileSummary.trim();
       const normalizedReason = reason.trim();
+      const normalizedExpiry = badgeExpiresAt.trim();
+      const expiryDate = normalizedExpiry ? new Date(normalizedExpiry) : null;
+      const expiresAtValue = expiryDate && !Number.isNaN(expiryDate.getTime()) ? expiryDate.toISOString() : null;
 
       if (status === 'rejected' && !normalizedReason) {
         setValidationError('거부 사유를 입력해주세요.');
@@ -198,6 +211,10 @@ export default function AdminVerificationsPage() {
         setValidationError('승인 전 요약 또는 키워드를 입력해주세요.');
         return;
       }
+      if (status === 'approved' && normalizedExpiry && !expiresAtValue) {
+        setValidationError('만료 날짜 형식을 확인해주세요.');
+        return;
+      }
       setValidationError('');
 
       await updateStatusMutation.mutateAsync({
@@ -206,6 +223,7 @@ export default function AdminVerificationsPage() {
           status,
           reason: status === 'rejected' ? normalizedReason : undefined,
           badgeType: status === 'approved' ? badgeType : undefined,
+          badgeExpiresAt: status === 'approved' ? expiresAtValue : undefined,
           verifiedProfileSummary: status === 'approved' ? (normalizedSummary ? normalizedSummary : null) : undefined,
           verifiedProfileKeywords: status === 'approved' ? (parsedKeywords.length ? parsedKeywords : null) : undefined,
         },
@@ -490,6 +508,20 @@ export default function AdminVerificationsPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="badgeExpiresAt">배지 만료일</Label>
+                    <Input
+                      id="badgeExpiresAt"
+                      type="date"
+                      value={badgeExpiresAt}
+                      onChange={(e) => {
+                        setBadgeExpiresAt(e.target.value);
+                        if (validationError) setValidationError('');
+                      }}
+                      className="mt-1"
+                    />
                   </div>
 
                   <div>

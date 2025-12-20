@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import MainLayout from '@/components/templates/MainLayout';
 import { getDictionary } from '@/i18n/get-dictionary';
 import { i18n, type Locale } from '@/i18n/config';
+import { SITE_URL } from '@/lib/siteUrl';
 
 type PageProps = {
   params: Promise<{ lang: Locale }>;
@@ -11,7 +12,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang } = await params;
   const dict = await getDictionary(lang);
   const meta = dict.metadata as Record<string, any>;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+  const baseUrl = SITE_URL;
   const currentUrl = `${baseUrl}/${lang}/about`;
 
   return {

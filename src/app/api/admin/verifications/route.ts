@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
             displayName: users.displayName,
             email: users.email,
             image: users.image,
+            badgeExpiresAt: users.badgeExpiresAt,
           },
         })
         .from(verificationRequests)

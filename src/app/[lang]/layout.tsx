@@ -12,6 +12,7 @@ import NextTopLoader from 'nextjs-toploader';
 import { SessionProvider } from 'next-auth/react';
 import ProfileChecker from '@/components/organisms/ProfileChecker';
 import AppToaster from '@/components/organisms/AppToaster';
+import { SITE_URL } from '@/lib/siteUrl';
 import "../globals.css";
 
 type Props = {
@@ -23,7 +24,7 @@ export async function generateStaticParams() {
   return i18n.locales.map((lang) => ({ lang }));
 }
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://viet-kconnect-renew-nextjs.vercel.app';
+const siteUrl = SITE_URL;
 const ogLocaleMap: Record<Locale, string> = {
   ko: 'ko_KR',
   en: 'en_US',

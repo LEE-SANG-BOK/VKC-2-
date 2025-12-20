@@ -1,6 +1,7 @@
 import type { Locale } from '@/i18n/config';
+import { SITE_URL } from '@/lib/siteUrl';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+const siteUrl = SITE_URL;
 const logoPath = '/brand-logo.png';
 
 type Props = {

@@ -142,6 +142,7 @@ export interface AdminVerification {
     displayName: string | null;
     email: string;
     image: string | null;
+    badgeExpiresAt?: string | null;
   } | null;
 }
 
