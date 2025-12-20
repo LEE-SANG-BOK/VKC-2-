@@ -26,6 +26,8 @@ import { useTogglePostLike, useTogglePostBookmark, useDeletePost, useUpdatePost,
 import { useCreateAnswer, useUpdateAnswer, useDeleteAnswer, useToggleAnswerLike, useAdoptAnswer, useCreateAnswerComment } from '@/repo/answers/mutation';
 import { useCreatePostComment, useUpdateComment, useDeleteComment, useToggleCommentLike } from '@/repo/comments/mutation';
 import { useReportPost, useReportComment, useReportAnswer } from '@/repo/reports/mutation';
+import { useHiddenTargets } from '@/repo/hides/query';
+import { useUnhideTarget } from '@/repo/hides/mutation';
 import { logEvent } from '@/repo/events/mutation';
 import { usePosts } from '@/repo/posts/query';
 import { useFollowStatus } from '@/repo/users/query';
@@ -219,6 +221,9 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const router = useRouter();
   const { data: session } = useSession();
   const user = session?.user;
+  const { idSet: hiddenAnswerIds } = useHiddenTargets('answer', Boolean(user));
+  const { idSet: hiddenCommentIds } = useHiddenTargets('comment', Boolean(user));
+  const unhideTargetMutation = useUnhideTarget();
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTooltips = (translations?.tooltips || {}) as Record<string, string>;
   const tPost = (translations?.post || {}) as Record<string, string>;
@@ -232,6 +237,10 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const bookmarkLabel = tTooltips.bookmark || (locale === 'vi' ? 'Lưu' : locale === 'en' ? 'Bookmark' : '북마크');
   const reportLabel = tCommon.report || (locale === 'vi' ? 'Báo cáo' : locale === 'en' ? 'Report' : '신고');
   const helpfulLabel = tCommon.helpful || (locale === 'vi' ? 'Hữu ích' : locale === 'en' ? 'Helpful' : '도움됨');
+  const unhideLabel = tCommon.unhide || (locale === 'vi' ? 'Bỏ ẩn' : locale === 'en' ? 'Unhide' : '숨김 해제');
+  const hiddenAnswerLabel = tCommon.hiddenAnswer || (locale === 'vi' ? 'Câu trả lời đã được ẩn.' : locale === 'en' ? 'This answer is hidden.' : '숨긴 답변입니다.');
+  const hiddenCommentLabel = tCommon.hiddenComment || (locale === 'vi' ? 'Bình luận đã được ẩn.' : locale === 'en' ? 'This comment is hidden.' : '숨긴 댓글입니다.');
+  const unhideFailedLabel = tCommon.unhideFailed || (locale === 'vi' ? 'Không thể bỏ ẩn.' : locale === 'en' ? 'Failed to unhide.' : '숨김 해제에 실패했습니다.');
   const editLabel = tCommon.edit || (locale === 'vi' ? 'Chỉnh sửa' : locale === 'en' ? 'Edit' : '수정');
   const deleteLabel = tCommon.delete || (locale === 'vi' ? 'Xóa' : locale === 'en' ? 'Delete' : '삭제');
   const adoptedLabel = tCommon.adopted || (locale === 'vi' ? 'Đã chọn' : locale === 'en' ? 'Adopted' : '채택됨');
@@ -521,6 +530,19 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const tRules = (translations?.newPost || {}) as Record<string, string>;
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const openLoginPrompt = () => setIsLoginPromptOpen(true);
+  const handleUnhide = async (targetType: 'answer' | 'comment', targetId: string) => {
+    if (!user) {
+      openLoginPrompt();
+      return;
+    }
+
+    try {
+      await unhideTargetMutation.mutateAsync({ targetType, targetId });
+    } catch (error) {
+      console.error('Failed to unhide target:', error);
+      toast.error(unhideFailedLabel);
+    }
+  };
 
   const resolveErrorMessage = (error: unknown, fallback: string) => {
     if (isAccountRestrictedError(error)) return error.message;
@@ -2481,6 +2503,25 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               ) : sortedAnswers.length > 0 ? (
                 <div className="space-y-6">
                   {sortedAnswers.map((answer, index) => {
+                    if (hiddenAnswerIds.has(answer.id)) {
+                      return (
+                        <div
+                          key={answer.id}
+                          className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3 sm:p-4"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{hiddenAnswerLabel}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleUnhide('answer', answer.id)}
+                              className="rounded-full px-3 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            >
+                              {unhideLabel}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
                     const answerBadge = getTrustBadgePresentation({
                       locale,
                       author: answer.author,
@@ -2699,6 +2740,25 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                           {answer.replies && answer.replies.length > 0 && (
                             <div className="mt-4 space-y-4 pl-4 sm:pl-6 border-l-2 border-gray-200 dark:border-gray-700">
                               {answer.replies.map((reply) => {
+                                if (hiddenCommentIds.has(reply.id)) {
+                                  return (
+                                    <div
+                                      key={reply.id}
+                                      className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3"
+                                    >
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">{hiddenCommentLabel}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUnhide('comment', reply.id)}
+                                          className="rounded-full px-3 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                        >
+                                          {unhideLabel}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                }
                                 const replyBadge = getTrustBadgePresentation({
                                   locale,
                                   author: reply.author,
@@ -2868,6 +2928,25 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               ) : post.comments && post.comments.length > 0 ? (
                 <div className="space-y-4 sm:space-y-6">
                   {post.comments.map((comment) => {
+                    if (hiddenCommentIds.has(comment.id)) {
+                      return (
+                        <div
+                          key={comment.id}
+                          className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3 sm:p-4"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{hiddenCommentLabel}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleUnhide('comment', comment.id)}
+                              className="rounded-full px-3 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            >
+                              {unhideLabel}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
                     const commentBadge = getTrustBadgePresentation({
                       locale,
                       author: comment.author,
@@ -3052,6 +3131,25 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                           {comment.replies && comment.replies.length > 0 && (
                             <div className="mt-4 space-y-4 pl-4 sm:pl-6 border-l-2 border-gray-200 dark:border-gray-700">
                               {comment.replies.map((reply) => {
+                                if (hiddenCommentIds.has(reply.id)) {
+                                  return (
+                                    <div
+                                      key={reply.id}
+                                      className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3"
+                                    >
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">{hiddenCommentLabel}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUnhide('comment', reply.id)}
+                                          className="rounded-full px-3 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                        >
+                                          {unhideLabel}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                }
                                 const replyBadge = getTrustBadgePresentation({
                                   locale,
                                   author: reply.author,
