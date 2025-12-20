@@ -1351,7 +1351,9 @@ $gh-address-comments
   - `images.remotePatterns`가 모든 호스트(`**`)와 `http`까지 허용(`next.config.ts:22`)
 - 작업(권장, 효율 우선)
   - 프로덕션 allowlist 고정
-    - 1st-party 도메인 + Supabase Storage + 소셜 아바타(필요 시) 등 “필요한 호스트만” 명시(나머지는 차단)
+    - Supabase Storage: `NEXT_PUBLIC_SUPABASE_URL`의 hostname 1개만 허용 + pathname은 `/storage/v1/object/**`로 제한
+    - Auth 아바타(현재 Google): `lh3.googleusercontent.com`(+필요 시 `lh4.googleusercontent.com`)만 허용
+    - (선택) 사이트 절대 URL이 이미지에 쓰이는 경우만 `NEXT_PUBLIC_SITE_URL|NEXT_PUBLIC_APP_URL|NEXTAUTH_URL` hostname을 허용(불필요하면 제외)
     - `http`는 금지하고 `https`만 허용(혼합 콘텐츠/보안 리스크 제거)
   - 실패 전략(깨짐 방지)
     - allowlist 밖 URL은 “이미지 없음” 처리(썸네일 placeholder) 또는 `unoptimized` 정책을 명확히 결정(성능/보안 기준으로)
