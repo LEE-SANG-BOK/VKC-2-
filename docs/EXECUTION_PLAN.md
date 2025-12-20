@@ -3910,6 +3910,7 @@ $gh-address-comments
 - [x] (2025-12-19) [LEAD] MainLayout 2xl 그리드 폭을 Header와 정렬(좌/우 레일 정렬)
 - [x] (2025-12-19) [LEAD] 좌측 사이드바 sticky 래핑 + 내부 스크롤 분리(메인 스크롤과 분리)
 - [x] (2025-12-19) [LEAD] UserTrustBadge 공통 컴포넌트 추가 + PostCard/Detail/Profile/Answer/Comment/추천·팔로잉 배지 위치 통일
+- [x] (2025-12-20) [LEAD] 홈 “신규 유저 빠른 팁” 안내 제거 (HomeClient)
 - [x] (2025-12-19) [FE] 헤더 우측 액션 순서 변경(알림/언어 스위치 위치 조정)
 - [x] (2025-12-20) [FE] 헤더 로고 툴팁 제거 + 로고 우측 브랜드 문구 상시 노출(모바일 포함)
 - [x] (2025-12-20) [FE] LanguageSwitcher 영어 옵션 숨김(ko/vi만 노출, en 라우팅은 유지)
