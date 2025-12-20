@@ -1,20 +1,19 @@
 import 'server-only';
 import type { Locale } from './config';
 
-const dictionaries = {
+type DictionaryJson = Record<string, any>;
+
+const dictionaries: Record<Locale, () => Promise<DictionaryJson>> = {
   ko: () => import('../../messages/ko.json').then((module) => module.default),
   en: () => import('../../messages/en.json').then((module) => module.default),
   vi: () => import('../../messages/vi.json').then((module) => module.default),
 };
 
-type DictionaryValue = string | number | boolean | null | DictionaryValue[] | { [key: string]: DictionaryValue };
-type Dictionary = Record<string, DictionaryValue>;
-
-const isObject = (value: DictionaryValue): value is Dictionary =>
+const isObject = (value: unknown): value is DictionaryJson =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
-const mergeDeep = (fallback: Dictionary, source: Dictionary) => {
-  const output: Dictionary = { ...fallback };
+const mergeDeep = (fallback: DictionaryJson, source: DictionaryJson) => {
+  const output: DictionaryJson = { ...fallback };
   Object.entries(source).forEach(([key, value]) => {
     const fallbackValue = fallback[key];
     if (isObject(value) && isObject(fallbackValue)) {
@@ -26,10 +25,10 @@ const mergeDeep = (fallback: Dictionary, source: Dictionary) => {
   return output;
 };
 
-export const getDictionary = async (locale: Locale) => {
+export const getDictionary = async (locale: Locale): Promise<DictionaryJson> => {
   if (locale === 'en') {
     const [enDict, koDict] = await Promise.all([dictionaries.en(), dictionaries.ko()]);
-    return mergeDeep(koDict as Dictionary, enDict as Dictionary);
+    return mergeDeep(koDict, enDict);
   }
 
   const dictFn = dictionaries[locale] || dictionaries.vi;
