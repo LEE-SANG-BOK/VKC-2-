@@ -371,7 +371,7 @@ $gh-address-comments
 ### P0
 
 - [ ] P0-0 (LEAD: Hot File 잠금/i18n 담당/게이트 고정)
-- [ ] P0-1 (LEAD/WEB/FE: en UI 숨김 + alternates/sitemap 유지 + ko fallback)
+- [x] P0-1 (LEAD/WEB/FE: en UI 숨김 + alternates/sitemap 유지 + ko fallback)
 - [ ] P0-2 (FE/WEB: ko/vi 하드코딩 제거 + 클립 0)
 - [ ] P0-3 (FE: 모바일 키보드/스크롤 UX 하드닝)
 - [ ] P0-4 (WEB/FE: 이미지 표준화 + 코드 스플리팅 + Query 튜닝)
@@ -387,7 +387,7 @@ $gh-address-comments
 - [x] P0-14 (FE/WEB: 피드백 UX 간소화)
 - [x] P0-15 (FE/WEB: 게시글 상세 액션/추천 정리)
 - [ ] P0-16 (FE/LEAD: 카드 헤더 정렬 + 데스크톱 폭 제한)
-- [ ] P0-17 (LEAD/FE: 좌측 사이드바 고정 + 독립 스크롤)
+- [x] P0-17 (LEAD/FE: 좌측 사이드바 고정 + 독립 스크롤)
 - [x] P0-18 (LEAD/FE: 헤더 뒤로가기 줄바꿈/정렬)
 - [x] P0-19 (WEB/FE/BE: 랭킹 온도-only + Event 자리)
 - [x] P0-20 (BE/WEB: UGC 무해화 + 링크 정책 단일화)
@@ -975,7 +975,7 @@ $gh-address-comments
 #### (2025-12-20) [LEAD] P0-1 en UI 숨김 + SEO 유지 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [FE] LanguageSwitcher en 숨김(ko/vi만 노출)
+  - [x] [FE] LanguageSwitcher en 숨김(ko/vi만 노출)
   - [x] [WEB] sitemap/alternates en 유지 + locale fallback 병합
   - [ ] [LEAD] QA 기준(ko/vi UI, en SEO 유지) 문서 반영
 
@@ -1270,8 +1270,8 @@ $gh-address-comments
 #### (2025-12-20) [LEAD] P0-17 좌측 사이드바 고정 + 독립 스크롤 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [LEAD] 좌측 컬럼 고정(스크롤 분리) 레이아웃 설계/반영(Hot File)
-  - [ ] [FE] 좌측 사이드바 내부 스크롤/높이 동작 정리
+  - [x] [LEAD] 좌측 컬럼 sticky 고정 + 높이 고정(Hot File)
+  - [x] [FE] 좌측 사이드바 내부 스크롤 분리(overflow-y-auto)
 
 - 목표: 메인 스크롤을 내릴 때 좌측 사이드바는 화면에 고정되고, 필요한 경우 내부 스크롤만 동작하도록 한다
 - 현황(스크린샷 기준)
@@ -1283,6 +1283,13 @@ $gh-address-comments
   - 사이드바 내부 스크롤 분리
     - 최대 높이를 `calc(100vh - header - spacing)`로 제한
     - 내용이 길 때만 내부 스크롤 동작
+- 구현(코드 변경)
+  - 좌측 레일 sticky + 고정 높이: `src/components/templates/MainLayout.tsx`
+  - 사이드바 내부 스크롤: `src/components/organisms/CategorySidebar.tsx`
+- 검증(로컬)
+  - `npm run lint`
+  - `npm run type-check`
+  - `SKIP_SITEMAP_DB=true npm run build`
 - 완료 기준
   - 메인 스크롤과 무관하게 좌측 사이드바가 고정되어 유지됨
   - 좌측 사이드바는 자체 스크롤만 동작하고, 하단으로 더 내려가지 않음
