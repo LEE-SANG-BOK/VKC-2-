@@ -146,6 +146,7 @@ $gh-address-comments
   - CI는 `npm ci`를 사용(`.github/workflows/ci.yml:1`)하지만, 저장소에는 `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`이 동시에 존재
   - 설치 재현성/취약점 대응/온보딩 비용을 올리는 전형적인 “반복 비용” 요인
 - 방향: CI 기준에 맞춰 단일 매니저/단일 락파일로 규칙화(문서 + 체크로 강제)
+- 연계: `P1-18`
 
 ### 4. Rate limit은 “존재”하지만 “확장 가능한 설계”가 아직 아님
 
@@ -161,6 +162,7 @@ $gh-address-comments
   - API가 `isExpert/badgeType`을 조회하지만 응답에 포함하지 않아 UI에서 상세 배지가 사라짐(`src/app/api/users/recommended/route.ts:54`, `src/app/api/users/recommended/route.ts:111`)
   - 온보딩은 관심사를 category `id(UUID)`로 저장하는데(`src/app/[lang]/(main)/onboarding/OnboardingClient.tsx:321`), 추천 메타는 숫자 포함 값을 제거해 관심사가 누락됨(`src/app/api/users/recommended/route.ts:107`)
 - 방향: 데이터 표현(관심사)과 배지 노출(응답 계약)을 한 번에 정리해 “반복 수정” 비용을 제거
+- 연계: `P1-13`, `P1-14`
 
 ### 6. AI 검색/요약(LLM/SGE) 노출을 위한 “추출 가능한 구조”가 시스템화돼 있지 않음
 
@@ -170,12 +172,13 @@ $gh-address-comments
   - `robots.ts`는 Google/Bing 중심이며, GPTBot/OAI-SearchBot 등 AI 크롤러 허용/차단 정책이 미정(`src/app/robots.ts:4`)
   - 출처/업데이트 표기(신뢰·최신성) 정책이 화면/메타/스키마에 일관되게 반영되지 않으면 E-E-A-T 신호가 약해짐(P1-8 연계)
 - 방향: “AI 검색 대비 SEO 계약(헤딩/즉답 구조/스키마/최신성/크롤링)”을 SoT로 만들고 템플릿화해 반복 비용을 제거
+- 연계: `P1-15`, `P1-8`
 
 ### 7. UGC 보안(XSS)–서버 “무해화” 부재 + `dangerouslySetInnerHTML` 렌더
 
 - 현황/리스크
   - 게시글/답변/댓글은 HTML을 그대로 저장/반환하는 구조이며, 클라이언트에서 `dangerouslySetInnerHTML`로 렌더됨(`src/app/api/posts/route.ts:666`, `src/app/api/posts/route.ts:819`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx:2273`)
-  - 현재 `createSafeUgcMarkup`는 링크에 `rel="ugc"`를 보정하는 수준이며, HTML 태그/속성의 allowlist 기반 “무해화(스크립트/이벤트/위험 URL 차단)”를 수행하지 않음(`src/utils/sanitizeUgcContent.ts:17`)
+  - 현재 `createSafeUgcMarkup`는 링크에 `rel="ugc"`를 보정하는 수준이며, HTML 태그/속성 allowlist 기반 “무해화(스크립트/이벤트/위험 URL 차단)”를 수행하지 않음(`src/utils/sanitizeUgcContent.ts:17`)
 - 방향
   - UGC는 “서버 write-time 무해화 + read-time 안전 렌더”를 단일 파이프라인으로 고정(허용 태그/속성/URL 스킴 규칙)
   - 대표 페이로드 회귀 방지용 테스트/샘플을 최소로라도 갖춰 “다시 열리는” 보안 이슈를 구조적으로 차단
@@ -205,16 +208,26 @@ $gh-address-comments
 
 - 현황/리스크
   - PWA는 `@ducanh2912/next-pwa` 기반으로 구성되어 있으나(`next.config.ts:3`), 의존성에 `next-pwa`도 함께 존재해 중복/혼선 가능성이 있음(`package.json:28`, `package.json:60`)
-  - `aggressiveFrontEndNavCaching` 등 캐시 옵션이 개인화/동적 페이지에서 “빠르지만 틀린 UI”를 만들 가능성이 있음(`next.config.ts:13`)
+  - `aggressiveFrontEndNavCaching` 등 캐시 옵션이 개인화/동적 페이지에서 stale UI를 만들 가능성이 있음(`next.config.ts:13`)
 - 방향: PWA는 의존성 1개로 통일하고, 캐시 가능한 영역(정적/큐레이션)과 캐시 금지 영역(작성/알림/프로필/세션)을 정책으로 고정
-- 연계: `P1-17`(PWA 의존성/캐시 경계 정리)
+- 연계: `P1-17`
 
 ### 11. SEO/검색 계약(SearchAction/Query Param)이 SoT에 고정돼 있지 않으면 드리프트가 발생
 
 - 현황/리스크
   - 전역 Structured Data의 `SearchAction`은 `/search?q=` 계약에 의존하며(`src/components/organisms/StructuredData.tsx:21`), 검색 라우트/파라미터가 바뀔 경우 SEO/AI 추출 품질이 즉시 하락할 수 있음
 - 방향: 검색 URL 계약을 “메타/스키마 빌더” 레이어에서 1회 정의하고, StructuredData/페이지/라우트는 결과만 소비하게 한다
-- 연계: `P1-15`(SEO 구조화), `P1-18`(캐시/계약 표준화)
+- 연계: `P1-15`
+
+### 12. Cache-Control/개인화 응답 캐싱 경계가 단일 정책으로 고정돼 있지 않음
+
+- 현황/리스크
+  - API 응답에서 `Cache-Control`이 엔드포인트별로 흩어져 있어 “공개 캐시(public)로 내려가도 되는 응답”과 “개인화/세션 기반(private/no-store) 응답”의 경계가 코드 리뷰만으로 유지되기 쉬움
+  - 기본 응답 헬퍼는 `no-store`를 쓰지만(`src/lib/api/response.ts:47`), 개별 라우트에서 직접 헤더를 세팅하는 패턴이 혼재함(예: `src/app/api/categories/route.ts:55`, `src/app/api/users/leaderboard/route.ts:79`)
+- 방향
+  - 캐시 정책을 1곳(헬퍼/유틸)에서만 정의하고, 라우트는 “public/private tier”를 선택만 하게 한다(반복 방지)
+  - public 캐시 적용 라우트는 “viewer-dependent 필드”가 절대 포함되지 않음을 점검하고, 필요한 경우 `Vary`(Authorization/Cookie 등) 정책을 함께 고정
+- 연계: `P1-19`
 
 ## 개선 플랜(리서치 → 의사결정 → 실행 보드로 내리는 방식, 단일 소스 지향)
 
@@ -257,7 +270,6 @@ $gh-address-comments
     - rate limit 정책 정의→저장소→응답 스키마→클라 UX까지 표준화(쓰기 API 우선)
     - 신고/숨김/차단/리뷰 큐는 “사용자 체감(즉시 숨김)”과 “운영 효율(규칙 기반)”을 같이 만족하도록 단일 플로우로 정리
     - 인증/배지/추천은 “taxonomy + payload + UI 라벨”이 항상 일치하도록 SoT로 고정
-    - 보안 기본값: UGC는 서버에서 무해화(allowed tags/attrs) 후 저장하고, 이미지 원격 소스는 allowlist로 제한해 운영/보안 사고를 구조적으로 차단
     - 연계: `P0-6`(rate limit), `P0-11`(숨김/신고), `P1-9`(모더레이션), `P1-14`(배지), `P1-13`(추천)
 
 ### 1) “단일 소스 오브 트루스(SoT)” 재정의(1회로 끝내는 정리)
@@ -351,8 +363,8 @@ $gh-address-comments
 | P0-17 | Lead | Design Front | Hot(레이아웃) | 좌측 사이드바 고정 + 독립 스크롤 | 메인 스크롤과 분리 + 사이드바 내부 스크롤만 동작 |
 | P0-18 | Lead | Design Front | Hot(Header) | 헤더 “뒤로가기” 줄바꿈/깨짐 제거 | `Quay lại` 등 다국어에서 줄바꿈 0 + 헤더 높이/정렬 안정 |
 | P0-19 | Web Feature | Design Front, Lead, BE | Shared(랭킹/메뉴) | 커뮤니티 랭킹: 온도-only + Event 자리 | 레벨 UI 제거 + 온도 36.5 기본 + 총멤버 숨김 + 우측 4컬럼/모바일 상단 Event 영역 |
-| P0-20 | BE | Web Feature, Lead | Shared(UGC/보안) | UGC 무해화(서버) + 링크 정책 단일화 | XSS 페이로드 차단 + 공식 출처 링크 허용(allowlist) + 렌더 안전 |
-| P0-21 | Lead | Web Feature | Shared(next.config) | `next/image` 원격 호스트 정책 고정 | prod에서 allowlist만 최적화 + `http` 금지 + 예외 정책 문서화 |
+| P0-20 | BE | Web Feature, Lead | Shared(API/보안) | UGC 무해화 + 링크 정책 단일화 | XSS 0 + allowlist/rel 정책 1규칙 |
+| P0-21 | Lead | Web Feature, Design Front | Shared(next.config) | `next/image` 원격 allowlist | `remotePatterns` 와일드카드 제거 + https-only + 이미지 로딩 정상 |
 
 ## Progress Checklist (집계용)
 
@@ -379,7 +391,7 @@ $gh-address-comments
 - [ ] P0-18 (LEAD/FE: 헤더 뒤로가기 줄바꿈/정렬)
 - [ ] P0-19 (WEB/FE/BE: 랭킹 온도-only + Event 자리)
 - [ ] P0-20 (BE/WEB: UGC 무해화 + 링크 정책 단일화)
-- [ ] P0-21 (LEAD/WEB: next/image 원격 정책 고정)
+- [ ] P0-21 (LEAD/WEB: `next/image` 원격 allowlist + https-only)
 
 ### P1
 
@@ -399,9 +411,9 @@ $gh-address-comments
 - [ ] P1-14 (LEAD/BE/WEB: 인증/배지 taxonomy + 운영 workflow 정리)
 - [ ] P1-15 (LEAD/WEB: AI 검색/요약 대비 SEO 구조화)
 - [ ] P1-16 (LEAD: SEO KPI/리뷰 리듬(GSC/GA4))
-- [ ] P1-17 (LEAD/WEB: PWA 의존성/캐시 정책 정리)
-- [ ] P1-18 (LEAD/BE: Cache-Control/공개 범위 정책 표준화)
-- [ ] P1-19 (LEAD: Repo 위생/시크릿 스캔(선택))
+- [ ] P1-17 (LEAD/WEB: PWA 의존성 단일화 + 캐시 경계 고정)
+- [ ] P1-18 (LEAD: 패키지 매니저/락파일 단일화)
+- [ ] P1-19 (BE/LEAD: Cache-Control 정책 SoT + 캐시 감사)
 
 ### P2
 
@@ -1312,44 +1324,42 @@ $gh-address-comments
   - 상단 안내에 계산식이 아닌 “랭킹 상승 행동”만 안내되고, 전체 멤버 수는 노출되지 않음
   - 웹은 우측 여백/컬럼이 확보되고, 모바일 상단은 Event로 확장 가능한 영역으로 남아 있음
 
-#### (2025-12-20) [BE/WEB] P0-20 UGC 무해화(서버) + 링크 정책 단일화 (P0)
+#### (2025-12-20) [BE/WEB] P0-20 UGC 무해화 + 링크 정책 단일화 (P0)
 
-- 목표: UGC(게시글/답변/댓글)의 stored XSS를 구조적으로 차단하면서, 공식 출처 링크는 allowlist 기반으로 허용하고 렌더 단계에서 `rel="ugc"`를 일괄 적용한다
+- 목표: UGC(질문/답변/댓글)의 XSS/피싱 리스크를 “서버 write-time 무해화 + 단일 링크 정책”으로 구조적으로 차단한다
 - 현황(코드 근거)
-  - write API가 `content`를 trim 후 그대로 저장(`src/app/api/posts/route.ts:666`, `src/app/api/posts/route.ts:819`)
-  - 상세에서 `dangerouslySetInnerHTML`로 UGC를 렌더(`src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx:2273`)
-  - 렌더 보정은 `rel="ugc"` 중심이며, HTML 태그/속성 allowlist 기반 무해화는 없음(`src/utils/sanitizeUgcContent.ts:17`)
-  - 링크 정책이 이중화되어 충돌 가능(스팸 필터의 URL 패턴 vs allowlist 검증)(`src/lib/content-filter.ts:15`, `src/lib/validation/ugc-links.ts:57`)
-- 작업(권장, P0는 최소 범위로)
-  - 단일 UGC 파이프라인(SoT) 확정
-    - write-time: HTML 무해화(허용 태그/속성/URL 스킴) → 텍스트 품질 검증(`validateUgcText`) → 외부 링크 allowlist 검증(`validateUgcExternalLinks`)
-    - read-time: 외부 링크 `rel="ugc"` + `targetBlank` + `noopener` 보장(`src/utils/sanitizeUgcContent.ts:17` 유지)
-  - 정책 충돌 제거
-    - URL 자체를 “스팸”으로 일괄 차단하지 않도록 조정하거나, allowlist와 충돌하지 않는 신호로만 사용하도록 분리
-  - 회귀 방지(최소)
-    - 대표 XSS 페이로드/위험 URL(`javascript:`/`data:`)/이벤트 속성(`onerror` 등) 케이스를 고정해 재발을 방지(테스트/스냅샷 중 택1)
+  - UGC는 HTML 그대로 저장/반환되고 클라이언트에서 `dangerouslySetInnerHTML`로 렌더됨(`src/app/api/posts/route.ts:666`, `src/app/api/posts/route.ts:819`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx:2273`)
+  - `createSafeUgcMarkup`는 링크 `rel="ugc"` 보정 수준이며, 태그/속성 allowlist 기반 무해화를 하지 않음(`src/utils/sanitizeUgcContent.ts:17`)
+  - 링크 정책이 스팸 필터와 allowlist 검증으로 분산되어 충돌 가능(`src/lib/content-filter.ts:15`, `src/lib/validation/ugc-links.ts:57`)
+- 작업(권장, 효율 우선)
+  - 무해화 파이프라인 고정(SoT)
+    - 서버에서 저장 직전에 HTML sanitize(허용 태그/속성/URL 스킴/이미지 src 규칙) → 저장/반환은 “이미 안전한 HTML”만
+    - 렌더 단계에서는 “링크 rel 정책(ugc + 필요 시 nofollow/sponsored)”만 보정하고, sanitize는 중복하지 않음(성능/일관성)
+  - 링크 정책 단일화(SoT)
+    - allowlist(공식 출처)에서 허용/차단을 결정하고, 스팸/연락처/광고 필터는 “추가 신호”로만 사용(우선순위/조건을 문서+코드로 통일)
+    - 허용되지 않은 외부 링크는 (1) 링크 제거(텍스트화) 또는 (2) 클릭 전 경고 화면 등 중 택1로 단순화(운영 효율 우선)
+  - 회귀 방지 최소 세트
+    - 대표 XSS 페이로드(스크립트/이벤트 핸들러/javascript: URL) 샘플을 문서/테스트로 고정해 재발 방지
 - 완료 기준
-  - 악성 스크립트/이벤트/위험 URL이 저장·렌더 단계에서 무력화됨
-  - 공식 allowlist 도메인 링크는 게시 가능하고, 비허용 도메인은 명확한 에러로 차단됨
-  - UGC 외부 링크는 기본 `rel="ugc"`(+ target blank 시 `noopener`)로 렌더됨
+  - 대표 XSS 페이로드가 저장/렌더에서 실행되지 않음
+  - 외부 링크 허용/차단/rel 정책이 단일 규칙으로 수렴하고(중복 로직 제거) 운영자가 예외를 1곳에서만 관리
 
-#### (2025-12-20) [LEAD/WEB] P0-21 `next/image` 원격 호스트 정책 고정 (P0)
+#### (2025-12-20) [LEAD/WEB] P0-21 `next/image` 원격 allowlist + https-only (P0)
 
-- 목표: 이미지 최적화(fetch/리사이즈) 대상 호스트를 allowlist로 제한해 SSRF/DoS/성능 리스크를 줄인다
+- 목표: `next/image` 원격 이미지 최적화가 “모든 호스트/HTTP”를 허용하는 상태를 해소해 SSRF/DoS/성능 리스크를 줄인다
 - 현황(코드 근거)
   - `images.remotePatterns`가 모든 호스트(`**`)와 `http`까지 허용(`next.config.ts:22`)
-  - UGC 이미지 src는 정규화 유틸이 있으나(host allowlist는 없음)(`src/utils/normalizePostImageSrc.ts:1`)
-- 작업(권장)
-  - 이미지 소스 인벤토리 1차(운영 효율 우선)
-    - 실제로 필요한 호스트(Supabase Storage, 1st-party, 소셜 프로필 이미지 등)만 allowlist로 지정
-  - 정책 고정
-    - prod: `https` + allowlist만 최적화(기본), `http` 금지
-    - 예외(필요 시): 외부 이미지는 업로드 유도/프록시/`unoptimized` 중 하나로 통일
-  - 문서화
-    - “허용 이미지 호스트/예외 정책/업로드 규칙”을 WORKING_PLAN의 SoT 규칙에 고정
+- 작업(권장, 효율 우선)
+  - 프로덕션 allowlist 고정
+    - 1st-party 도메인 + Supabase Storage + 소셜 아바타(필요 시) 등 “필요한 호스트만” 명시(나머지는 차단)
+    - `http`는 금지하고 `https`만 허용(혼합 콘텐츠/보안 리스크 제거)
+  - 실패 전략(깨짐 방지)
+    - allowlist 밖 URL은 “이미지 없음” 처리(썸네일 placeholder) 또는 `unoptimized` 정책을 명확히 결정(성능/보안 기준으로)
+  - 공용 이미지 래퍼에 규칙 고정
+    - sizes/lazy/placeholder 뿐 아니라 “허용 src 정규화/검증”까지 공용 유틸/컴포넌트로 통일(페이지별 임의 처리 금지)
 - 완료 기준
-  - prod에서 unknown host 이미지를 Next Image 최적화가 fetch하지 않음(allowlist만)
-  - 핵심 화면(피드/상세/프로필)에서 이미지가 정상 렌더되며, 실패 시 UX가 명확함
+  - `remotePatterns` 와일드카드/`http` 허용이 제거되고, 필수 이미지(아바타/썸네일)가 정상 로딩
+  - 외부 이미지가 섞여도 서버가 임의 호스트를 fetch/리사이즈하지 않음(정책 준수)
 
 ### P0 Exit criteria
 
@@ -1360,12 +1370,12 @@ $gh-address-comments
 - `ko/vi` 기준 텍스트 클립/하드코딩이 핵심 화면에서 0(의도된 `truncate` 제외)
 - 가이드라인 안내가 1회 동작하고(노출/확인 기록), 작성/제출 플로우에 영향 0
 - 신고 즉시 숨김 및 “안보기” 맞춤 숨김이 동작하고(승인 전 포함), 피드/검색에서 재노출되지 않음
+- UGC는 서버 write-time 무해화가 적용되어 XSS 페이로드가 실행되지 않고, 외부 링크 정책(allowlist + `rel="ugc"` + 필요 시 `nofollow`)이 단일 규칙으로 수렴
+- `next/image` 원격 정책이 allowlist + https-only로 고정되어 `remotePatterns: **`/`http` 허용이 제거됨(이미지 로딩 정상)
 - SEO 메타/키워드 파이프라인이 통합되고(중복 로직 제거), 카드/피드백 UX가 요구사항대로 정리됨
 - 데스크톱 카드 폭/정렬이 개선되고 좌측 사이드바 고정/독립 스크롤이 정상 동작
 - 헤더 뒤로가기(`Quay lại` 등) 줄바꿈/정렬 문제가 재현되지 않음
 - 커뮤니티 랭킹은 온도-only로 단순화되고(Event 확장 자리 포함) 불필요 지표(레벨/총멤버/계산식)가 UI에 노출되지 않음
-- UGC(게시글/답변/댓글)는 서버에서 무해화되어 stored XSS 리스크가 닫히고, 공식 출처 링크 정책이 단일 규칙으로 동작
-- `next/image` 원격 호스트 정책이 allowlist로 고정되어 운영/보안 리스크가 낮아짐
 
 ---
 
@@ -1572,43 +1582,54 @@ $gh-address-comments
 - 완료 기준
   - KPI/리뷰 루틴이 문서로 고정되고, 리포트가 자동/반자동으로 재현 가능(사람이 매번 수작업으로 모으지 않음)
 
-#### (2025-12-20) [LEAD/WEB] P1-17 PWA 의존성/캐시 정책 정리 (P1)
+#### (2025-12-20) [LEAD/WEB] P1-17 PWA 의존성 단일화 + 캐시 경계 고정 (P1)
 
-- 목표: PWA는 “빠르지만 틀리지 않게” — 캐시 가능한 영역(정적/큐레이션)과 캐시 금지 영역(세션/작성/알림/프로필)을 정책으로 고정해 운영 비용과 오류를 줄인다
+- 목표: PWA가 “설치/오프라인 UX 개선”에만 기여하고, 개인화/동적 화면에서 stale UI를 만들지 않도록 정책을 고정한다
 - 현황(코드 근거)
-  - PWA는 `@ducanh2912/next-pwa` 기반으로 구성(`next.config.ts:3`)
-  - 의존성에 `next-pwa`가 함께 존재해 중복/혼선 가능(`package.json:60`)
-  - `aggressiveFrontEndNavCaching` 등 옵션이 동적/개인화 페이지에서 stale UI를 만들 수 있음(`next.config.ts:13`)
-- 플랜(체크리스트)
-  - [ ] [LEAD] PWA 패키지 1개로 통일(권장: 현 구성 유지 + 중복 제거)
-  - [ ] [WEB] 캐시 경계 표준화: 캐시 허용(정적/뉴스/가이드) vs 캐시 금지(작성/알림/프로필/세션) 목록 고정
-  - [ ] [WEB] `ENABLE_PWA/DISABLE_PWA` 운영 규칙과 배포 환경별 정책 확정(`next.config.ts:5`)
+  - PWA는 `@ducanh2912/next-pwa` 기반이나(`next.config.ts:3`), 의존성에 `next-pwa`도 함께 존재해 중복/혼선 가능성이 있음(`package.json:28`, `package.json:60`)
+  - `aggressiveFrontEndNavCaching` 등 캐시 옵션이 동적/개인화 화면에서 stale UI를 만들 가능성이 있음(`next.config.ts:13`)
+- 작업(권장)
+  - 의존성 단일화
+    - PWA 패키지는 1개만 유지(중복 제거)하고, 활성화 조건(`ENABLE_PWA`)을 운영 정책으로 확정
+  - 캐시 경계(SoT) 확정
+    - 캐시 허용: 정적 자산 + 운영자 큐레이션 콘텐츠(가이드/공지/뉴스)
+    - 캐시 금지: 작성/알림/프로필/세션/팔로우/좋아요 등 개인화·상태성 API 및 화면
+    - 오프라인 폴백은 “읽기 UX”만 보장(작성/상태 변경은 온라인 필요)
+  - 검증 루틴(운영 효율)
+    - 오프라인/저속에서 홈/상세는 안내+캐시로 복구 가능, 개인화 화면은 “정상 안내”로 실패(무한 로딩 금지)
 - 완료 기준
-  - PWA 활성화 조건과 캐시 범위가 문서로 고정되고, 개인화 페이지에서 stale/권한 오류가 재현되지 않음
+  - PWA 패키지/설정이 1개로 수렴하고, 캐시 범위가 문서/코드에서 일치
+  - PWA로 인해 개인화 화면에서 stale UI/오작동이 발생하지 않음(최소 시나리오 검증)
 
-#### (2025-12-20) [LEAD/BE] P1-18 Cache-Control/공개 범위 정책 표준화 (P1)
+#### (2025-12-20) [LEAD] P1-18 패키지 매니저/락파일 단일화 (P1)
 
-- 목표: “공개 캐시”와 “개인화/세션 응답”을 구조적으로 분리해, 개인정보/세션 데이터가 캐시되는 사고를 예방한다
+- 목표: 설치 재현성을 높여 온보딩/CI/보안 대응의 “반복 비용”을 제거한다
 - 현황(코드 근거)
-  - API 응답 헤더는 라우트별로 수동 설정되어 일관성이 약함(예: `public, s-maxage…` vs `private, no-store`) (`src/app/api/**`)
-  - 공용 응답 헬퍼는 있지만(Cache-Control 기본값이 고정돼 있지 않음) 라우트별 편차가 생기기 쉬움(`src/lib/api/response.ts:1`)
-- 플랜(체크리스트)
-  - [ ] [LEAD] “캐시 가능/불가 엔드포인트” 목록화(세션/개인화 포함 여부 기준)
-  - [ ] [BE] 응답 헬퍼/컨벤션으로 강제: `private, no-store`(세션/개인화) vs `public, s-maxage`(공개/집계) 기본값 통일
-  - [ ] [BE] 캐시 대상 TTL 정책(뉴스/카테고리/트렌딩/랭킹 등) 1장으로 고정 + 변경 시 1곳만 수정
+  - CI는 `npm ci`를 사용(`.github/workflows/ci.yml:1`)하지만, `package-lock.json`/`pnpm-lock.yaml`/`yarn.lock`이 동시에 존재(혼선/재현성 저하)
+- 작업(권장)
+  - 단일 매니저 확정: CI 기준으로 `npm` 고정(예: `package-lock.json`만 유지)
+  - 다른 락파일 제거 + 재생성/검증 절차를 문서에 고정
+  - CI/훅(선택): “다른 락파일이 생기면 실패” 체크 추가(반복 방지)
 - 완료 기준
-  - 캐시 정책 표가 문서로 고정되고, 주요 엔드포인트의 Cache-Control이 정책과 일치
+  - 저장소에 락파일이 1개만 존재하고, 로컬/CI 설치가 같은 결과를 재현
 
-#### (2025-12-20) [LEAD] P1-19 Repo 위생/시크릿 스캔(선택) (P1)
+#### (2025-12-20) [BE/LEAD] P1-19 Cache-Control 정책 SoT + 캐시 감사 (P1)
 
-- 목표: 로컬 시크릿(.env, OAuth client secret 등)이나 대용량 파일이 PR/배포에 섞이는 사고를 구조적으로 차단한다
+- 목표: “공개 캐시 가능 응답”과 “개인화/세션 응답”의 경계를 단일 정책으로 고정해 데이터 노출/성능 이슈를 구조적으로 줄인다
 - 현황(코드 근거)
-  - `.gitignore`는 `.env*`와 `client_secret*.json`을 무시하도록 되어 있으나(`.gitignore:1`), 운영 과정에서 실수로 유사 파일이 유입될 가능성은 항상 존재
-- 플랜(체크리스트)
-  - [ ] [LEAD] “시크릿 파일 금지/관리 규칙”을 문서(README/HANDOVER)로 고정
-  - [ ] [LEAD] CI 또는 로컬 가드(선택): 시크릿 패턴 스캔/대용량 파일 차단을 릴리즈 전 단계에 추가(차단 기준 최소화)
+  - 여러 API 라우트에서 `Cache-Control`을 개별 설정하고 있어 정책 드리프트 위험이 있음(예: `src/app/api/categories/route.ts:55`, `src/app/api/users/leaderboard/route.ts:79`)
+  - 기본 응답 헬퍼는 `no-store`지만(`src/lib/api/response.ts:47`), 라우트에서 직접 세팅하는 패턴이 혼재
+- 작업(권장, 효율 우선)
+  - 캐시 tier 정의(SoT)
+    - `public`: 익명 기준 동일 응답만(절대 viewer-dependent 필드 포함 금지)
+    - `private`: 로그인/개인화 응답은 `private, no-store` 고정
+    - `hybrid`: 필요한 경우에만 `Vary`를 명시하고, 공개 캐시를 쓰지 않도록 보수적으로 설계
+  - 라우트 감사(소규모부터)
+    - `public` 캐시를 사용하는 엔드포인트 목록화 → 응답 스키마에 개인화 필드가 없는지 점검
+    - 위험 엔드포인트는 `private, no-store`로 내리고, 클라 캐시(TanStack Query)로 체감 성능 보완
 - 완료 기준
-  - PR에서 시크릿/대용량 파일이 자동으로 감지되거나, 최소한의 체크리스트로 사람이 놓치지 않게 운영됨
+  - 캐시 정책이 유틸/헬퍼로 단일화되고, 공개 캐시 적용 엔드포인트가 “안전 목록”으로 관리됨
+  - 개인화 응답이 public 캐시로 내려가는 케이스가 0
 
 ---
 
