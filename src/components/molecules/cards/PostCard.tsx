@@ -17,6 +17,8 @@ import { useCategories } from '@/repo/categories/query';
 import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
 import { useToggleFollow } from '@/repo/users/mutation';
 import { logEvent } from '@/repo/events/mutation';
+import { useHiddenTargets } from '@/repo/hides/query';
+import { useHideTarget, useUnhideTarget } from '@/repo/hides/mutation';
 import { ALLOWED_CATEGORY_SLUGS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
@@ -70,6 +72,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const params = useParams();
   const { data: session } = useSession();
   const { openLoginPrompt } = useLoginPrompt();
+  const { idSet: hiddenPostIds } = useHiddenTargets('post', Boolean(session?.user));
+  const hideTargetMutation = useHideTarget();
+  const unhideTargetMutation = useUnhideTarget();
   const locale = (params?.lang as 'ko' | 'en' | 'vi') || 'ko';
   const t = (translations?.tooltips || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
@@ -83,6 +88,11 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const linkCopiedLabel = t.linkCopied || (locale === 'vi' ? 'Đã sao chép liên kết!' : locale === 'en' ? 'Link copied!' : '링크가 복사되었습니다!');
   const copyFailedLabel = t.copyFailed || (locale === 'vi' ? 'Không thể sao chép liên kết.' : locale === 'en' ? 'Failed to copy link.' : '복사에 실패했습니다.');
   const sourcePrefix = tCommon.source || (locale === 'vi' ? 'Nguồn' : locale === 'en' ? 'Source' : '출처');
+  const hideLabel = tCommon.hide || (locale === 'vi' ? 'Ẩn' : locale === 'en' ? 'Hide' : '안보기');
+  const unhideLabel = tCommon.unhide || (locale === 'vi' ? 'Bỏ ẩn' : locale === 'en' ? 'Unhide' : '숨김 해제');
+  const hiddenPostLabel = tCommon.hiddenPost || (locale === 'vi' ? 'Bài viết đã được ẩn.' : locale === 'en' ? 'This post is hidden.' : '숨긴 게시글입니다.');
+  const hideFailedLabel = tCommon.hideFailed || (locale === 'vi' ? 'Không thể ẩn bài viết.' : locale === 'en' ? 'Failed to hide the post.' : '게시글을 숨길 수 없습니다.');
+  const unhideFailedLabel = tCommon.unhideFailed || (locale === 'vi' ? 'Không thể bỏ ẩn.' : locale === 'en' ? 'Failed to unhide.' : '숨김 해제에 실패했습니다.');
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -183,6 +193,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const [localIsBookmarked, setLocalIsBookmarked] = useState(initialIsBookmarked || false);
   const [localLikes, setLocalLikes] = useState(stats.likes);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const isHidden = hiddenPostIds.has(String(id));
   const localizeTag = (tag: string) => {
     const raw = tag?.replace(/^#/, '').trim();
     if (!raw) return '';
@@ -396,6 +407,26 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     }
   };
 
+  const handleToggleHide = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!session?.user) {
+      openLoginPrompt();
+      return;
+    }
+
+    try {
+      if (isHidden) {
+        await unhideTargetMutation.mutateAsync({ targetType: 'post', targetId: String(id) });
+      } else {
+        await hideTargetMutation.mutateAsync({ targetType: 'post', targetId: String(id) });
+      }
+    } catch (error) {
+      console.error('Failed to toggle hide:', error);
+      toast.error(isHidden ? unhideFailedLabel : hideFailedLabel);
+    }
+  };
+
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowShareMenu((prev) => !prev);
@@ -482,6 +513,25 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
   const extraCount = Math.max(totalImages - 1, 0);
   const mediaGridClass = `question-card-media-grid question-card-media-grid--row question-card-media-grid--single`;
+
+  if (isHidden) {
+    return (
+      <article className="question-card group">
+        <div className="question-card-main">
+          <div className="flex items-center justify-between gap-3 px-2 py-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400">{hiddenPostLabel}</span>
+            <button
+              type="button"
+              onClick={handleToggleHide}
+              className="rounded-full px-3 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {unhideLabel}
+            </button>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article
@@ -725,6 +775,13 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
               </button>
             </Tooltip>
+            <button
+              type="button"
+              onClick={handleToggleHide}
+              className="inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
+            >
+              {hideLabel}
+            </button>
             {isQuestion ? (
               <>
                 <Tooltip
