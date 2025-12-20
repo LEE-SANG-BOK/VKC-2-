@@ -626,36 +626,48 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                 <p className="text-gray-700 dark:text-gray-300 mb-4">{initialProfile.bio}</p>
               )}
 
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-2 sm:gap-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Calendar className="w-4 h-4" />
-                  <span className="truncate">{profileLabels.joinedAt}: {new Date(initialProfile.joinedAt).toLocaleDateString(locale)}</span>
-                </div>
-                {initialProfile.gender && (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-2 sm:gap-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-2 min-w-0">
-                    <User className="w-4 h-4" />
-                    <span className="truncate">{profileLabels.gender}: {getGenderLabel(initialProfile.gender)}</span>
+                    <Calendar className="w-4 h-4" />
+                    <span className="min-w-0 max-w-full truncate inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[11px] sm:text-xs font-semibold text-gray-700 dark:text-gray-200">
+                      <span className="sr-only">{profileLabels.joinedAt}: </span>
+                      {new Date(initialProfile.joinedAt).toLocaleDateString(locale)}
+                    </span>
                   </div>
-                )}
-                {initialProfile.ageGroup && (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <User className="w-4 h-4" />
-                    <span className="truncate">{profileLabels.ageGroup}: {getAgeGroupLabel(initialProfile.ageGroup)}</span>
-                  </div>
-                )}
-                {(() => {
-                  const legacyStatus = initialProfile.status;
-                  const effectiveUserType =
-                    initialProfile.userType ||
-                    (legacyStatus && legacyStatus !== 'banned' && legacyStatus !== 'suspended' ? legacyStatus : null);
-                  if (!effectiveUserType) return null;
-                  return (
+                  {initialProfile.gender && (
                     <div className="flex items-center gap-2 min-w-0">
-                      <Briefcase className="w-4 h-4" />
-                      <span className="truncate">{profileLabels.status}: {getUserTypeLabel(effectiveUserType, userTypeLabels)}</span>
+                      <User className="w-4 h-4" />
+                      <span className="min-w-0 max-w-full truncate inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[11px] sm:text-xs font-semibold text-gray-700 dark:text-gray-200">
+                        <span className="sr-only">{profileLabels.gender}: </span>
+                        {getGenderLabel(initialProfile.gender)}
+                      </span>
                     </div>
-                  );
-                })()}
+                  )}
+                  {initialProfile.ageGroup && (
+                    <div className="flex items-center gap-2 min-w-0">
+                      <User className="w-4 h-4" />
+                      <span className="min-w-0 max-w-full truncate inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[11px] sm:text-xs font-semibold text-gray-700 dark:text-gray-200">
+                        <span className="sr-only">{profileLabels.ageGroup}: </span>
+                        {getAgeGroupLabel(initialProfile.ageGroup)}
+                      </span>
+                    </div>
+                  )}
+                  {(() => {
+                    const legacyStatus = initialProfile.status;
+                    const effectiveUserType =
+                      initialProfile.userType ||
+                      (legacyStatus && legacyStatus !== 'banned' && legacyStatus !== 'suspended' ? legacyStatus : null);
+                    if (!effectiveUserType) return null;
+                    return (
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Briefcase className="w-4 h-4" />
+                        <span className="min-w-0 max-w-full truncate inline-flex items-center rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200 px-2 py-0.5 text-[11px] sm:text-xs font-semibold">
+                          <span className="sr-only">{profileLabels.status}: </span>
+                          {getUserTypeLabel(effectiveUserType, userTypeLabels)}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 {isOwnProfile && initialProfile.email && (
                   <div className="col-span-2 flex items-center gap-2 min-w-0">
                     <Mail className="w-4 h-4" />
