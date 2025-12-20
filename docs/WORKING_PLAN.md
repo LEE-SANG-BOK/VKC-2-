@@ -389,7 +389,7 @@ $gh-address-comments
 - [ ] P0-16 (FE/LEAD: 카드 헤더 정렬 + 데스크톱 폭 제한)
 - [ ] P0-17 (LEAD/FE: 좌측 사이드바 고정 + 독립 스크롤)
 - [ ] P0-18 (LEAD/FE: 헤더 뒤로가기 줄바꿈/정렬)
-- [ ] P0-19 (WEB/FE/BE: 랭킹 온도-only + Event 자리)
+- [x] P0-19 (WEB/FE/BE: 랭킹 온도-only + Event 자리)
 - [x] P0-20 (BE/WEB: UGC 무해화 + 링크 정책 단일화)
 - [x] P0-21 (LEAD/WEB: `next/image` 원격 allowlist + https-only)
 
@@ -1325,6 +1325,22 @@ $gh-address-comments
     - 웹(lg+): 12컬럼 기준 “랭킹 콘텐츠 8 + 우측 4 비워두기(또는 Event placeholder)”로 고정
     - 모바일: 상단 안내 영역을 유지하고, 해당 영역을 “Event(추후)”로 전환 가능한 컴포넌트 슬롯으로 확보
     - 메뉴 라벨: `상위 기여자(Event)`로 임시 표기(사이드바/툴팁/페이지 타이틀과 일관성 유지)
+- 구현(코드 변경)
+  - API: 점수(정렬)는 유지하되, UI 표시용 `temperature`를 추가(기본 36.5, 소수 1자리, `36.5 + log10(score+1)*2`)
+    - `src/app/api/users/leaderboard/route.ts`
+  - 타입: `UserLeaderboardEntry`에 `temperature` 추가 + 레벨 관련 필드 제거
+    - `src/repo/users/types.ts`
+  - UI: 레벨/진행바/총 멤버 수/계산식 노출 제거 → 온도-only + “랭킹이 오르는 행동” 안내로 교체 + 모바일 Event placeholder 추가
+    - `src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx`
+  - 레이아웃: 웹에서 우측 4 영역 확보를 위해 `rightRail`에 Event placeholder 추가
+    - `src/app/[lang]/(main)/leaderboard/page.tsx`
+  - 메뉴: `상위 기여자(Event)` 라벨 적용(vi/en도 Event 표기)
+    - `src/components/organisms/CategorySidebar.tsx`
+- 검증(로컬)
+  - `npm run lint`
+  - `npm run type-check`
+  - `SKIP_SITEMAP_DB=true npm run build`
+  - `npm run test:e2e`
 - 완료 기준
   - 랭킹 페이지에서 `Level` 관련 UI가 보이지 않음(진행바/라벨 포함)
   - 온도는 기본 36.5 기반으로 표시되며, 높은 온도에서만 “더 뜨거운” 표현이 적용됨

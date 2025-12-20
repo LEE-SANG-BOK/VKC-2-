@@ -105,9 +105,31 @@ export default async function LeaderboardPage({ params, searchParams }: PageProp
   } catch {
   }
 
+  const eventCopy =
+    lang === 'en'
+      ? { title: 'Event', description: 'Coming soon' }
+      : lang === 'vi'
+        ? { title: 'Event', description: 'Sắp ra mắt' }
+        : { title: 'Event', description: '준비중' };
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <MainLayout hideSidebar translations={dict}>
+      <MainLayout
+        hideSidebar
+        rightRail={
+          <div className="sticky top-[var(--vk-header-height)] py-6">
+            <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-4">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+                {eventCopy.title}
+              </h2>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                {eventCopy.description}
+              </p>
+            </section>
+          </div>
+        }
+        translations={dict}
+      >
         <LeaderboardClient
           lang={lang}
           translations={dict}

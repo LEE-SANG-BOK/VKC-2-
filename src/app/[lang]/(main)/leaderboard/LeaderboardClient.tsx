@@ -18,6 +18,31 @@ interface LeaderboardClientProps {
   initialLimit: number;
 }
 
+const resolveTemperatureTone = (temperature: number) => {
+  if (temperature >= 41) {
+    return {
+      iconClassName: 'text-red-600',
+      chipClassName: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-200',
+      filled: true,
+      extraFlames: 1,
+    };
+  }
+  if (temperature >= 39.5) {
+    return {
+      iconClassName: 'text-red-500',
+      chipClassName: 'bg-red-50/70 text-red-700 dark:bg-red-900/20 dark:text-red-200',
+      filled: true,
+      extraFlames: 0,
+    };
+  }
+  return {
+    iconClassName: 'text-orange-500/80',
+    chipClassName: 'bg-orange-50/70 text-orange-700 dark:bg-orange-900/20 dark:text-orange-200',
+    filled: false,
+    extraFlames: 0,
+  };
+};
+
 export default function LeaderboardClient({ translations, lang, initialPage, initialLimit }: LeaderboardClientProps) {
   const searchParams = useSearchParams();
   const pageParam = parseInt(searchParams?.get('page') || '', 10);
@@ -38,12 +63,9 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
             topTitle: 'Top Rankers',
             listTitle: 'All Rankers',
             trustLabel: 'Trust',
-            levelLabel: 'Level',
             temperatureLabel: 'Temperature',
             helpfulLabel: 'Helpful',
             adoptionRateLabel: 'Adoption rate',
-            scoreLabel: 'Score',
-            totalLabel: 'Total members',
             pageInfo: 'Page {current} / {total}',
             previous: 'Previous',
             next: 'Next',
@@ -51,7 +73,15 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
             loading: 'Loading...',
             rankLabel: 'Rank',
             guideLabel: 'How trust badges work',
-            scoreFormula: 'Score = Trust + Helpful × 5 + Adoption rate',
+            rankGuideTitle: 'How to climb the ranking',
+            rankGuideItems: [
+              'Write helpful answers',
+              'Get answers accepted',
+              'Keep a healthy history (no reports)',
+              'Verify your profile for trust',
+            ],
+            eventTitle: 'Event',
+            eventDescription: 'Coming soon',
             unknownUser: 'Unknown',
           }
         : lang === 'vi'
@@ -61,12 +91,9 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
               topTitle: 'Top xếp hạng',
               listTitle: 'Tất cả thành viên',
               trustLabel: 'Độ tin cậy',
-              levelLabel: 'Cấp',
               temperatureLabel: 'Nhiệt',
               helpfulLabel: 'Hữu ích',
               adoptionRateLabel: 'Tỷ lệ được chấp nhận',
-              scoreLabel: 'Điểm',
-              totalLabel: 'Tổng thành viên',
               pageInfo: 'Trang {current} / {total}',
               previous: 'Trước',
               next: 'Tiếp theo',
@@ -74,7 +101,15 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
               loading: 'Đang tải...',
               rankLabel: 'Hạng',
               guideLabel: 'Cách hoạt động của huy hiệu tin cậy',
-              scoreFormula: 'Điểm = Độ tin cậy + Hữu ích × 5 + Tỷ lệ được chấp nhận',
+              rankGuideTitle: 'Cách tăng thứ hạng',
+              rankGuideItems: [
+                'Viết câu trả lời hữu ích',
+                'Nhận câu trả lời được chấp nhận',
+                'Giữ lịch sử hoạt động lành mạnh',
+                'Xác minh hồ sơ để tăng độ tin cậy',
+              ],
+              eventTitle: 'Event',
+              eventDescription: 'Sắp ra mắt',
               unknownUser: 'Không rõ',
             }
           : {
@@ -83,12 +118,9 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
               topTitle: 'TOP 랭커',
               listTitle: '전체 랭킹',
               trustLabel: '신뢰',
-              levelLabel: '레벨',
               temperatureLabel: '온도',
               helpfulLabel: '도움',
               adoptionRateLabel: '채택률',
-              scoreLabel: '점수',
-              totalLabel: '전체 멤버',
               pageInfo: '{current} / {total} 페이지',
               previous: '이전',
               next: '다음',
@@ -96,7 +128,15 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
               loading: '로딩 중...',
               rankLabel: '순위',
               guideLabel: '신뢰 배지 안내',
-              scoreFormula: '점수 = 신뢰 + 도움 × 5 + 채택률',
+              rankGuideTitle: '랭킹이 오르는 행동',
+              rankGuideItems: [
+                '도움이 되는 답변 작성',
+                '채택된 답변 늘리기',
+                '신고 없는 건강한 활동 유지',
+                '프로필 인증/전문가 뱃지 받기',
+              ],
+              eventTitle: 'Event',
+              eventDescription: '준비중',
               unknownUser: '알 수 없음',
             };
 
@@ -109,6 +149,10 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
   }, [lang, tCommon]);
 
   const numberFormatter = useMemo(() => new Intl.NumberFormat(lang), [lang]);
+  const temperatureFormatter = useMemo(
+    () => new Intl.NumberFormat(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    [lang]
+  );
   const percentFormatter = useMemo(() => new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }), [lang]);
 
   const { data, isLoading } = useUserLeaderboard(
@@ -124,7 +168,6 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
   const entries = (data?.data || []) as UserLeaderboardEntry[];
   const pagination = data?.pagination;
   const totalPages = pagination?.totalPages || 1;
-  const totalCount = pagination?.total || entries.length;
 
   const showTopSection = currentPage === 1 && entries.length > 0;
   const topRankers = showTopSection ? entries.slice(0, 3) : [];
@@ -169,22 +212,15 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
   return (
     <div className="flex flex-col gap-6 px-4 py-6">
       <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              {copy.title}
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              {copy.subtitle}
-            </p>
-          </div>
-          <div className="rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-right">
-            <div className="text-xs text-gray-500 dark:text-gray-400">{copy.totalLabel}</div>
-            <div className="text-xl font-semibold text-gray-900 dark:text-white">
-              {isLoading ? '--' : numberFormatter.format(totalCount)}
-            </div>
-          </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            {copy.title}
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            {copy.subtitle}
+          </p>
         </div>
+
         <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
           <Link
             href={`/${lang}/guide/trust-badges`}
@@ -192,9 +228,27 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
           >
             {copy.guideLabel}
           </Link>
-          <span className="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-gray-500 dark:text-gray-300">
-            {copy.scoreFormula}
-          </span>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-gray-50 dark:bg-gray-900/40 p-4">
+          <div className="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
+            <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+            {copy.rankGuideTitle}
+          </div>
+          <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-gray-600 dark:text-gray-300">
+            {(copy.rankGuideItems || []).map((item: string) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-3 lg:hidden rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 p-4">
+          <div className="text-xs font-semibold text-gray-900 dark:text-white">
+            {copy.eventTitle}
+          </div>
+          <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+            {copy.eventDescription}
+          </div>
         </div>
       </section>
 
@@ -205,7 +259,7 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
             const Icon = config.icon;
             const displayName = entry.displayName || entry.name || copy.unknownUser;
             const avatarSrc = entry.avatar || entry.image || '';
-            const levelPercent = Math.round((entry.levelProgress || 0) * 100);
+            const temperatureTone = resolveTemperatureTone(entry.temperature);
             const badge = getTrustBadgePresentation({
               locale: lang,
               author: {
@@ -250,23 +304,32 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
                   </div>
                   <div className="flex items-center gap-3">
                     <Avatar name={displayName} imageUrl={avatarSrc} size="lg" />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                        <span>{copy.levelLabel} {entry.level}</span>
-                        <span>{levelPercent}%</span>
-                      </div>
-                      <div className="mt-1 h-2 w-full rounded-full bg-gray-200/70 dark:bg-gray-800">
-                        <div
-                          className="h-full rounded-full bg-blue-500/80"
-                          style={{ width: `${levelPercent}%` }}
-                        />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${temperatureTone.chipClassName}`}>
+                          <Flame
+                            className={`h-3.5 w-3.5 ${temperatureTone.iconClassName}`}
+                            fill={temperatureTone.filled ? 'currentColor' : 'none'}
+                          />
+                          {temperatureTone.extraFlames ? (
+                            <Flame
+                              className={`h-3.5 w-3.5 ${temperatureTone.iconClassName}`}
+                              fill={temperatureTone.filled ? 'currentColor' : 'none'}
+                            />
+                          ) : null}
+                          {copy.temperatureLabel} {temperatureFormatter.format(entry.temperature)}°
+                        </span>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          {copy.trustLabel} {numberFormatter.format(entry.trustScore)}
+                        </span>
                       </div>
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-600 dark:text-gray-300">
-                        <span className="inline-flex items-center gap-1">
-                          <Flame className="h-3.5 w-3.5 text-orange-500/80" />
-                          {copy.temperatureLabel} {numberFormatter.format(entry.score)}
+                        <span>
+                          {copy.helpfulLabel} {numberFormatter.format(entry.helpfulAnswers)}
                         </span>
-                        <span>{copy.trustLabel} {numberFormatter.format(entry.trustScore)}</span>
+                        <span>
+                          {copy.adoptionRateLabel} {percentFormatter.format(entry.adoptionRate)}%
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -291,7 +354,7 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
             {entries.map((entry: UserLeaderboardEntry) => {
               const displayName = entry.displayName || entry.name || copy.unknownUser;
               const avatarSrc = entry.avatar || entry.image || '';
-              const levelPercent = Math.round((entry.levelProgress || 0) * 100);
+              const temperatureTone = resolveTemperatureTone(entry.temperature);
               const badge = getTrustBadgePresentation({
                 locale: lang,
                 author: {
@@ -326,13 +389,19 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
                         ) : null}
                       </div>
                       <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        {copy.levelLabel} {entry.level} · {copy.temperatureLabel} {numberFormatter.format(entry.score)}
-                      </div>
-                      <div className="mt-2 h-1.5 w-full max-w-[220px] rounded-full bg-gray-200/70 dark:bg-gray-800">
-                        <div
-                          className="h-full rounded-full bg-blue-500/80"
-                          style={{ width: `${levelPercent}%` }}
-                        />
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${temperatureTone.chipClassName}`}>
+                          <Flame
+                            className={`h-3.5 w-3.5 ${temperatureTone.iconClassName}`}
+                            fill={temperatureTone.filled ? 'currentColor' : 'none'}
+                          />
+                          {temperatureTone.extraFlames ? (
+                            <Flame
+                              className={`h-3.5 w-3.5 ${temperatureTone.iconClassName}`}
+                              fill={temperatureTone.filled ? 'currentColor' : 'none'}
+                            />
+                          ) : null}
+                          {copy.temperatureLabel} {temperatureFormatter.format(entry.temperature)}°
+                        </span>
                       </div>
                     </div>
                   </div>

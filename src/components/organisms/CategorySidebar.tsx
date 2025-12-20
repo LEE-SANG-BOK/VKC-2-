@@ -231,13 +231,18 @@ export default function CategorySidebar({
     feedback: t.feedbackTooltip || tooltipFallbacks.feedback,
   };
 
-  const leaderboardLabel =
+  const leaderboardBaseLabel =
     t.leaderboard ||
     (locale === 'vi'
       ? 'Top người đóng góp'
       : locale === 'en'
         ? 'Top Contributors'
         : '상위 기여자');
+  const leaderboardLabel = leaderboardBaseLabel.includes('Event')
+    ? leaderboardBaseLabel
+    : locale === 'vi' || locale === 'en'
+      ? `${leaderboardBaseLabel} (Event)`
+      : `${leaderboardBaseLabel}(Event)`;
   const feedbackLabel = 'Feedback';
 
   const menuCategories = [

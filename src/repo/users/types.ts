@@ -89,11 +89,10 @@ export interface UserLeaderboardEntry {
   isExpert: boolean;
   badgeType?: string | null;
   score: number;
+  temperature: number;
   trustScore: number;
   helpfulAnswers: number;
   adoptionRate: number;
-  level: number;
-  levelProgress: number;
   rank: number;
 }
 

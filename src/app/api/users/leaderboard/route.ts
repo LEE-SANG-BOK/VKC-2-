@@ -4,15 +4,12 @@ import { users } from '@/lib/db/schema';
 import { desc, sql, count } from 'drizzle-orm';
 import { paginatedResponse, serverErrorResponse } from '@/lib/api/response';
 
-const resolveLevel = (score: number) => {
-  const safeScore = Math.max(0, Math.round(score));
-  const step = 100;
-  const level = Math.floor(safeScore / step) + 1;
-  const progress = Number(((safeScore % step) / step).toFixed(2));
-  return {
-    level,
-    levelProgress: progress,
-  };
+const resolveTemperature = (score: number) => {
+  const safeScore = Math.max(0, score);
+  const base = 36.5;
+  const multiplier = 2;
+  const temperature = base + Math.log10(safeScore + 1) * multiplier;
+  return Number(temperature.toFixed(1));
 };
 
 export async function GET(request: NextRequest) {
@@ -54,7 +51,7 @@ export async function GET(request: NextRequest) {
       const trustScore = Number(row.trustScore ?? 0);
       const helpfulAnswers = Number(row.helpfulAnswers ?? 0);
       const adoptionRate = Number(row.adoptionRate ?? 0);
-      const { level, levelProgress } = resolveLevel(scoreValue);
+      const temperature = resolveTemperature(scoreValue);
 
       return {
         id: row.id,
@@ -66,11 +63,10 @@ export async function GET(request: NextRequest) {
         isExpert: row.isExpert ?? false,
         badgeType: row.badgeType ?? null,
         score: Math.max(0, Math.round(scoreValue)),
+        temperature,
         trustScore,
         helpfulAnswers,
         adoptionRate,
-        level,
-        levelProgress,
         rank: offset + index + 1,
       };
     });
