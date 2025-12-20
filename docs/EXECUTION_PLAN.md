@@ -2741,6 +2741,24 @@ $gh-address-comments
 
 ### 0.6.3 [BE] Backend Agent
 
+#### (2025-12-20) [BE] 유저 점수 API rank 계산 추가 (P0)
+
+- 플랜(체크리스트)
+  - [x] `/api/users/[id]/score`에 rank 계산 로직 추가
+  - [x] 동점 tie-break 기준(createdAt/id)으로 일관된 순위 산출
+- 현황 분석(코드 기준)
+  - 프론트에서 rank 표시를 사용하지만 API 응답에는 rank가 누락됨
+- 변경 내용(why/what)
+  - why: 프로필/피드 점수 카드에서 rank 표기를 안정적으로 제공
+  - what: 점수 서브쿼리 + 동일 점수 tie-break로 rank 산출 후 응답 포함
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/api/users/[id]/score/route.ts
+- 다음 액션/의존성
+  - 없음
+
 #### (2025-12-18) [BE] 추천 사용자 API 보강 + 과부하 방지 (P0)
 
 - 플랜(체크리스트)

@@ -8,6 +8,7 @@
 - [FE] PostCard 모바일 하단 액션/카운트 한 줄 정렬 + 인증 사용자 요약 라벨 Tooltip 보강
 - [FE] 프로필 통계 5개 항목 1행 정렬 + 프로필 설정 화면 헤더를 메인 헤더와 통일
 - [FE] 피드 상단 “추천 사용자 보기” CTA 강조(그라데이션 버튼)
+- [BE] 사용자 점수 API(`/api/users/[id]/score`)에 rank 계산 추가(동점 tie-break 포함)
 - [FE] Header signup CTA를 “바로 시작하기” 계열로 정리 + 공유하기 CTA 설명 문구 업데이트
 - [FE] 온보딩 가이드/FAQ locale fallback 맵 정리 + 글쓰기 기본 태그 fallback locale 분리
 - [FE] 알림/피드백/프로필 편집/에디터 i18n fallback 보강(링크 모달/오류 메시지 포함)
