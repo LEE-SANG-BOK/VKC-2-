@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { rateLimitResponse } from './src/lib/api/response';
 
 const locales = ['ko', 'en', 'vi'];
 const defaultLocale = 'vi';
@@ -42,13 +43,7 @@ export function middleware(request: NextRequest) {
       const result = checkRateLimit(rateKey);
       if (!result.ok) {
         const retryAfter = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
-        return new NextResponse(JSON.stringify({ error: 'Too many requests' }), {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': String(retryAfter),
-          },
-        });
+        return rateLimitResponse('Too many requests.', 'RATE_LIMITED', retryAfter);
       }
     }
     return NextResponse.next();

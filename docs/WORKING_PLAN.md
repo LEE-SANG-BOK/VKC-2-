@@ -1050,6 +1050,7 @@ $gh-address-comments
 
 - 목표: 스팸/남용 방어(출시 직후 가장 흔한 장애 요인)
 - 작업
+  - 현재(베이스라인): `middleware.ts`에 “쓰기 메서드” in-memory 제한이 있고, 429 응답은 공용 스키마(`rateLimitResponse`) + `Retry-After`로 통일됨(프로덕션 멀티 인스턴스 내구성은 제한적)
   - 공용 rate limit 유틸 설계(스토리지 포함): Redis/KV 우선, 로컬/개발 환경은 in-memory fallback(환경변수 on/off)
   - 적용 우선순위(필수): 글/답변/댓글/신고/피드백/인증 요청 + 비용 큰 읽기(검색/키워드 추천 등)
   - 429 응답 규격 통일 + 프론트 UX 처리(토스트/재시도 안내, `Retry-After` 준수)
