@@ -71,6 +71,7 @@ export interface UserScore {
   level: number;
   levelProgress: number;
   nextLevelScore: number;
+  rank?: number | null;
   badges: {
     isVerified: boolean;
     isExpert: boolean;

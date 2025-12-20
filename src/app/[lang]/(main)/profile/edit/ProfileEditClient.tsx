@@ -11,6 +11,7 @@ import { useMyProfile } from '@/repo/users/query';
 import { queryKeys } from '@/repo/keys';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
+import MainLayout from '@/components/templates/MainLayout';
 import { DISPLAY_NAME_MAX_LENGTH, DISPLAY_NAME_MIN_LENGTH, generateDisplayNameFromEmail, normalizeDisplayName } from '@/lib/utils/profile';
 
 type AvatarSource = ImageBitmap | HTMLImageElement;
@@ -551,23 +552,20 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-4 py-4">
-          <button
-            onClick={handleCancel}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            {copy.backButton}
-          </button>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-8">
+    <MainLayout hideSidebar hideSearch centerVariant="canvas" translations={translations}>
+      <div className="px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200/50 dark:border-gray-700/50 p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{copy.pageTitle}</h1>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <button
+                onClick={handleCancel}
+                className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                {copy.backButton}
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{copy.pageTitle}</h1>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="flex flex-col items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-700">
@@ -863,6 +861,6 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

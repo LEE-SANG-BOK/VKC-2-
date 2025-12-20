@@ -31,11 +31,10 @@
 - `git push`/PR 갱신은 **[LEAD]가 수행**(작업 단위로 push)
 - (주의) Codex CLI 환경에서 `.git/index.lock` 생성이 막혀 `git add/commit/push`가 실패할 수 있음 → 이 경우 **로컬 터미널에서 수동으로** 커밋/푸시 진행
 
-#### 0.3.1 브랜치/워크트리 현황·커밋 전략(2025-12-19 기준)
-- 주 워크트리: `/Users/bk/Desktop/VKC-2-` (`codex-next-step`, main과 동일 커밋). 현재 FE/BE/문서 변경 다수(README, LeaderboardClient, VerificationRequestClient, PostCard 공식/검수 카운트, API 카운트, docs) 존재 → 커밋/푸시는 로컬 터미널에서만 수행. 빌드 시 `SKIP_SITEMAP_DB=true npm run build` 사용.
-- 백업 워크트리: `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2` — `.env.local` 등 백업 전용, 커밋 금지.
-- 기타 브랜치: `codex-subscriptions` 워크트리에도 기존 변경이 남아 있으므로 새 작업은 `codex-next-step` 기반 새 브랜치에서 진행하고, 충돌 위험 변경은 `stash` 또는 별도 백업 브랜치로 분리.
-- 커밋/PR 전략: 스코프별 단일 커밋 묶음 → i18n 키 추가 포함 → `npm run lint` → `SKIP_SITEMAP_DB=true npm run build` → `docs/EXECUTION_PLAN.md`, `HANDOVER.md` 갱신 → 로컬 터미널에서 커밋/푸시 → 단일 PR 유지, `@codex` 멘션 후 CI 통과 시 머지. 머지 후 모든 워크트리 `git pull origin main` 동기화 후 새 브랜치 생성.
+#### 0.3.1 브랜치/워크트리 현황·커밋 전략(2025-12-20 기준)
+- 주 워크트리: `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2` (공통 브랜치: `codex-integration`)
+- 운영 원칙: 단일 워크트리/단일 브랜치 고정, 커밋/푸시는 **LEAD만 수행**
+- 커밋/PR 전략: 스코프별 단일 커밋 묶음 → i18n 키 추가 포함 → `npm run lint` → `SKIP_SITEMAP_DB=true npm run build` → `docs/EXECUTION_PLAN.md`, `HANDOVER.md` 갱신 → 로컬 터미널에서 커밋/푸시 → 단일 PR 유지, `@codex` 멘션 후 CI 통과 시 머지. 머지 후 모든 워크트리 `git pull origin main` 동기화.
 
 #### 0.3.2 진행 중 브랜치/워크트리 메모(커밋/머지 상태)
 - `/Users/bk/Desktop/VKC-2-`
@@ -75,6 +74,7 @@
 - **[FE] Design Front Agent**: UI/UX/반응형/Tailwind/컴포넌트 일관성(i18n 포함) (주 소유: `src/components/**`, `src/app/**(UI)`, `src/app/globals.css`)
 - **[WEB] Web Feature Agent**: 사용자 플로우/게이팅/모달/Query 키·훅/클라 상태/SSR Hydration(SEO 포함) (주 소유: `src/repo/**`, `src/providers/**`, `src/app/[lang]/**(기능)`)
 - **[BE] Backend Agent**: API Routes/DB(Drizzle)/마이그레이션/캐시·레이트리밋/관리자 API (주 소유: `src/app/api/**`, `src/lib/db/**`, `src/lib/**(auth/supabase)`)
+- **[QA/Release] (LEAD 겸임)**: 실기기/브라우저 매트릭스 점검 → 회귀 체크리스트 → 배포/릴리즈 노트 관리
 - **공통 규칙**: 에이전트는 작업 시작 전 `docs/EXECUTION_PLAN.md`에서 담당/범위 확인 → 작업 완료 후 “체크/변경 요청”을 Lead에 전달 → Lead가 검증 후 체크리스트/문서 반영 및 커밋/푸시
 
 ### 0.5 에이전트 작업 기록/플랜(필수)
@@ -3757,6 +3757,31 @@ $gh-address-comments
 - [x] (2025-12-19) [FE] 추천 사용자 카드 메타 표시 개선: follower/posts/following 단순 지표 → 프로필/온보딩 기반 핵심 3요소(예: 인증/채택률/관심사 일치)로 교체 + 인증 사용자는 닉네임 상단에 표시 (메모: BE API 필드 선행)
 - [x] (2025-12-19) [FE] 모바일 글/답변 폼 키보드 safe-area + autosize 적용(작성 중 화면 밀림/가림 방지)
 - [x] (2025-12-19) [FE] i18n 하드코딩/누락 정리: 화면 텍스트/툴팁/배지/카테고리 라벨 전수 점검(ko/en/vi)
+
+#### (2025-12-20) [FE] 피드/프로필 모바일 정렬 보강 + 추천 CTA 강조 (P0)
+
+- 플랜(체크리스트)
+  - [x] 오른쪽 레일은 본문 스크롤에 동행(우측 sticky 제거)
+  - [x] PostCard 모바일 하단 액션/카운트 동일 행 유지(세로 분리 제거)
+  - [x] 인증 사용자 요약 라벨에 정의 툴팁 추가
+  - [x] 프로필 통계 5개 항목 1행 정렬(모바일)
+  - [x] 피드 상단 “추천 사용자 보기” CTA 강조
+  - [x] 프로필 설정 헤더를 메인 헤더와 동일 레이아웃으로 통일
+- 변경 내용(why/what)
+  - why: 모바일 하단 액션 분리/프로필 통계 줄 끊김으로 가독성 저하, 추천 CTA 시각적 존재감 부족, 프로필 설정 화면 헤더 일관성 이슈
+  - what: MainLayout 우측 레일 sticky 제거, PostCard 모바일 하단 액션 랩 규칙 제거, 인증 사용자 요약 Tooltip 추가, ProfileClient 통계 grid 5열 고정, PostList 추천 CTA 그라데이션 강조, ProfileEdit 화면을 MainLayout으로 래핑
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/postgres npm run build
+- 변경 파일
+  - src/components/templates/MainLayout.tsx
+  - src/app/globals.css
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/organisms/PostList.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx
+- i18n
+  - 신규 키 요청: 없음
 
 **웹 기능(사용자/관리자 기능)**
 - [x] (2025-12-18) [WEB] 팔로잉 “추천 팔로잉” 현황 분석 + 개선안 제시(추천 기준/제외 규칙/노출 우선순위)

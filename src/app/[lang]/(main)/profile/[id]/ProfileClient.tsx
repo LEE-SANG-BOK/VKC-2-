@@ -14,7 +14,7 @@ import Tooltip from '@/components/atoms/Tooltip';
 import PostCard from '@/components/molecules/cards/PostCard';
 import AnswerCard from '@/components/molecules/cards/AnswerCard';
 import CommentCard from '@/components/molecules/cards/CommentCard';
-import { useInfiniteUserPosts, useInfiniteUserAnswers, useInfiniteUserComments, useInfiniteUserBookmarks, useFollowStatus } from '@/repo/users/query';
+import { useInfiniteUserPosts, useInfiniteUserAnswers, useInfiniteUserComments, useInfiniteUserBookmarks, useFollowStatus, useUserScore } from '@/repo/users/query';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 import { getUserTypeLabel } from '@/utils/userTypeLabel';
 
@@ -141,6 +141,11 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
         acceptedAnswers: 'Accepted Answers',
         myComments: 'My Comments',
         bookmarks: 'Bookmarks',
+        points: 'Points',
+        title: 'Title',
+        level: 'Level',
+        rank: 'Rank',
+        leaderboard: 'Leaderboard',
         noPosts: 'No posts yet',
         noAccepted: 'No accepted answers yet',
         noComments: 'No comments yet',
@@ -177,6 +182,11 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
         acceptedAnswers: 'Câu trả lời được chấp nhận',
         myComments: 'Bình luận của tôi',
         bookmarks: 'Đánh dấu',
+        points: 'Điểm',
+        title: 'Danh hiệu',
+        level: 'Cấp độ',
+        rank: 'Xếp hạng',
+        leaderboard: 'Bảng xếp hạng',
         noPosts: 'Chưa có bài viết',
         noAccepted: 'Chưa có câu trả lời được chấp nhận',
         noComments: 'Chưa có bình luận',
@@ -212,6 +222,11 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
       acceptedAnswers: '채택된 답변',
       myComments: '내 댓글',
       bookmarks: '북마크',
+      points: '포인트',
+      title: '칭호',
+      level: '레벨',
+      rank: '랭킹',
+      leaderboard: '리더보드',
       noPosts: '게시글이 없습니다',
       noAccepted: '채택된 답변이 없습니다',
       noComments: '댓글이 없습니다',
@@ -247,6 +262,11 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
     acceptedAnswers: t.acceptedAnswers || profileFallbacks.acceptedAnswers,
     myComments: t.myComments || profileFallbacks.myComments,
     bookmarks: t.bookmarks || profileFallbacks.bookmarks,
+    points: t.points || profileFallbacks.points,
+    title: t.title || profileFallbacks.title,
+    level: t.level || profileFallbacks.level,
+    rank: t.rank || profileFallbacks.rank,
+    leaderboard: t.leaderboard || profileFallbacks.leaderboard,
     noPosts: t.noPosts || profileFallbacks.noPosts,
     noAccepted: t.noAccepted || profileFallbacks.noAccepted,
     noComments: t.noComments || profileFallbacks.noComments,
@@ -266,6 +286,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
     fifties: t.fifties || profileFallbacks.fifties,
     sixtyPlus: t.sixtyPlus || profileFallbacks.sixtyPlus,
   };
+  const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
   const displayName = initialProfile.displayName || initialProfile.username || profileFallbacks.userName;
 
   const trustBadgePresentation = getTrustBadgePresentation({
@@ -288,6 +309,17 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
   const isOwnProfile = user?.id === initialProfile.id;
   
   const { data: followStatus } = useFollowStatus(initialProfile.id, !isOwnProfile && !!user);
+  const { data: scoreData } = useUserScore(initialProfile.id);
+  const scoreSummary = scoreData?.data;
+  const rankValue = scoreSummary?.rank ?? null;
+  const progressPercent = scoreSummary ? Math.round(scoreSummary.levelProgress * 100) : 0;
+  const titleValue = scoreSummary
+    ? locale === 'vi'
+      ? `Cấp ${scoreSummary.level}`
+      : locale === 'en'
+        ? `Level ${scoreSummary.level}`
+        : `Lv. ${scoreSummary.level}`
+    : '';
   
   const [isFollowing, setIsFollowing] = useState(initialProfile.isFollowing ?? false);
   const [followersCount, setFollowersCount] = useState(initialProfile.stats.followers);
@@ -556,13 +588,13 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                       <Button
                         variant="secondary"
                         onClick={handleEditProfile}
-                        className="flex items-center justify-center gap-2 border border-gray-300 w-full"
+                        className="flex items-center justify-center gap-2 border border-gray-300 w-full pr-9 sm:pr-4"
                         size="sm"
                       >
                         <Edit className="w-4 h-4" />
                         <span className="hidden sm:inline">{profileLabels.editProfile}</span>
                       </Button>
-                      <div className="absolute -top-2 -right-2 sm:hidden">
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 sm:hidden">
                         <Tooltip
                           content={profileLabels.editProfileTooltip}
                           position="top"
@@ -570,7 +602,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                           <button
                             type="button"
                             aria-label={profileLabels.editProfileTooltip}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/60 text-gray-600 dark:text-gray-200 shadow-sm"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/60 text-gray-600 dark:text-gray-200 shadow-sm"
                           >
                             <Info className="h-4 w-4" />
                           </button>
@@ -638,27 +670,59 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-4 sm:gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex-1 min-w-[80px] text-center cursor-pointer hover:opacity-80 transition-opacity">
-                <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{followersCount}</div>
-                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{profileLabels.followers}</div>
-              </div>
-              <div className="flex-1 min-w-[80px] text-center cursor-pointer hover:opacity-80 transition-opacity">
-                <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.following}</div>
-                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{profileLabels.following}</div>
-              </div>
-              <div className="flex-1 min-w-[80px] text-center">
-                <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.posts}</div>
-                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{profileLabels.posts}</div>
-              </div>
-              <div className="flex-1 min-w-[80px] text-center">
-                <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.accepted}</div>
-                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{profileLabels.accepted}</div>
-              </div>
-              <div className="flex-1 min-w-[80px] text-center">
-                <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{initialProfile.stats.comments}</div>
-                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{profileLabels.comments}</div>
-              </div>
+              {scoreSummary ? (
+                <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3 sm:p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex flex-col min-w-[80px]">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{profileLabels.points}</span>
+                      <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{numberFormatter.format(scoreSummary.score)}</span>
+                    </div>
+                    <div className="flex flex-col min-w-[80px]">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{profileLabels.title}</span>
+                      <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{titleValue}</span>
+                    </div>
+                    <div className="flex flex-col min-w-[80px]">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{profileLabels.rank}</span>
+                      <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{rankValue ? `#${numberFormatter.format(rankValue)}` : '-'}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/${locale}/leaderboard`)}
+                      className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      {profileLabels.leaderboard}
+                    </button>
+                  </div>
+                  <div className="mt-3 h-2 rounded-full bg-gray-200 dark:bg-gray-800">
+                    <div
+                      className="h-2 rounded-full bg-blue-600 dark:bg-blue-400"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-5 gap-2 sm:gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="min-w-0 text-center cursor-pointer hover:opacity-80 transition-opacity">
+                  <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{followersCount}</div>
+                  <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.followers}</div>
+                </div>
+                <div className="min-w-0 text-center cursor-pointer hover:opacity-80 transition-opacity">
+                  <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.following}</div>
+                  <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.following}</div>
+                </div>
+                <div className="min-w-0 text-center">
+                  <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.posts}</div>
+                  <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.posts}</div>
+                </div>
+                <div className="min-w-0 text-center">
+                  <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.accepted}</div>
+                  <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.accepted}</div>
+                </div>
+                <div className="min-w-0 text-center">
+                  <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.comments}</div>
+                  <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.comments}</div>
+                </div>
               </div>
             </div>
           </div>
