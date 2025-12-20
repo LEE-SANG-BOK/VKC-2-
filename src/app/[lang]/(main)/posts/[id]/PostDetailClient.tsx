@@ -4,13 +4,13 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, HelpCircle, CheckCircle, ThumbsUp, AlertTriangle, Link as LinkIcon } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Avatar from '@/components/atoms/Avatar';
 import UserChip from '@/components/molecules/user/UserChip';
 import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
 import Button from '@/components/atoms/Button';
 import Tooltip from '@/components/atoms/Tooltip';
 import Modal from '@/components/atoms/Modal';
-import RichTextEditor from '@/components/molecules/editor/RichTextEditor';
 import PostCard from '@/components/molecules/cards/PostCard';
 import Header from '@/components/organisms/Header';
 import FollowButton from '@/components/atoms/FollowButton';
@@ -56,6 +56,13 @@ interface PaginatedListResponse<T> {
     paginationMode?: 'offset' | 'cursor';
   };
 }
+
+const RichTextEditor = dynamic(() => import('@/components/molecules/editor/RichTextEditor'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-[180px] w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800" />
+  ),
+});
 
 function mergeById<T extends { id: string }>(current: T[] | undefined, incoming: T[]): T[] {
   const existing = current ?? [];
