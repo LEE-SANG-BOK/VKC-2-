@@ -1401,6 +1401,7 @@ $gh-address-comments
   - 프로덕션 allowlist 고정
     - Supabase Storage: `NEXT_PUBLIC_SUPABASE_URL`의 hostname 1개만 허용 + pathname은 `/storage/v1/object/**`로 제한
     - Auth 아바타(현재 Google): `lh3.googleusercontent.com`(+필요 시 `lh4.googleusercontent.com`)만 허용
+    - Seed/공지/미디어 썸네일(임시): `images.unsplash.com` 허용(필요 시 Supabase로 이관 후 제거)
     - (선택) 사이트 절대 URL이 이미지에 쓰이는 경우만 `NEXT_PUBLIC_SITE_URL|NEXT_PUBLIC_APP_URL|NEXTAUTH_URL` hostname을 허용(불필요하면 제외)
     - `http`는 금지하고 `https`만 허용(혼합 콘텐츠/보안 리스크 제거)
   - 실패 전략(깨짐 방지)

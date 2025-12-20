@@ -64,6 +64,11 @@ const nextConfig: NextConfig = {
         hostname: 'lh4.googleusercontent.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https' as const,
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
   },
