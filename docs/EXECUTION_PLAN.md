@@ -40,8 +40,8 @@
 
 #### 0.3.2 진행 중 브랜치/워크트리 메모(커밋/머지 상태)
 - `/Users/bk/Desktop/VKC-2-`
-  - 브랜치: `codex-integration` (main 기준 신규 작업 브랜치)
-  - 워크트리 변경: 메타데이터 baseUrl(`SITE_URL`), UGC allowlist 상수화, 리스트 API post-list serializer 적용, PostDetail/Verification fallback 보강, 팔로잉 모달 보강, 마이그레이션 `0034_badge_expires_at` 추가 등
+  - 브랜치: `main` (PR #19 merge 완료, 로컬/원격 동기화 완료)
+  - 워크트리: clean
 - `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2`
   - 브랜치: `codex-subscriptions` (dirty) → **백업 전용**, merge/커밋 금지
 
