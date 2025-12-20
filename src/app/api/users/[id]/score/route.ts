@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import { successResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 
 interface RouteContext {
@@ -24,18 +24,23 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, id),
-      columns: {
-        id: true,
-        trustScore: true,
-        helpfulAnswers: true,
-        adoptionRate: true,
-        isVerified: true,
-        isExpert: true,
-        badgeType: true,
-      },
-    });
+    const scoreExpr = sql<number>`(${users.trustScore} + ${users.helpfulAnswers} * 5 + ${users.adoptionRate})::float`;
+
+    const [user] = await db
+      .select({
+        id: users.id,
+        trustScore: users.trustScore,
+        helpfulAnswers: users.helpfulAnswers,
+        adoptionRate: users.adoptionRate,
+        isVerified: users.isVerified,
+        isExpert: users.isExpert,
+        badgeType: users.badgeType,
+        createdAt: users.createdAt,
+        score: scoreExpr,
+      })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
 
     if (!user) {
       return notFoundResponse('사용자를 찾을 수 없습니다.');
@@ -44,15 +49,27 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const trustScore = Number(user.trustScore ?? 0);
     const helpfulAnswers = Number(user.helpfulAnswers ?? 0);
     const adoptionRate = Number(user.adoptionRate ?? 0);
-    const score = trustScore + helpfulAnswers * 5 + adoptionRate;
-    const levelInfo = resolveLevel(score);
+    const scoreValue = Number(user.score ?? 0);
+    const levelInfo = resolveLevel(scoreValue);
+    const [{ count: higherCount } = { count: 0 }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(
+        or(
+          sql`${scoreExpr} > ${scoreValue}`,
+          and(sql`${scoreExpr} = ${scoreValue}`, sql`${users.createdAt} > ${user.createdAt}`),
+          and(sql`${scoreExpr} = ${scoreValue}`, sql`${users.createdAt} = ${user.createdAt}`, sql`${users.id} > ${user.id}`)
+        )
+      );
+    const rank = Number(higherCount || 0) + 1;
 
     const response = successResponse({
       userId: user.id,
-      score: Math.max(0, Math.round(score)),
+      score: Math.max(0, Math.round(scoreValue)),
       trustScore,
       helpfulAnswers,
       adoptionRate,
+      rank,
       ...levelInfo,
       badges: {
         isVerified: user.isVerified ?? false,
