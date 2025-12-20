@@ -375,7 +375,7 @@ $gh-address-comments
 - [ ] P0-2 (FE/WEB: ko/vi 하드코딩 제거 + 클립 0)
 - [ ] P0-3 (FE: 모바일 키보드/스크롤 UX 하드닝)
 - [ ] P0-4 (WEB/FE: 이미지 표준화 + 코드 스플리팅 + Query 튜닝)
-- [ ] P0-5 (FE: A11y 최소 기준)
+- [x] P0-5 (FE: A11y 최소 기준)
 - [x] P0-6 (BE/WEB: rate limit + 429 UX)
 - [x] P0-7 (LEAD/WEB: Playwright 스모크/게이트)
 - [x] P0-8 (LEAD/BE/WEB: 이벤트 스키마 + 수집)
@@ -1038,14 +1038,19 @@ $gh-address-comments
 #### (2025-12-20) [FE] P0-5 A11y 최소 기준(출시 차단만) (P0)
 
 - 플랜(체크리스트)
-  - [ ] [FE] 아이콘-only 버튼 aria-label 전수
-  - [ ] [FE] 터치 타깃 최소 규격 점검
+  - [x] [FE] 아이콘-only 버튼 aria-label 전수
+  - [x] [FE] 터치 타깃 최소 규격 점검
 
 - 목표: 아이콘 버튼/내비/모달 접근성 결함으로 인한 이탈 방지
 - 작업
   - 아이콘-only 버튼 `aria-label` 전수(예: 네비/카드 액션/헤더)
   - 포커스 링/키보드 탭 이동/대비 기본 점검(치명 항목만)
 - 완료 기준: 주요 화면에서 “무라벨 버튼 0”
+
+- 최근 구현(2025-12-21)
+  - 검색 페이지(H1/폼 레이블) 보강: `src/app/[lang]/(main)/search/SearchClient.tsx`
+  - 헤더/검색/카드/사이드바 등 아이콘 버튼 `aria-label` 및 모바일 터치 타깃(≥44px) 정리
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`, `node scripts/accessibility-audit.js`(Home/Search/Leaderboard 0 violations)
 
 #### (2025-12-20) [BE] P0-6 Rate limit 필수 적용(쓰기 API 우선) (P0)
 
