@@ -552,7 +552,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
   };
 
   return (
-    <MainLayout hideSidebar hideSearch centerVariant="canvas" translations={translations}>
+    <MainLayout hideSidebar centerVariant="canvas" translations={translations}>
       <div className="px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200/50 dark:border-gray-700/50 p-6">
