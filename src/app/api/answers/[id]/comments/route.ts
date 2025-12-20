@@ -10,6 +10,7 @@ import { eq, asc } from 'drizzle-orm';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
+import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
 
 const commentRateLimitWindowMs = 60 * 60 * 1000;
 const commentRateLimitMax = 40;
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return errorResponse('댓글 내용을 입력해주세요.', 'COMMENT_REQUIRED');
     }
 
-    const normalizedContent = content.trim();
+    const normalizedContent = sanitizeUgcHtml(content);
     const validation = validateUgcText(normalizedContent, UGC_LIMITS.commentContent.min, UGC_LIMITS.commentContent.max);
     if (!validation.ok) {
       if (validation.code === 'UGC_TOO_SHORT') {

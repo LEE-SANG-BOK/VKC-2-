@@ -8,6 +8,7 @@ import { eq, and, sql, isNull } from 'drizzle-orm';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
+import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
 import { getChildrenForParent, isGroupParentSlug } from '@/lib/constants/category-groups';
 import dayjs from 'dayjs';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
@@ -200,7 +201,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const { title, content, category, subcategory, tags } = body;
 
     const finalTitle = title !== undefined ? String(title).trim() : post.title;
-    const finalContent = content !== undefined ? String(content).trim() : post.content;
+    const finalContent = content !== undefined ? sanitizeUgcHtml(String(content)) : post.content;
     const finalCategory = category !== undefined ? String(category).trim() : post.category;
     const finalSubcategory = subcategory !== undefined ? (subcategory ? String(subcategory).trim() : '') : post.subcategory || '';
 

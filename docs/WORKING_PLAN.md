@@ -390,8 +390,8 @@ $gh-address-comments
 - [ ] P0-17 (LEAD/FE: 좌측 사이드바 고정 + 독립 스크롤)
 - [ ] P0-18 (LEAD/FE: 헤더 뒤로가기 줄바꿈/정렬)
 - [ ] P0-19 (WEB/FE/BE: 랭킹 온도-only + Event 자리)
-- [ ] P0-20 (BE/WEB: UGC 무해화 + 링크 정책 단일화)
-- [ ] P0-21 (LEAD/WEB: `next/image` 원격 allowlist + https-only)
+- [x] P0-20 (BE/WEB: UGC 무해화 + 링크 정책 단일화)
+- [x] P0-21 (LEAD/WEB: `next/image` 원격 allowlist + https-only)
 
 ### P1
 
@@ -1340,6 +1340,22 @@ $gh-address-comments
     - 허용되지 않은 외부 링크는 (1) 링크 제거(텍스트화) 또는 (2) 클릭 전 경고 화면 등 중 택1로 단순화(운영 효율 우선)
   - 회귀 방지 최소 세트
     - 대표 XSS 페이로드(스크립트/이벤트 핸들러/javascript: URL) 샘플을 문서/테스트로 고정해 재발 방지
+- 구현(코드 변경)
+  - 서버 write-time sanitize 도입: `src/lib/validation/ugc-sanitize.ts` (허용 태그/속성 allowlist, `data-thumbnail` 보존)
+  - 링크 allowlist 검증 보강: protocol-relative(`//...`) 우회 차단(`src/lib/validation/ugc-links.ts`)
+  - URL 스팸 차단 중복 제거: `src/lib/content-filter.ts`에서 URL 패턴 제거 → allowlist 검증이 SoT
+  - 적용 라우트(저장 직전 sanitize)
+    - `src/app/api/posts/route.ts`
+    - `src/app/api/posts/[id]/route.ts`
+    - `src/app/api/posts/[id]/answers/route.ts`
+    - `src/app/api/posts/[id]/comments/route.ts`
+    - `src/app/api/answers/[id]/route.ts`
+    - `src/app/api/answers/[id]/comments/route.ts`
+    - `src/app/api/comments/[id]/route.ts`
+- 검증(로컬)
+  - `npm run lint`
+  - `npm run type-check`
+  - `SKIP_SITEMAP_DB=true npm run build`
 - 완료 기준
   - 대표 XSS 페이로드가 저장/렌더에서 실행되지 않음
   - 외부 링크 허용/차단/rel 정책이 단일 규칙으로 수렴하고(중복 로직 제거) 운영자가 예외를 1곳에서만 관리

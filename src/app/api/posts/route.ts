@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
+import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
 import { ACTIVE_GROUP_PARENT_SLUGS, DEPRECATED_GROUP_PARENT_SLUGS, getChildrenForParent, isGroupChildSlug, isGroupParentSlug } from '@/lib/constants/category-groups';
 import { isExpertBadgeType } from '@/lib/constants/badges';
 import { getFollowingIdSet } from '@/lib/api/follow';
@@ -663,7 +664,7 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedTitle = title.trim();
-    const normalizedContent = content.trim();
+    const normalizedContent = sanitizeUgcHtml(content);
     const normalizedCategory = category.trim();
     const normalizedSubcategory = typeof subcategory === 'string' ? subcategory.trim() : '';
 

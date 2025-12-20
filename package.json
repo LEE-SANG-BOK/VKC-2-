@@ -47,6 +47,7 @@
     "@tiptap/react": "^3.10.5",
     "@tiptap/starter-kit": "^3.10.5",
     "@types/lodash": "^4.17.20",
+    "@types/sanitize-html": "^2.16.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.19",
@@ -64,6 +65,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "recharts": "2.15.4",
+    "sanitize-html": "^2.17.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0"
   },
