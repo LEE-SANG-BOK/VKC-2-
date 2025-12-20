@@ -827,6 +827,42 @@ $gh-address-comments
 - 다음 액션/의존성
   - 프로필 메타 이관 필요 시 범위 확정
 
+#### (2025-12-20) [WEB] P0-12 메타 이관 확장(정적/알림/구독/작성/가이드) (P0)
+
+- 플랜(체크리스트)
+  - [x] 정적 페이지(about/faq/privacy/terms) 메타 이관
+  - [x] 피드백/알림/구독/작성 메타 이관
+  - [x] 가이드(신뢰 배지) 메타 이관
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/[lang]/(main)/*/page.tsx`, `src/app/[lang]/guide/trust-badges/page.tsx`
+  - 재현/리스크: 정적/유틸 페이지에서 메타 로직 분산
+- 변경 내용(why/what)
+  - why: 메타/키워드 파이프라인 통일 유지
+  - what: 해당 페이지들의 `generateMetadata`를 공용 빌더로 이관
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/about/page.tsx
+  - src/app/[lang]/(main)/faq/page.tsx
+  - src/app/[lang]/(main)/privacy/page.tsx
+  - src/app/[lang]/(main)/terms/page.tsx
+  - src/app/[lang]/(main)/feedback/page.tsx
+  - src/app/[lang]/(main)/notifications/page.tsx
+  - src/app/[lang]/(main)/posts/new/page.tsx
+  - src/app/[lang]/(main)/subscriptions/page.tsx
+  - src/app/[lang]/guide/trust-badges/page.tsx
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-12 metadata builder rollout (static pages)
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint 완료, type-check/build 미실행
+  - 의존성/선행 작업: 없음
+  - 커밋 메시지 제안: [WEB] expand metadata builder to static pages
+- 다음 액션/의존성
+  - 프로필 메타 이관 필요 시 범위 확정
+
 #### (2025-12-20) [WEB] P0-14 피드백 폼 필드 최소화 (P0)
 
 - 플랜(체크리스트)

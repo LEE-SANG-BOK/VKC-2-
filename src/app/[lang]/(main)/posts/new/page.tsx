@@ -4,6 +4,8 @@ import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/config';
 import { fetchCategories } from '@/repo/categories/fetch';
 import { queryKeys } from '@/repo/keys';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 import NewPostClient from './NewPostClient';
 
 export const dynamic = 'force-dynamic';
@@ -40,14 +42,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   })();
 
-  return {
-    title: t.title || fallback.title,
-    description: t.description || fallback.description,
+  const meta = (dict?.metadata as Record<string, unknown>) || {};
+  const title = t.title || fallback.title;
+  const description = t.description || fallback.description;
+  const keywords = flattenKeywords(buildKeywords({ title, content: description }));
+
+  return buildPageMetadata({
+    locale: lang,
+    path: '/posts/new',
+    title,
+    description,
+    siteName: (meta?.home as Record<string, string>)?.siteName,
+    keywords,
     robots: {
       index: false,
       follow: false,
     },
-  };
+  });
 }
 
 export default async function NewPostPage({ params }: PageProps) {

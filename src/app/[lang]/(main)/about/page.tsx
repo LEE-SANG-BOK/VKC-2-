@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import MainLayout from '@/components/templates/MainLayout';
 import { getDictionary } from '@/i18n/get-dictionary';
-import { i18n, type Locale } from '@/i18n/config';
-import { SITE_URL } from '@/lib/siteUrl';
+import { type Locale } from '@/i18n/config';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 
 type PageProps = {
   params: Promise<{ lang: Locale }>;
@@ -12,29 +13,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang } = await params;
   const dict = await getDictionary(lang);
   const meta = dict.metadata as Record<string, any>;
-  const baseUrl = SITE_URL;
-  const currentUrl = `${baseUrl}/${lang}/about`;
+  const title =
+    meta.about?.title ||
+    (lang === 'en'
+      ? 'About - viet kconnect'
+      : lang === 'vi'
+        ? 'Giới thiệu - viet kconnect'
+        : '소개 - viet kconnect');
+  const description =
+    meta.about?.description ||
+    (lang === 'en'
+      ? 'Learn what viet kconnect is and how it works.'
+      : lang === 'vi'
+        ? 'Tìm hiểu về viet kconnect và cách hoạt động.'
+        : 'viet kconnect 소개 및 운영 방식.');
+  const keywords = flattenKeywords(buildKeywords({ title, content: description }));
 
-  return {
-    title:
-      meta.about?.title ||
-      (lang === 'en'
-        ? 'About - viet kconnect'
-        : lang === 'vi'
-          ? 'Giới thiệu - viet kconnect'
-          : '소개 - viet kconnect'),
-    description:
-      meta.about?.description ||
-      (lang === 'en'
-        ? 'Learn what viet kconnect is and how it works.'
-        : lang === 'vi'
-          ? 'Tìm hiểu về viet kconnect và cách hoạt động.'
-          : 'viet kconnect 소개 및 운영 방식.'),
-    alternates: {
-      canonical: currentUrl,
-      languages: Object.fromEntries(i18n.locales.map((l) => [l, `${baseUrl}/${l}/about`])),
-    },
-  };
+  return buildPageMetadata({
+    locale: lang,
+    path: '/about',
+    title,
+    description,
+    siteName: (meta?.home as Record<string, string>)?.siteName,
+    keywords,
+  });
 }
 
 export default async function AboutPage({ params }: PageProps) {
