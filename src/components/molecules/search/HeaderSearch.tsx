@@ -291,6 +291,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
         <select
           value={parentCategory}
           onChange={(e) => handleParentCategoryChange(e.target.value)}
+          aria-label={searchLabels.category}
           className="w-full truncate appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
         >
           <option value="all">{searchLabels.category}</option>
@@ -311,6 +312,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
             <select
               value={childCategory}
               onChange={(e) => setChildCategory(e.target.value)}
+              aria-label={searchLabels.subCategory}
               className="w-full truncate appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
             >
               <option value="">{searchLabels.subCategory}</option>
@@ -339,6 +341,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
           onBlur={handleSearchBlur}
           onClick={handleSearchActivate}
           onMouseDown={handleSearchActivate}
+          aria-label={tSearch.enterKeyword || searchLabels.placeholder}
           placeholder={placeholderText}
           className="flex-1 bg-transparent text-sm outline-none min-w-0 placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white"
         />

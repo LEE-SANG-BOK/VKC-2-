@@ -22,8 +22,8 @@ export default function ActionIconButton({
   const resolvedVariant = variant || (typeof count === 'number' ? 'pill' : 'icon');
   const baseClasses = 'inline-flex items-center justify-center rounded-full transition-colors';
   const sizeClasses = resolvedVariant === 'pill'
-    ? 'gap-1 px-2 py-1 min-h-[30px] text-xs font-semibold'
-    : 'p-1.5 min-h-[30px] min-w-[30px]';
+    ? 'gap-1 px-3 py-2 min-h-[44px] text-xs font-semibold sm:px-2 sm:py-1 sm:min-h-[32px]'
+    : 'p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px]';
 
   return (
     <button

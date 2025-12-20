@@ -133,7 +133,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
           {showBackButton && (
             <button
               onClick={() => router.back()}
-              className="shrink-0 inline-flex items-center gap-1.5 p-1.5 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-300 text-gray-600 dark:text-gray-400 whitespace-nowrap"
+              className="shrink-0 inline-flex h-11 items-center gap-1.5 px-2.5 sm:h-9 sm:px-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-300 text-gray-600 dark:text-gray-400 whitespace-nowrap"
               aria-label={goBackLabel}
             >
               <span aria-hidden className="text-lg sm:text-base">←</span>
@@ -143,7 +143,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
           {!showBackButton && (
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-1.5 sm:p-1.5 rounded-xl border-2 border-blue-300/90 dark:border-blue-900/60 bg-white/70 dark:bg-gray-900/40 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 group"
+              className="lg:hidden inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-xl border-2 border-blue-300/90 dark:border-blue-900/60 bg-white/70 dark:bg-gray-900/40 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 group"
               aria-label={sidebarToggleLabel}
             >
               {isMobileMenuOpen ? (
@@ -186,7 +186,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
                 <div className="relative">
                   <button
                     onClick={() => setIsNotificationModalOpen(!isNotificationModalOpen)}
-                    className="relative p-1 sm:p-1 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
+                    className="relative inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
                     aria-label={notificationsLabel}
                   >
                     <Bell className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-amber-400 transition-colors" />

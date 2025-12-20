@@ -116,10 +116,10 @@ export default function FollowButton({
 
   const sizeClasses =
     size === 'xs'
-      ? 'px-2 py-0.5 text-[9px] leading-none min-h-[20px]'
+      ? 'px-3 py-2 text-xs min-h-[44px] sm:px-2 sm:py-0.5 sm:text-[9px] sm:leading-none sm:min-h-[20px]'
       : size === 'sm'
-        ? 'px-3 py-1.5 text-xs min-h-[36px]'
-        : 'px-4 py-2 text-sm min-h-[40px]';
+        ? 'px-3 py-2 text-sm min-h-[44px] sm:px-3 sm:py-1.5 sm:text-xs sm:min-h-[36px]'
+        : 'px-4 py-2 text-sm min-h-[44px] sm:min-h-[40px]';
   const activeClasses = following
     ? 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'
     : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700';

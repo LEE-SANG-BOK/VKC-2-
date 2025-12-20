@@ -269,7 +269,7 @@ export default function RecommendedUsersSection({
           <button
             type="button"
             onClick={() => scrollCarousel(-1)}
-            className="inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 h-8 w-8 text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 h-11 w-11 sm:h-9 sm:w-9 text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             aria-label={ariaPrev}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -277,7 +277,7 @@ export default function RecommendedUsersSection({
           <button
             type="button"
             onClick={() => scrollCarousel(1)}
-            className="inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 h-8 w-8 text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 h-11 w-11 sm:h-9 sm:w-9 text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             aria-label={ariaNext}
           >
             <ChevronRight className="h-4 w-4" />

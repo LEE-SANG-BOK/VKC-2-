@@ -442,7 +442,7 @@ export default function CategorySidebar({
                 type="button"
                 aria-label={feedbackLabel}
                 onClick={() => handleCategoryClick('feedback')}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200/70 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-gray-200/70 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <span aria-hidden className="text-base leading-none">💬</span>
               </button>

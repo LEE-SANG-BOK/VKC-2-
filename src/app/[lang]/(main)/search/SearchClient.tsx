@@ -511,11 +511,13 @@ export default function SearchClient({
       translations={translations || {}}
     >
       <div className="px-3 py-6">
+        <h1 className="sr-only">{searchButtonLabel}</h1>
         {/* Category Filter - Mobile */}
         <div className="mb-4 flex md:hidden gap-2 px-3">
           <select
             value={parentCategory}
             onChange={(e) => handleParentCategoryChangeWithReset(e.target.value)}
+            aria-label={categoryLabel}
             className="flex-1 appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white font-medium outline-none cursor-pointer"
           >
             <option value="all">{allCategoriesLabel}</option>
@@ -528,7 +530,8 @@ export default function SearchClient({
             <select
               value={childCategory}
               onChange={(e) => setChildCategory(e.target.value)}
-                className="flex-1 appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white font-medium outline-none cursor-pointer"
+              aria-label={subCategoriesLabel}
+              className="flex-1 appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white font-medium outline-none cursor-pointer"
             >
               <option value="">{subCategoriesLabel}</option>
               {childCategories.map((child) => (
@@ -547,6 +550,7 @@ export default function SearchClient({
               <select
                 value={parentCategory}
                 onChange={(e) => handleParentCategoryChangeWithReset(e.target.value)}
+                aria-label={categoryLabel}
                 className="appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
               >
                 <option value="all">{categoryLabel}</option>
@@ -568,6 +572,7 @@ export default function SearchClient({
                   <select
                     value={childCategory}
                     onChange={(e) => setChildCategory(e.target.value)}
+                    aria-label={subCategoryLabel}
                     className="appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
                   >
                     <option value="">{subCategoryLabel}</option>
@@ -602,6 +607,7 @@ export default function SearchClient({
                 onBlur={handleInputBlur}
                 onClick={handleInputFocus}
                 placeholder={examplePlaceholder || searchPlaceholderLabel}
+                aria-label={searchPlaceholderLabel}
                 className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none min-w-0"
               />
             </div>

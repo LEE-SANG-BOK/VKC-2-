@@ -156,7 +156,8 @@ class AccessibilityAuditor {
     const page = await context.newPage();
 
     try {
-      await page.goto(toUrl(`/${config.lang}`), { waitUntil: 'networkidle' });
+      await page.goto(toUrl(`/${config.lang}`), { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
 
       if (!config.postId) {
         const postHref = await page.evaluate((lang) => {
@@ -195,8 +196,8 @@ class AccessibilityAuditor {
     const page = await context.newPage();
 
     try {
-      // 페이지 로드
-      await page.goto(pageInfo.url, { waitUntil: 'networkidle' });
+      await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
 
       let violations = [];
 

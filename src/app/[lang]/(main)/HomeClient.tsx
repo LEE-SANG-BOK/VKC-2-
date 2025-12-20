@@ -24,6 +24,9 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
   const isLoggedIn = status === 'authenticated';
   const { data: me } = useMyProfile({ enabled: isLoggedIn });
   const { data: mySubs } = useMySubscriptions(isLoggedIn);
+  const appName = dict?.common?.appName || 'VietHub';
+  const appDescription = dict?.common?.appDescription || '';
+  const homeHeading = appDescription ? `${appName} - ${appDescription}` : appName;
 
   const categoryParam = searchParams?.get('c') ?? null;
   const hasCategoryParam = categoryParam !== null;
@@ -78,6 +81,7 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
       translations={dict}
     >
       <div className="flex flex-col gap-1 pb-4">
+        <h1 className="sr-only">{homeHeading}</h1>
         <NoticeBanner translations={dict} lang={lang} />
         <div className="space-y-1">
           <div className="lg:hidden">

@@ -212,7 +212,8 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-1.5 p-1.5 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
+        aria-label={name}
+        className="inline-flex h-11 items-center space-x-1.5 px-2 sm:h-9 sm:px-1.5 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
       >
         <Avatar name={name} size="md" imageUrl={avatar} hoverHighlight />
         <span className="text-xs font-medium text-gray-700 dark:text-gray-300 hidden lg:block">

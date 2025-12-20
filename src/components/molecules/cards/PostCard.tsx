@@ -600,7 +600,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             type="button"
             onClick={handleHideMenuToggle}
             aria-label={hideLabel}
-            className="inline-flex h-8 min-w-[32px] items-center justify-center px-1 text-sm font-semibold text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
+            className="inline-flex h-11 min-w-[44px] sm:h-8 sm:min-w-[32px] items-center justify-center px-1 text-sm font-semibold text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
           >
             {hideEmoji}
           </button>
@@ -855,7 +855,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               <button
                 type="button"
                 onClick={handleBookmarkClick}
-                className={`inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                aria-label={bookmarkLabel}
+                className={`inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
               >
                 <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
               </button>
@@ -870,7 +871,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                     type="button"
                     onClick={(e) => e.stopPropagation()}
                     aria-label={t.questionPost || (locale === 'vi' ? 'Bài hỏi đáp' : locale === 'en' ? 'Question post' : '질문글')}
-                    className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 shrink-0"
+                    className="inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 shrink-0"
                   >
                     <CircleHelp className="w-4 h-4" />
                   </button>
@@ -891,7 +892,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                         ? t.resolvedPost || (locale === 'vi' ? 'Đã giải quyết' : locale === 'en' ? 'Resolved' : '해결됨')
                         : t.unresolvedPost || (locale === 'vi' ? 'Chưa giải quyết' : locale === 'en' ? 'Unresolved' : '미해결')
                     }
-                    className={`inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] ${
+                    className={`inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] ${
                       isAdopted
                         ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
                         : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'

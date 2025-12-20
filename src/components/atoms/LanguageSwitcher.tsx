@@ -53,7 +53,7 @@ export default function LanguageSwitcher() {
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Language"
         data-testid="language-switcher-toggle"
-        className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 sm:py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-300"
+        className="inline-flex h-11 items-center gap-1 sm:gap-1.5 px-2.5 sm:h-9 sm:px-3 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-300"
       >
         <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         <span className="hidden md:inline text-xs sm:text-sm">{localeNames[currentLocale]}</span>
@@ -70,7 +70,7 @@ export default function LanguageSwitcher() {
               key={locale}
               onClick={() => handleLocaleChange(locale)}
               data-testid={`language-option-${locale}`}
-              className={`w-full text-left px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors first:rounded-t-lg last:rounded-b-lg ${currentLocale === locale ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-300'
+              className={`w-full text-left px-3 sm:px-4 py-3 sm:py-2 text-xs sm:text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors first:rounded-t-lg last:rounded-b-lg ${currentLocale === locale ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-300'
                 }`}
             >
               {localeNames[locale]}
