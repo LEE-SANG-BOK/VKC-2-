@@ -64,15 +64,27 @@ call_endpoint() {
 log "API smoke verification against ${BASE_URL}"
 log "SESSION_COOKIE ${SESSION_COOKIE:+provided}${SESSION_COOKIE:+" (length ${#SESSION_COOKIE})"}"
 
+PROBE_KEY_GUEST="${PROBE_KEY_GUEST:-verify-guest-$(date +%s%N)}"
+PROBE_KEY_AUTH="${PROBE_KEY_AUTH:-verify-auth-$(date +%s%N)}"
+
 # Guest checks
-call_endpoint "GET" "/api/auth/profile" "401" "Auth profile (guest)"
+call_endpoint "GET" "/api/users/me" "401" "Current user (guest)"
 call_endpoint "GET" "/api/categories" "200" "Categories list"
-call_endpoint "GET" "/api/questions?sort=popular" "200" "Questions popular feed (guest)"
-call_endpoint "GET" "/api/posts?view=all" "200" "Posts feed (guest)"
+call_endpoint "GET" "/api/posts?sort=popular" "200" "Posts feed (guest, popular)"
+call_endpoint "GET" "/api/search/examples" "200" "Search examples (guest)"
+call_endpoint "GET" "/api/probe/rate-limit?key=${PROBE_KEY_GUEST}" "200" "Rate limit probe (guest, 1/4)"
+call_endpoint "GET" "/api/probe/rate-limit?key=${PROBE_KEY_GUEST}" "200" "Rate limit probe (guest, 2/4)"
+call_endpoint "GET" "/api/probe/rate-limit?key=${PROBE_KEY_GUEST}" "200" "Rate limit probe (guest, 3/4)"
+call_endpoint "GET" "/api/probe/rate-limit?key=${PROBE_KEY_GUEST}" "429" "Rate limit probe (guest, 4/4)"
 
 # Authenticated checks (requires SESSION_COOKIE)
-call_endpoint "GET" "/api/auth/profile" "200" "Auth profile (logged in)" true
-call_endpoint "GET" "/api/questions?sort=following" "200" "Questions following feed (logged in)" true
-call_endpoint "GET" "/api/bookmarks" "200" "Bookmarks list (logged in)" true
+call_endpoint "GET" "/api/users/me" "200" "Current user (logged in)" true
+call_endpoint "GET" "/api/users/me/subscriptions" "200" "My subscriptions (logged in)" true
+call_endpoint "GET" "/api/posts?filter=following" "200" "Posts feed (logged in, following)" true
+call_endpoint "GET" "/api/notifications/unread-count" "200" "Unread notifications count (logged in)" true
+call_endpoint "GET" "/api/probe/rate-limit?key=${PROBE_KEY_AUTH}" "200" "Rate limit probe (logged in, 1/4)" true
+call_endpoint "GET" "/api/probe/rate-limit?key=${PROBE_KEY_AUTH}" "200" "Rate limit probe (logged in, 2/4)" true
+call_endpoint "GET" "/api/probe/rate-limit?key=${PROBE_KEY_AUTH}" "200" "Rate limit probe (logged in, 3/4)" true
+call_endpoint "GET" "/api/probe/rate-limit?key=${PROBE_KEY_AUTH}" "429" "Rate limit probe (logged in, 4/4)" true
 
 log "Done. Review warnings above for non-matching status codes."

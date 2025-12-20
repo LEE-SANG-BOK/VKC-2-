@@ -1103,8 +1103,9 @@ $gh-address-comments
   - Release(Staging): 동일 스모크를 스테이징 URL로 재실행(필요 시 `E2E_BASE_URL` 사용)
   - Local(개발자): 빠른 게이트 + 필요 시 E2E
     - 빠른 게이트는 항상 수행, E2E는 “스테이징 URL 또는 로컬 데이터 환경”이 준비된 경우에만 수행
-  - 스크립트 정렬(필요)
-    - 기존 감사/스모크 스크립트는 현재 라우트(`/[lang]`) 기준으로 재정렬 필요(`scripts/performance-audit.js:1`, `scripts/accessibility-audit.js:1`, `scripts/verify-api.sh:1`)
+  - 스크립트 정렬
+    - 감사 스크립트는 현재 라우트(`/[lang]`) 기준으로 정렬 완료(`P1-12`, `scripts/performance-audit.js:1`, `scripts/accessibility-audit.js:1`)
+    - API 스모크 스크립트는 현재 API 기준으로 정렬(`scripts/verify-api.sh:1`)
 - 완료 기준: “릴리즈 전 필수로 돌리는 Playwright 스모크”가 문서/CI에 고정되고, 실패 시 배포 중단
 
 #### (2025-12-20) [LEAD] P0-8 핵심 지표 이벤트 정의 + 수집 v1 (P0)
