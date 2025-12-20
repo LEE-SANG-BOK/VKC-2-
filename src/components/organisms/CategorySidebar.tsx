@@ -6,6 +6,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Bug, Trophy } from 'lucide-react';
 import { LEGACY_CATEGORIES, getCategoryName, CATEGORY_GROUPS } from '@/lib/constants/categories';
 import CategoryItem from '@/components/molecules/categories/CategoryItem';
+import Tooltip from '@/components/atoms/Tooltip';
 import { useSession } from 'next-auth/react';
 import { useCategories, useMySubscriptions } from '@/repo/categories/query';
 import { useToggleSubscription } from '@/repo/categories/mutation';
@@ -243,7 +244,13 @@ export default function CategorySidebar({
     : locale === 'vi' || locale === 'en'
       ? `${leaderboardBaseLabel} (Event)`
       : `${leaderboardBaseLabel}(Event)`;
-  const feedbackLabel = 'Feedback';
+  const feedbackLabel =
+    t.feedback ||
+    (locale === 'vi'
+      ? 'Phản hồi'
+      : locale === 'en'
+        ? 'Feedback'
+        : '피드백');
 
   const menuCategories = [
     { id: 'popular', icon: TrendingUp, count: 0 },
@@ -251,13 +258,6 @@ export default function CategorySidebar({
     { id: 'following', icon: Users, count: 0 },
     { id: 'subscribed', icon: HeartHandshake, count: 0 },
     { id: 'leaderboard', icon: Trophy, count: 0, label: leaderboardLabel },
-    {
-      id: 'feedback',
-      icon: undefined,
-      count: 0,
-      label: feedbackLabel,
-      className: 'mx-4 my-1 justify-center gap-0 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-100 dark:hover:bg-blue-900/40',
-    },
     // { id: 'media', icon: Film, count: 0 }, // 미디어 전용 페이지 (숨김 상태)
   ];
 
@@ -420,12 +420,8 @@ export default function CategorySidebar({
             </h3>
           </div>
           {menuCategories.map((category) => {
-            const isFeedback = category.id === 'feedback';
             const label = (category as { label?: string }).label || t[category.id] || menuLabelFallbacks[category.id] || category.id;
-            const description = isFeedback ? undefined : showInlineDescriptions ? tooltipSummary(menuTooltips[category.id]) : undefined;
-            const tooltip = isFeedback ? menuTooltips[category.id] : undefined;
-            const ariaLabel = isFeedback ? feedbackLabel : undefined;
-            const labelClassName = isFeedback ? 'text-center w-full' : undefined;
+            const description = showInlineDescriptions ? tooltipSummary(menuTooltips[category.id]) : undefined;
             return (
               <CategoryItem
                 key={category.id}
@@ -436,13 +432,22 @@ export default function CategorySidebar({
                 count={category.count}
                 isActive={activeCategory === category.id}
                 onClick={handleCategoryClick}
-                tooltip={tooltip}
-                ariaLabel={ariaLabel}
-                labelClassName={labelClassName}
                 className={(category as { className?: string }).className}
               />
             );
           })}
+          <div className="px-4 pt-2 flex justify-end">
+            <Tooltip content={menuTooltips.feedback} position="left" touchBehavior="longPress">
+              <button
+                type="button"
+                aria-label={feedbackLabel}
+                onClick={() => handleCategoryClick('feedback')}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200/70 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <span aria-hidden className="text-base leading-none">💬</span>
+              </button>
+            </Tooltip>
+          </div>
         </div>
 
         {/* Divider */}

@@ -384,7 +384,7 @@ $gh-address-comments
 - [x] P0-11 (BE/WEB/FE: 숨김/신고 즉시 숨김)
 - [ ] P0-12 (WEB/BE/FE: 메타/키워드 파이프라인 통합)
 - [ ] P0-13 (FE/WEB: 라벨 제거 + 강조 UI)
-- [ ] P0-14 (FE/WEB: 피드백 UX 간소화)
+- [x] P0-14 (FE/WEB: 피드백 UX 간소화)
 - [x] P0-15 (FE/WEB: 게시글 상세 액션/추천 정리)
 - [ ] P0-16 (FE/LEAD: 카드 헤더 정렬 + 데스크톱 폭 제한)
 - [ ] P0-17 (LEAD/FE: 좌측 사이드바 고정 + 독립 스크롤)
@@ -942,8 +942,8 @@ $gh-address-comments
   - what: 버그 타입에서는 만족도 영역 숨김, 피드백에만 만족도 선택 노출, 텍스트 입력 안내를 상세 입력 하단으로 이동
 - 검증
   - [x] npm run lint
-  - [ ] npm run type-check
-  - [ ] npm run build
+  - [x] npm run type-check
+  - [x] npm run build
 - 변경 파일
   - src/app/[lang]/(main)/feedback/FeedbackClient.tsx
   - docs/WORKING_PLAN.md
@@ -1205,7 +1205,7 @@ $gh-address-comments
 #### (2025-12-20) [FE] P0-14 피드백 UX 간소화 + 사이드바 피드백 아이콘화 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [FE] 피드백 UI 간소화
+  - [x] [FE] 피드백 UI 간소화
   - [x] [WEB] 피드백 폼 필드 최소화 + 제출 UX
 
 - 목표: 피드백 제출 허들을 낮추고, 사이드바 피드백 진입을 “작고 명확한 이모지 + 툴팁”으로 정리한다
@@ -1216,7 +1216,7 @@ $gh-address-comments
     - 제출 후: 감사 메시지로 마무리(예: “감사합니다. 제출하신 내용 반영하여 페이지 개선에 힘쓰겠습니다.”)
     - “현재 페이지(URL)” 입력 UI는 노출하지 않고 자동 수집만 유지(표시는 제거)
   - 사이드바 피드백
-    - 메뉴 리스트의 “아이콘 슬롯(메뉴 텍스트 왼쪽)”에 피드백을 “아이콘(이모지)만”으로 배치(라벨 텍스트는 숨김)
+    - “상위 기여자(Event)” 아래 우측에 “이모지 버튼(💬)만” 배치(라벨 텍스트 미노출)
     - 설명은 Tooltip로 대체(접근성 `aria-label` 포함), 클릭 시 `/${lang}/feedback`로 이동
 - 완료 기준
   - 버그 폼에서 영향도/재현 단계가 사라지고, 제출 후 감사 UX가 일관됨
