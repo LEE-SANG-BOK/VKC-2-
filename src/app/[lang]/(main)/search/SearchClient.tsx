@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import Link from 'next/link';
 import dayjs from 'dayjs';
@@ -9,6 +9,7 @@ import MainLayout from '@/components/templates/MainLayout';
 import PostCard from '@/components/molecules/cards/PostCard';
 import { usePosts } from '@/repo/posts/query';
 import { useSearchKeywords } from '@/repo/search/query';
+import { logEvent } from '@/repo/events/mutation';
 import type { PostListItem } from '@/repo/posts/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
@@ -36,6 +37,123 @@ export default function SearchClient({
   const t = (translations?.search || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTooltips = (translations?.tooltips || {}) as Record<string, string>;
+  const searchFallbacks = useMemo(() => {
+    if (lang === 'en') {
+      return {
+        searchPlaceholder: 'Search for anything.',
+        searchPlaceholderShort: 'Search...',
+        searchButton: 'Search',
+        allCategories: 'All Categories',
+        subCategories: 'Subcategories',
+        categoryLabel: 'Category',
+        subCategoryLabel: 'Sub',
+        enterKeyword: 'Enter search keyword',
+        enterKeywordMin: `Please enter at least ${MIN_SEARCH_QUERY_LENGTH} characters.`,
+        enterKeywordMinSearch: `Please enter at least ${MIN_SEARCH_QUERY_LENGTH} characters to search.`,
+        searchError: 'Something went wrong while searching. Please try again shortly.',
+        popularKeywordsTitle: 'Popular searches',
+        fallbackFiltersLabel: 'Applied filters',
+        fallbackTokensLabel: 'Search keywords',
+        fallbackReasonPopular: 'No close matches, so we\'re surfacing popular questions.',
+        fallbackNotice: 'No close matches — showing popular questions instead.',
+        noResults: 'No results found for "{query}"',
+        previous: 'Previous',
+        next: 'Next',
+        pageInfo: '{current} / {total} pages',
+        unknownAuthor: 'Unknown',
+        photo: '(Photo)',
+        suggestionTitle: 'Autocomplete',
+        suggestionTag: 'Tag',
+        suggestionCategory: 'Category',
+        suggestionSubcategory: 'Subcategory',
+        suggestionEmpty: 'No suggestions yet.',
+        suggestionLoading: 'Loading...',
+      };
+    }
+    if (lang === 'vi') {
+      return {
+        searchPlaceholder: 'Tìm kiếm bất cứ điều gì.',
+        searchPlaceholderShort: 'Tìm kiếm...',
+        searchButton: 'Tìm kiếm',
+        allCategories: 'Tất cả danh mục',
+        subCategories: 'Danh mục phụ',
+        categoryLabel: 'Danh mục',
+        subCategoryLabel: 'Danh mục con',
+        enterKeyword: 'Nhập từ khóa tìm kiếm',
+        enterKeywordMin: `Vui lòng nhập ít nhất ${MIN_SEARCH_QUERY_LENGTH} ký tự.`,
+        enterKeywordMinSearch: `Vui lòng nhập ít nhất ${MIN_SEARCH_QUERY_LENGTH} ký tự để tìm kiếm.`,
+        searchError: 'Đã xảy ra lỗi khi tìm kiếm. Vui lòng thử lại sau.',
+        popularKeywordsTitle: 'Tìm kiếm phổ biến',
+        fallbackFiltersLabel: 'Bộ lọc áp dụng',
+        fallbackTokensLabel: 'Từ khóa tìm kiếm',
+        fallbackReasonPopular: 'Không có kết quả tương đồng nên đang hiển thị câu hỏi phổ biến.',
+        fallbackNotice: 'Không có kết quả phù hợp — hiển thị câu hỏi phổ biến.',
+        noResults: 'Không tìm thấy kết quả cho "{query}"',
+        previous: 'Trước',
+        next: 'Tiếp',
+        pageInfo: '{current} / {total} trang',
+        unknownAuthor: 'Không xác định',
+        photo: '(Ảnh)',
+        suggestionTitle: 'Gợi ý',
+        suggestionTag: 'Thẻ',
+        suggestionCategory: 'Danh mục',
+        suggestionSubcategory: 'Danh mục con',
+        suggestionEmpty: 'Chưa có gợi ý.',
+        suggestionLoading: 'Đang tải...',
+      };
+    }
+    return {
+      searchPlaceholder: '궁금한 내용을 검색해보세요.',
+      searchPlaceholderShort: '검색...',
+      searchButton: '검색',
+      allCategories: '전체 분류',
+      subCategories: '세부 분류',
+      categoryLabel: '분류',
+      subCategoryLabel: '세부',
+      enterKeyword: '검색어를 입력하세요',
+      enterKeywordMin: `검색어를 ${MIN_SEARCH_QUERY_LENGTH}자 이상 입력하세요.`,
+      enterKeywordMinSearch: `검색어를 ${MIN_SEARCH_QUERY_LENGTH}자 이상 입력해주세요.`,
+      searchError: '검색 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      popularKeywordsTitle: '인기 검색어',
+      fallbackFiltersLabel: '적용된 필터',
+      fallbackTokensLabel: '검색 키워드',
+      fallbackReasonPopular: '검색어와 딱 맞는 결과가 없으므로 인기 질문을 보여드려요.',
+      fallbackNotice: '정확히 일치하는 결과가 없어 인기 질문을 보여드려요.',
+      noResults: '"{query}"에 대한 검색 결과가 없습니다',
+      previous: '이전',
+      next: '다음',
+      pageInfo: '{current} / {total} 페이지',
+      unknownAuthor: '알 수 없음',
+      photo: '(사진)',
+      suggestionTitle: '자동완성',
+      suggestionTag: '태그',
+      suggestionCategory: '카테고리',
+      suggestionSubcategory: '세부',
+      suggestionEmpty: '추천 결과가 없습니다.',
+      suggestionLoading: '로딩 중...',
+    };
+  }, [lang]);
+  const searchPlaceholderLabel = t.searchPlaceholder || searchFallbacks.searchPlaceholder;
+  const searchButtonLabel = t.searchButton || searchFallbacks.searchButton;
+  const allCategoriesLabel = t.allCategories || searchFallbacks.allCategories;
+  const subCategoriesLabel = t.subCategories || searchFallbacks.subCategories;
+  const categoryLabel = t.categoryLabel || searchFallbacks.categoryLabel;
+  const subCategoryLabel = t.subCategoryLabel || searchFallbacks.subCategoryLabel;
+  const enterKeywordLabel = t.enterKeyword || searchFallbacks.enterKeyword;
+  const enterKeywordMinLabel = searchFallbacks.enterKeywordMin;
+  const enterKeywordMinSearchLabel = searchFallbacks.enterKeywordMinSearch;
+  const searchErrorLabel = t.searchError || searchFallbacks.searchError;
+  const popularKeywordsTitle = t.popularKeywordsTitle || searchFallbacks.popularKeywordsTitle;
+  const fallbackFiltersLabel = t.fallbackFiltersLabel || searchFallbacks.fallbackFiltersLabel;
+  const fallbackTokensLabel = t.fallbackTokensLabel || searchFallbacks.fallbackTokensLabel;
+  const fallbackNoticeLabel = t.fallbackNotice || searchFallbacks.fallbackNotice;
+  const fallbackReasonPopularLabel = t.fallbackReasonPopular || searchFallbacks.fallbackReasonPopular;
+  const noResultsLabel = t.noResults || searchFallbacks.noResults;
+  const previousLabel = t.previous || searchFallbacks.previous;
+  const nextLabel = t.next || searchFallbacks.next;
+  const pageInfoLabel = t.pageInfo || searchFallbacks.pageInfo;
+  const unknownAuthorLabel = t.unknownAuthor || searchFallbacks.unknownAuthor;
+  const photoLabel = t.photo || searchFallbacks.photo;
 
   const getGroupLabel = useCallback((group: (typeof CATEGORY_GROUPS)[keyof typeof CATEGORY_GROUPS]) => {
     if (lang === 'vi' && group.label_vi) return group.label_vi;
@@ -92,6 +210,7 @@ export default function SearchClient({
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
+  const lastLoggedRef = useRef('');
   const activeQuery = initialQuery;
   const activeQueryTrimmed = activeQuery.trim();
   const activeParentCategory = initialParentCategory;
@@ -101,9 +220,7 @@ export default function SearchClient({
   const debouncedTrimmedQuery = debouncedQuery.trim();
   const shouldSuggest = debouncedTrimmedQuery.length >= MIN_SEARCH_QUERY_LENGTH;
 
-  // 카테고리/소분류별 예시 키 풀을 구성
-  const resolveExamplePool = useCallback(() => {
-    // 기본 인기/생활 예시 풀
+  useEffect(() => {
     const basePool = [
       t.exampleLiving,
       t.exampleWork,
@@ -114,7 +231,6 @@ export default function SearchClient({
       t.popularExample3,
     ].filter(Boolean) as string[];
 
-    // 대분류 전용 예시: 예) search.examples.parent.<parentId>1~5 형태로 번역 키 사용
     const parentPool = [
       t[`examples.parent.${parentCategory}.1`],
       t[`examples.parent.${parentCategory}.2`],
@@ -123,7 +239,6 @@ export default function SearchClient({
       t[`examples.parent.${parentCategory}.5`],
     ].filter(Boolean) as string[];
 
-    // 소분류 전용 예시: 예) search.examples.sub.<childId>1~5
     const childPool = [
       t[`examples.sub.${childCategory}.1`],
       t[`examples.sub.${childCategory}.2`],
@@ -132,16 +247,17 @@ export default function SearchClient({
       t[`examples.sub.${childCategory}.5`],
     ].filter(Boolean) as string[];
 
-    if (childCategory && childPool.length > 0) return childPool;
-    if (parentCategory && parentCategory !== 'all' && parentPool.length > 0) return parentPool;
-    if (basePool.length > 0) return basePool;
-    return [t.searchPlaceholder || '검색어를 입력하세요'];
-  }, [childCategory, parentCategory, t]);
+    const pool =
+      childCategory && childPool.length > 0
+        ? childPool
+        : parentCategory && parentCategory !== 'all' && parentPool.length > 0
+          ? parentPool
+          : basePool.length > 0
+            ? basePool
+            : [searchPlaceholderLabel];
 
-  useEffect(() => {
-    const pool = resolveExamplePool();
-    setExamplePlaceholder(pool[Math.floor(Math.random() * pool.length)] || (t.searchPlaceholder || '검색어를 입력하세요'));
-  }, [resolveExamplePool, t.searchPlaceholder]);
+    setExamplePlaceholder(pool[Math.floor(Math.random() * pool.length)] || searchPlaceholderLabel);
+  }, [childCategory, parentCategory, searchPlaceholderLabel, t]);
 
   useEffect(() => {
     setQuery(initialQuery);
@@ -185,41 +301,19 @@ export default function SearchClient({
   );
   const { data: keywordRecommendationsData } = useSearchKeywords({ limit: 10 });
 
-  const suggestionLabels = useMemo(() => {
-    if (lang === 'en') {
-      return {
-        title: 'Autocomplete',
-        tag: 'Tag',
-        category: 'Category',
-        subcategory: 'Subcategory',
-        empty: 'No suggestions yet.',
-        loading: 'Loading...',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        title: 'Gợi ý',
-        tag: 'Thẻ',
-        category: 'Danh mục',
-        subcategory: 'Danh mục con',
-        empty: 'Chưa có gợi ý.',
-        loading: 'Đang tải...',
-      };
-    }
-    return {
-      title: '자동완성',
-      tag: '태그',
-      category: '카테고리',
-      subcategory: '세부',
-      empty: '추천 결과가 없습니다.',
-      loading: '로딩 중...',
-    };
-  }, [lang]);
+  const suggestionLabels = {
+    title: t.suggestionTitle || searchFallbacks.suggestionTitle,
+    tag: t.suggestionTag || searchFallbacks.suggestionTag,
+    category: t.suggestionCategory || searchFallbacks.suggestionCategory,
+    subcategory: t.suggestionSubcategory || searchFallbacks.suggestionSubcategory,
+    empty: t.suggestionEmpty || searchFallbacks.suggestionEmpty,
+    loading: t.suggestionLoading || searchFallbacks.suggestionLoading,
+  };
   useEffect(() => {
     if (isError) {
-      toast.error(t.searchError || '검색 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      toast.error(searchErrorLabel);
     }
-  }, [isError, t.searchError, error]);
+  }, [isError, searchErrorLabel, error]);
 
   const keywordSuggestions = useMemo(() => {
     const keywords = keywordSuggestionsData?.data?.keywords || [];
@@ -289,12 +383,41 @@ export default function SearchClient({
     return labels;
   }, [fallbackMeta?.fallbackFilters, lang, questionLabel, shareLabel]);
   const fallbackReasonText = fallbackMeta?.reason === 'popular'
-    ? t.fallbackReasonPopular || (lang === 'vi'
-      ? 'Không có kết quả tương đồng nên đang hiển thị câu hỏi phổ biến.'
-      : lang === 'en'
-        ? 'No close matches — showing popular questions instead.'
-        : '정확히 일치하는 결과가 없어 인기 질문을 보여드려요.')
-    : t.fallbackNotice || (lang === 'vi' ? 'Không có kết quả phù hợp — hiển thị câu hỏi phổ biến.' : lang === 'en' ? 'No close matches — showing popular questions instead.' : '정확히 일치하는 결과가 없어 인기 질문을 보여드려요.');
+    ? fallbackReasonPopularLabel
+    : fallbackNoticeLabel;
+
+  useEffect(() => {
+    if (!isActiveQueryValid || isLoading || !postsData) return;
+    const key = [activeQueryTrimmed, activeParentCategory, activeChildCategory, initialPage].join('|');
+    if (!activeQueryTrimmed || lastLoggedRef.current === key) return;
+    lastLoggedRef.current = key;
+    logEvent({
+      eventType: 'search',
+      entityType: 'search',
+      locale: lang,
+      referrer: typeof document !== 'undefined' ? document.referrer : '',
+      metadata: {
+        query: activeQueryTrimmed,
+        parentCategory: activeParentCategory !== 'all' ? activeParentCategory : null,
+        childCategory: activeChildCategory || null,
+        page: initialPage,
+        resultCount: postsData.data?.length || 0,
+        isFallback: fallbackMeta?.isFallback ?? false,
+        reason: fallbackMeta?.reason ?? null,
+        tokens: fallbackMeta?.tokens ?? null,
+      },
+    });
+  }, [
+    activeQueryTrimmed,
+    activeParentCategory,
+    activeChildCategory,
+    initialPage,
+    isActiveQueryValid,
+    isLoading,
+    postsData,
+    fallbackMeta,
+    lang,
+  ]);
 
   const handleParentCategoryChangeWithReset = useCallback((category: string) => {
     setParentCategory(category);
@@ -307,12 +430,7 @@ export default function SearchClient({
   const handleSearch = () => {
     const trimmedQuery = query.trim();
     if (trimmedQuery.length < MIN_SEARCH_QUERY_LENGTH) {
-      const fallbackMessage = lang === 'vi'
-        ? `Vui lòng nhập ít nhất ${MIN_SEARCH_QUERY_LENGTH} ký tự.`
-        : lang === 'en'
-          ? `Please enter at least ${MIN_SEARCH_QUERY_LENGTH} characters.`
-          : `검색어를 ${MIN_SEARCH_QUERY_LENGTH}자 이상 입력하세요.`;
-      toast.error(t.enterKeyword || fallbackMessage);
+      toast.error(t.enterKeyword || enterKeywordMinLabel);
       return;
     }
     const params = new URLSearchParams();
@@ -349,17 +467,15 @@ export default function SearchClient({
     return `/${lang}/search?${params.toString()}`;
   };
 
-  const popularKeywords = useMemo(() => {
-    return [
-      t.popularKeyword1,
-      t.popularKeyword2,
-      t.popularKeyword3,
-      t.popularKeyword4,
-      t.popularKeyword5,
-    ].filter(Boolean) as string[];
-  }, [t.popularKeyword1, t.popularKeyword2, t.popularKeyword3, t.popularKeyword4, t.popularKeyword5]);
+  const popularKeywords = [
+    t.popularKeyword1,
+    t.popularKeyword2,
+    t.popularKeyword3,
+    t.popularKeyword4,
+    t.popularKeyword5,
+  ].filter(Boolean) as string[];
 
-  const recommendedKeywords = useMemo(() => {
+  const recommendedKeywords = (() => {
     const apiKeywords = keywordRecommendationsData?.data?.keywords || [];
     const values = apiKeywords.length > 0 ? apiKeywords.map((item) => item.value) : popularKeywords;
     const seen = new Set<string>();
@@ -373,7 +489,7 @@ export default function SearchClient({
         return true;
       })
       .slice(0, 10);
-  }, [keywordRecommendationsData, popularKeywords]);
+  })();
 
   const handleApplyKeyword = (keyword: string) => {
     setQuery(keyword);
@@ -402,7 +518,7 @@ export default function SearchClient({
             onChange={(e) => handleParentCategoryChangeWithReset(e.target.value)}
             className="flex-1 appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white font-medium outline-none cursor-pointer"
           >
-            <option value="all">{t.allCategories || '전체 카테고리'}</option>
+            <option value="all">{allCategoriesLabel}</option>
             {parentOptions.map((cat) => (
               <option key={cat.slug} value={cat.slug}>{cat.label}</option>
             ))}
@@ -414,7 +530,7 @@ export default function SearchClient({
               onChange={(e) => setChildCategory(e.target.value)}
                 className="flex-1 appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white font-medium outline-none cursor-pointer"
             >
-              <option value="">{t.subCategories || '하위 카테고리'}</option>
+              <option value="">{subCategoriesLabel}</option>
               {childCategories.map((child) => (
                 <option key={child.slug} value={child.slug}>{getCategoryName(child, lang)}</option>
               ))}
@@ -433,7 +549,7 @@ export default function SearchClient({
                 onChange={(e) => handleParentCategoryChangeWithReset(e.target.value)}
                 className="appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
               >
-                <option value="all">{t.categoryLabel || '카테고리'}</option>
+                <option value="all">{categoryLabel}</option>
                 {parentOptions.map((cat) => (
                   <option key={cat.slug} value={cat.slug}>{cat.label}</option>
                 ))}
@@ -454,7 +570,7 @@ export default function SearchClient({
                     onChange={(e) => setChildCategory(e.target.value)}
                     className="appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
                   >
-                    <option value="">{t.subCategoryLabel || '세부'}</option>
+                    <option value="">{subCategoryLabel}</option>
                     {childCategories.map((child) => (
                       <option key={child.slug} value={child.slug}>{getCategoryName(child, lang)}</option>
                     ))}
@@ -485,7 +601,7 @@ export default function SearchClient({
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
                 onClick={handleInputFocus}
-                placeholder={examplePlaceholder || t.searchPlaceholder || '검색어를 입력하세요'}
+                placeholder={examplePlaceholder || searchPlaceholderLabel}
                 className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none min-w-0"
               />
             </div>
@@ -494,7 +610,7 @@ export default function SearchClient({
               onClick={handleSearch}
               className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-full transition-colors flex-shrink-0"
             >
-              {t.searchButton || '검색'}
+              {searchButtonLabel}
             </button>
           </div>
             {isSuggestionOpen && shouldSuggest ? (
@@ -548,7 +664,7 @@ export default function SearchClient({
         {recommendedKeywords.length > 0 && (
           <div className="mb-6 flex flex-wrap gap-2 items-center">
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              {t.popularKeywordsTitle || '인기 검색어'}
+              {popularKeywordsTitle}
             </span>
             {recommendedKeywords.map((kw) => (
               <button
@@ -567,11 +683,7 @@ export default function SearchClient({
           !isActiveQueryValid ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">
-                {lang === 'vi'
-                  ? `Vui lòng nhập ít nhất ${MIN_SEARCH_QUERY_LENGTH} ký tự để tìm kiếm.`
-                  : lang === 'en'
-                    ? `Please enter at least ${MIN_SEARCH_QUERY_LENGTH} characters to search.`
-                    : `검색어를 ${MIN_SEARCH_QUERY_LENGTH}자 이상 입력해주세요.`}
+                {enterKeywordMinSearchLabel}
               </p>
             </div>
           ) : (
@@ -589,13 +701,13 @@ export default function SearchClient({
                     </p>
                     {filterLabels.length > 0 && (
                       <p className="text-xs text-gray-800 dark:text-gray-200">
-                        {(t.fallbackFiltersLabel || '적용된 필터') + ': ' + filterLabels.join(', ')}
+                        {fallbackFiltersLabel + ': ' + filterLabels.join(', ')}
                       </p>
                     )}
                     {fallbackTokens.length > 0 && (
                       <div className="flex flex-wrap items-center gap-2 text-xs text-gray-800 dark:text-gray-200">
                         <span className="font-semibold text-amber-900 dark:text-amber-100">
-                          {t.fallbackTokensLabel || '검색 키워드'}:
+                          {fallbackTokensLabel}:
                         </span>
                         <div className="flex flex-wrap gap-1">
                           {fallbackTokens.map((token) => (
@@ -617,13 +729,13 @@ export default function SearchClient({
                     id={post.id}
                     author={{
                       id: post.author?.id,
-                      name: post.author?.displayName || post.author?.name || t.unknownAuthor || 'Unknown',
+                      name: post.author?.displayName || post.author?.name || unknownAuthorLabel,
                       avatar: post.author?.image || '/default-avatar.jpg',
                       followers: 0,
                       isVerified: post.author?.isVerified || false,
                     }}
                     title={post.title}
-                    excerpt={post.excerpt || (post.content || '').replace(/<img[^>]*>/gi, t.photo || '(Photo)').replace(/<[^>]*>/g, '').substring(0, 200)}
+                    excerpt={post.excerpt || (post.content || '').replace(/<img[^>]*>/gi, photoLabel).replace(/<[^>]*>/g, '').substring(0, 200)}
                     tags={post.tags || []}
                     stats={{
                       likes: post.likesCount ?? post.likes ?? 0,
@@ -637,6 +749,8 @@ export default function SearchClient({
                     thumbnail={post.thumbnail}
                     thumbnails={post.thumbnails}
                     imageCount={post.imageCount}
+                    officialAnswerCount={post.officialAnswerCount}
+                    reviewedAnswerCount={post.reviewedAnswerCount}
                     publishedAt={dayjs(post.createdAt).format('YYYY.MM.DD HH:mm')}
                     isQuestion={post.type === 'question'}
                     isAdopted={post.isResolved}
@@ -657,12 +771,12 @@ export default function SearchClient({
                         className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       >
                         <ChevronLeft className="w-4 h-4" />
-                        {t.previous || 'Previous'}
+                        {previousLabel}
                       </Link>
                     )}
 
                     <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
-                      {(t.pageInfo || '{current} / {total} pages').replace('{current}', String(initialPage)).replace('{total}', String(totalPages))}
+                      {pageInfoLabel.replace('{current}', String(initialPage)).replace('{total}', String(totalPages))}
                     </span>
 
                     {initialPage < totalPages && (
@@ -670,7 +784,7 @@ export default function SearchClient({
                         href={buildPageUrl(initialPage + 1)}
                         className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       >
-                        {t.next || 'Next'}
+                        {nextLabel}
                         <ChevronRight className="w-4 h-4" />
                       </Link>
                     )}
@@ -680,7 +794,7 @@ export default function SearchClient({
             ) : (
               <div className="text-center py-12">
                 <p className="text-gray-500 dark:text-gray-400">
-                  {(t.noResults || 'No results found for "{query}"').replace('{query}', initialQuery)}
+                  {noResultsLabel.replace('{query}', initialQuery)}
                 </p>
               </div>
             )}
@@ -694,10 +808,10 @@ export default function SearchClient({
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              {t.enterKeyword || '검색어를 입력하세요'}
+              {enterKeywordLabel}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
-              {t.searchPlaceholder || '궁금한 내용을 검색해보세요'}
+              {searchPlaceholderLabel}
             </p>
           </div>
         )}

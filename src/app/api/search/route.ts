@@ -5,39 +5,10 @@ import { posts, users } from '@/lib/db/schema';
 import { successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { getFollowingIdSet } from '@/lib/api/follow';
-import { and, or, ilike, desc, eq, sql, inArray } from 'drizzle-orm';
+import { and, or, ilike, desc, eq, inArray } from 'drizzle-orm';
 import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
+import { postListSelect, serializePostPreview } from '@/lib/api/post-list';
 
-const stripHtmlToText = (html: string) =>
-  html
-    .replace(/<img[^>]*>/gi, '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
-
-const extractImages = (html: string, maxThumbs = 4) => {
-  if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
-  const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  const thumbnails: string[] = [];
-  let match: RegExpExecArray | null;
-  let imageCount = 0;
-  let selected: string | null = null;
-  while ((match = regex.exec(html))) {
-    imageCount += 1;
-    const src = match[1];
-    if (!selected && /data-thumbnail\s*=\s*['"]?true['"]?/i.test(match[0])) {
-      selected = src;
-    }
-    if (thumbnails.length < maxThumbs) thumbnails.push(src);
-  }
-  if (selected) {
-    const ordered = [selected, ...thumbnails.filter((src) => src !== selected)];
-    return { thumbnails: ordered.slice(0, maxThumbs), thumbnail: selected, imageCount };
-  }
-  return { thumbnails, thumbnail: thumbnails[0] ?? null, imageCount };
-};
 
 /**
  * GET /api/search
@@ -70,31 +41,11 @@ export async function GET(request: NextRequest) {
     const shouldSearchUsers = mode !== 'posts';
 
     // 게시글 검색
-    const contentPreviewLimit = 4000;
     const postsLimit = Math.min(limit, 10);
 
     const postsResult = shouldSearchPosts
       ? await db
-          .select({
-            id: posts.id,
-            authorId: posts.authorId,
-            type: posts.type,
-            title: posts.title,
-            content: sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
-            category: posts.category,
-            subcategory: posts.subcategory,
-            tags: posts.tags,
-            createdAt: posts.createdAt,
-            author: {
-              id: users.id,
-              name: users.name,
-              displayName: users.displayName,
-              image: users.image,
-              isVerified: users.isVerified,
-              isExpert: users.isExpert,
-              badgeType: users.badgeType,
-            },
-          })
+          .select(postListSelect())
           .from(posts)
           .leftJoin(users, eq(posts.authorId, users.id))
           .where(
@@ -130,30 +81,22 @@ export async function GET(request: NextRequest) {
         : new Set<string>();
 
     const trimmedPosts = postsResult.map((post) => {
-      const preview = typeof post.content === 'string' ? post.content : '';
-      const excerpt = buildExcerpt(preview);
-      const { thumbnail, thumbnails, imageCount } = extractImages(preview, 4);
+      const base = serializePostPreview(post, { followingIdSet });
 
       return {
-        id: post.id,
-        authorId: post.authorId,
-        type: post.type,
-        title: post.title,
-        excerpt,
-        category: post.category,
-        subcategory: post.subcategory,
-        tags: Array.isArray(post.tags) ? post.tags : [],
-        createdAt: post.createdAt,
-        thumbnail,
-        thumbnails,
-        imageCount,
-        author: post.author
-          ? {
-              ...post.author,
-              isExpert: post.author.isExpert || false,
-              isFollowing: currentUser ? followingIdSet.has(post.authorId) : false,
-            }
-          : post.author,
+        id: base.id,
+        authorId: base.authorId,
+        type: base.type,
+        title: base.title,
+        excerpt: base.excerpt,
+        category: base.category,
+        subcategory: base.subcategory,
+        tags: base.tags,
+        createdAt: base.createdAt,
+        thumbnail: base.thumbnail,
+        thumbnails: base.thumbnails,
+        imageCount: base.imageCount,
+        author: base.author,
       };
     });
 
@@ -171,7 +114,10 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    response.headers.set('Cache-Control', 'private, no-store');
+    response.headers.set(
+      'Cache-Control',
+      currentUser ? 'private, no-store' : 'public, s-maxage=120, stale-while-revalidate=600'
+    );
     return response;
   } catch (error) {
     console.error('GET /api/search error:', error);

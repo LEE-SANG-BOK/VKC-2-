@@ -3801,6 +3801,29 @@ $gh-address-comments
 - i18n
   - 신규 키 요청: 없음
 
+#### (2025-12-20) [WEB] 검색 자동완성/결과 보강 + 로그 전송 (P0)
+
+- 플랜(체크리스트)
+  - [x] 검색 API에서 post-list 직렬화 유틸 재사용
+  - [x] 비로그인 검색 캐시 정책 보강
+  - [x] 검색 화면 fallback 라벨/자동완성 라벨 정리
+  - [x] 검색 이벤트 로그 전송
+- 현황 분석(코드 기준)
+  - 검색 API가 별도 파싱 로직을 중복 보유
+  - 검색 UI는 일부 라벨이 하드코딩되어 locale 혼용
+- 변경 내용(why/what)
+  - why: 검색 결과/프리뷰 포맷 일관화 + i18n fallback 정리 + 검색 로깅 확보
+  - what: post-list serializer 적용, 비로그인 캐시, SearchClient fallback/자동완성 라벨 정리 및 로그 전송
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/api/search/route.ts
+  - src/app/[lang]/(main)/search/SearchClient.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
 **웹 기능(사용자/관리자 기능)**
 - [x] (2025-12-18) [WEB] 팔로잉 “추천 팔로잉” 현황 분석 + 개선안 제시(추천 기준/제외 규칙/노출 우선순위)
 - [x] (2025-12-18) [WEB] 추천 팔로잉: 1회 전체 노출 금지 → 페이지네이션/무한스크롤 도입(서버/클라 키 정리)
