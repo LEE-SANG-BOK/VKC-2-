@@ -217,7 +217,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
       seen.add(id);
       return true;
     });
-    return [...deduped].sort((a, b) => (b.stats?.followers ?? 0) - (a.stats?.followers ?? 0));
+    return deduped;
   }, [recommendedUsers]);
 
   const scoreFallbacks = useMemo(() => {
@@ -528,7 +528,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                     <RecommendedUsersSection
                       title={recommendedUsersLabel}
                       locale={locale}
-                      users={sortedRecommendations as any}
+                      users={sortedRecommendations}
                       isLoading={recommendedLoading}
                       hasNextPage={hasNextRecommendedPage}
                       isFetchingNextPage={isFetchingNextRecommendedPage}
@@ -571,7 +571,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
               <RecommendedUsersSection
                 title={recommendedUsersLabel}
                 locale={locale}
-                users={sortedRecommendations as any}
+                users={sortedRecommendations}
                 isLoading={recommendedLoading}
                 hasNextPage={hasNextRecommendedPage}
                 isFetchingNextPage={isFetchingNextRecommendedPage}

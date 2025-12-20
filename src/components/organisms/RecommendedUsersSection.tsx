@@ -22,6 +22,7 @@ interface RecommendedUser {
   image?: string | null;
   isFollowing?: boolean;
   isVerified?: boolean;
+  isExpert?: boolean;
   badgeType?: string | null;
   recommendationMeta?: RecommendationMetaItem[];
   stats?: RecommendedUserStats;
@@ -169,6 +170,7 @@ export default function RecommendedUsersSection({
           locale,
           author: {
             isVerified: user.isVerified,
+            isExpert: user.isExpert,
             badgeType: user.badgeType,
           },
           translations: mergedTrustTranslations,
@@ -185,6 +187,7 @@ export default function RecommendedUsersSection({
           metaLabels: mergedMetaLabels,
           badgeLabels,
         });
+        const visibleMetaTexts = metaTexts.slice(0, 2);
         return (
           <div
             key={userId}
@@ -229,11 +232,18 @@ export default function RecommendedUsersSection({
                       tooltipPosition="top"
                     />
                   </div>
-                  {metaTexts.length > 0 ? (
-                    <div className={`${cardMetaClass} text-gray-500 dark:text-gray-400 flex flex-wrap gap-1`}>
-                      {metaTexts.map((text, index) => (
-                        <span key={`${userId}-meta-${index}`} className="inline-flex">
-                          # {text}
+                  {visibleMetaTexts.length > 0 ? (
+                    <div className={`${cardMetaClass} text-gray-600 dark:text-gray-300 flex flex-wrap gap-1.5`}>
+                      {visibleMetaTexts.map((text, index) => (
+                        <span
+                          key={`${userId}-meta-${index}`}
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 ${
+                            index === 0
+                              ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200'
+                              : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                          }`}
+                        >
+                          {text}
                         </span>
                       ))}
                     </div>
