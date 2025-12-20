@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPublicSWR, successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { sql } from 'drizzle-orm';
 
 type KeywordSource = 'tag' | 'category' | 'subcategory';
@@ -139,10 +139,7 @@ export async function GET(request: NextRequest) {
       keywords,
       query: query || undefined,
     });
-    response.headers.set(
-      'Cache-Control',
-      hasQuery ? 'public, s-maxage=120, stale-while-revalidate=600' : 'public, s-maxage=600, stale-while-revalidate=3600'
-    );
+    setPublicSWR(response, hasQuery ? 120 : 600, hasQuery ? 600 : 3600);
     return response;
   } catch (error) {
     console.error('GET /api/search/keywords error:', error);

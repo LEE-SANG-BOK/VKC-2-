@@ -413,7 +413,7 @@ $gh-address-comments
 - [ ] P1-16 (LEAD: SEO KPI/리뷰 리듬(GSC/GA4))
 - [x] P1-17 (LEAD/WEB: PWA 의존성 단일화 + 캐시 경계 고정)
 - [x] P1-18 (LEAD: 패키지 매니저/락파일 단일화)
-- [ ] P1-19 (BE/LEAD: Cache-Control 정책 SoT + 캐시 감사)
+- [x] P1-19 (BE/LEAD: Cache-Control 정책 SoT + 캐시 감사)
 
 ### P2
 
@@ -1724,8 +1724,8 @@ $gh-address-comments
 
 - 목표: “공개 캐시 가능 응답”과 “개인화/세션 응답”의 경계를 단일 정책으로 고정해 데이터 노출/성능 이슈를 구조적으로 줄인다
 - 현황(코드 근거)
-  - 여러 API 라우트에서 `Cache-Control`을 개별 설정하고 있어 정책 드리프트 위험이 있음(예: `src/app/api/categories/route.ts:55`, `src/app/api/users/leaderboard/route.ts:79`)
-  - 기본 응답 헬퍼는 `no-store`지만(`src/lib/api/response.ts:47`), 라우트에서 직접 세팅하는 패턴이 혼재
+  - 여러 API 라우트에서 `Cache-Control`을 개별 설정하고 있어 정책 드리프트 위험이 있음(예: `src/app/api/categories/route.ts:1`, `src/app/api/users/leaderboard/route.ts:1`)
+  - 기본 응답 헬퍼는 `no-store`지만(`src/lib/api/response.ts:1`), 라우트에서 직접 세팅하는 패턴이 혼재
 - 작업(권장, 효율 우선)
   - 캐시 tier 정의(SoT)
     - `public`: 익명 기준 동일 응답만(절대 viewer-dependent 필드 포함 금지)
@@ -1734,6 +1734,10 @@ $gh-address-comments
   - 라우트 감사(소규모부터)
     - `public` 캐시를 사용하는 엔드포인트 목록화 → 응답 스키마에 개인화 필드가 없는지 점검
     - 위험 엔드포인트는 `private, no-store`로 내리고, 클라 캐시(TanStack Query)로 체감 성능 보완
+- 변경(반영)
+  - 캐시 정책 SoT 추가: `CACHE_CONTROL`, `setPublicSWR`, `setPrivateNoStore`, `setNoStore` (`src/lib/api/response.ts:1`)
+  - API 라우트에서 문자열 직접 세팅 제거 → 유틸로 통일(드리프트 방지)
+  - public 캐시는 “비로그인 + viewer-independent” 조건에서만 설정(`/api/posts`, `/api/posts/trending`, `/api/search*`, `/api/categories`, `/api/news`, `/api/users/leaderboard` 등)
 - 완료 기준
   - 캐시 정책이 유틸/헬퍼로 단일화되고, 공개 캐시 적용 엔드포인트가 “안전 목록”으로 관리됨
   - 개인화 응답이 public 캐시로 내려가는 케이스가 0

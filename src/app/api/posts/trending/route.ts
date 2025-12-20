@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { posts, users, answers, comments } from '@/lib/db/schema';
-import { successResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPrivateNoStore, setPublicSWR, successResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { getFollowingIdSet } from '@/lib/api/follow';
 import { and, desc, eq, gte, inArray, isNull, sql, type SQL } from 'drizzle-orm';
@@ -164,10 +164,11 @@ export async function GET(request: NextRequest) {
       .map(({ score, ...post }) => post);
 
     const response = successResponse(sorted);
-    response.headers.set(
-      'Cache-Control',
-      currentUser ? 'private, no-store' : 'public, s-maxage=300, stale-while-revalidate=600'
-    );
+    if (currentUser) {
+      setPrivateNoStore(response);
+    } else {
+      setPublicSWR(response, 300, 600);
+    }
     return response;
   } catch (error) {
     console.error('GET /api/posts/trending error:', error);

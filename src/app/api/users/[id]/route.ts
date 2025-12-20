@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { userMeColumns } from '@/lib/db/columns';
 import { users, follows, posts, answers, comments, bookmarks } from '@/lib/db/schema';
+import { setNoStore, setPrivateNoStore } from '@/lib/api/response';
 import { eq, count, and } from 'drizzle-orm';
 import { getSession } from '@/lib/api/auth';
 import { DISPLAY_NAME_MIN_LENGTH, generateDisplayNameFromEmail, normalizeDisplayName, sanitizeDisplayName } from '@/lib/utils/profile';
@@ -41,10 +42,9 @@ export async function GET(
     }
 
     if (!user) {
-      return NextResponse.json(
-        { error: '사용자를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      const response = NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 404 });
+      setNoStore(response);
+      return response;
     }
 
     const queries: Promise<any>[] = [
@@ -118,14 +118,13 @@ export async function GET(
         bookmarks: bookmarksResult[0]?.count || 0,
       },
     });
-    response.headers.set('Cache-Control', 'private, no-store');
+    setPrivateNoStore(response);
     return response;
   } catch (error) {
     console.error('Error fetching user:', error);
-    return NextResponse.json(
-      { error: '사용자 정보를 가져오는데 실패했습니다.' },
-      { status: 500 }
-    );
+    const response = NextResponse.json({ error: '사용자 정보를 가져오는데 실패했습니다.' }, { status: 500 });
+    setNoStore(response);
+    return response;
   }
 }
 
@@ -137,10 +136,14 @@ export async function PUT(
     const { id } = await params;
     const sessionUser = await getSession(request);
     if (!sessionUser) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+      const response = NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+      setNoStore(response);
+      return response;
     }
     if (sessionUser.id !== id) {
-      return NextResponse.json({ error: '본인 정보만 수정할 수 있습니다.' }, { status: 403 });
+      const response = NextResponse.json({ error: '본인 정보만 수정할 수 있습니다.' }, { status: 403 });
+      setNoStore(response);
+      return response;
     }
 
     const body = await request.json();
@@ -160,7 +163,9 @@ export async function PUT(
 
     const normalizedDisplayName = displayName ? normalizeDisplayName(displayName) : undefined;
     if (displayName !== undefined && (normalizedDisplayName || '').length < DISPLAY_NAME_MIN_LENGTH) {
-      return NextResponse.json({ error: '닉네임은 2자 이상이어야 합니다.' }, { status: 400 });
+      const response = NextResponse.json({ error: '닉네임은 2자 이상이어야 합니다.' }, { status: 400 });
+      setNoStore(response);
+      return response;
     }
 
     const updatePayload: Record<string, unknown> = {
@@ -194,15 +199,16 @@ export async function PUT(
 
     await db.update(users).set(updatePayload).where(eq(users.id, id));
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: '사용자 정보가 업데이트되었습니다.',
     });
+    setPrivateNoStore(response);
+    return response;
   } catch (error) {
     console.error('Error updating user:', error);
-    return NextResponse.json(
-      { error: '사용자 정보 업데이트에 실패했습니다.' },
-      { status: 500 }
-    );
+    const response = NextResponse.json({ error: '사용자 정보 업데이트에 실패했습니다.' }, { status: 500 });
+    setNoStore(response);
+    return response;
   }
 }

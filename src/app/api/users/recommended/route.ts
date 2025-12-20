@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users, follows, posts } from '@/lib/db/schema';
 import { eq, ne, notInArray, sql, desc, and } from 'drizzle-orm';
-import { errorResponse } from '@/lib/api/response';
+import { setPrivateNoStore, errorResponse } from '@/lib/api/response';
 
 export async function GET(req: NextRequest) {
   try {
@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
     });
-    response.headers.set('Cache-Control', 'private, no-store');
+    setPrivateNoStore(response);
     return response;
   } catch (error) {
     console.error('Get recommended users error:', error);

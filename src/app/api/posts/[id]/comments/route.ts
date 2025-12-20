@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { comments, posts, likes } from '@/lib/db/schema';
-import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, paginatedResponse, rateLimitResponse } from '@/lib/api/response';
+import { setPrivateNoStore, successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, paginatedResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkRateLimit } from '@/lib/api/rateLimit';
 import { checkUserStatus } from '@/lib/user-status';
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     if (!wantsPagination) {
       const response = successResponse(formatted);
-      response.headers.set('Cache-Control', 'private, no-store');
+      setPrivateNoStore(response);
       return response;
     }
 
@@ -207,7 +207,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       hasMore: rawHasMore,
       paginationMode: useCursorPagination ? 'cursor' : 'offset',
     });
-    response.headers.set('Cache-Control', 'private, no-store');
+    setPrivateNoStore(response);
     return response;
   } catch (error) {
     console.error('GET /api/posts/[id]/comments error:', error);

@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAdminSession } from '@/lib/admin/auth';
+import { setNoStore, setPrivateNoStore } from '@/lib/api/response';
 import { sql } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getAdminSession(request);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      setNoStore(response);
+      return response;
     }
 
     const result = await db.execute(sql`
@@ -64,10 +67,12 @@ export async function POST(request: NextRequest) {
       success: true,
       data: summary,
     });
-    response.headers.set('Cache-Control', 'private, no-store');
+    setPrivateNoStore(response);
     return response;
   } catch (error) {
     console.error('POST /api/admin/reports/backfill-content-reports error:', error);
-    return NextResponse.json({ error: 'Failed to backfill reports' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to backfill reports' }, { status: 500 });
+    setNoStore(response);
+    return response;
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { follows } from '@/lib/db/schema';
-import { successResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPrivateNoStore, successResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, and } from 'drizzle-orm';
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const user = await getSession(request);
     if (!user) {
       const response = successResponse({ isFollowing: false });
-      response.headers.set('Cache-Control', 'private, no-store');
+      setPrivateNoStore(response);
       return response;
     }
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     });
 
     const response = successResponse({ isFollowing: !!existingFollow });
-    response.headers.set('Cache-Control', 'private, no-store');
+    setPrivateNoStore(response);
     return response;
   } catch (error) {
     console.error('GET /api/users/[id]/follow/status error:', error);

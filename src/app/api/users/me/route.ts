@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userMeColumns } from '@/lib/db/columns';
 import { users, posts, answers, follows, comments, bookmarks, likes } from '@/lib/db/schema';
-import { successResponse, unauthorizedResponse, serverErrorResponse, errorResponse } from '@/lib/api/response';
+import { setPrivateNoStore, successResponse, unauthorizedResponse, serverErrorResponse, errorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, sql, and, inArray } from 'drizzle-orm';
 import { DISPLAY_NAME_MIN_LENGTH, normalizeDisplayName } from '@/lib/utils/profile';
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     };
 
     const response = successResponse(userWithStats);
-    response.headers.set('Cache-Control', 'private, no-store');
+    setPrivateNoStore(response);
     return response;
   } catch (error) {
     console.error('GET /api/users/me error:', error);
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     if (postIds.length === 0) {
       const response = successResponse({ likedPostIds: [], bookmarkedPostIds: [] });
-      response.headers.set('Cache-Control', 'private, no-store');
+      setPrivateNoStore(response);
       return response;
     }
 
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     const bookmarkedPostIds = bookmarkedRows.map((row) => row.postId).filter(Boolean) as string[];
 
     const response = successResponse({ likedPostIds, bookmarkedPostIds });
-    response.headers.set('Cache-Control', 'private, no-store');
+    setPrivateNoStore(response);
     return response;
   } catch (error) {
     console.error('POST /api/users/me error:', error);
@@ -190,7 +190,9 @@ export async function PUT(request: NextRequest) {
       return unauthorizedResponse('사용자 정보를 찾을 수 없습니다.');
     }
 
-    return successResponse(updatedUser, '프로필이 업데이트되었습니다.');
+    const response = successResponse(updatedUser, '프로필이 업데이트되었습니다.');
+    setPrivateNoStore(response);
+    return response;
   } catch (error) {
     console.error('PUT /api/users/me error:', error);
     return serverErrorResponse();

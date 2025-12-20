@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { desc, sql, count } from 'drizzle-orm';
-import { paginatedResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPublicSWR, paginatedResponse, serverErrorResponse } from '@/lib/api/response';
 
 const resolveTemperature = (score: number) => {
   const safeScore = Math.max(0, score);
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     });
 
     const response = paginatedResponse(leaderboard, page, limit, total);
-    response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
+    setPublicSWR(response, 120, 600);
     return response;
   } catch (error) {
     console.error('GET /api/users/leaderboard error:', error);

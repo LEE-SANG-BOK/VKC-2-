@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { posts, users, categorySubscriptions, categories, follows, topicSubscriptions, answers, comments, likes, bookmarks } from '@/lib/db/schema';
-import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
+import { setNoStore, setPrivateNoStore, setPublicSWR, successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkRateLimit } from '@/lib/api/rateLimit';
 import { checkUserStatus } from '@/lib/user-status';
@@ -508,7 +508,7 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      response.headers.set('Cache-Control', 'no-store');
+      setNoStore(response);
       return response;
     }
 
@@ -583,12 +583,11 @@ export async function GET(request: NextRequest) {
     });
 
     const shouldCachePublic = !user && !filter && !hasSearch;
-    response.headers.set(
-      'Cache-Control',
-      shouldCachePublic
-        ? 'public, s-maxage=60, stale-while-revalidate=300'
-        : 'private, no-store'
-    );
+    if (shouldCachePublic) {
+      setPublicSWR(response, 60, 300);
+    } else {
+      setPrivateNoStore(response);
+    }
 
     return response;
   } catch (error) {

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { posts, follows, answers, comments, likes, bookmarks } from '@/lib/db/schema';
-import { successResponse, errorResponse, notFoundResponse, forbiddenResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPrivateNoStore, successResponse, errorResponse, notFoundResponse, forbiddenResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession, isOwner } from '@/lib/api/auth';
 import { eq, and, sql, isNull } from 'drizzle-orm';
 import { hasProhibitedContent } from '@/lib/content-filter';
@@ -153,7 +153,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     };
 
     const response = successResponse(postDetail);
-    response.headers.set('Cache-Control', 'private, no-store');
+    setPrivateNoStore(response);
     return response;
   } catch (error) {
     console.error('GET /api/posts/[id] error:', error);

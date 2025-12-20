@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { follows, users } from '@/lib/db/schema';
-import { paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPrivateNoStore, paginatedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { getFollowingIdSet } from '@/lib/api/follow';
 import { eq, desc, sql, and, or, lt, type SQL } from 'drizzle-orm';
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       hasMore: rawHasMore,
       paginationMode: useCursorPagination ? 'cursor' : 'offset',
     });
-    response.headers.set('Cache-Control', 'private, no-store');
+    setPrivateNoStore(response);
     return response;
   } catch (error) {
     console.error('GET /api/users/[id]/followers error:', error);

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { users } from '@/lib/db/schema';
-import { paginatedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPrivateNoStore, setPublicSWR, paginatedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { getFollowingIdSet } from '@/lib/api/follow';
 import { sql, or, ilike, desc } from 'drizzle-orm';
@@ -71,10 +71,11 @@ export async function GET(request: NextRequest) {
     }));
 
     const response = paginatedResponse(decoratedUsers, page, limit, total);
-    response.headers.set(
-      'Cache-Control',
-      currentUser ? 'private, no-store' : 'public, s-maxage=120, stale-while-revalidate=600'
-    );
+    if (currentUser) {
+      setPrivateNoStore(response);
+    } else {
+      setPublicSWR(response, 120, 600);
+    }
     return response;
   } catch (error) {
     console.error('GET /api/search/users error:', error);

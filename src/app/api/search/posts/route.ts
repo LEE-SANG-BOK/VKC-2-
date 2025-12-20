@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { posts } from '@/lib/db/schema';
-import { paginatedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPublicSWR, paginatedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { sql, eq, desc, and, inArray, SQL } from 'drizzle-orm';
 import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
 
@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = paginatedResponse(postsResult, page, limit, responseTotal, meta);
-    response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
+    setPublicSWR(response, 120, 600);
     return response;
   } catch (error) {
     console.error('GET /api/search/posts error:', error);
