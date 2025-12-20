@@ -156,7 +156,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
     expertBadge: tTrust.expertLabel || modalFallbacks.expertBadge,
     communityBadge: tTrust.communityLabel || modalFallbacks.communityBadge,
     verifiedBadge: tTrust.verifiedUserLabel || modalFallbacks.verifiedBadge,
-    unknownUser: modalFallbacks.unknownUser,
+    unknownUser: tCommon.anonymous || modalFallbacks.unknownUser,
     student: t.student || modalFallbacks.student,
     worker: t.worker || modalFallbacks.worker,
     resident: t.resident || modalFallbacks.resident,
@@ -409,7 +409,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
       locale: locale as 'ko' | 'en' | 'vi',
       onboardingLabels: tOnboarding,
     });
-    const metaTexts: string[] = formatRecommendationMetaItems({
+    const metaTexts = formatRecommendationMetaItems({
       items: localizedMetaItems,
       fallback: localizedMetaItems,
       metaLabels,
@@ -734,6 +734,8 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                       isAdopted={post.isResolved}
                       isLiked={post.isLiked}
                       isBookmarked={post.isBookmarked}
+                      officialAnswerCount={post.officialAnswerCount}
+                      reviewedAnswerCount={post.reviewedAnswerCount}
                       trustBadge={(post as any).trustBadge}
                       trustWeight={(post as any).trustWeight}
                       translations={translations}

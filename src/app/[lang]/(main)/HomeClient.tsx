@@ -9,12 +9,13 @@ import NewsSection from '@/components/organisms/NewsSection';
 import AdminPostRail from '@/components/organisms/AdminPostRail';
 import PostList from '@/components/organisms/PostList';
 import NoticeBanner from '@/components/organisms/NoticeBanner';
+import type { Locale } from '@/i18n/config';
 import { useMyProfile } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
 
 interface HomeClientProps {
   dict: any;
-  lang: string;
+  lang: Locale;
 }
 
 export default function HomeClient({ dict, lang }: HomeClientProps) {
