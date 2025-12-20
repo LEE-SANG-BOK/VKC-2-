@@ -246,6 +246,21 @@ $gh-address-comments
   - (deleted) src/app/api/admin/content-reports/route.ts
   - (deleted) src/app/api/admin/content-reports/[id]/route.ts
 
+#### (2025-12-20) [LEAD] build 오류 해결: 유저 점수 API route 복원 (P0)
+
+- 플랜(체크리스트)
+  - [x] `/api/users/[id]/score` route 복원
+  - [x] `npm run build` 통과 확인
+- 현황 분석(코드 기준)
+  - `.next/dev/types`에서 `/api/users/[id]/score` 타입 참조가 생성되었는데 실제 route 파일이 없어 빌드 실패
+- 변경 내용(why/what)
+  - why: 빌드 타입 체크 실패 해소
+  - what: `src/app/api/users/[id]/score/route.ts` 복원
+- 검증
+  - [x] npm run build
+- 변경 파일
+  - src/app/api/users/[id]/score/route.ts
+
 #### (2025-12-18) [LEAD] 컴포넌트 폴더 구조 정리: molecules/cards 분리 (P0)
 
 - 플랜(체크리스트)
