@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
@@ -18,7 +18,8 @@ import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation'
 import { useToggleFollow } from '@/repo/users/mutation';
 import { logEvent } from '@/repo/events/mutation';
 import { useHiddenTargets } from '@/repo/hides/query';
-import { useHideTarget, useUnhideTarget } from '@/repo/hides/mutation';
+import { useHideTarget } from '@/repo/hides/mutation';
+import { useReportPost } from '@/repo/reports/mutation';
 import { ALLOWED_CATEGORY_SLUGS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
@@ -74,7 +75,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const { openLoginPrompt } = useLoginPrompt();
   const { idSet: hiddenPostIds } = useHiddenTargets('post', Boolean(session?.user));
   const hideTargetMutation = useHideTarget();
-  const unhideTargetMutation = useUnhideTarget();
+  const reportPostMutation = useReportPost();
   const locale = (params?.lang as 'ko' | 'en' | 'vi') || 'ko';
   const t = (translations?.tooltips || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
@@ -88,11 +89,11 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const linkCopiedLabel = t.linkCopied || (locale === 'vi' ? 'Đã sao chép liên kết!' : locale === 'en' ? 'Link copied!' : '링크가 복사되었습니다!');
   const copyFailedLabel = t.copyFailed || (locale === 'vi' ? 'Không thể sao chép liên kết.' : locale === 'en' ? 'Failed to copy link.' : '복사에 실패했습니다.');
   const sourcePrefix = tCommon.source || (locale === 'vi' ? 'Nguồn' : locale === 'en' ? 'Source' : '출처');
-  const hideLabel = tCommon.hide || (locale === 'vi' ? 'Ẩn' : locale === 'en' ? 'Hide' : '안보기');
-  const unhideLabel = tCommon.unhide || (locale === 'vi' ? 'Bỏ ẩn' : locale === 'en' ? 'Unhide' : '숨김 해제');
-  const hiddenPostLabel = tCommon.hiddenPost || (locale === 'vi' ? 'Bài viết đã được ẩn.' : locale === 'en' ? 'This post is hidden.' : '숨긴 게시글입니다.');
+  const hideLabel = tCommon.hide || (locale === 'vi' ? 'Ẩn' : locale === 'en' ? 'Hide' : '숨김');
+  const reportLabel = tCommon.report || (locale === 'vi' ? 'Báo cáo' : locale === 'en' ? 'Report' : '신고');
+  const reportSubmittedLabel = tCommon.reportSubmitted || (locale === 'vi' ? 'Báo cáo đã được gửi.' : locale === 'en' ? 'Report submitted.' : '신고가 접수되었습니다.');
+  const reportFailedLabel = tCommon.reportFailed || (locale === 'vi' ? 'Không thể gửi báo cáo.' : locale === 'en' ? 'Failed to submit report.' : '신고 처리 중 오류가 발생했습니다.');
   const hideFailedLabel = tCommon.hideFailed || (locale === 'vi' ? 'Không thể ẩn bài viết.' : locale === 'en' ? 'Failed to hide the post.' : '게시글을 숨길 수 없습니다.');
-  const unhideFailedLabel = tCommon.unhideFailed || (locale === 'vi' ? 'Không thể bỏ ẩn.' : locale === 'en' ? 'Failed to unhide.' : '숨김 해제에 실패했습니다.');
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -193,9 +194,10 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const [localIsBookmarked, setLocalIsBookmarked] = useState(initialIsBookmarked || false);
   const [localLikes, setLocalLikes] = useState(stats.likes);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [showHideMenu, setShowHideMenu] = useState(false);
+  const hideMenuRef = useRef<HTMLDivElement | null>(null);
   const isHidden = hiddenPostIds.has(String(id));
-  const hideActionLabel = isHidden ? unhideLabel : hideLabel;
-  const hideEmoji = isHidden ? '👀' : '🙈';
+  const hideEmoji = ':)';
   const localizeTag = (tag: string) => {
     const raw = tag?.replace(/^#/, '').trim();
     if (!raw) return '';
@@ -418,20 +420,56 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     }
 
     try {
-      if (isHidden) {
-        await unhideTargetMutation.mutateAsync({ targetType: 'post', targetId: String(id) });
-      } else {
-        await hideTargetMutation.mutateAsync({ targetType: 'post', targetId: String(id) });
-      }
+      await hideTargetMutation.mutateAsync({ targetType: 'post', targetId: String(id) });
     } catch (error) {
       console.error('Failed to toggle hide:', error);
-      toast.error(isHidden ? unhideFailedLabel : hideFailedLabel);
+      toast.error(hideFailedLabel);
     }
   };
 
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowShareMenu((prev) => !prev);
+  };
+
+  useEffect(() => {
+    if (!showHideMenu) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!hideMenuRef.current?.contains(event.target as Node)) {
+        setShowHideMenu(false);
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [showHideMenu]);
+
+  const handleHideMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowHideMenu((prev) => !prev);
+  };
+
+  const handleHideFromMenu = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowHideMenu(false);
+    await handleToggleHide(e);
+  };
+
+  const handleReportFromMenu = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowHideMenu(false);
+    if (!session?.user) {
+      openLoginPrompt();
+      return;
+    }
+    try {
+      await reportPostMutation.mutateAsync({
+        postId: String(id),
+        data: { type: 'spam', reason: 'spam' },
+      });
+      toast.success(reportSubmittedLabel);
+    } catch (error) {
+      toast.error(reportFailedLabel);
+    }
   };
 
   const shareLabels = {
@@ -517,25 +555,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const mediaGridClass = `question-card-media-grid question-card-media-grid--row question-card-media-grid--single`;
 
   if (isHidden) {
-    return (
-      <article className="question-card group">
-        <div className="question-card-main">
-          <div className="flex items-center justify-between gap-3 px-2 py-2">
-            <span className="text-sm text-gray-500 dark:text-gray-400">{hiddenPostLabel}</span>
-            <Tooltip content={hideActionLabel} position="top">
-              <button
-                type="button"
-                onClick={handleToggleHide}
-                aria-label={hideActionLabel}
-                className="rounded-full p-1.5 text-base leading-none text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                {hideEmoji}
-              </button>
-            </Tooltip>
-          </div>
-        </div>
-      </article>
-    );
+    return null;
   }
 
   return (
@@ -544,6 +564,34 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       className={`question-card group ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
         }`}
     >
+      <div ref={hideMenuRef} className="absolute right-3 top-3 z-10">
+        <button
+          type="button"
+          onClick={handleHideMenuToggle}
+          aria-label={hideLabel}
+          className="inline-flex h-8 min-w-[32px] items-center justify-center rounded-full border border-gray-200 bg-white/90 px-2 text-sm font-semibold text-gray-600 shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-300 dark:hover:text-white"
+        >
+          {hideEmoji}
+        </button>
+        {showHideMenu ? (
+          <div className="mt-1 w-24 overflow-hidden rounded-lg border border-gray-200 bg-white text-sm shadow-lg dark:border-gray-700 dark:bg-gray-900">
+            <button
+              type="button"
+              onClick={handleHideFromMenu}
+              className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              {hideLabel}
+            </button>
+            <button
+              type="button"
+              onClick={handleReportFromMenu}
+              className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              {reportLabel}
+            </button>
+          </div>
+        ) : null}
+      </div>
       <div className="question-card-main">
         <div className="question-card-body">
           {/* Author Info & Badges */}
@@ -599,18 +647,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   <span>{formatDateTime(publishedAt, locale)}</span>
                 </div>
               </div>
-            </div>
-            <div className="ml-auto shrink-0">
-              <Tooltip content={hideActionLabel} position="top">
-                <button
-                  type="button"
-                  onClick={handleToggleHide}
-                  aria-label={hideActionLabel}
-                  className="rounded-full p-1.5 text-base leading-none text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                >
-                  {hideEmoji}
-                </button>
-              </Tooltip>
             </div>
           </div>
 
