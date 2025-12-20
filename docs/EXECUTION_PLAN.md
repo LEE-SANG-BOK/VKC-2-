@@ -3955,3 +3955,19 @@ $gh-address-comments
   - docs/WORKING_PLAN.md
 - 다음 액션/의존성
   - (선택) `common.share` i18n 키 추가 여부 결정
+
+#### (2025-12-20) [LEAD] i18n `common.share` 추가 + DB migrate 타임아웃 우회 (P0)
+
+- 플랜(체크리스트)
+  - [x] `messages/*`에 `common.share` 추가
+  - [x] statement_timeout 비활성화 옵션으로 DB migrate 재시도
+- 변경 내용(why/what)
+  - why: 공유 CTA 공통 라벨 누락 보완 + 로컬 migrate 블로커 해소
+  - what: ko/en/vi 공통 키 추가, `PGOPTIONS='-c statement_timeout=0'`로 마이그레이션 수행
+- 검증
+  - [x] npm run db:migrate (PGOPTIONS 적용)
+  - [ ] lint/build 재실행 없음(i18n 변경)
+- 변경 파일
+  - messages/ko.json
+  - messages/en.json
+  - messages/vi.json
