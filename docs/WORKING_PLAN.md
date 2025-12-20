@@ -412,7 +412,7 @@ $gh-address-comments
 - [ ] P1-15 (LEAD/WEB: AI 검색/요약 대비 SEO 구조화)
 - [ ] P1-16 (LEAD: SEO KPI/리뷰 리듬(GSC/GA4))
 - [ ] P1-17 (LEAD/WEB: PWA 의존성 단일화 + 캐시 경계 고정)
-- [ ] P1-18 (LEAD: 패키지 매니저/락파일 단일화)
+- [x] P1-18 (LEAD: 패키지 매니저/락파일 단일화)
 - [ ] P1-19 (BE/LEAD: Cache-Control 정책 SoT + 캐시 감사)
 
 ### P2
@@ -1710,6 +1710,9 @@ $gh-address-comments
   - 단일 매니저 확정: CI 기준으로 `npm` 고정(예: `package-lock.json`만 유지)
   - 다른 락파일 제거 + 재생성/검증 절차를 문서에 고정
   - CI/훅(선택): “다른 락파일이 생기면 실패” 체크 추가(반복 방지)
+- 변경(반영)
+  - `pnpm-lock.yaml`, `yarn.lock`, `.yarnrc.yml` 제거 → `package-lock.json`만 유지
+  - CI에 락파일 가드 추가: `package-lock.json` 존재 + 다른 락파일이 있으면 실패(`.github/workflows/ci.yml:1`)
 - 완료 기준
   - 저장소에 락파일이 1개만 존재하고, 로컬/CI 설치가 같은 결과를 재현
 

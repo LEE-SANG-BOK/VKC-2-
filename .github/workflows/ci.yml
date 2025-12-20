@@ -36,6 +36,13 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Lockfile Policy
+        run: |
+          test -f package-lock.json
+          test ! -f pnpm-lock.yaml
+          test ! -f yarn.lock
+          test ! -f .yarnrc.yml
+
       - name: Install
         run: npm ci
 
