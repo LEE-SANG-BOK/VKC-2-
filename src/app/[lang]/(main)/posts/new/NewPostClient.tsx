@@ -14,8 +14,9 @@ import Modal from '@/components/atoms/Modal';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 import type { Locale } from '@/i18n/config';
-import { UGC_LIMITS, getPlainTextLength, isLowQualityText } from '@/lib/validation/ugc';
+import { UGC_LIMITS, extractPlainText, getPlainTextLength, isLowQualityText } from '@/lib/validation/ugc';
 
 const RichTextEditor = dynamic(() => import('@/components/molecules/editor/RichTextEditor'), {
   ssr: false,
@@ -541,58 +542,6 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     }
   }, [parentCategory, parentOptions, childCategory]);
 
-  // 카테고리별 인기 태그 매핑 (id/slug/name 소문자 키 모두 대응 + slug 포함 키워드 매칭)
-  const popularTags: Record<string, string[]> = {
-    'jobs': ['취업', '채용', '지원서'],
-    'employment': ['취업', '지원서', '면접'],
-    'intern': ['인턴', '서류', '면접'],
-    'contest': ['공모전', '포트폴리오', '수상'],
-    'visa': ['비자', '연장', '체류'],
-    'study': ['학업', '장학금', '수업'],
-    'education': ['학업', '수업', '장학금'],
-    'life': ['생활', '주거', '교통'],
-    'daily-life': ['생활', '주거', '생활정보'],
-    'housing': ['주거', '월세', '방구하기'],
-    'finance': ['금융', '계좌개설', '송금'],
-    'healthcare': ['의료', '보험', '병원'],
-    'legal': ['법률', '계약', '신고'],
-    'business': ['비즈니스', '창업', '서류'],
-    'tech': ['IT', '개발', '프로젝트'],
-    'gaming': ['게임', '커뮤니티', '리뷰'],
-    'korean-language': ['한국어', '토픽', '수업'],
-  };
-
-  const keywordTags: Record<string, string[]> = {
-    '비자': ['비자', '연장', '체류'],
-    'visa': ['비자', '연장', '체류'],
-    '채용': ['취업', '채용', '면접'],
-    '취업': ['취업', '채용', '면접'],
-    '면접': ['면접', '자소서', '포트폴리오'],
-    '인턴': ['인턴', '서류', '면접'],
-    '공모전': ['공모전', '포트폴리오', '수상'],
-    '포트폴리오': ['포트폴리오', '공모전', '수상'],
-    '장학': ['장학금', '학업', '수업'],
-    '학업': ['학업', '수업', '장학금'],
-    '주거': ['주거', '월세', '방구하기'],
-    '월세': ['주거', '월세', '방구하기'],
-    '계좌': ['금융', '계좌개설', '송금'],
-    '송금': ['송금', '계좌개설', '금융'],
-    '보험': ['보험', '의료', '병원'],
-    '병원': ['병원', '의료', '보험'],
-    '법률': ['법률', '계약', '신고'],
-    '계약': ['계약', '법률', '신고'],
-    '창업': ['비즈니스', '창업', '서류'],
-    '개발': ['IT', '개발', '프로젝트'],
-    '게임': ['게임', '커뮤니티', '리뷰'],
-    '토픽': ['한국어', '토픽', '수업'],
-  };
-
-  const extractKeywords = (text: string) => {
-    const lower = text.toLowerCase();
-    const tokens = lower.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-    return new Set(tokens);
-  };
-
   const localizeTag = (tag: string) => {
     return localizeCommonTagLabel(tag, lang);
   };
@@ -615,46 +564,21 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     const child = childOptions.find((childOption) => childOption.slug === childCategory);
     const parentLabel = resolveLocalizedLabel(parentCategory) || selectedParent?.label;
     const childLabel = resolveLocalizedLabel(child?.slug) || child?.name;
-    const keys = [
-      child?.id, child?.slug, child?.name,
-      parentCategory, selectedParent?.slug, selectedParent?.label,
-    ].filter(Boolean).map((v) => v!.toLowerCase());
-
-    const collected: string[] = [];
-    keys.forEach((k) => {
-      const arr = popularTags[k];
-      if (arr) {
-        collected.push(...arr);
-        return;
-      }
-      if (k.includes('visa')) collected.push('비자', '연장', '체류');
-      if (k.includes('job') || k.includes('employment')) collected.push('취업', '채용', '면접');
-      if (k.includes('intern')) collected.push('인턴', '서류', '면접');
-      if (k.includes('contest')) collected.push('공모전', '포트폴리오', '수상');
-      if (k.includes('study') || k.includes('edu')) collected.push('학업', '장학금', '수업');
-      if (k.includes('life') || k.includes('daily')) collected.push('생활', '주거', '교통');
-      if (k.includes('finance')) collected.push('금융', '계좌개설', '송금');
-      if (k.includes('health')) collected.push('의료', '보험', '병원');
-      if (k.includes('legal')) collected.push('법률', '계약', '신고');
-      if (k.includes('business')) collected.push('비즈니스', '창업', '서류');
-      if (k.includes('tech')) collected.push('IT', '개발', '프로젝트');
-      if (k.includes('game')) collected.push('게임', '커뮤니티', '리뷰');
-      if (k.includes('korean')) collected.push('한국어', '토픽', '수업');
-    });
-
-    // 제목/본문 키워드 기반 태그 추가
-    const keywordPool = extractKeywords(`${title} ${content}`);
-    Object.entries(keywordTags).forEach(([kw, tags]) => {
-      if (keywordPool.has(kw.toLowerCase())) {
-        collected.push(...tags);
-      }
-    });
+    const keywordCandidates = flattenKeywords(
+      buildKeywords({
+        title,
+        content: extractPlainText(resolvedContentWithThumbnail),
+        category: parentLabel,
+        subcategory: childLabel,
+      }),
+      8
+    );
 
     // 카테고리/세부분류를 우선 포함
     const base = [
       childLabel,
       parentLabel,
-      ...collected,
+      ...keywordCandidates,
       defaultTagLabel,
     ].filter(Boolean) as string[];
     const localized = base.map(localizeTag);

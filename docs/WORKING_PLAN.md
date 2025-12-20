@@ -382,7 +382,7 @@ $gh-address-comments
 - [ ] P0-9 (LEAD/FE: 크로스브라우징 QA)
 - [ ] P0-10 (LEAD/WEB/BE/FE: 가이드라인 v1)
 - [x] P0-11 (BE/WEB/FE: 숨김/신고 즉시 숨김)
-- [ ] P0-12 (WEB/BE/FE: 메타/키워드 파이프라인 통합)
+- [x] P0-12 (WEB/BE/FE: 메타/키워드 파이프라인 통합)
 - [ ] P0-13 (FE/WEB: 라벨 제거 + 강조 UI)
 - [x] P0-14 (FE/WEB: 피드백 UX 간소화)
 - [x] P0-15 (FE/WEB: 게시글 상세 액션/추천 정리)
@@ -1164,8 +1164,8 @@ $gh-address-comments
 
 - 플랜(체크리스트)
   - [x] [WEB] 메타 빌더/키워드 빌더 도입
-  - [ ] [BE] 키워드 API/연동 정리
-  - [ ] [FE] UI 해시태그/추천 표시 연동
+  - [x] [BE] (P0 범위) 기존 `/api/search/keywords` 유지(DB 집계 기반), 메타/해시태그 SoT는 `keywords.ts`로 고정
+  - [x] [FE] 글쓰기 자동 해시태그를 공용 키워드 빌더(`buildKeywords`)로 통일(중복 로직 제거)
 
 - 목표: SEO 메타(title/description/OG/Twitter) 생성과 “자동 키워드(해시태그/추천 키워드)”를 같은 소스에서 만들고, 중복 로직을 제거한다
 - 핵심 원칙(효율/반복 최소화)
@@ -1184,6 +1184,12 @@ $gh-address-comments
 - 완료 기준
   - `generateMetadata`(OG/Twitter 포함)와 “자동 키워드(해시태그)”가 동일 파이프라인을 사용
   - 키워드 로직이 1곳에만 존재하고(중복 제거), UI/SEO/API 모두 결과만 소비
+  - 글쓰기 기본 태그 생성은 `src/lib/seo/keywords.ts`를 SoT로 사용(컴포넌트 내부 키워드 매핑/토큰 로직 없음)
+
+- 최근 구현(2025-12-21)
+  - 글쓰기 자동 태그(`posts/new`)를 `buildKeywords/flattenKeywords` 기반으로 통일
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
 
 #### (2025-12-20) [FE] P0-13 카드/템플릿 “강조 표시” 정리(라벨 제거) (P0)
 
