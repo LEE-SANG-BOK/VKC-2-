@@ -411,7 +411,7 @@ $gh-address-comments
 - [ ] P1-14 (LEAD/BE/WEB: 인증/배지 taxonomy + 운영 workflow 정리)
 - [ ] P1-15 (LEAD/WEB: AI 검색/요약 대비 SEO 구조화)
 - [ ] P1-16 (LEAD: SEO KPI/리뷰 리듬(GSC/GA4))
-- [ ] P1-17 (LEAD/WEB: PWA 의존성 단일화 + 캐시 경계 고정)
+- [x] P1-17 (LEAD/WEB: PWA 의존성 단일화 + 캐시 경계 고정)
 - [x] P1-18 (LEAD: 패키지 매니저/락파일 단일화)
 - [ ] P1-19 (BE/LEAD: Cache-Control 정책 SoT + 캐시 감사)
 
@@ -1697,6 +1697,9 @@ $gh-address-comments
     - 오프라인 폴백은 “읽기 UX”만 보장(작성/상태 변경은 온라인 필요)
   - 검증 루틴(운영 효율)
     - 오프라인/저속에서 홈/상세는 안내+캐시로 복구 가능, 개인화 화면은 “정상 안내”로 실패(무한 로딩 금지)
+- 변경(반영)
+  - 중복 의존성 제거: `next-pwa` 제거 → `@ducanh2912/next-pwa`만 유지(`package.json:1`)
+  - 캐시 옵션 보수화: `cacheOnFrontEndNav=false`, `aggressiveFrontEndNavCaching=false`로 고정(`next.config.ts:1`)
 - 완료 기준
   - PWA 패키지/설정이 1개로 수렴하고, 캐시 범위가 문서/코드에서 일치
   - PWA로 인해 개인화 화면에서 stale UI/오작동이 발생하지 않음(최소 시나리오 검증)
