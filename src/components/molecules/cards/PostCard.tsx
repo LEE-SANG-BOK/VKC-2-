@@ -8,12 +8,15 @@ import { useSession } from 'next-auth/react';
 import { BadgeCheck, Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
+import ActionIconButton from '@/components/atoms/ActionIconButton';
+import FeedImage from '@/components/atoms/FeedImage';
 import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
 import Avatar from '@/components/atoms/Avatar';
 import { useLoginPrompt } from '@/providers/LoginPromptProvider';
 import { useCategories } from '@/repo/categories/query';
 import { useTogglePostLike, useTogglePostBookmark } from '@/repo/posts/mutation';
 import { useToggleFollow } from '@/repo/users/mutation';
+import { logEvent } from '@/repo/events/mutation';
 import { ALLOWED_CATEGORY_SLUGS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
@@ -77,6 +80,16 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const bookmarkLabel = t.bookmark || (locale === 'vi' ? 'Lưu' : locale === 'en' ? 'Bookmark' : '북마크');
   const copyLinkLabel = t.copyLink || (locale === 'vi' ? 'Sao chép liên kết' : locale === 'en' ? 'Copy link' : '링크 복사');
   const closeLabel = t.close || (locale === 'vi' ? 'Đóng' : locale === 'en' ? 'Close' : '닫기');
+  const linkCopiedLabel = t.linkCopied || (locale === 'vi' ? 'Đã sao chép liên kết!' : locale === 'en' ? 'Link copied!' : '링크가 복사되었습니다!');
+  const copyFailedLabel = t.copyFailed || (locale === 'vi' ? 'Không thể sao chép liên kết.' : locale === 'en' ? 'Failed to copy link.' : '복사에 실패했습니다.');
+  const sourcePrefix = tCommon.source || (locale === 'vi' ? 'Nguồn' : locale === 'en' ? 'Source' : '출처');
+  const answerBadgeFallbacks = locale === 'en'
+    ? { officialAnswer: 'Official answer', reviewedAnswer: 'Reviewed answer' }
+    : locale === 'vi'
+      ? { officialAnswer: 'Câu trả lời chính thức', reviewedAnswer: 'Câu trả lời đã kiểm duyệt' }
+      : { officialAnswer: '공식 답변', reviewedAnswer: '검수 답변' };
+  const officialAnswerLabel = tCommon.officialAnswer || answerBadgeFallbacks.officialAnswer;
+  const reviewedAnswerLabel = tCommon.reviewedAnswer || answerBadgeFallbacks.reviewedAnswer;
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -93,7 +106,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
 
   const responseCount = Math.max(0, Number(stats.comments ?? 0));
-  const responseLabel = isQuestion ? (tCommon.answer || '답변') : (tCommon.comment || '댓글');
+  const responseLabel = isQuestion
+    ? (tCommon.answer || (locale === 'vi' ? 'Trả lời' : locale === 'en' ? 'Answer' : '답변'))
+    : (tCommon.comment || (locale === 'vi' ? 'Bình luận' : locale === 'en' ? 'Comment' : '댓글'));
   const answerLabel = locale === 'en'
     ? `${responseCount} ${responseCount === 1 ? responseLabel : `${responseLabel}s`}`
     : locale === 'vi'
@@ -102,10 +117,22 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
   const certifiedCount = Math.max(0, certifiedResponderCount ?? 0);
   const otherCount = Math.max(0, otherResponderCount ?? 0);
+  const officialCount = Math.max(0, officialAnswerCount ?? 0);
+  const reviewedCount = Math.max(0, reviewedAnswerCount ?? 0);
+  const verifiedSummaryTooltip = tTrust.verifiedUserTooltip || tTrust.verifiedTooltip || (locale === 'vi'
+    ? 'Câu trả lời từ người dùng đã xác minh danh tính.'
+    : locale === 'en'
+      ? 'Answers from users whose identity has been verified.'
+      : '신분이 확인된 사용자의 답변입니다.');
   const responseNoun = isQuestion
-    ? (locale === 'en' ? 'answers' : tCommon.answer || '답변')
-    : (locale === 'en' ? 'comments' : tCommon.comment || '댓글');
-  const certifiedCompactLabel = certifiedCount > 0 ? `+${certifiedCount}` : '';
+    ? (locale === 'en' ? 'answers' : tCommon.answer || (locale === 'vi' ? 'Trả lời' : '답변'))
+    : (locale === 'en' ? 'comments' : tCommon.comment || (locale === 'vi' ? 'Bình luận' : '댓글'));
+  const responseNounCompact = locale === 'vi'
+    ? (isQuestion ? 'trả lời' : 'bình luận')
+    : responseNoun;
+  const certifiedCompactLabel = certifiedCount > 0
+    ? `+${certifiedCount} ${responseNounCompact}`
+    : '';
   const certifiedSummaryLabel = certifiedCount > 0
     ? (otherCount > 0
       ? (tPost.certifiedResponderSummary
@@ -128,23 +155,13 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             ? `${certifiedCount} certified users left ${responseNoun}`
             : `인증 사용자 ${certifiedCount}명의 ${responseNoun}이 있습니다`))
     : '';
-  const answerBadgeFallbacks = locale === 'en'
-    ? { officialAnswer: 'Official answer', reviewedAnswer: 'Reviewed answer' }
-    : locale === 'vi'
-      ? { officialAnswer: 'Câu trả lời chính thức', reviewedAnswer: 'Câu trả lời đã kiểm duyệt' }
-      : { officialAnswer: '공식 답변', reviewedAnswer: '검수 답변' };
-  const officialAnswerLabel = tCommon.officialAnswer || answerBadgeFallbacks.officialAnswer;
-  const reviewedAnswerLabel = tCommon.reviewedAnswer || answerBadgeFallbacks.reviewedAnswer;
-  const officialCount = Math.max(0, officialAnswerCount ?? 0);
-  const reviewedCount = Math.max(0, reviewedAnswerCount ?? 0);
-  const showOfficialBadge = Boolean(isQuestion && officialCount > 0);
-  const showReviewedBadge = Boolean(isQuestion && !showOfficialBadge && reviewedCount > 0);
-  const reviewBadgeLabel = showOfficialBadge ? officialAnswerLabel : reviewedAnswerLabel;
-  const reviewBadgeClassName = showOfficialBadge
-    ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700'
-    : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700';
+  const buildBadgeLabel = (label: string, count: number) => (count > 1 ? `${label} ${count}` : label);
+  const showOfficialBadge = isQuestion && officialCount > 0;
+  const showReviewedBadge = isQuestion && reviewedCount > 0;
+  const officialBadgeLabel = showOfficialBadge ? buildBadgeLabel(officialAnswerLabel, officialCount) : '';
+  const reviewedBadgeLabel = showReviewedBadge ? buildBadgeLabel(reviewedAnswerLabel, reviewedCount) : '';
 
-  const anonymousFallback = tCommon.anonymous || '사용자';
+  const anonymousFallback = tCommon.anonymous || (locale === 'vi' ? 'Người dùng' : locale === 'en' ? 'User' : '사용자');
   const safeName = (raw?: string) => safeDisplayName(raw, anonymousFallback);
   const safeLabel = (raw?: string) => safeShortLabel(raw);
 
@@ -415,9 +432,16 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success(t.linkCopied || '링크가 복사되었습니다!');
+      toast.success(linkCopiedLabel);
+      logEvent({
+        eventType: 'share',
+        entityType: 'post',
+        entityId: String(id),
+        locale,
+        metadata: { channel: 'copy' },
+      });
     } catch (err) {
-      toast.error(t.copyFailed || '복사에 실패했습니다.');
+      toast.error(copyFailedLabel);
     } finally {
       setShowShareMenu(false);
     }
@@ -431,6 +455,13 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     e.stopPropagation();
     if (!shareUrl) return;
     openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
+    logEvent({
+      eventType: 'share',
+      entityType: 'post',
+      entityId: String(id),
+      locale,
+      metadata: { channel: 'facebook' },
+    });
     setShowShareMenu(false);
   };
 
@@ -438,6 +469,13 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     e.stopPropagation();
     if (!shareUrl) return;
     openShareWindow(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`);
+    logEvent({
+      eventType: 'share',
+      entityType: 'post',
+      entityId: String(id),
+      locale,
+      metadata: { channel: 'x' },
+    });
     setShowShareMenu(false);
   };
 
@@ -445,16 +483,19 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     e.stopPropagation();
     if (!shareUrl) return;
     openShareWindow(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`);
+    logEvent({
+      eventType: 'share',
+      entityType: 'post',
+      entityId: String(id),
+      locale,
+      metadata: { channel: 'telegram' },
+    });
     setShowShareMenu(false);
   };
 
   const hasMedia = displayImages.length > 0;
   const totalImages = imageCount || displayImages.length;
   const primaryImage = displayImages[0] || '';
-  const [renderImageSrc, setRenderImageSrc] = useState(primaryImage);
-  useEffect(() => {
-    setRenderImageSrc(primaryImage);
-  }, [primaryImage]);
 
   const extraCount = Math.max(totalImages - 1, 0);
   const mediaGridClass = `question-card-media-grid question-card-media-grid--row question-card-media-grid--single`;
@@ -500,6 +541,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                     onClick={() => router.push(trustBadgeGuideHref)}
                     labelVariant="text"
                     badgeClassName="!px-1.5 !py-0.5"
+                    labelClassName="text-[11px] text-gray-500 dark:text-gray-400 inline-block max-w-[140px] truncate sm:max-w-none"
                   />
                   {!isSelf && authorId ? (
                     <button
@@ -528,7 +570,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             </h3>
             {sourceLabel && (
               <span className="text-[11px] font-semibold rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
-                출처: {sourceLabel}
+                {sourcePrefix}: {sourceLabel}
               </span>
             )}
           </div>
@@ -540,26 +582,20 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
         </div>
 
-        {hasMedia && renderImageSrc ? (
+        {hasMedia ? (
           <div
             className="question-card-media question-card-media-grid--row"
             onClick={(e) => e.stopPropagation()}
           >
             <div className={mediaGridClass}>
               <div className="question-card-thumb__inner">
-                <img
-                  src={renderImageSrc}
+                <FeedImage
+                  src={primaryImage}
                   alt={title}
-                  loading="lazy"
-                  decoding="async"
                   width={180}
                   height={120}
+                  sizes="(max-width: 640px) 100vw, 180px"
                   className="w-full h-full object-cover"
-                  onError={() => {
-                    if (renderImageSrc !== '/brand-logo.png') {
-                      setRenderImageSrc('/brand-logo.png');
-                    }
-                  }}
                 />
                 {extraCount > 0 ? (
                   <span className="question-card-thumb__badge sm:hidden">+{extraCount}</span>
@@ -574,7 +610,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 max-h-[48px] overflow-hidden sm:max-h-none md:flex-nowrap md:overflow-x-auto md:scrollbar-hide md:pr-2">
+        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -609,44 +645,53 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span className="truncate tabular-nums">{responseCount}</span>
             </button>
-            {showOfficialBadge || showReviewedBadge ? (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border whitespace-nowrap ${reviewBadgeClassName}`}>
+            {showOfficialBadge ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-blue-600 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300 min-w-0 max-w-full">
                 <BadgeCheck className="h-3 w-3 shrink-0" />
-                {reviewBadgeLabel}
+                <span className="min-w-0 break-words whitespace-normal leading-tight">{officialBadgeLabel}</span>
+              </span>
+            ) : null}
+            {showReviewedBadge ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-emerald-600 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 min-w-0 max-w-full">
+                <BadgeCheck className="h-3 w-3 shrink-0" />
+                <span className="min-w-0 break-words whitespace-normal leading-tight">{reviewedBadgeLabel}</span>
               </span>
             ) : null}
             {certifiedSummaryLabel ? (
-              <>
-                <span className="inline-flex flex-wrap items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-200 min-w-0 md:hidden leading-tight">
-                  <CircleCheck className="h-3 w-3 shrink-0" />
-                  <span className="min-w-0 break-words whitespace-normal sm:truncate">{certifiedCompactLabel}</span>
-                </span>
-                <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-200 min-w-0 leading-tight">
-                  <CircleCheck className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{certifiedSummaryLabel}</span>
-                </span>
-              </>
+              <Tooltip content={verifiedSummaryTooltip} position="top">
+                <>
+                  <span className="inline-flex flex-wrap items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-200 min-w-0 md:hidden leading-tight">
+                    <CircleCheck className="h-3 w-3 shrink-0" />
+                    <span className="min-w-0 break-words whitespace-normal sm:truncate">{certifiedCompactLabel}</span>
+                  </span>
+                  <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-200 min-w-0 leading-tight">
+                    <CircleCheck className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{certifiedSummaryLabel}</span>
+                  </span>
+                </>
+              </Tooltip>
             ) : null}
           </div>
           <div className="question-card-actions-row shrink-0">
             <Tooltip content={likeLabel} position="top">
-              <button
-                type="button"
+              <ActionIconButton
+                icon={<ThumbsUp className={`w-4 h-4 ${localIsLiked ? 'fill-current' : ''}`} />}
+                label={likeLabel}
+                count={localLikes}
                 onClick={handleLikeClick}
-                className={`flex items-center gap-1 rounded-full px-2 py-1 min-h-[30px] text-xs font-semibold transition-colors ${localIsLiked ? 'text-blue-600 font-semibold bg-blue-50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-              >
-                <ThumbsUp className={`w-4 h-4 ${localIsLiked ? 'fill-current' : ''}`} />
-                <span>{localLikes}</span>
-              </button>
+                aria-pressed={localIsLiked}
+                aria-disabled={toggleLikeMutation.isPending}
+                className={localIsLiked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}
+              />
             </Tooltip>
             <div className="relative">
               <Tooltip content={shareLabel} position="top">
-                <button
+                <ActionIconButton
+                  icon={<Share2 className="w-4 h-4" />}
+                  label={shareLabel}
                   onClick={handleShareClick}
-                  className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <Share2 className="w-4 h-4" />
-                </button>
+                  className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                />
               </Tooltip>
               {showShareMenu && typeof document !== 'undefined'
                 ? createPortal(

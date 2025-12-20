@@ -41,6 +41,7 @@ interface RecommendedUsersSectionProps {
   badgeLabels?: Record<string, string>;
   previousLabel?: string;
   nextLabel?: string;
+  anonymousLabel?: string;
   compact?: boolean;
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
@@ -62,6 +63,7 @@ export default function RecommendedUsersSection({
   badgeLabels,
   previousLabel,
   nextLabel,
+  anonymousLabel,
   compact = false,
   hasNextPage,
   isFetchingNextPage,
@@ -72,6 +74,7 @@ export default function RecommendedUsersSection({
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
+  const [hasInteracted, setHasInteracted] = useState(false);
   const cardPaddingClass = compact ? 'px-2.5 py-2' : 'px-3 py-3';
   const cardGapClass = compact ? 'gap-2' : 'gap-3';
   const cardNameClass = compact ? 'text-[13px]' : 'text-sm';
@@ -90,12 +93,17 @@ export default function RecommendedUsersSection({
   const safeUsers = useMemo(() => users ?? [], [users]);
   const hasUsers = safeUsers.length > 0;
 
+  const markInteracted = useCallback(() => {
+    setHasInteracted((prev) => (prev ? prev : true));
+  }, []);
+
   const scrollCarousel = useCallback((direction: -1 | 1) => {
     const el = carouselRef.current;
     if (!el) return;
+    markInteracted();
     const delta = Math.max(240, Math.round(el.clientWidth * 0.9));
     el.scrollBy({ left: direction * delta, behavior: 'smooth' });
-  }, []);
+  }, [markInteracted]);
 
   const mergedTrustTranslations = useMemo(() => {
     const base = trustBadgeTranslations || {};
@@ -109,12 +117,14 @@ export default function RecommendedUsersSection({
 
   const ariaPrev = previousLabel || (locale === 'vi' ? 'Trước' : locale === 'en' ? 'Previous' : '이전');
   const ariaNext = nextLabel || (locale === 'vi' ? 'Tiếp' : locale === 'en' ? 'Next' : '다음');
+  const fallbackName = anonymousLabel || (locale === 'vi' ? 'Người dùng ẩn danh' : locale === 'en' ? 'Anonymous user' : '익명 사용자');
 
   useEffect(() => {
-    if (!onLoadMore || !hasNextPage || isFetchingNextPage) return;
+    if (!hasInteracted || !onLoadMore || !hasNextPage || isFetchingNextPage) return;
     const root = carouselRef.current;
     const target = sentinelRef.current;
     if (!root || !target) return;
+    if (root.scrollWidth <= root.clientWidth + 8) return;
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
@@ -126,7 +136,7 @@ export default function RecommendedUsersSection({
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, onLoadMore]);
+  }, [hasInteracted, hasNextPage, isFetchingNextPage, onLoadMore]);
 
   const skeletonCards = (
     <>
@@ -154,7 +164,7 @@ export default function RecommendedUsersSection({
     <>
       {safeUsers.map((user) => {
         const userId = String(user.id);
-        const displayName = user.displayName || user.email || (locale === 'vi' ? 'Không rõ' : locale === 'en' ? 'Unknown' : '알 수 없음');
+        const displayName = user.displayName || user.email || fallbackName;
         const trustBadgePresentation = getTrustBadgePresentation({
           locale,
           author: {
@@ -169,7 +179,7 @@ export default function RecommendedUsersSection({
           onboardingLabels,
         });
         const resolvedMetaItems: RecommendationMetaItem[] = localizedMetaItems.length > 0 ? localizedMetaItems : [];
-        const metaTexts: string[] = formatRecommendationMetaItems({
+        const metaTexts = formatRecommendationMetaItems({
           items: resolvedMetaItems,
           fallback: resolvedMetaItems,
           metaLabels: mergedMetaLabels,
@@ -241,11 +251,11 @@ export default function RecommendedUsersSection({
 
   return (
     <div className={`rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 ${compact ? 'p-3' : 'p-4'}`}>
-      <div className="flex items-center justify-between gap-2 mb-3 min-h-[32px]">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate min-w-0 flex-1">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           {title}
         </h3>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => scrollCarousel(-1)}
@@ -267,6 +277,7 @@ export default function RecommendedUsersSection({
 
       <div
         ref={carouselRef}
+        onScroll={markInteracted}
         className={`grid grid-flow-col ${compact ? 'auto-cols-[minmax(200px,1fr)]' : 'auto-cols-[minmax(220px,1fr)]'} sm:auto-cols-[minmax(240px,1fr)] lg:auto-cols-[minmax(260px,1fr)] ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1`}
       >
         {isLoading ? skeletonCards : userCards}

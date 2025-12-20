@@ -88,9 +88,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
           </main>
           {hasRightRail ? (
             <aside className="hidden lg:block w-[320px] shrink-0 lg:justify-self-end">
-              <div className="sticky top-[var(--vk-header-height)]">
-                {rightRail}
-              </div>
+              {rightRail}
             </aside>
           ) : null}
         </div>
