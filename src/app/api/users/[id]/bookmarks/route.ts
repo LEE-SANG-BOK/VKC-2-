@@ -6,41 +6,11 @@ import { getSession } from '@/lib/api/auth';
 import { getFollowingIdSet } from '@/lib/api/follow';
 import { eq, desc, sql, inArray, and, isNotNull, isNull, or, lt, type SQL } from 'drizzle-orm';
 import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
+import { postListSelect, serializePostPreview } from '@/lib/api/post-list';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
-
-const stripHtmlToText = (html: string) =>
-  html
-    .replace(/<img[^>]*>/gi, '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
-
-const extractImages = (html: string, maxThumbs = 4) => {
-  if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
-  const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  const thumbnails: string[] = [];
-  let match: RegExpExecArray | null;
-  let imageCount = 0;
-  let selected: string | null = null;
-  while ((match = regex.exec(html))) {
-    imageCount += 1;
-    const src = match[1];
-    if (!selected && /data-thumbnail\s*=\s*['"]?true['"]?/i.test(match[0])) {
-      selected = src;
-    }
-    if (thumbnails.length < maxThumbs) thumbnails.push(src);
-  }
-  if (selected) {
-    const ordered = [selected, ...thumbnails.filter((src) => src !== selected)];
-    return { thumbnails: ordered.slice(0, maxThumbs), thumbnail: selected, imageCount };
-  }
-  return { thumbnails, thumbnail: thumbnails[0] ?? null, imageCount };
-};
 
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
@@ -113,32 +83,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const totalPages = Math.ceil(total / limit);
     const queryLimit = useCursorPagination ? limit + 1 : limit;
 
-    const contentPreviewLimit = 4000;
     const bookmarkRows = await db
       .select({
         bookmarkId: bookmarks.id,
         bookmarkCreatedAt: bookmarks.createdAt,
-        id: posts.id,
-        authorId: posts.authorId,
-        type: posts.type,
-        title: posts.title,
-        content: sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
-        category: posts.category,
-        subcategory: posts.subcategory,
-        tags: posts.tags,
-        views: posts.views,
-        likes: posts.likes,
-        isResolved: posts.isResolved,
-        createdAt: posts.createdAt,
-        author: {
-          id: users.id,
-          name: users.name,
-          displayName: users.displayName,
-          image: users.image,
-          isVerified: users.isVerified,
-          isExpert: users.isExpert,
-          badgeType: users.badgeType,
-        },
+        ...postListSelect(),
       })
       .from(bookmarks)
       .innerJoin(posts, eq(bookmarks.postId, posts.id))
@@ -167,15 +116,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const shouldComputeResponderCounts = !useCursorPagination;
     const emptyResponderRows: Array<{ postId: string | null; authorId: string | null }> = [];
 
-    const [
-      answerCounts,
-      commentCounts,
-      officialAnswerCounts,
-      reviewedAnswerCounts,
-      likedRows,
-      answerResponders,
-      commentResponders,
-    ] =
+    const [answerCounts, commentCounts, officialAnswerCounts, reviewedAnswerCounts, likedRows, answerResponders, commentResponders] =
       postIds.length > 0
         ? await Promise.all([
             db
@@ -306,10 +247,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     });
 
     const formattedBookmarks = pageList.map(bookmark => {
-      const content = typeof bookmark.content === 'string' ? bookmark.content : '';
-      const { thumbnail, thumbnails, imageCount } = extractImages(content, 4);
-      const excerpt = buildExcerpt(content);
-
+      const base = serializePostPreview(bookmark, { followingIdSet });
+      const createdAt = typeof base.createdAt === 'string' ? base.createdAt : base.createdAt.toISOString();
       const postId = bookmark.id;
       const answersCount = postId ? (answerCountMap.get(postId) ?? 0) : 0;
       const postCommentsCount = postId ? (commentCountMap.get(postId) ?? 0) : 0;
@@ -318,47 +257,47 @@ export async function GET(request: NextRequest, context: RouteContext) {
       const reviewedAnswerCount = postId ? (reviewedAnswerCountMap.get(postId) ?? 0) : 0;
       
       return {
-        id: bookmark.id,
-        type: bookmark.type,
-        title: bookmark.title || '',
-        excerpt,
-        category: bookmark.category || '',
-        subcategory: bookmark.subcategory,
-        tags: bookmark.tags || [],
-        views: bookmark.views || 0,
-        likes: bookmark.likes || 0,
+        id: base.id,
+        type: base.type,
+        title: base.title || '',
+        excerpt: base.excerpt,
+        category: base.category || '',
+        subcategory: base.subcategory || undefined,
+        tags: base.tags,
+        views: base.views,
+        likes: base.likes,
         answersCount,
         postCommentsCount,
         commentsCount,
-        isResolved: bookmark.isResolved,
-        createdAt: bookmark.createdAt?.toISOString(),
-        publishedAt: bookmark.createdAt?.toISOString(),
-        thumbnail,
-        thumbnails,
-        imageCount,
+        officialAnswerCount,
+        reviewedAnswerCount,
+        isResolved: base.isResolved,
+        createdAt,
+        publishedAt: createdAt,
+        thumbnail: base.thumbnail,
+        thumbnails: base.thumbnails,
+        imageCount: base.imageCount,
         author: {
-          id: bookmark.author?.id,
-          name: bookmark.author?.displayName || bookmark.author?.name || 'User',
-          avatar: bookmark.author?.image || '/avatar-default.jpg',
-          isVerified: bookmark.author?.isVerified || false,
-          isExpert: bookmark.author?.isExpert || false,
-          badgeType: bookmark.author?.badgeType || null,
+          id: base.author?.id || '',
+          name: base.author?.displayName || base.author?.name || 'User',
+          avatar: base.author?.image || '/avatar-default.jpg',
+          isVerified: base.author?.isVerified || false,
+          isExpert: base.author?.isExpert || false,
+          badgeType: base.author?.badgeType || null,
           followers: 0,
-          isFollowing: currentUser ? followingIdSet.has(bookmark.authorId) : false,
+          isFollowing: base.author?.isFollowing || false,
         },
         stats: {
-          likes: bookmark.likes || 0,
+          likes: base.likes,
           comments: commentsCount,
           shares: 0,
         },
         certifiedResponderCount: postId ? (certifiedRespondersByPost.get(postId)?.size ?? 0) : 0,
         otherResponderCount: postId ? (otherRespondersByPost.get(postId)?.size ?? 0) : 0,
-        officialAnswerCount,
-        reviewedAnswerCount,
         isLiked: postId ? likedPostIds.has(postId) : false,
         isBookmarked: true,
-        isQuestion: bookmark.type === 'question',
-        isAdopted: bookmark.isResolved,
+        isQuestion: base.type === 'question',
+        isAdopted: base.isResolved,
         bookmarkedAt: bookmark.bookmarkCreatedAt?.toISOString(),
       };
     });

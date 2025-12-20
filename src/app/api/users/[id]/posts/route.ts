@@ -6,41 +6,11 @@ import { getSession } from '@/lib/api/auth';
 import { getFollowingIdSet } from '@/lib/api/follow';
 import { eq, desc, sql, and, inArray, isNotNull, isNull, or, lt, type SQL } from 'drizzle-orm';
 import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
+import { postListSelect, serializePostPreview } from '@/lib/api/post-list';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
-
-const stripHtmlToText = (html: string) =>
-  html
-    .replace(/<img[^>]*>/gi, '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
-
-const extractImages = (html: string, maxThumbs = 4) => {
-  if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
-  const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  const thumbnails: string[] = [];
-  let match: RegExpExecArray | null;
-  let imageCount = 0;
-  let selected: string | null = null;
-  while ((match = regex.exec(html))) {
-    imageCount += 1;
-    const src = match[1];
-    if (!selected && /data-thumbnail\s*=\s*['"]?true['"]?/i.test(match[0])) {
-      selected = src;
-    }
-    if (thumbnails.length < maxThumbs) thumbnails.push(src);
-  }
-  if (selected) {
-    const ordered = [selected, ...thumbnails.filter((src) => src !== selected)];
-    return { thumbnails: ordered.slice(0, maxThumbs), thumbnail: selected, imageCount };
-  }
-  return { thumbnails, thumbnail: thumbnails[0] ?? null, imageCount };
-};
 
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
@@ -112,33 +82,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const totalPages = Math.ceil(total / limit);
     const queryLimit = useCursorPagination ? limit + 1 : limit;
 
-    const contentPreviewLimit = 4000;
     const userPosts = await db
-      .select({
-        id: posts.id,
-        authorId: posts.authorId,
-        type: posts.type,
-        title: posts.title,
-        content: sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
-        category: posts.category,
-        subcategory: posts.subcategory,
-        tags: posts.tags,
-        views: posts.views,
-        likes: posts.likes,
-        isResolved: posts.isResolved,
-        adoptedAnswerId: posts.adoptedAnswerId,
-        createdAt: posts.createdAt,
-        updatedAt: posts.updatedAt,
-        author: {
-          id: users.id,
-          name: users.name,
-          displayName: users.displayName,
-          image: users.image,
-          isVerified: users.isVerified,
-          isExpert: users.isExpert,
-          badgeType: users.badgeType,
-        },
-      })
+      .select(postListSelect())
       .from(posts)
       .leftJoin(users, eq(posts.authorId, users.id))
       .where(and(...conditions))
@@ -165,16 +110,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const shouldComputeResponderCounts = !useCursorPagination;
     const emptyResponderRows: Array<{ postId: string | null; authorId: string | null }> = [];
 
-    const [
-      answerCounts,
-      commentCounts,
-      officialAnswerCounts,
-      reviewedAnswerCounts,
-      likedRows,
-      bookmarkedRows,
-      answerResponders,
-      commentResponders,
-    ] =
+    const [answerCounts, commentCounts, officialAnswerCounts, reviewedAnswerCounts, likedRows, bookmarkedRows, answerResponders, commentResponders] =
       postIds.length > 0
         ? await Promise.all([
             db
@@ -318,10 +254,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     });
 
     const formattedPosts = pageList.map(post => {
-      const content = typeof post.content === 'string' ? post.content : '';
-      const { thumbnail, thumbnails, imageCount } = extractImages(content, 4);
-      const excerpt = buildExcerpt(content);
-
+      const base = serializePostPreview(post, { followingIdSet });
+      const createdAt = typeof base.createdAt === 'string' ? base.createdAt : base.createdAt.toISOString();
       const answersCount = answerCountMap.get(post.id) ?? 0;
       const postCommentsCount = commentCountMap.get(post.id) ?? 0;
       const commentsCount = answersCount + postCommentsCount;
@@ -329,47 +263,47 @@ export async function GET(request: NextRequest, context: RouteContext) {
       const reviewedAnswerCount = reviewedAnswerCountMap.get(post.id) ?? 0;
       
       return {
-        id: post.id,
-        type: post.type,
-        title: post.title,
-        excerpt,
-        category: post.category,
-        subcategory: post.subcategory,
-        tags: post.tags || [],
-        views: post.views,
-        likes: post.likes || 0,
+        id: base.id,
+        type: base.type,
+        title: base.title,
+        excerpt: base.excerpt,
+        category: base.category,
+        subcategory: base.subcategory || undefined,
+        tags: base.tags,
+        views: base.views,
+        likes: base.likes,
         answersCount,
         postCommentsCount,
         commentsCount,
-        isResolved: post.isResolved,
-        createdAt: post.createdAt?.toISOString(),
-        publishedAt: post.createdAt?.toISOString(),
-        thumbnail,
-        thumbnails,
-        imageCount,
+        officialAnswerCount,
+        reviewedAnswerCount,
+        isResolved: base.isResolved,
+        createdAt,
+        publishedAt: createdAt,
+        thumbnail: base.thumbnail,
+        thumbnails: base.thumbnails,
+        imageCount: base.imageCount,
         author: {
-          id: post.author?.id,
-          name: post.author?.displayName || post.author?.name || 'User',
-          avatar: post.author?.image || '/avatar-default.jpg',
-          isVerified: post.author?.isVerified || false,
-          isExpert: post.author?.isExpert || false,
-          badgeType: post.author?.badgeType || null,
+          id: base.author?.id || '',
+          name: base.author?.displayName || base.author?.name || 'User',
+          avatar: base.author?.image || '/avatar-default.jpg',
+          isVerified: base.author?.isVerified || false,
+          isExpert: base.author?.isExpert || false,
+          badgeType: base.author?.badgeType || null,
           followers: 0,
-          isFollowing: currentUser ? followingIdSet.has(post.authorId) : false,
+          isFollowing: base.author?.isFollowing || false,
         },
         stats: {
-          likes: post.likes || 0,
+          likes: base.likes,
           comments: commentsCount,
           shares: 0,
         },
         certifiedResponderCount: certifiedRespondersByPost.get(post.id)?.size ?? 0,
         otherResponderCount: otherRespondersByPost.get(post.id)?.size ?? 0,
-        officialAnswerCount,
-        reviewedAnswerCount,
-        isLiked: currentUser ? likedPostIds.has(post.id) : false,
-        isBookmarked: currentUser ? bookmarkedPostIds.has(post.id) : false,
-        isQuestion: post.type === 'question',
-        isAdopted: post.isResolved,
+        isLiked: currentUser ? likedPostIds.has(base.id) : false,
+        isBookmarked: currentUser ? bookmarkedPostIds.has(base.id) : false,
+        isQuestion: base.type === 'question',
+        isAdopted: base.isResolved,
       };
     });
 

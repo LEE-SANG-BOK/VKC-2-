@@ -10,7 +10,7 @@ const toHostname = (value: string) => {
   }
 };
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://example.com';
+const baseUrl = SITE_URL;
 
 const buildAllowlist = () => {
   const envDomains = (process.env.UGC_ALLOWED_DOMAINS || '')
@@ -19,8 +19,8 @@ const buildAllowlist = () => {
     .filter(Boolean);
 
   const defaults = [
-    process.env.NEXT_PUBLIC_SITE_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
+    SITE_URL,
+    API_BASE,
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     'gov.kr',
     'go.kr',
@@ -69,3 +69,5 @@ export const validateUgcExternalLinks = (content: string) => {
   }
   return { ok: true } as const;
 };
+import { API_BASE } from '@/lib/apiBase';
+import { SITE_URL } from '@/lib/siteUrl';
