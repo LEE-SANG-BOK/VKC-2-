@@ -597,21 +597,22 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
-              {title}
-            </h3>
-            {sourceLabel && (
-              <span className="text-[11px] font-semibold rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
-                {sourcePrefix}: {sourceLabel}
-              </span>
-            )}
-          </div>
+          <div className="lg:pl-12">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
+                {title}
+              </h3>
+              {sourceLabel && (
+                <span className="text-[11px] font-semibold rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                  {sourcePrefix}: {sourceLabel}
+                </span>
+              )}
+            </div>
 
-          {/* Excerpt */}
-          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2 leading-relaxed">
-            {excerpt}
-          </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2 leading-relaxed">
+              {excerpt}
+            </p>
+          </div>
 
         </div>
 
@@ -643,7 +644,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2">
+        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2 lg:pl-12">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -668,7 +669,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
       <div className="question-card-actions">
         <div className="question-card-footer-fixed !flex-nowrap !gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1 flex-nowrap">
+          <div className="flex items-center gap-2 min-w-0 flex-1 flex-nowrap lg:pl-12">
             <button
               type="button"
               onClick={handleAnswerCountClick}

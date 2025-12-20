@@ -378,7 +378,7 @@ export default function CategorySidebar({
     : `
         w-[320px] h-full flex flex-col
         bg-transparent
-        overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300
+        overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-gray-300
         scrollbar-track-transparent hover:scrollbar-thumb-gray-400
         z-40
         pt-0
