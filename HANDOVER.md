@@ -4,6 +4,8 @@
 
 ## 최근 주요 변경 사항
 
+- [LEAD] `common.share` i18n 키 추가(ko/en/vi)
+- [LEAD] DB migrate statement_timeout 우회: `PGOPTIONS='-c statement_timeout=0' npm run db:migrate`로 성공
 - [WEB] posts/trending/users posts/bookmarks API 응답을 post-list serializer로 통일(썸네일/요약/작성자 포맷 일관화)
 - [WEB] 메타데이터 baseUrl을 `SITE_URL`로 통일(홈/FAQ/게시글 상세) + UGC allowlist에 SITE_URL/API_BASE 고정
 - [FE] PostDetail/VerificationRequest fallback 보강 + 공유 CTA/로그 이벤트 보완, 팔로잉 모달에 공식/검수 카운트 전달
