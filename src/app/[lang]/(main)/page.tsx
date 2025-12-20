@@ -10,6 +10,7 @@ import { fetchCategories } from '@/repo/categories/fetch';
 import { queryKeys } from '@/repo/keys';
 import { fetchNews } from '@/repo/news/fetch';
 import { CATEGORY_GROUPS } from '@/lib/constants/categories';
+import { SITE_URL } from '@/lib/siteUrl';
 
 export const revalidate = 60;
 const categoryParents = Object.keys(CATEGORY_GROUPS);
@@ -52,7 +53,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   };
   const categoryFallback = categoryFallbacks[lang] ?? categoryFallbacks.ko;
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+  const baseUrl = SITE_URL;
   const currentPage = Math.max(1, parseInt(page || '1') || 1);
 
   const buildUrl = (locale: string) => {

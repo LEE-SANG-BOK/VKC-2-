@@ -7,6 +7,8 @@
 
 ---
 
+> 실행 중 플랜은 `docs/WORKING_PLAN.md`를 우선 참고(요약/실행용), 본 문서는 히스토리/증빙용.
+
 ## 0. 작업 운영 원칙
 
 ### 0.1 스택/아키텍처 고정(변경 금지)
@@ -32,17 +34,16 @@
 - (주의) Codex CLI 환경에서 `.git/index.lock` 생성이 막혀 `git add/commit/push`가 실패할 수 있음 → 이 경우 **로컬 터미널에서 수동으로** 커밋/푸시 진행
 
 #### 0.3.1 브랜치/워크트리 현황·커밋 전략(2025-12-20 기준)
-- 주 워크트리: `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2` (공통 브랜치: `codex-integration`)
+- 주 워크트리: `/Users/bk/Desktop/VKC-2-` (공통 브랜치: `codex-integration`)
 - 운영 원칙: 단일 워크트리/단일 브랜치 고정, 커밋/푸시는 **LEAD만 수행**
 - 커밋/PR 전략: 스코프별 단일 커밋 묶음 → i18n 키 추가 포함 → `npm run lint` → `SKIP_SITEMAP_DB=true npm run build` → `docs/EXECUTION_PLAN.md`, `HANDOVER.md` 갱신 → 로컬 터미널에서 커밋/푸시 → 단일 PR 유지, `@codex` 멘션 후 CI 통과 시 머지. 머지 후 모든 워크트리 `git pull origin main` 동기화.
 
 #### 0.3.2 진행 중 브랜치/워크트리 메모(커밋/머지 상태)
 - `/Users/bk/Desktop/VKC-2-`
-  - 브랜치: `codex-lead-refactor` (PR #9는 원격 main에 머지됨). 로컬 `main`은 아직 `origin/main` 대비 뒤처짐 → `git switch main && git pull origin main` 필요.
-  - 워크트리 미커밋: `HANDOVER.md`, `docs/EXECUTION_PLAN.md`, `src/components/molecules/cards/PostCard.tsx`, `src/components/organisms/Header.tsx`, `src/components/organisms/RecommendedUsersSection.tsx`.
+  - 브랜치: `codex-integration` (main 기준 신규 작업 브랜치)
+  - 워크트리 변경: 메타데이터 baseUrl(`SITE_URL`), UGC allowlist 상수화, 리스트 API post-list serializer 적용, PostDetail/Verification fallback 보강, 팔로잉 모달 보강, 마이그레이션 `0034_badge_expires_at` 추가 등
 - `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2`
-  - 브랜치: `codex-subscriptions` (dirty). 대량의 수정/신규 파일 존재 → 작업 금지/백업 전용, 필요한 파일만 선별 이관.
-- 머지 완료: PR #6/#7/#8/#9는 모두 원격 `main`에 머지됨. 로컬 워크트리는 머지 후 동기화 필요.
+  - 브랜치: `codex-subscriptions` (dirty) → **백업 전용**, merge/커밋 금지
 
 #### 0.3.3 Codex End-to-End 플로우(5.2 xh 기준)
 - 로컬 설계/착수: 스캐폴딩 → 타입 정의 → 핵심 로직 초안.
@@ -3918,3 +3919,39 @@ $gh-address-comments
 - [x] (2025-12-19) 모니터링/에러 로깅 도입(Sentry/LogRocket 등) + 알림 채널 설정
 - [x] (2025-12-19) 보안 헤더/레이트리밋/어뷰즈 대응 정책 점검(CSP/Rate limit/봇 차단)
 - [x] (2025-12-19) 운영 백업/장애 대응 플로우 문서화(DB 백업 주기, 복구 절차)
+
+#### (2025-12-20) [LEAD] 메타데이터 URL/UGC allowlist 상수화 + 리스트 API 직렬화 + 상세/인증 fallback 보강 (P0)
+
+- 플랜(체크리스트)
+  - [x] SITE_URL 기반 metadata baseUrl 통일(홈/FAQ/게시글 상세)
+  - [x] UGC allowlist 상수화(SITE_URL/API_BASE)
+  - [x] posts/trending/users posts/bookmarks API를 post-list serializer로 통일
+  - [x] PostDetail/VerificationRequest fallback 보강 + 이벤트 로그 보완
+  - [x] 배지 만료 마이그레이션 추가 + 작업 요약 문서화
+- 현황 분석(코드 기준)
+  - 메타데이터 baseUrl이 환경변수 fallback에 분산돼 URL 일관성이 낮음
+  - 리스트 API의 excerpt/thumbnail 파싱 로직이 중복돼 유지보수 비용 증가
+- 변경 내용(why/what)
+  - why: SEO URL 정합성/UGC 링크 기준 고정 + 리스트 응답 포맷 정합성 확보 + 상세/인증 i18n fallback 안정화
+  - what: SITE_URL/POST serializer 적용, PostDetail/VerificationRequest fallback 확장, 배지 만료 마이그레이션 추가
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/page.tsx
+  - src/app/[lang]/(main)/faq/page.tsx
+  - src/app/[lang]/(main)/posts/[id]/page.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
+  - src/app/api/posts/route.ts
+  - src/app/api/posts/trending/route.ts
+  - src/app/api/users/[id]/bookmarks/route.ts
+  - src/app/api/users/[id]/posts/route.ts
+  - src/components/molecules/modals/FollowingModal.tsx
+  - src/lib/validation/ugc-links.ts
+  - src/lib/db/migrations/0034_badge_expires_at.sql
+  - src/lib/db/migrations/meta/_journal.json
+  - docs/WORKING_PLAN.md
+- 다음 액션/의존성
+  - (선택) `common.share` i18n 키 추가 여부 결정

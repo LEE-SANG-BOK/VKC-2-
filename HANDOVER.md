@@ -4,6 +4,11 @@
 
 ## 최근 주요 변경 사항
 
+- [WEB] posts/trending/users posts/bookmarks API 응답을 post-list serializer로 통일(썸네일/요약/작성자 포맷 일관화)
+- [WEB] 메타데이터 baseUrl을 `SITE_URL`로 통일(홈/FAQ/게시글 상세) + UGC allowlist에 SITE_URL/API_BASE 고정
+- [FE] PostDetail/VerificationRequest fallback 보강 + 공유 CTA/로그 이벤트 보완, 팔로잉 모달에 공식/검수 카운트 전달
+- [BE] 배지 만료 컬럼 마이그레이션 `0034_badge_expires_at` 추가(_journal 반영)
+- [DOC] `docs/WORKING_PLAN.md` 추가(요약 실행 플랜)
 - [FE] 우측 레일 sticky 제거로 추천 콘텐츠가 본문과 함께 스크롤되도록 정렬
 - [FE] PostCard 모바일 하단 액션/카운트 한 줄 정렬 + 인증 사용자 요약 라벨 Tooltip 보강
 - [FE] 프로필 통계 5개 항목 1행 정렬 + 프로필 설정 화면 헤더를 메인 헤더와 통일

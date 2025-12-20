@@ -8,6 +8,7 @@ import { and, desc, eq, gte, inArray, isNull, sql, type SQL } from 'drizzle-orm'
 import dayjs from 'dayjs';
 import { isExpertBadgeType } from '@/lib/constants/badges';
 import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
+import { postListSelect, serializePostPreview } from '@/lib/api/post-list';
 
 const resolveTrust = (author: any, createdAt: Date | string) => {
   const months = dayjs().diff(createdAt, 'month', true);
@@ -17,36 +18,6 @@ const resolveTrust = (author: any, createdAt: Date | string) => {
   return { badge: 'community', weight: 0.7 };
 };
 
-const stripHtmlToText = (html: string) =>
-  html
-    .replace(/<img[^>]*>/gi, '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
-
-const extractImages = (html: string, maxThumbs = 4) => {
-  if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
-  const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  const thumbnails: string[] = [];
-  let match: RegExpExecArray | null;
-  let imageCount = 0;
-  let selected: string | null = null;
-  while ((match = regex.exec(html))) {
-    imageCount += 1;
-    const src = match[1];
-    if (!selected && /data-thumbnail\s*=\s*['"]?true['"]?/i.test(match[0])) {
-      selected = src;
-    }
-    if (thumbnails.length < maxThumbs) thumbnails.push(src);
-  }
-  if (selected) {
-    const ordered = [selected, ...thumbnails.filter((src) => src !== selected)];
-    return { thumbnails: ordered.slice(0, maxThumbs), thumbnail: selected, imageCount };
-  }
-  return { thumbnails, thumbnail: thumbnails[0] ?? null, imageCount };
-};
 
 /**
  * GET /api/posts/trending
@@ -74,8 +45,6 @@ export async function GET(request: NextRequest) {
     dateFrom.setDate(dateFrom.getDate() - daysAgo);
 
     const fetchLimit = Math.min(90, limit * 3);
-    const contentPreviewLimit = 4000;
-
     const selectTrendingRows = (from?: Date) => {
       const baseConditions: SQL[] = [inArray(posts.category, ACTIVE_GROUP_PARENT_SLUGS) as SQL];
       if (from) {
@@ -84,31 +53,7 @@ export async function GET(request: NextRequest) {
       const whereClause = baseConditions.length > 1 ? and(...baseConditions) : baseConditions[0];
 
       return db
-        .select({
-          id: posts.id,
-          authorId: posts.authorId,
-          type: posts.type,
-          title: posts.title,
-          content: sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
-          category: posts.category,
-          subcategory: posts.subcategory,
-          tags: posts.tags,
-          views: posts.views,
-          likes: posts.likes,
-          isResolved: posts.isResolved,
-          adoptedAnswerId: posts.adoptedAnswerId,
-          createdAt: posts.createdAt,
-          updatedAt: posts.updatedAt,
-          author: {
-            id: users.id,
-            name: users.name,
-            displayName: users.displayName,
-            image: users.image,
-            isVerified: users.isVerified,
-            isExpert: users.isExpert,
-            badgeType: users.badgeType,
-          },
-        })
+        .select(postListSelect())
         .from(posts)
         .leftJoin(users, eq(posts.authorId, users.id))
         .where(whereClause)
@@ -188,9 +133,8 @@ export async function GET(request: NextRequest) {
       : new Set<string>();
 
     const decorated = trendingPosts.map((post) => {
-      const content = typeof post.content === 'string' ? post.content : '';
-      const { thumbnail, thumbnails, imageCount } = extractImages(content, 4);
       const trust = resolveTrust(post.author, post.createdAt);
+      const base = serializePostPreview(post, { followingIdSet });
       const baseScore = (post.likes ?? 0) * 2 + (post.views ?? 0);
       const answersCount = answerCountMap.get(post.id) ?? 0;
       const postCommentsCount = commentCountMap.get(post.id) ?? 0;
@@ -200,40 +144,16 @@ export async function GET(request: NextRequest) {
       const ageDays = dayjs().diff(post.createdAt, 'day', true);
       const recencyWeight = Math.max(0.6, 1 - ageDays / (daysAgo * 1.5));
       const engagementScore = answersCount * 3 + postCommentsCount;
-      const excerpt = buildExcerpt(content);
 
       return {
-        id: post.id,
-        authorId: post.authorId,
-        type: post.type,
-        title: post.title,
-        excerpt,
-        category: post.category,
-        subcategory: post.subcategory,
-        tags: Array.isArray(post.tags) ? post.tags : [],
-        views: post.views ?? 0,
-        likes: post.likes ?? 0,
+        ...base,
         answersCount,
         postCommentsCount,
         commentsCount,
         officialAnswerCount,
         reviewedAnswerCount,
-        isResolved: post.isResolved ?? false,
-        adoptedAnswerId: post.adoptedAnswerId ?? null,
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt,
-        author: post.author
-          ? {
-              ...post.author,
-              isExpert: post.author.isExpert || false,
-              isFollowing: currentUser ? followingIdSet.has(post.authorId) : false,
-            }
-          : post.author,
         trustBadge: trust.badge,
         trustWeight: trust.weight,
-        thumbnail,
-        thumbnails,
-        imageCount,
         score: (baseScore + engagementScore) * trust.weight * recencyWeight,
       };
     });

@@ -13,6 +13,7 @@ import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 import { ACTIVE_GROUP_PARENT_SLUGS, DEPRECATED_GROUP_PARENT_SLUGS, getChildrenForParent, isGroupChildSlug, isGroupParentSlug } from '@/lib/constants/category-groups';
 import { isExpertBadgeType } from '@/lib/constants/badges';
 import { getFollowingIdSet } from '@/lib/api/follow';
+import { postListSelect, serializePostPreview } from '@/lib/api/post-list';
 
 const resolveTrust = (author: any, createdAt: Date | string) => {
   const months = dayjs().diff(createdAt, 'month', true);
@@ -258,63 +259,7 @@ export async function GET(request: NextRequest) {
           )[0]?.count || 0
         );
 
-    const stripHtmlToText = (html: string) =>
-      html
-        .replace(/<img[^>]*>/gi, '')
-        .replace(/<[^>]*>/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-    const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
-
-    const extractImages = (html: string, maxThumbs = 4) => {
-      if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
-      const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-      const thumbnails: string[] = [];
-      let match: RegExpExecArray | null;
-      let imageCount = 0;
-      let selected: string | null = null;
-      while ((match = regex.exec(html))) {
-        imageCount += 1;
-        const src = match[1];
-        if (!selected && /data-thumbnail\s*=\s*['"]?true['"]?/i.test(match[0])) {
-          selected = src;
-        }
-        if (thumbnails.length < maxThumbs) thumbnails.push(src);
-      }
-      if (selected) {
-        const ordered = [selected, ...thumbnails.filter((src) => src !== selected)];
-        return { thumbnails: ordered.slice(0, maxThumbs), thumbnail: selected, imageCount };
-      }
-      return { thumbnails, thumbnail: thumbnails[0] ?? null, imageCount };
-    };
-
-    const contentPreviewLimit = 4000;
-    const postSelect = {
-      id: posts.id,
-      authorId: posts.authorId,
-      type: posts.type,
-      title: posts.title,
-      content: sql<string>`left(${posts.content}, ${contentPreviewLimit})`.as('content'),
-      category: posts.category,
-      subcategory: posts.subcategory,
-      tags: posts.tags,
-      views: posts.views,
-      likes: posts.likes,
-      isResolved: posts.isResolved,
-      adoptedAnswerId: posts.adoptedAnswerId,
-      createdAt: posts.createdAt,
-      updatedAt: posts.updatedAt,
-      author: {
-        id: users.id,
-        name: users.name,
-        displayName: users.displayName,
-        image: users.image,
-        isVerified: users.isVerified,
-        isExpert: users.isExpert,
-        badgeType: users.badgeType,
-      },
-    };
+    const postSelect = postListSelect();
 
     if (useCursorPagination) {
       conditions.push(
@@ -332,16 +277,7 @@ export async function GET(request: NextRequest) {
       const shouldComputeResponderCounts = !useCursorPagination;
       const emptyResponderRows: Array<{ postId: string | null; authorId: string | null }> = [];
 
-      const [
-        answerCounts,
-        commentCounts,
-        officialAnswerCounts,
-        reviewedAnswerCounts,
-        answerResponders,
-        commentResponders,
-        likedRows,
-        bookmarkedRows,
-      ] = await Promise.all([
+      const [answerCounts, commentCounts, officialAnswerCounts, reviewedAnswerCounts, answerResponders, commentResponders, likedRows, bookmarkedRows] = await Promise.all([
         db
           .select({ postId: answers.postId, count: sql<number>`count(*)::int` })
           .from(answers)
@@ -481,10 +417,8 @@ export async function GET(request: NextRequest) {
         : new Set<string>();
 
       return list.map((post) => {
-        const content = typeof post.content === 'string' ? post.content : '';
-        const { thumbnail, thumbnails, imageCount } = extractImages(content, 4);
         const trust = resolveTrust(post.author, post.createdAt);
-        const excerpt = buildExcerpt(content);
+        const base = serializePostPreview(post, { followingIdSet });
 
         const answersCount = answerCountMap.get(post.id) ?? 0;
         const postCommentsCount = commentCountMap.get(post.id) ?? 0;
@@ -494,32 +428,9 @@ export async function GET(request: NextRequest) {
         const reviewedAnswerCount = reviewedAnswerCountMap.get(post.id) ?? 0;
 
         return {
-          id: post.id,
-          authorId: post.authorId,
-          type: post.type,
-          title: post.title,
-          excerpt,
-          category: post.category,
-          subcategory: post.subcategory,
-          tags: Array.isArray(post.tags) ? post.tags : [],
-          views: post.views ?? 0,
-          likes: post.likes ?? 0,
-          isResolved: post.isResolved ?? false,
-          adoptedAnswerId: post.adoptedAnswerId ?? null,
-          createdAt: post.createdAt,
-          updatedAt: post.updatedAt,
-          author: post.author
-            ? {
-                ...post.author,
-                isExpert: post.author.isExpert || false,
-                isFollowing: user ? followingIdSet.has(post.authorId) : false,
-              }
-            : post.author,
+          ...base,
           trustBadge: trust.badge,
           trustWeight: trust.weight,
-          thumbnail,
-          thumbnails,
-          imageCount,
           isLiked: user ? likedPostIds.has(post.id) : false,
           isBookmarked: user ? bookmarkedPostIds.has(post.id) : false,
           likesCount: post.likes ?? 0,

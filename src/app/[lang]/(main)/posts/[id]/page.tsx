@@ -9,6 +9,7 @@ import PostDetailClient from './PostDetailClient';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 import { stripHtml } from '@/utils/htmlToText';
 import { buildCategoryPopularFilters, buildRelatedPostFilters } from '@/utils/postRecommendationFilters';
+import { SITE_URL } from '@/lib/siteUrl';
 
 // 동적 라우트 설정
 export const dynamicParams = true;
@@ -52,7 +53,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+  const baseUrl = SITE_URL;
   const currentUrl = `${baseUrl}/${lang}/posts/${id}`;
 
   const description = stripHtml(post.content || '').substring(0, 160);
@@ -218,7 +219,7 @@ export default async function PostDetailPage({ params }: PageProps) {
     isAdopted: post.isResolved,
   };
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+  const baseUrl = SITE_URL;
   const answerCount = post.answersCount ?? 0;
   const jsonLdImageSrc = normalizePostImageSrc(mappedPost.thumbnail) || '/brand-logo.png';
   const jsonLdImage = jsonLdImageSrc.startsWith('/') ? `${baseUrl}${jsonLdImageSrc}` : jsonLdImageSrc;
