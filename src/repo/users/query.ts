@@ -65,6 +65,8 @@ export function useUserScore(
     queryKey: queryKeys.users.score(userId),
     queryFn: ({ signal }) => fetchUserScore(userId, { signal }),
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     ...options,
   });
 }
@@ -77,6 +79,8 @@ export function useFollowStatus(
     queryKey: ['followStatus', userId],
     queryFn: ({ signal }) => checkFollowStatus(userId, { signal }),
     enabled: !!userId && enabled,
+    staleTime: 60_000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 

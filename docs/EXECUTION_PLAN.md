@@ -1684,6 +1684,34 @@ $gh-address-comments
 - 다음 액션/의존성
   - Lead가 커밋 분리 기준대로 add/commit 필요
 
+#### (2025-12-20) [FE] 프로필 통계 1행 고정 + 프로필 설정 헤더 정합 (P0-2)
+
+- 플랜(체크리스트)
+  - [ ] 프로필 통계 5개를 모바일에서도 1행 유지(가로 스크롤 허용)
+  - [ ] 프로필 설정 페이지 헤더를 메인 헤더 구성과 동일하게 노출
+- 커밋 분리(요청 단위)
+  - [ ] Commit A: `[FE] 프로필 통계 1행 고정` → `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`
+  - [ ] Commit B: `[FE] 프로필 설정 헤더 정합` → `src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`
+  - [ ] Commit C: `[DOC] FE 작업 기록` → `docs/WORKING_PLAN.md`, `HANDOVER.md`, `docs/EXECUTION_PLAN.md`
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`
+  - 재현/리스크: 모바일에서 통계 블록이 여러 줄로 쌓이며 컴팩트 레이아웃이 깨짐
+- 변경 내용(why/what)
+  - why: 모바일에서도 핵심 수치를 한 줄로 유지해 가독성/일관성 확보
+  - what: 통계 블록을 가로 스크롤 가능한 flex row로 전환, 프로필 설정은 기본 헤더 구성으로 정렬
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx
+  - docs/WORKING_PLAN.md
+  - HANDOVER.md
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 모바일 프로필 통계 가로 스크롤 UX 확인 필요
+
 ### 0.6.2 [WEB] Web Feature Agent
 
 #### (2025-12-18) [WEB] 헤더/프로필 모달 성능 최적화 (P0)
@@ -4078,3 +4106,22 @@ $gh-address-comments
   - src/components/molecules/cards/CommentCard.tsx
   - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
   - docs/EXECUTION_PLAN.md
+
+#### (2025-12-20) [FE] 게시글 안보기 아이콘화 + 우상단 배치 (P0-13)
+
+- 플랜(체크리스트)
+  - [x] 하단 텍스트 버튼 제거
+  - [x] 우상단 이모지 버튼 + Tooltip 제공
+  - [x] 숨김 상태에도 동일한 토글 UI 적용
+- 현황 분석(코드 기준)
+  - 기존 카드 하단 액션에 “안보기” 텍스트가 섞여 시각 균형 저하
+- 변경 내용(why/what)
+  - why: 카드 하단 액션 통일 + 숨김 동선 상단 분리
+  - what: 우상단 이모지 버튼으로 숨김/해제 토글, 하단 텍스트 버튼 제거
+- 검증
+  - [ ] npm run lint
+  - [ ] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - docs/EXECUTION_PLAN.md
+  - HANDOVER.md

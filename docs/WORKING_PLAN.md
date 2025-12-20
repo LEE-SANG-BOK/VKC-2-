@@ -203,7 +203,7 @@
 - [ ] P0-8 (LEAD/BE/WEB: 이벤트 스키마 + 수집)
 - [ ] P0-9 (LEAD/FE: 크로스브라우징 QA)
 - [ ] P0-10 (LEAD/WEB/BE/FE: 가이드라인 v1)
-- [ ] P0-11 (BE/WEB/FE: 숨김/신고 즉시 숨김)
+- [x] P0-11 (BE/WEB/FE: 숨김/신고 즉시 숨김)
 - [ ] P0-12 (WEB/BE/FE: 메타/키워드 파이프라인 통합)
 - [ ] P0-13 (FE/WEB: 라벨 제거 + 강조 UI)
 - [ ] P0-14 (FE/WEB: 피드백 UX 간소화)
@@ -358,6 +358,151 @@
 - 다음 액션/의존성
   - 모바일/데스크톱에서 인증 요약 라벨 길이별 레이아웃 확인 필요
 
+#### (2025-12-20) [FE] 프로필 통계 1행 유지 + 프로필 설정 헤더 정합 (P0-2)
+
+- 플랜(체크리스트)
+  - [x] 프로필 통계 5개를 모바일에서도 1행 유지(가로 스크롤 허용)
+  - [x] 프로필 설정 페이지 헤더를 메인 헤더 구성과 동일하게 노출
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`
+  - 재현/리스크: 모바일에서 통계 블록이 여러 줄로 쌓이며 컴팩트 레이아웃이 깨짐
+- 변경 내용(why/what)
+  - why: 모바일에서도 핵심 수치를 한 줄로 유지해 가독성/일관성 확보
+  - what: 통계 블록을 가로 스크롤 가능한 flex row로 전환, 프로필 설정은 기본 헤더 구성으로 정렬
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx
+- 다음 액션/의존성
+  - 모바일 프로필 통계 가로 스크롤 UX 확인 필요
+
+#### (2025-12-20) [LEAD] 카드 정렬/폭 축소 + 좌측 사이드바 고정 (P0-16/P0-17)
+
+- 플랜(체크리스트)
+  - [x] [FE] PostCard 제목/본문/태그/액션을 닉네임 기준으로 정렬(lg 이상)
+  - [x] [LEAD] 데스크톱 메인 컬럼 폭 축소(1040px → 960px) + 헤더 정렬
+  - [x] [LEAD] 좌측 사이드바 sticky 고정 + 독립 스크롤 보강
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/molecules/cards/PostCard.tsx`, `src/components/templates/MainLayout.tsx`, `src/components/organisms/Header.tsx`, `src/components/organisms/CategorySidebar.tsx`
+  - 재현/리스크: 데스크톱에서 카드 가로 길이 과도 + 제목/본문이 아바타 아래로 밀림, 좌측 사이드바 스크롤이 메인과 분리되지 않음
+- 변경 내용(why/what)
+  - why: 데스크톱 가독성/정렬 개선 + 좌측 사이드바 고정성 확보
+  - what: 카드 본문/태그/액션에 `lg:pl-12` 적용, 2xl 메인 폭 960px로 축소, 좌측 레일 sticky 적용/overscroll 보강
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/templates/MainLayout.tsx
+  - src/components/organisms/Header.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-16/17 카드 정렬/폭 축소 + 좌측 사이드바 고정
+  - 필요한 파일 목록: 위 변경 파일 전체
+  - 필요 검증(lint/type-check/build/기타): lint/build 권장
+  - 의존성/선행 작업: 없음(Hot File)
+  - 커밋 메시지 제안: `[LEAD] align card content + fix sidebar sticky`
+- 다음 액션/의존성
+  - 데스크톱/태블릿에서 카드 폭/정렬 체감 확인
+  - 좌측 사이드바 스크롤 분리 동작 확인
+
+#### (2025-12-20) [FE] 게시글 안보기 아이콘화 + 우상단 배치 (P0-13)
+
+- 플랜(체크리스트)
+  - [x] 하단 텍스트 버튼 제거
+  - [x] 우상단 이모지 버튼으로 전환 + Tooltip 제공
+  - [x] 숨김 상태에서도 동일 UI로 토글
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/molecules/cards/PostCard.tsx`
+  - 재현/리스크: 하단 액션 행에 “안보기” 텍스트가 섞여 시각적 균형이 깨짐
+- 변경 내용(why/what)
+  - why: 카드 하단 액션은 통일된 아이콘 행으로 유지하고, 숨김 동선은 상단 보조 액션으로 분리
+  - what: 상단 우측에 이모지 버튼(tooltip/aria-label) 배치, 하단 텍스트 버튼 제거
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+- 다음 액션/의존성
+  - 카드 상단 여백과 겹침 여부 확인 필요
+
+#### (2025-12-20) [WEB/BE] 맞춤 숨김 v1 + 신고 즉시 숨김 (P0-11)
+
+- 플랜(체크리스트)
+  - [x] /api/hides GET/POST/DELETE 추가 (content_reports 기반)
+  - [x] 신고 API에서 content_reports 동시 기록
+  - [x] 카드/상세에서 숨김 표시 + 숨김 해제
+  - [x] hide 쿼리/뮤테이션 + report 성공 시 hide 캐시 갱신
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: 신고는 reports 테이블만 기록, 사용자별 숨김 저장/렌더 경로 없음
+  - 재현/리스크: 신고 직후에도 리스트/상세에서 콘텐츠가 계속 노출됨
+- 변경 내용(why/what)
+  - why: 신고 즉시 숨김 요구 사항과 사용자 맞춤 숨김 v1 제공
+  - what: content_reports 기반 hides API/쿼리 추가, 카드/상세에서 숨김 상태 렌더, 신고 성공 시 hide 캐시 반영
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/api/hides/route.ts
+  - src/app/api/reports/route.ts
+  - src/app/api/posts/[id]/report/route.ts
+  - src/app/api/answers/[id]/report/route.ts
+  - src/app/api/comments/[id]/report/route.ts
+  - src/repo/hides/types.ts
+  - src/repo/hides/fetch.ts
+  - src/repo/hides/query.ts
+  - src/repo/hides/mutation.ts
+  - src/repo/keys.ts
+  - src/repo/reports/mutation.ts
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/components/molecules/cards/CommentCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-11 숨김 v1 + 신고 즉시 숨김
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint/build 완료, type-check 미실행
+  - 의존성/선행 작업: 없음
+  - 커밋 메시지 제안: [WEB/BE] P0-11 hide v1 + report immediate hide
+- 다음 액션/의존성
+  - type-check 필요 시 실행
+#### (2025-12-20) [WEB] P0-4 퍼포먼스 1차(에디터 스플릿 + 쿼리 튜닝) (P0)
+
+- 플랜(체크리스트)
+  - [x] PostDetail RichTextEditor dynamic import
+  - [x] follow/status/score 쿼리 staleTime/gcTime 기본값 튜닝
+  - [ ] 이미지 sizes/lazy/placeholder 통일(이관 필요)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/repo/users/query.ts`
+  - 재현/리스크: 상세 진입 시 에디터 번들이 선로드, 팔로우/점수 쿼리 재요청 빈도
+- 변경 내용(why/what)
+  - why: 초기 로딩 JS 축소 + 불필요 refetch 감소
+  - what: 상세 에디터 dynamic import, user score/followStatus 기본 staleTime/gcTime 적용
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/repo/users/query.ts
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-4 editor split + query tuning
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint 완료, type-check/build 미실행
+  - 의존성/선행 작업: FE 이미지 표준화 후속
+- 커밋 메시지 제안: [WEB] split editor + tune user queries
+- 다음 액션/의존성
+  - FE 이미지 표준화 작업 병행 필요
+
 ## P0 (출시 전: Launch blocking)
 
 #### (2025-12-20) [LEAD] P0-0 운영/병렬 규칙 고정 (P0)
@@ -421,8 +566,8 @@
 
 - 플랜(체크리스트)
   - [ ] [FE] 이미지 sizes/lazy/placeholder 통일
-  - [ ] [WEB] dynamic import 확대(에디터/모달/관리자)
-  - [ ] [WEB] Query enabled/staleTime 튜닝
+  - [x] [WEB] dynamic import 확대(에디터/모달/관리자)
+  - [x] [WEB] Query enabled/staleTime 튜닝
 
 - 목표: 초기 로딩/스크롤 체감 개선(이미지/무거운 UI 중심 + 불필요 API 호출 감소)
 - 작업

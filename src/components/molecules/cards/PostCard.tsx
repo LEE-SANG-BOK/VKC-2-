@@ -194,6 +194,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const [localLikes, setLocalLikes] = useState(stats.likes);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const isHidden = hiddenPostIds.has(String(id));
+  const hideActionLabel = isHidden ? unhideLabel : hideLabel;
+  const hideEmoji = isHidden ? '👀' : '🙈';
   const localizeTag = (tag: string) => {
     const raw = tag?.replace(/^#/, '').trim();
     if (!raw) return '';
@@ -520,13 +522,16 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         <div className="question-card-main">
           <div className="flex items-center justify-between gap-3 px-2 py-2">
             <span className="text-sm text-gray-500 dark:text-gray-400">{hiddenPostLabel}</span>
-            <button
-              type="button"
-              onClick={handleToggleHide}
-              className="rounded-full px-3 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              {unhideLabel}
-            </button>
+            <Tooltip content={hideActionLabel} position="top">
+              <button
+                type="button"
+                onClick={handleToggleHide}
+                aria-label={hideActionLabel}
+                className="rounded-full p-1.5 text-base leading-none text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                {hideEmoji}
+              </button>
+            </Tooltip>
           </div>
         </div>
       </article>
@@ -595,23 +600,36 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 </div>
               </div>
             </div>
+            <div className="ml-auto shrink-0">
+              <Tooltip content={hideActionLabel} position="top">
+                <button
+                  type="button"
+                  onClick={handleToggleHide}
+                  aria-label={hideActionLabel}
+                  className="rounded-full p-1.5 text-base leading-none text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                >
+                  {hideEmoji}
+                </button>
+              </Tooltip>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
-              {title}
-            </h3>
-            {sourceLabel && (
-              <span className="text-[11px] font-semibold rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
-                {sourcePrefix}: {sourceLabel}
-              </span>
-            )}
-          </div>
+          <div className="lg:pl-12">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
+                {title}
+              </h3>
+              {sourceLabel && (
+                <span className="text-[11px] font-semibold rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                  {sourcePrefix}: {sourceLabel}
+                </span>
+              )}
+            </div>
 
-          {/* Excerpt */}
-          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2 leading-relaxed">
-            {excerpt}
-          </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2 leading-relaxed">
+              {excerpt}
+            </p>
+          </div>
 
         </div>
 
@@ -643,7 +661,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2">
+        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2 lg:pl-12">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -668,7 +686,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
       <div className="question-card-actions">
         <div className="question-card-footer-fixed !flex-nowrap !gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1 flex-nowrap">
+          <div className="flex items-center gap-2 min-w-0 flex-1 flex-nowrap lg:pl-12">
             <button
               type="button"
               onClick={handleAnswerCountClick}
@@ -775,13 +793,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
               </button>
             </Tooltip>
-            <button
-              type="button"
-              onClick={handleToggleHide}
-              className="inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
-            >
-              {hideLabel}
-            </button>
             {isQuestion ? (
               <>
                 <Tooltip
