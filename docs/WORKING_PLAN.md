@@ -688,6 +688,34 @@
 - 다음 액션/의존성
   - 홈/프로필 등 추가 메타 이관 필요
 
+#### (2025-12-20) [WEB] P0-14 피드백 폼 필드 최소화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 버그 타입 영향도 입력 제거
+  - [x] 만족도 입력은 피드백만 노출
+  - [x] 입력 유도 문구 위치 재정리
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/[lang]/(main)/feedback/FeedbackClient.tsx`
+  - 재현/리스크: 버그 제보에 만족도(영향도) 요구로 제출 허들 상승
+- 변경 내용(why/what)
+  - why: 버그 제보 필수 입력을 “상세 설명”만 남겨 제출 허들 최소화
+  - what: 버그 타입에서는 만족도 영역 숨김, 피드백에만 만족도 선택 노출, 텍스트 입력 안내를 상세 입력 하단으로 이동
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/feedback/FeedbackClient.tsx
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-14 feedback form simplification
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint 완료, type-check/build 미실행
+  - 의존성/선행 작업: FE 사이드바 피드백 아이콘화 작업 필요
+  - 커밋 메시지 제안: [WEB] simplify feedback form fields
+- 다음 액션/의존성
+  - FE에서 사이드바 피드백 아이콘 전환 후 마무리
+
 ## P0 (출시 전: Launch blocking)
 
 #### (2025-12-20) [LEAD] P0-0 운영/병렬 규칙 고정 (P0)
@@ -931,7 +959,7 @@
 
 - 플랜(체크리스트)
   - [ ] [FE] 피드백 UI 간소화
-  - [ ] [WEB] 피드백 폼 필드 최소화 + 제출 UX
+  - [x] [WEB] 피드백 폼 필드 최소화 + 제출 UX
 
 - 목표: 피드백 제출 허들을 낮추고, 사이드바 피드백 진입을 “작고 명확한 이모지 + 툴팁”으로 정리한다
 - 작업(권장)
