@@ -173,7 +173,8 @@ class PerformanceAuditor {
     const page = await context.newPage();
 
     try {
-      await page.goto(toUrl(`/${config.lang}`), { waitUntil: 'networkidle' });
+      await page.goto(toUrl(`/${config.lang}`), { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
 
       if (!config.postId) {
         const postHref = await page.evaluate((lang) => {
@@ -213,7 +214,8 @@ class PerformanceAuditor {
 
     try {
       // Navigation Timing API를 위한 시작 시점 기록
-      await page.goto(pageInfo.url, { waitUntil: 'networkidle' });
+      await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
 
       // 페이지 로딩 성능 측정
       const performanceMetrics = await page.evaluate(() => {
