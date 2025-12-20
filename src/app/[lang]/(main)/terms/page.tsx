@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import MainLayout from '@/components/templates/MainLayout';
 import { getDictionary } from '@/i18n/get-dictionary';
-import { i18n, type Locale } from '@/i18n/config';
-import { SITE_URL } from '@/lib/siteUrl';
+import { type Locale } from '@/i18n/config';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 
 type PageProps = {
   params: Promise<{ lang: Locale }>;
@@ -12,33 +13,34 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang } = await params;
   const dict = await getDictionary(lang);
   const meta = dict.metadata as Record<string, any>;
-  const baseUrl = SITE_URL;
-  const currentUrl = `${baseUrl}/${lang}/terms`;
+  const title =
+    meta.terms?.title ||
+    (lang === 'en'
+      ? 'Terms - viet kconnect'
+      : lang === 'vi'
+        ? 'Điều khoản - viet kconnect'
+        : '이용약관 - viet kconnect');
+  const description =
+    meta.terms?.description ||
+    (lang === 'en'
+      ? 'Review the terms of service for viet kconnect.'
+      : lang === 'vi'
+        ? 'Xem điều khoản dịch vụ của viet kconnect.'
+        : 'viet kconnect 이용약관을 확인하세요.');
+  const keywords = flattenKeywords(buildKeywords({ title, content: description }));
 
-  return {
-    title:
-      meta.terms?.title ||
-      (lang === 'en'
-        ? 'Terms - viet kconnect'
-        : lang === 'vi'
-          ? 'Điều khoản - viet kconnect'
-          : '이용약관 - viet kconnect'),
-    description:
-      meta.terms?.description ||
-      (lang === 'en'
-        ? 'Review the terms of service for viet kconnect.'
-        : lang === 'vi'
-          ? 'Xem điều khoản dịch vụ của viet kconnect.'
-          : 'viet kconnect 이용약관을 확인하세요.'),
-    alternates: {
-      canonical: currentUrl,
-      languages: Object.fromEntries(i18n.locales.map((l) => [l, `${baseUrl}/${l}/terms`])),
-    },
+  return buildPageMetadata({
+    locale: lang,
+    path: '/terms',
+    title,
+    description,
+    siteName: (meta?.home as Record<string, string>)?.siteName,
+    keywords,
     robots: {
       index: true,
       follow: true,
     },
-  };
+  });
 }
 
 export default async function TermsPage({ params }: PageProps) {

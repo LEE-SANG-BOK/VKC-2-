@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import MainLayout from '@/components/templates/MainLayout';
 import { getDictionary } from '@/i18n/get-dictionary';
-import { i18n, type Locale } from '@/i18n/config';
-import { SITE_URL } from '@/lib/siteUrl';
+import { type Locale } from '@/i18n/config';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 
 type PageProps = {
   params: Promise<{ lang: Locale }>;
@@ -12,33 +13,34 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang } = await params;
   const dict = await getDictionary(lang);
   const meta = dict.metadata as Record<string, any>;
-  const baseUrl = SITE_URL;
-  const currentUrl = `${baseUrl}/${lang}/privacy`;
+  const title =
+    meta.privacy?.title ||
+    (lang === 'en'
+      ? 'Privacy - viet kconnect'
+      : lang === 'vi'
+        ? 'Quyền riêng tư - viet kconnect'
+        : '개인정보처리방침 - viet kconnect');
+  const description =
+    meta.privacy?.description ||
+    (lang === 'en'
+      ? 'Learn how viet kconnect handles your data.'
+      : lang === 'vi'
+        ? 'Tìm hiểu cách viet kconnect xử lý dữ liệu của bạn.'
+        : 'viet kconnect의 개인정보 처리 방침을 확인하세요.');
+  const keywords = flattenKeywords(buildKeywords({ title, content: description }));
 
-  return {
-    title:
-      meta.privacy?.title ||
-      (lang === 'en'
-        ? 'Privacy - viet kconnect'
-        : lang === 'vi'
-          ? 'Quyền riêng tư - viet kconnect'
-          : '개인정보처리방침 - viet kconnect'),
-    description:
-      meta.privacy?.description ||
-      (lang === 'en'
-        ? 'Learn how viet kconnect handles your data.'
-        : lang === 'vi'
-          ? 'Tìm hiểu cách viet kconnect xử lý dữ liệu của bạn.'
-          : 'viet kconnect의 개인정보 처리 방침을 확인하세요.'),
-    alternates: {
-      canonical: currentUrl,
-      languages: Object.fromEntries(i18n.locales.map((l) => [l, `${baseUrl}/${l}/privacy`])),
-    },
+  return buildPageMetadata({
+    locale: lang,
+    path: '/privacy',
+    title,
+    description,
+    siteName: (meta?.home as Record<string, string>)?.siteName,
+    keywords,
     robots: {
       index: true,
       follow: true,
     },
-  };
+  });
 }
 
 export default async function PrivacyPage({ params }: PageProps) {

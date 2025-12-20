@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/config';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 import NotificationsClient from './NotificationsClient';
 
 export const dynamic = 'force-dynamic';
@@ -35,14 +37,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   })();
 
-  return {
-    title: t.title || fallback.title,
-    description: t.description || fallback.description,
+  const meta = (dict?.metadata as Record<string, unknown>) || {};
+  const title = t.title || fallback.title;
+  const description = t.description || fallback.description;
+  const keywords = flattenKeywords(buildKeywords({ title, content: description }));
+
+  return buildPageMetadata({
+    locale: lang,
+    path: '/notifications',
+    title,
+    description,
+    siteName: (meta?.home as Record<string, string>)?.siteName,
+    keywords,
     robots: {
       index: false,
       follow: false,
     },
-  };
+  });
 }
 
 export default async function NotificationsPage({ params }: PageProps) {

@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import TrustBadge, { type TrustLevel } from '@/components/atoms/TrustBadge';
 import { getDictionary } from '@/i18n/get-dictionary';
 import { i18n, type Locale } from '@/i18n/config';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 
 type PageProps = {
   params: Promise<{ lang: string }>;
@@ -34,10 +36,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         ? 'Tìm hiểu ý nghĩa của từng huy hiệu tin cậy và cách được gán.'
         : '각 신뢰 배지의 의미와 부여 기준을 확인하세요.');
 
-  return {
+  const keywords = flattenKeywords(buildKeywords({ title, content: description }));
+
+  return buildPageMetadata({
+    locale,
+    path: '/guide/trust-badges',
     title,
     description,
-  };
+    siteName: (meta?.home as Record<string, string>)?.siteName,
+    keywords,
+  });
 }
 
 export default async function TrustBadgesGuidePage({ params }: PageProps) {
@@ -179,4 +187,3 @@ export default async function TrustBadgesGuidePage({ params }: PageProps) {
     </main>
   );
 }
-
