@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { users, follows, posts } from '@/lib/db/schema';
-import { eq, ne, notInArray, sql, desc, and } from 'drizzle-orm';
+import { users, follows, posts, categories } from '@/lib/db/schema';
+import { eq, ne, notInArray, sql, desc, and, inArray } from 'drizzle-orm';
 import { setPrivateNoStore, errorResponse } from '@/lib/api/response';
 
 export async function GET(req: NextRequest) {
@@ -20,8 +20,20 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(12, Math.max(1, limitCandidate));
     const offset = (page - 1) * limit;
 
-    const normalizeInterest = (value: string | null | undefined) =>
-      typeof value === 'string' ? value.trim().toLowerCase() : '';
+    const viewer = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: {
+        userType: true,
+        visaType: true,
+        koreanLevel: true,
+        interests: true,
+      },
+    });
+
+    const viewerUserType = viewer?.userType || null;
+    const viewerVisaType = viewer?.visaType || null;
+    const viewerKoreanLevel = viewer?.koreanLevel || null;
+    const viewerInterests = (viewer?.interests || []).filter((value) => typeof value === 'string' && value.trim().length > 0);
 
     // Get users that current user is already following
     const followingUsers = await db
@@ -50,6 +62,21 @@ export async function GET(req: NextRequest) {
     const total = Number(totalResult[0]?.count || 0);
 
     // Get recommended users with stats
+    const matchScore = sql<number>`
+      (CASE WHEN ${viewerUserType} IS NOT NULL AND ${users.userType} = ${viewerUserType} THEN 4 ELSE 0 END)
+      + (CASE WHEN ${viewerVisaType} IS NOT NULL AND ${users.visaType} = ${viewerVisaType} THEN 3 ELSE 0 END)
+      + (CASE WHEN ${viewerKoreanLevel} IS NOT NULL AND ${users.koreanLevel} = ${viewerKoreanLevel} THEN 1 ELSE 0 END)
+      + (CASE
+          WHEN COALESCE(array_length(${viewerInterests}::text[], 1), 0) > 0
+            AND COALESCE(${users.interests} && ${viewerInterests}::text[], false)
+          THEN 3
+          ELSE 0
+        END)
+      + (CASE WHEN ${users.isVerified} THEN 1 ELSE 0 END)
+      + (CASE WHEN ${users.isExpert} THEN 1 ELSE 0 END)
+      + (CASE WHEN ${users.badgeType} IS NOT NULL THEN 1 ELSE 0 END)
+    `;
+
     const recommendedUsers = await db
       .select({
         id: users.id,
@@ -61,6 +88,7 @@ export async function GET(req: NextRequest) {
         isVerified: users.isVerified,
         isExpert: users.isExpert,
         badgeType: users.badgeType,
+        badgeExpiresAt: users.badgeExpiresAt,
         status: users.status,
         userType: users.userType,
         interests: users.interests,
@@ -84,29 +112,55 @@ export async function GET(req: NextRequest) {
       })
       .from(users)
       .where(and(...whereConditions))
-      .orderBy(desc(users.isVerified), desc(sql`
-        (SELECT COUNT(*) FROM ${follows} WHERE ${follows.followingId} = ${users.id})
-      `))
+      .orderBy(
+        desc(matchScore),
+        desc(sql`COALESCE(${users.lastLoginAt}, ${users.createdAt})`),
+        desc(users.isVerified),
+        desc(sql`(SELECT COUNT(*) FROM ${follows} WHERE ${follows.followingId} = ${users.id})`)
+      )
       .limit(limit)
       .offset(offset);
 
-    const pickInterest = (interestList?: string[] | null) => {
-      if (!interestList || interestList.length === 0) return '';
-      return interestList.find((interest) => normalizeInterest(interest)) || '';
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const interestIds = Array.from(
+      new Set(
+        recommendedUsers
+          .flatMap((user) => user.interests || [])
+          .filter((value): value is string => typeof value === 'string' && uuidRegex.test(value))
+      )
+    );
+
+    const categoryRows = interestIds.length
+      ? await db
+          .select({ id: categories.id, slug: categories.slug })
+          .from(categories)
+          .where(inArray(categories.id, interestIds))
+      : [];
+    const categorySlugById = new Map(categoryRows.map((row) => [row.id, row.slug] as const));
+
+    const resolveInterest = (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return '';
+      if (uuidRegex.test(trimmed)) return categorySlugById.get(trimmed) || '';
+      return trimmed;
     };
-    const hasDigits = (value: string) => /\d/.test(value);
+
+    const pickInterest = (interestList: string[]) => {
+      if (interestList.length === 0) return '';
+      return interestList[0] || '';
+    };
 
     const formattedUsers = recommendedUsers.map(user => {
+      const resolvedInterests = (user.interests || [])
+        .map((value) => (typeof value === 'string' ? resolveInterest(value) : ''))
+        .filter((value) => value.length > 0);
+
       const recommendationMeta = [
+        { key: 'interest', value: pickInterest(resolvedInterests) },
         { key: 'userType', value: user.userType || '' },
         { key: 'visaType', value: user.visaType || '' },
         { key: 'koreanLevel', value: user.koreanLevel || '' },
-        { key: 'interest', value: pickInterest(user.interests) },
-        { key: 'status', value: user.status || '' },
-      ]
-        .filter((item) => typeof item.value === 'string' && item.value.trim().length > 0)
-        .filter((item) => item.key === 'visaType' || !hasDigits(item.value as string))
-        .slice(0, 3);
+      ].filter((item) => typeof item.value === 'string' && item.value.trim().length > 0).slice(0, 2);
 
       return {
       id: user.id,
@@ -116,11 +170,14 @@ export async function GET(req: NextRequest) {
       image: user.image,
       bio: user.bio,
       isVerified: user.isVerified,
+      isExpert: user.isExpert,
+      badgeType: user.badgeType,
+      badgeExpiresAt: user.badgeExpiresAt,
       status: user.status,
       userType: user.userType,
       visaType: user.visaType,
       koreanLevel: user.koreanLevel,
-      interests: user.interests,
+      interests: resolvedInterests,
       isFollowing: followingIdSet.has(user.id),
       recommendationMeta,
       stats: {
