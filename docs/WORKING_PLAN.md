@@ -406,7 +406,7 @@ $gh-address-comments
 - [ ] P1-9 (BE: 모더레이션 자동화 고도화)
 - [ ] P1-10 (WEB: 튜토리얼/리마인드)
 - [ ] P1-11 (WEB/FE: 저속·오프라인 UX/PWA 폴백 v1)
-- [ ] P1-12 (LEAD/WEB: 성능·접근성 감사 스크립트 정렬)
+- [x] P1-12 (LEAD/WEB: 성능·접근성 감사 스크립트 정렬)
 - [ ] P1-13 (WEB/BE/FE: 추천 사용자 개인화/표시 규칙 정리)
 - [ ] P1-14 (LEAD/BE/WEB: 인증/배지 taxonomy + 운영 workflow 정리)
 - [ ] P1-15 (LEAD/WEB: AI 검색/요약 대비 SEO 구조화)
@@ -1580,14 +1580,20 @@ $gh-address-comments
 - 판정 기준(고정): `LCP ≤ 2.5s`, `INP ≤ 200ms`, `CLS ≤ 0.1`(모바일 우선). 기준 확인: `https://wallaroomedia.com/blog/what-are-core-web-vitals/`
 - 현황(코드 근거)
   - 감사 스크립트의 테스트 URL이 구 라우트(`/questions` 등)를 기준으로 되어 있음(`scripts/performance-audit.js:1`, `scripts/accessibility-audit.js:1`)
-- 작업(권장)
-  - 타깃 URL을 현재 구조로 교체(예: `/{lang}` 홈, `/{lang}/search`, `/{lang}/posts/{id}` 등)
-  - 네트워크 프로파일을 포함한 실행 규칙 정의(예: 모바일 viewport + 3G throttle 1회는 “정기 점검”)
-  - 결과의 pass/fail은 위 CWV 판정 기준으로 통일하고, 실패 시 이슈/백로그로 즉시 기록(릴리즈 차단은 아님)
-  - 운영 방식 결정
-    - 릴리즈 차단 게이트에 넣지 않고, “주간/야간 점검”으로 고정(실패 시 이슈 트래킹)
-- 완료 기준
-  - 스크립트가 현재 라우트에서 실행 가능하고, “언제/어디서/무엇을 본다”가 문서로 고정됨
+- 변경(반영)
+  - 타깃 URL을 현재 구조로 교체(`/{lang}` 홈, `/{lang}/search`, `/{lang}/leaderboard`, 선택: `/{lang}/posts/{id}`, `/{lang}/profile/{id}`)
+  - 실행 파라미터를 환경변수로 고정
+    - `AUDIT_BASE_URL`(기본: `http://localhost:3000`)
+    - `AUDIT_LANG`(기본: `ko`)
+    - `AUDIT_POST_ID`/`AUDIT_USER_ID`(선택, 미지정 시 홈에서 1회 추출 시도)
+  - 접근성 감사는 `@axe-core/playwright`가 없으면 lite(기본 규칙)로 자동 폴백
+  - 리포트 출력 위치 고정: `reports/performance-audit.{json,html}`, `reports/accessibility-audit.{json,html}`
+- 실행(예시)
+  - 로컬: `AUDIT_LANG=ko npm run audit:performance`
+  - 로컬: `AUDIT_LANG=vi npm run audit:accessibility`
+  - 스테이징/프리뷰: `AUDIT_BASE_URL=https://<host> AUDIT_LANG=vi npm run audit:full`
+- 운영 방식(권장)
+  - 릴리즈 차단 게이트에 넣지 않고, “주간/야간 점검”으로 고정(실패 시 이슈/백로그로 기록)
 
 #### (2025-12-20) [WEB/BE/FE] P1-13 추천 사용자(Recommended Users) 개인화/표시 규칙 정리 (P1)
 

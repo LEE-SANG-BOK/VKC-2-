@@ -2,52 +2,74 @@
 
 /**
  * WCAG 2.1 AA 접근성 자동 검증 스크립트
- * axe-core와 lighthouse를 사용한 종합 접근성 감사
+ * axe-core(선택) + 기본 규칙 기반 접근성 감사
  */
 
 let chromium;
 let AxeBuilder;
-let lighthouse;
 
 try {
-  // Playwright 기반 감사 패키지는 선택 사항이므로 동적 로드한다.
-  // (사용하지 않는 환경에서는 설치되어 있지 않을 수 있음)
   ({ chromium } = require('playwright'));
-  AxeBuilder = require('@axe-core/playwright').default;
-  lighthouse = require('lighthouse');
 } catch (error) {
   console.error(
     '\n⚠️  Playwright 기반 접근성 감사가 비활성화되어 있습니다.\n' +
-      '    필요한 경우 `npm install playwright @axe-core/playwright lighthouse` 실행 후 다시 시도하세요.\n',
+      '    필요한 경우 `npm install playwright` 실행 후 다시 시도하세요.\n',
   );
   process.exit(0);
 }
 const fs = require('fs');
 const path = require('path');
 
-// 검사할 페이지 목록
-const PAGES_TO_TEST = [
-  {
-    name: 'HomePage',
-    url: 'http://localhost:3000',
-    description: '메인 페이지'
-  },
-  {
-    name: 'QuestionsPage',
-    url: 'http://localhost:3000/questions',
-    description: '질문 목록 페이지'
-  },
-  {
-    name: 'QuestionDetailPage',
-    url: 'http://localhost:3000/questions/1',
-    description: '질문 상세 페이지'
-  },
-  {
-    name: 'ProfilePage',
-    url: 'http://localhost:3000/profile',
-    description: '프로필 페이지'
+try {
+  AxeBuilder = require('@axe-core/playwright').default;
+} catch (error) {
+  AxeBuilder = null;
+}
+
+const AUDIT_BASE_URL = process.env.AUDIT_BASE_URL || 'http://localhost:3000';
+const AUDIT_LANG = process.env.AUDIT_LANG || 'ko';
+const AUDIT_POST_ID = process.env.AUDIT_POST_ID || null;
+const AUDIT_USER_ID = process.env.AUDIT_USER_ID || null;
+
+const toUrl = (pathname) => new URL(pathname, AUDIT_BASE_URL).toString();
+
+const buildPagesToTest = ({ lang, postId, userId }) => {
+  const pages = [
+    {
+      name: 'HomePage',
+      url: toUrl(`/${lang}`),
+      description: '홈(피드)',
+    },
+    {
+      name: 'SearchPage',
+      url: toUrl(`/${lang}/search`),
+      description: '검색',
+    },
+    {
+      name: 'LeaderboardPage',
+      url: toUrl(`/${lang}/leaderboard`),
+      description: '커뮤니티 랭킹',
+    },
+  ];
+
+  if (postId) {
+    pages.push({
+      name: 'PostDetailPage',
+      url: toUrl(`/${lang}/posts/${postId}`),
+      description: '게시글 상세',
+    });
   }
-];
+
+  if (userId) {
+    pages.push({
+      name: 'ProfilePage',
+      url: toUrl(`/${lang}/profile/${userId}`),
+      description: '프로필',
+    });
+  }
+
+  return pages;
+};
 
 // WCAG 2.1 AA 기준
 const WCAG_RULES = {
@@ -66,7 +88,7 @@ class AccessibilityAuditor {
     this.results = {
       timestamp: new Date().toISOString(),
       summary: {
-        totalPages: PAGES_TO_TEST.length,
+        totalPages: 0,
         passedPages: 0,
         failedPages: 0,
         totalViolations: 0,
@@ -83,7 +105,15 @@ class AccessibilityAuditor {
     const browser = await chromium.launch({ headless: true });
 
     try {
-      for (const page of PAGES_TO_TEST) {
+      if (!AxeBuilder) {
+        console.log('ℹ️  @axe-core/playwright 미설치: 기본 규칙 기반(lite)으로 실행합니다.\n');
+      }
+
+      const resolved = await this.resolveTargets(browser);
+      const pagesToTest = buildPagesToTest(resolved);
+      this.results.summary.totalPages = pagesToTest.length;
+
+      for (const page of pagesToTest) {
         console.log(`📄 ${page.name} (${page.description}) 검사 중...`);
 
         const pageResult = await this.auditPage(browser, page);
@@ -111,6 +141,55 @@ class AccessibilityAuditor {
     }
   }
 
+  async resolveTargets(browser) {
+    const config = {
+      lang: AUDIT_LANG,
+      postId: AUDIT_POST_ID,
+      userId: AUDIT_USER_ID,
+    };
+
+    if (config.postId && config.userId) {
+      return config;
+    }
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    try {
+      await page.goto(toUrl(`/${config.lang}`), { waitUntil: 'networkidle' });
+
+      if (!config.postId) {
+        const postHref = await page.evaluate((lang) => {
+          const selector = `a[href^="/${lang}/posts/"]`;
+          return document.querySelector(selector)?.getAttribute('href') || null;
+        }, config.lang);
+
+        if (postHref) {
+          const match = postHref.match(new RegExp(`^/${config.lang}/posts/([^/?#]+)`));
+          if (match) config.postId = match[1];
+        }
+      }
+
+      if (!config.userId) {
+        const userHref = await page.evaluate((lang) => {
+          const selector = `a[href^="/${lang}/profile/"]`;
+          return document.querySelector(selector)?.getAttribute('href') || null;
+        }, config.lang);
+
+        if (userHref) {
+          const match = userHref.match(new RegExp(`^/${config.lang}/profile/([^/?#]+)`));
+          if (match) config.userId = match[1];
+        }
+      }
+    } catch (error) {
+      return config;
+    } finally {
+      await context.close();
+    }
+
+    return config;
+  }
+
   async auditPage(browser, pageInfo) {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -119,20 +198,15 @@ class AccessibilityAuditor {
       // 페이지 로드
       await page.goto(pageInfo.url, { waitUntil: 'networkidle' });
 
-      // axe-core 접근성 검사
-      const axeBuilder = new AxeBuilder({ page });
-      const axeResults = await axeBuilder
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
-        .analyze();
+      let violations = [];
 
-      // Lighthouse 접근성 검사 (간소화)
-      const lighthouseScore = await this.getLighthouseAccessibilityScore(page);
+      if (AxeBuilder) {
+        const axeBuilder = new AxeBuilder({ page });
+        const axeResults = await axeBuilder
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+          .analyze();
 
-      return {
-        name: pageInfo.name,
-        url: pageInfo.url,
-        description: pageInfo.description,
-        violations: axeResults.violations.map(violation => ({
+        violations = axeResults.violations.map(violation => ({
           id: violation.id,
           impact: violation.impact,
           description: violation.description,
@@ -140,7 +214,18 @@ class AccessibilityAuditor {
           helpUrl: violation.helpUrl,
           nodes: violation.nodes.length,
           wcagLevel: this.getWCAGLevel(violation.tags)
-        })),
+        }));
+      } else {
+        violations = await this.runLiteChecks(page);
+      }
+
+      const lighthouseScore = await this.getLighthouseAccessibilityScore(page);
+
+      return {
+        name: pageInfo.name,
+        url: pageInfo.url,
+        description: pageInfo.description,
+        violations,
         lighthouseScore: lighthouseScore,
         timestamp: new Date().toISOString()
       };
@@ -157,6 +242,102 @@ class AccessibilityAuditor {
     } finally {
       await context.close();
     }
+  }
+
+  async runLiteChecks(page) {
+    const { violations } = await page.evaluate(() => {
+      const result = { violations: [] };
+
+      const push = (violation) => {
+        result.violations.push(violation);
+      };
+
+      const images = Array.from(document.querySelectorAll('img'));
+      const imagesWithoutAlt = images.filter((img) => !(img.getAttribute('alt') || '').trim());
+      if (imagesWithoutAlt.length > 0) {
+        push({
+          id: 'image-alt',
+          impact: 'serious',
+          description: '대체 텍스트(alt)가 없는 이미지가 있습니다.',
+          help: '의미 있는 이미지에는 alt를 추가하고, 장식용 이미지는 alt=""를 사용하세요.',
+          helpUrl: 'https://www.w3.org/WAI/WCAG21/Understanding/non-text-content.html',
+          nodes: imagesWithoutAlt.length,
+          wcagLevel: 'AA',
+        });
+      }
+
+      const clickable = Array.from(document.querySelectorAll('button, a, [role="button"]'));
+      const unnamedButtons = clickable.filter((el) => {
+        const text = (el.textContent || '').trim();
+        const ariaLabel = (el.getAttribute('aria-label') || '').trim();
+        const ariaLabelledby = (el.getAttribute('aria-labelledby') || '').trim();
+        return text.length === 0 && ariaLabel.length === 0 && ariaLabelledby.length === 0;
+      });
+      if (unnamedButtons.length > 0) {
+        push({
+          id: 'button-name',
+          impact: 'critical',
+          description: '접근 가능한 이름이 없는 버튼/링크가 있습니다.',
+          help: '아이콘-only 액션에는 aria-label 또는 aria-labelledby를 제공하세요.',
+          helpUrl: 'https://www.w3.org/WAI/WCAG21/Understanding/name-role-value.html',
+          nodes: unnamedButtons.length,
+          wcagLevel: 'AA',
+        });
+      }
+
+      const inputs = Array.from(document.querySelectorAll('input, textarea, select'));
+      const inputsWithoutLabels = inputs.filter((input) => {
+        if ((input.getAttribute('type') || '').toLowerCase() === 'hidden') return false;
+
+        const ariaLabel = (input.getAttribute('aria-label') || '').trim();
+        const ariaLabelledby = (input.getAttribute('aria-labelledby') || '').trim();
+        if (ariaLabel.length > 0 || ariaLabelledby.length > 0) return false;
+
+        const id = (input.getAttribute('id') || '').trim();
+        if (!id) return true;
+        return !document.querySelector(`label[for="${id.replace(/"/g, '\\"')}"]`);
+      });
+      if (inputsWithoutLabels.length > 0) {
+        push({
+          id: 'form-label',
+          impact: 'serious',
+          description: '레이블이 없는 폼 입력이 있습니다.',
+          help: 'label[for] 또는 aria-label/aria-labelledby로 입력의 목적을 제공하세요.',
+          helpUrl: 'https://www.w3.org/WAI/WCAG21/Understanding/labels-or-instructions.html',
+          nodes: inputsWithoutLabels.length,
+          wcagLevel: 'AA',
+        });
+      }
+
+      const h1Count = document.querySelectorAll('h1').length;
+      if (h1Count === 0) {
+        push({
+          id: 'heading-h1',
+          impact: 'moderate',
+          description: 'H1 제목이 없습니다.',
+          help: '페이지마다 대표 제목(H1)을 1개 제공하세요.',
+          helpUrl: 'https://www.w3.org/WAI/WCAG21/Understanding/info-and-relationships.html',
+          nodes: 1,
+          wcagLevel: 'AA',
+        });
+      }
+
+      if (h1Count > 1) {
+        push({
+          id: 'heading-h1-multiple',
+          impact: 'moderate',
+          description: 'H1 제목이 여러 개입니다.',
+          help: '페이지당 H1은 1개만 사용하세요.',
+          helpUrl: 'https://www.w3.org/WAI/WCAG21/Understanding/info-and-relationships.html',
+          nodes: h1Count,
+          wcagLevel: 'AA',
+        });
+      }
+
+      return result;
+    });
+
+    return violations;
   }
 
   async getLighthouseAccessibilityScore(page) {
