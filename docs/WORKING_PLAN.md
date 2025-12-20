@@ -171,6 +171,51 @@ $gh-address-comments
   - 출처/업데이트 표기(신뢰·최신성) 정책이 화면/메타/스키마에 일관되게 반영되지 않으면 E-E-A-T 신호가 약해짐(P1-8 연계)
 - 방향: “AI 검색 대비 SEO 계약(헤딩/즉답 구조/스키마/최신성/크롤링)”을 SoT로 만들고 템플릿화해 반복 비용을 제거
 
+### 7. UGC 보안(XSS)–서버 “무해화” 부재 + `dangerouslySetInnerHTML` 렌더
+
+- 현황/리스크
+  - 게시글/답변/댓글은 HTML을 그대로 저장/반환하는 구조이며, 클라이언트에서 `dangerouslySetInnerHTML`로 렌더됨(`src/app/api/posts/route.ts:666`, `src/app/api/posts/route.ts:819`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx:2273`)
+  - 현재 `createSafeUgcMarkup`는 링크에 `rel="ugc"`를 보정하는 수준이며, HTML 태그/속성의 allowlist 기반 “무해화(스크립트/이벤트/위험 URL 차단)”를 수행하지 않음(`src/utils/sanitizeUgcContent.ts:17`)
+- 방향
+  - UGC는 “서버 write-time 무해화 + read-time 안전 렌더”를 단일 파이프라인으로 고정(허용 태그/속성/URL 스킴 규칙)
+  - 대표 페이로드 회귀 방지용 테스트/샘플을 최소로라도 갖춰 “다시 열리는” 보안 이슈를 구조적으로 차단
+- 연계: `P0-20`(UGC 무해화 + 링크 정책 단일화)
+
+### 8. UGC 링크 정책이 분산/충돌(공식 출처 allowlist가 사실상 동작하지 않을 수 있음)
+
+- 현황/리스크
+  - 금칙어/스팸 필터가 `https?://` 자체를 스팸 시그널로 취급해 외부 링크를 사실상 차단하는 경향이 있음(`src/lib/content-filter.ts:15`)
+  - 동시에 “공식 출처 도메인 allowlist” 검증 로직이 존재해 정책이 이중화되어 있음(`src/lib/validation/ugc-links.ts:57`)
+- 방향
+  - 링크 허용/차단은 allowlist(공식 출처) 1곳을 SoT로 두고, 스팸/연락처/광고 필터는 별도 신호로만 사용(순서/조건을 문서+코드로 통일)
+  - 외부 링크 rel 정책(`ugc` + 필요 시 `nofollow/sponsored`)은 렌더 단계에서 일괄 적용해 SEO/운영 리스크를 동시에 최소화
+- 연계: `P0-20`
+
+### 9. `next/image` 원격 호스트 전면 허용(`remotePatterns: **` + `http`)은 운영/보안 리스크
+
+- 현황/리스크
+  - `images.remotePatterns`가 모든 호스트(`**`)를 허용하고 `http`까지 허용함(`next.config.ts:22`)
+  - UGC/프로필/썸네일 등에서 외부 이미지 URL이 섞이면 서버가 원격 이미지를 fetch/리사이즈하는 형태가 되어 SSRF/DoS/성능 리스크가 커짐
+- 방향
+  - 프로덕션은 allowlist 기반으로 축소(예: Supabase Storage + 1st-party 도메인)하고, 나머지는 업로드/프록시/`unoptimized` 등 정책을 명확히 분리
+  - 이미지 src는 공용 정규화 유틸로 통일(`src/utils/normalizePostImageSrc.ts:1`)
+- 연계: `P0-21`(이미지 원격 정책 고정)
+
+### 10. PWA 의존성/캐시 경계가 ‘정책’으로 고정돼 있지 않음(중복/오동작 위험)
+
+- 현황/리스크
+  - PWA는 `@ducanh2912/next-pwa` 기반으로 구성되어 있으나(`next.config.ts:3`), 의존성에 `next-pwa`도 함께 존재해 중복/혼선 가능성이 있음(`package.json:28`, `package.json:60`)
+  - `aggressiveFrontEndNavCaching` 등 캐시 옵션이 개인화/동적 페이지에서 “빠르지만 틀린 UI”를 만들 가능성이 있음(`next.config.ts:13`)
+- 방향: PWA는 의존성 1개로 통일하고, 캐시 가능한 영역(정적/큐레이션)과 캐시 금지 영역(작성/알림/프로필/세션)을 정책으로 고정
+- 연계: `P1-17`(PWA 의존성/캐시 경계 정리)
+
+### 11. SEO/검색 계약(SearchAction/Query Param)이 SoT에 고정돼 있지 않으면 드리프트가 발생
+
+- 현황/리스크
+  - 전역 Structured Data의 `SearchAction`은 `/search?q=` 계약에 의존하며(`src/components/organisms/StructuredData.tsx:21`), 검색 라우트/파라미터가 바뀔 경우 SEO/AI 추출 품질이 즉시 하락할 수 있음
+- 방향: 검색 URL 계약을 “메타/스키마 빌더” 레이어에서 1회 정의하고, StructuredData/페이지/라우트는 결과만 소비하게 한다
+- 연계: `P1-15`(SEO 구조화), `P1-18`(캐시/계약 표준화)
+
 ## 개선 플랜(리서치 → 의사결정 → 실행 보드로 내리는 방식, 단일 소스 지향)
 
 ### 0) 구조적 최적화/공통화/효율화 로드맵(SoT/계약/템플릿)
@@ -212,6 +257,7 @@ $gh-address-comments
     - rate limit 정책 정의→저장소→응답 스키마→클라 UX까지 표준화(쓰기 API 우선)
     - 신고/숨김/차단/리뷰 큐는 “사용자 체감(즉시 숨김)”과 “운영 효율(규칙 기반)”을 같이 만족하도록 단일 플로우로 정리
     - 인증/배지/추천은 “taxonomy + payload + UI 라벨”이 항상 일치하도록 SoT로 고정
+    - 보안 기본값: UGC는 서버에서 무해화(allowed tags/attrs) 후 저장하고, 이미지 원격 소스는 allowlist로 제한해 운영/보안 사고를 구조적으로 차단
     - 연계: `P0-6`(rate limit), `P0-11`(숨김/신고), `P1-9`(모더레이션), `P1-14`(배지), `P1-13`(추천)
 
 ### 1) “단일 소스 오브 트루스(SoT)” 재정의(1회로 끝내는 정리)
@@ -305,6 +351,8 @@ $gh-address-comments
 | P0-17 | Lead | Design Front | Hot(레이아웃) | 좌측 사이드바 고정 + 독립 스크롤 | 메인 스크롤과 분리 + 사이드바 내부 스크롤만 동작 |
 | P0-18 | Lead | Design Front | Hot(Header) | 헤더 “뒤로가기” 줄바꿈/깨짐 제거 | `Quay lại` 등 다국어에서 줄바꿈 0 + 헤더 높이/정렬 안정 |
 | P0-19 | Web Feature | Design Front, Lead, BE | Shared(랭킹/메뉴) | 커뮤니티 랭킹: 온도-only + Event 자리 | 레벨 UI 제거 + 온도 36.5 기본 + 총멤버 숨김 + 우측 4컬럼/모바일 상단 Event 영역 |
+| P0-20 | BE | Web Feature, Lead | Shared(UGC/보안) | UGC 무해화(서버) + 링크 정책 단일화 | XSS 페이로드 차단 + 공식 출처 링크 허용(allowlist) + 렌더 안전 |
+| P0-21 | Lead | Web Feature | Shared(next.config) | `next/image` 원격 호스트 정책 고정 | prod에서 allowlist만 최적화 + `http` 금지 + 예외 정책 문서화 |
 
 ## Progress Checklist (집계용)
 
@@ -330,6 +378,8 @@ $gh-address-comments
 - [ ] P0-17 (LEAD/FE: 좌측 사이드바 고정 + 독립 스크롤)
 - [ ] P0-18 (LEAD/FE: 헤더 뒤로가기 줄바꿈/정렬)
 - [ ] P0-19 (WEB/FE/BE: 랭킹 온도-only + Event 자리)
+- [ ] P0-20 (BE/WEB: UGC 무해화 + 링크 정책 단일화)
+- [ ] P0-21 (LEAD/WEB: next/image 원격 정책 고정)
 
 ### P1
 
@@ -349,6 +399,9 @@ $gh-address-comments
 - [ ] P1-14 (LEAD/BE/WEB: 인증/배지 taxonomy + 운영 workflow 정리)
 - [ ] P1-15 (LEAD/WEB: AI 검색/요약 대비 SEO 구조화)
 - [ ] P1-16 (LEAD: SEO KPI/리뷰 리듬(GSC/GA4))
+- [ ] P1-17 (LEAD/WEB: PWA 의존성/캐시 정책 정리)
+- [ ] P1-18 (LEAD/BE: Cache-Control/공개 범위 정책 표준화)
+- [ ] P1-19 (LEAD: Repo 위생/시크릿 스캔(선택))
 
 ### P2
 
@@ -1259,6 +1312,45 @@ $gh-address-comments
   - 상단 안내에 계산식이 아닌 “랭킹 상승 행동”만 안내되고, 전체 멤버 수는 노출되지 않음
   - 웹은 우측 여백/컬럼이 확보되고, 모바일 상단은 Event로 확장 가능한 영역으로 남아 있음
 
+#### (2025-12-20) [BE/WEB] P0-20 UGC 무해화(서버) + 링크 정책 단일화 (P0)
+
+- 목표: UGC(게시글/답변/댓글)의 stored XSS를 구조적으로 차단하면서, 공식 출처 링크는 allowlist 기반으로 허용하고 렌더 단계에서 `rel="ugc"`를 일괄 적용한다
+- 현황(코드 근거)
+  - write API가 `content`를 trim 후 그대로 저장(`src/app/api/posts/route.ts:666`, `src/app/api/posts/route.ts:819`)
+  - 상세에서 `dangerouslySetInnerHTML`로 UGC를 렌더(`src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx:2273`)
+  - 렌더 보정은 `rel="ugc"` 중심이며, HTML 태그/속성 allowlist 기반 무해화는 없음(`src/utils/sanitizeUgcContent.ts:17`)
+  - 링크 정책이 이중화되어 충돌 가능(스팸 필터의 URL 패턴 vs allowlist 검증)(`src/lib/content-filter.ts:15`, `src/lib/validation/ugc-links.ts:57`)
+- 작업(권장, P0는 최소 범위로)
+  - 단일 UGC 파이프라인(SoT) 확정
+    - write-time: HTML 무해화(허용 태그/속성/URL 스킴) → 텍스트 품질 검증(`validateUgcText`) → 외부 링크 allowlist 검증(`validateUgcExternalLinks`)
+    - read-time: 외부 링크 `rel="ugc"` + `targetBlank` + `noopener` 보장(`src/utils/sanitizeUgcContent.ts:17` 유지)
+  - 정책 충돌 제거
+    - URL 자체를 “스팸”으로 일괄 차단하지 않도록 조정하거나, allowlist와 충돌하지 않는 신호로만 사용하도록 분리
+  - 회귀 방지(최소)
+    - 대표 XSS 페이로드/위험 URL(`javascript:`/`data:`)/이벤트 속성(`onerror` 등) 케이스를 고정해 재발을 방지(테스트/스냅샷 중 택1)
+- 완료 기준
+  - 악성 스크립트/이벤트/위험 URL이 저장·렌더 단계에서 무력화됨
+  - 공식 allowlist 도메인 링크는 게시 가능하고, 비허용 도메인은 명확한 에러로 차단됨
+  - UGC 외부 링크는 기본 `rel="ugc"`(+ target blank 시 `noopener`)로 렌더됨
+
+#### (2025-12-20) [LEAD/WEB] P0-21 `next/image` 원격 호스트 정책 고정 (P0)
+
+- 목표: 이미지 최적화(fetch/리사이즈) 대상 호스트를 allowlist로 제한해 SSRF/DoS/성능 리스크를 줄인다
+- 현황(코드 근거)
+  - `images.remotePatterns`가 모든 호스트(`**`)와 `http`까지 허용(`next.config.ts:22`)
+  - UGC 이미지 src는 정규화 유틸이 있으나(host allowlist는 없음)(`src/utils/normalizePostImageSrc.ts:1`)
+- 작업(권장)
+  - 이미지 소스 인벤토리 1차(운영 효율 우선)
+    - 실제로 필요한 호스트(Supabase Storage, 1st-party, 소셜 프로필 이미지 등)만 allowlist로 지정
+  - 정책 고정
+    - prod: `https` + allowlist만 최적화(기본), `http` 금지
+    - 예외(필요 시): 외부 이미지는 업로드 유도/프록시/`unoptimized` 중 하나로 통일
+  - 문서화
+    - “허용 이미지 호스트/예외 정책/업로드 규칙”을 WORKING_PLAN의 SoT 규칙에 고정
+- 완료 기준
+  - prod에서 unknown host 이미지를 Next Image 최적화가 fetch하지 않음(allowlist만)
+  - 핵심 화면(피드/상세/프로필)에서 이미지가 정상 렌더되며, 실패 시 UX가 명확함
+
 ### P0 Exit criteria
 
 - UI에서 언어 선택은 `ko/vi`만 보임, `/en/*` 직접 접근 및 sitemap/alternates의 `en` 노출은 유지
@@ -1272,6 +1364,8 @@ $gh-address-comments
 - 데스크톱 카드 폭/정렬이 개선되고 좌측 사이드바 고정/독립 스크롤이 정상 동작
 - 헤더 뒤로가기(`Quay lại` 등) 줄바꿈/정렬 문제가 재현되지 않음
 - 커뮤니티 랭킹은 온도-only로 단순화되고(Event 확장 자리 포함) 불필요 지표(레벨/총멤버/계산식)가 UI에 노출되지 않음
+- UGC(게시글/답변/댓글)는 서버에서 무해화되어 stored XSS 리스크가 닫히고, 공식 출처 링크 정책이 단일 규칙으로 동작
+- `next/image` 원격 호스트 정책이 allowlist로 고정되어 운영/보안 리스크가 낮아짐
 
 ---
 
