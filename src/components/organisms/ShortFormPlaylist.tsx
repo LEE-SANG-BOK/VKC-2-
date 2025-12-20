@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import ShareButton from '@/components/molecules/actions/ShareButton';
 import { useNews } from '@/repo/news/query';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 export default function ShortFormPlaylist() {
   const params = useParams();
@@ -123,7 +124,15 @@ export default function ShortFormPlaylist() {
           >
             <div className="relative w-28 h-16 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
               {clip.imageUrl ? (
-                <Image src={clip.imageUrl} alt={clip.title} fill sizes="112px" className="object-cover" />
+                <Image
+                  src={clip.imageUrl}
+                  alt={clip.title}
+                  fill
+                  sizes="112px"
+                  className="object-cover"
+                  placeholder="blur"
+                  blurDataURL={DEFAULT_BLUR_DATA_URL}
+                />
               ) : null}
             </div>
             <div className="flex-1 min-w-0">

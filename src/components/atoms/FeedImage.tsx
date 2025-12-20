@@ -2,9 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-
-const DEFAULT_BLUR_DATA_URL =
-  'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface FeedImageProps {
   src?: string | null;

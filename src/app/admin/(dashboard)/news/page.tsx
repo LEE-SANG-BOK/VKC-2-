@@ -39,6 +39,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Pencil, Trash2, Search, ExternalLink, Upload, X, ImageIcon } from 'lucide-react';
 import { AdminNews } from '@/repo/admin/types';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 import dayjs from 'dayjs';
 
 interface NewsFormData {
@@ -334,7 +335,10 @@ export default function AdminNewsPage() {
                                 src={newsItem.imageUrl}
                                 alt={newsItem.title}
                                 fill
+                                sizes="64px"
                                 className="object-cover"
+                                placeholder="blur"
+                                blurDataURL={DEFAULT_BLUR_DATA_URL}
                               />
                             </div>
                           ) : (
@@ -551,7 +555,10 @@ export default function AdminNewsPage() {
                     src={formData.imageUrl}
                     alt="뉴스 이미지"
                     fill
+                    sizes="512px"
                     className="object-cover"
+                    placeholder="blur"
+                    blurDataURL={DEFAULT_BLUR_DATA_URL}
                   />
                   <Button
                     type="button"

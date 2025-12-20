@@ -10,6 +10,7 @@ import Modal from '@/components/atoms/Modal';
 import Tooltip from '@/components/atoms/Tooltip';
 import { useUserProfile } from '@/repo/users/query';
 import { getUserTypeLabel } from '@/utils/userTypeLabel';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -332,7 +333,10 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
                         alt={profile.displayName}
                         width={80}
                         height={80}
+                        sizes="80px"
                         className="w-20 h-20 rounded-full object-cover"
+                        placeholder="blur"
+                        blurDataURL={DEFAULT_BLUR_DATA_URL}
                       />
                     ) : (
                       <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">

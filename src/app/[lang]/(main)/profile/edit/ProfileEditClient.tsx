@@ -12,6 +12,7 @@ import { queryKeys } from '@/repo/keys';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
 import MainLayout from '@/components/templates/MainLayout';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 import { DISPLAY_NAME_MAX_LENGTH, DISPLAY_NAME_MIN_LENGTH, generateDisplayNameFromEmail, normalizeDisplayName } from '@/lib/utils/profile';
 
 type AvatarSource = ImageBitmap | HTMLImageElement;
@@ -576,7 +577,10 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     width={128}
                     height={128}
                     unoptimized={avatarUnoptimized}
+                    sizes="128px"
                     className="w-32 h-32 rounded-full border-4 border-gray-100 dark:border-gray-700 object-cover"
+                    placeholder="blur"
+                    blurDataURL={DEFAULT_BLUR_DATA_URL}
                   />
                   <input
                     ref={avatarInputRef}

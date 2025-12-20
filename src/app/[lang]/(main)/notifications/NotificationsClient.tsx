@@ -5,6 +5,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import Image from 'next/image';
 import { Bell, CheckCircle, MessageCircle, MessageSquare, Award, Settings, UserPlus, CheckCheck, Trash2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 import Header from '@/components/organisms/Header';
 import Button from '@/components/atoms/Button';
 import { useNotifications } from '@/repo/notifications/query';
@@ -310,7 +311,10 @@ export default function NotificationsClient({ locale, translations }: Notificati
                               alt={notification.author.name}
                               width={24}
                               height={24}
+                              sizes="24px"
                               className="w-6 h-6 rounded-full"
+                              placeholder="blur"
+                              blurDataURL={DEFAULT_BLUR_DATA_URL}
                             />
                             <span className="text-sm font-semibold text-gray-900 dark:text-white">
                               {notification.author.name}

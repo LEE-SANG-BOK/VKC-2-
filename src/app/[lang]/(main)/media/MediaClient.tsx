@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 import { useNews } from '@/repo/news/query';
 import type { NewsItem } from '@/repo/news/types';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface MediaClientProps {
   translations: Record<string, unknown>;
@@ -65,7 +66,15 @@ export default function MediaClient({ translations, lang }: MediaClientProps) {
               <div className="flex gap-3">
                 <div className="relative w-24 h-16 shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/60">
                   {item.imageUrl ? (
-                    <Image src={item.imageUrl} alt={item.title} fill sizes="96px" className="object-cover" />
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.title}
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                      placeholder="blur"
+                      blurDataURL={DEFAULT_BLUR_DATA_URL}
+                    />
                   ) : null}
                 </div>
                 <div className="min-w-0">
@@ -96,7 +105,15 @@ export default function MediaClient({ translations, lang }: MediaClientProps) {
           >
             {selected.imageUrl ? (
               <div className="relative w-full h-56 bg-gray-100 dark:bg-gray-800">
-                <Image src={selected.imageUrl} alt={selected.title} fill sizes="768px" className="object-cover" />
+                <Image
+                  src={selected.imageUrl}
+                  alt={selected.title}
+                  fill
+                  sizes="768px"
+                  className="object-cover"
+                  placeholder="blur"
+                  blurDataURL={DEFAULT_BLUR_DATA_URL}
+                />
               </div>
             ) : null}
             <div className="p-6 space-y-3">

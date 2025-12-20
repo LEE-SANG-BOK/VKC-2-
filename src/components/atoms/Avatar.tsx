@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { User as UserIcon } from 'lucide-react';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface AvatarProps {
   name: string;
@@ -37,7 +38,7 @@ export default function Avatar({ name, size = 'md', imageUrl, showVerifiedOverla
 
   const overlay = showVerifiedOverlay ? (
     <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center overflow-hidden">
-      <Image src="/icon-verified.png" alt="verified" width={16} height={16} className="object-contain" />
+      <Image src="/icon-verified.png" alt="verified" width={16} height={16} sizes="16px" className="object-contain" />
     </span>
   ) : null;
 
@@ -54,8 +55,11 @@ export default function Avatar({ name, size = 'md', imageUrl, showVerifiedOverla
           alt={name}
           width={sizePixels[size]}
           height={sizePixels[size]}
+          sizes={`${sizePixels[size]}px`}
           className="w-full h-full object-cover"
           unoptimized={false}
+          placeholder="blur"
+          blurDataURL={DEFAULT_BLUR_DATA_URL}
           onError={() => setImgError(true)}
         />
         {overlay}
