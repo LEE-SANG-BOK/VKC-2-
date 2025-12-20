@@ -87,8 +87,6 @@ export function useTogglePostLike() {
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(postId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-      queryClient.refetchQueries({ queryKey: queryKeys.posts.all, type: 'all' });
-      queryClient.refetchQueries({ queryKey: queryKeys.users.all, type: 'all' });
       if (response?.data?.isLiked) {
         logEvent({
           eventType: 'like',
@@ -203,8 +201,6 @@ export function useTogglePostBookmark() {
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(postId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-      queryClient.refetchQueries({ queryKey: queryKeys.posts.all, type: 'all' });
-      queryClient.refetchQueries({ queryKey: queryKeys.users.all, type: 'all' });
       if (response?.data?.isBookmarked) {
         logEvent({
           eventType: 'bookmark',

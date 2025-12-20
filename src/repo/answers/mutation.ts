@@ -76,9 +76,6 @@ export function useToggleAnswerLike() {
       if (postId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(postId) });
       }
-      queryClient.refetchQueries({ queryKey: queryKeys.answers.all, type: 'all' });
-      queryClient.refetchQueries({ queryKey: queryKeys.posts.all, type: 'all' });
-      queryClient.refetchQueries({ queryKey: queryKeys.users.all, type: 'all' });
       if (response?.data?.isLiked) {
         logEvent({
           eventType: 'like',

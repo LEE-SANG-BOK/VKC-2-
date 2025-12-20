@@ -1030,6 +1030,11 @@ $gh-address-comments
   - Query 튜닝: 알림/모달/드로어/탭 등 “열렸을 때만” 요청(`enabled`), 불필요 refetch 제거, 적정 `staleTime` 설정
 - 완료 기준: 저속 네트워크에서 첫 인터랙션 체감 개선 + “불필요 백그라운드 요청”이 발생하지 않음
 
+- 최근 구현(2025-12-21)
+  - 좋아요/북마크 토글 이후 `refetchQueries(type='all')` 제거(불필요 네트워크/데이터 사용 감소)
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/repo/posts/mutation.ts`, `src/repo/answers/mutation.ts`, `src/repo/comments/mutation.ts`
+
 #### (2025-12-20) [FE] P0-5 A11y 최소 기준(출시 차단만) (P0)
 
 - 플랜(체크리스트)
