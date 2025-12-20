@@ -105,6 +105,14 @@
 - 방향: 정책 정의(임계치/범위/우선순위) → 저장소(외부/지속) → 공통 응답 스키마 → 클라 UX까지 한 번에 표준화
 - 연계: `P0-6`(rate limit + 429 UX), `P1-2`(고도화)
 
+### 5. 추천 사용자(Recommended Users)–온보딩/배지 데이터 불일치
+
+- 현황/리스크
+  - 추천 API는 “인증 우선 + 팔로워 수” 정렬로만 추천되어 개인화가 없음(`src/app/api/users/recommended/route.ts:87`)
+  - API가 `isExpert/badgeType`을 조회하지만 응답에 포함하지 않아 UI에서 상세 배지가 사라짐(`src/app/api/users/recommended/route.ts:54`, `src/app/api/users/recommended/route.ts:111`)
+  - 온보딩은 관심사를 category `id(UUID)`로 저장하는데(`src/app/[lang]/(main)/onboarding/OnboardingClient.tsx:321`), 추천 메타는 숫자 포함 값을 제거해 관심사가 누락됨(`src/app/api/users/recommended/route.ts:107`)
+- 방향: 데이터 표현(관심사)과 배지 노출(응답 계약)을 한 번에 정리해 “반복 수정” 비용을 제거
+
 ## 개선 플랜(리서치 → 의사결정 → 실행 보드로 내리는 방식, 단일 소스 지향)
 
 ### 1) “단일 소스 오브 트루스(SoT)” 재정의(1회로 끝내는 정리)
@@ -227,6 +235,8 @@
 - [ ] P1-10 (WEB: 튜토리얼/리마인드)
 - [ ] P1-11 (WEB/FE: 저속·오프라인 UX/PWA 폴백 v1)
 - [ ] P1-12 (LEAD/WEB: 성능·접근성 감사 스크립트 정렬)
+- [ ] P1-13 (WEB/BE/FE: 추천 사용자 개인화/표시 규칙 정리)
+- [ ] P1-14 (LEAD/BE/WEB: 인증/배지 taxonomy + 운영 workflow 정리)
 
 ### P2
 
@@ -275,6 +285,7 @@
 ### P1로 반영하는 것이 합리적인 항목(가치 크지만 범위/의존성 큼)
 
 - 온보딩 개인화(추가 유저 필드/마이그레이션 포함): 관심사/상태 수집 → 추천/피드에 반영(데이터 모델 합의 필요)
+- 추천 사용자(팔로우 유도): 온보딩 정보 기반 개인화 + 카드 정보(배지/메타) 표시 규칙 정리
 - 질문자↔답변자 전환 유도: 채택 리마인드/팔로우 유도(마이크로 전환 설계)
 - 출처 표기: 답변 UI에 “출처/날짜” 구조화 필드(데이터 모델 + UX 합의 필요, UGC 링크 정책 유지)
 - 검색 UX 고도화: 필터/추천 키워드/연관 검색(현 구조 위에 점진적 개선)
@@ -784,7 +795,7 @@
 - 완료 기준
   - 공유 동선은 “1개의 옵션 목록”만 존재(중복 UI 제거)
   - 신고 버튼은 과도한 시각적 경고(빨강) 없이도 접근 가능(툴팁/접근성 포함)
-- 추천은 항상 1개 섹션만 보이고, 답변/댓글과 시각적으로 분리됨
+  - 추천은 항상 1개 섹션만 보이고, 답변/댓글과 시각적으로 분리됨
 
 #### (2025-12-20) [FE] P0-16 피드 카드 헤더 정렬 + 데스크톱 카드 폭 제한 (P0)
 
@@ -1000,6 +1011,55 @@
     - 릴리즈 차단 게이트에 넣지 않고, “주간/야간 점검”으로 고정(실패 시 이슈 트래킹)
 - 완료 기준
   - 스크립트가 현재 라우트에서 실행 가능하고, “언제/어디서/무엇을 본다”가 문서로 고정됨
+
+#### (2025-12-20) [WEB/BE/FE] P1-13 추천 사용자(Recommended Users) 개인화/표시 규칙 정리 (P1)
+
+- 목표: 추천 사용자 섹션을 온보딩 기반으로 개인화하고, 배지/메타 노출을 “강조 1~2개” 원칙으로 통일한다
+- 현황(코드 근거)
+  - 추천 API는 `isVerified desc` + 팔로워 수 desc 정렬로만 추천되고, viewer 기반 매칭이 없음(`src/app/api/users/recommended/route.ts:87`)
+  - API가 `isExpert/badgeType`을 조회하지만 응답에 포함하지 않아 UI에서 상세 배지가 사라짐(`src/app/api/users/recommended/route.ts:54`, `src/app/api/users/recommended/route.ts:111`)
+  - 온보딩은 관심사를 category `id(UUID)`로 저장하고(`src/app/[lang]/(main)/onboarding/OnboardingClient.tsx:321`), 추천 메타는 숫자 포함 값을 제거해 관심사가 누락됨(`src/app/api/users/recommended/route.ts:107`)
+  - 추천 카드 메타가 `# {text}` 나열로 표시되어 강조 규칙과 충돌(`src/components/organisms/RecommendedUsersSection.tsx:232`)
+- 작업(권장)
+  - 데이터/표시 계약 정리
+    - `/api/users/recommended` 응답에 `badgeType`, `isExpert` 포함(필요 시 `badgeExpiresAt`도 포함)
+    - 메타는 1~2개만 노출(나머지는 툴팁/프로필 상세로), `#` 나열 대신 chip/inline 강조 UI로 교체
+  - 관심사 표현(SoT) 통일
+    - 권장: `users.interests`는 category `slug`로 저장(표시/추천/검색에서 재사용 가능)
+    - 대안: `id` 유지 시, 추천 API에서 category 테이블(`src/lib/db/schema.ts:259`)을 통해 `slug/name`로 매핑하여 전달(UID 노출 금지)
+  - 개인화 랭킹 v1(효율 우선)
+    - viewer의 `userType/visaType/interests/koreanLevel` 기반 matchScore + `badgeType/isVerified/isExpert` 가중
+    - 최근 활동(`lastLoginAt`) 가중으로 “휴면 계정” 노출 감소
+    - 이미 팔로우/차단/숨김 유저 제외(기존 제외 + 숨김 정책 `P0-11` 연계)
+    - 중복 노출 감소: 1일 단위 로테이션(랜덤 시드) 또는 “최근 노출된 추천 유저” 캐시(서버/클라 중 택1)
+  - 노출 수(권장)
+    - 모바일: 1~2개가 보이는 캐러셀, total 6
+    - 태블릿: 2~3개, total 8
+    - 데스크톱: 4개, total 8~12(캐러셀), 필요 시 “더 보기” 링크 추가
+- 완료 기준
+  - 추천 카드에서 `badgeType` 기반 배지(학생 인증/비자 전문가 등)가 노출됨
+  - 추천 메타는 1~2개만 강조되고 UUID/잡문구가 노출되지 않음
+  - 온보딩 데이터가 추천 노출/매칭에 실제로 사용됨(테스트 케이스/로그로 확인)
+
+#### (2025-12-20) [LEAD/BE/WEB] P1-14 인증/배지 taxonomy + 운영 workflow 정리 (P1)
+
+- 목표: 인증 요청(type) ↔ 배지 타입(badgeType) ↔ UI 라벨/툴팁이 같은 규칙을 공유하도록 “단일 소스”로 고정한다
+- 현황(코드 근거)
+  - 인증 요청 타입: `student/worker/expert/business/other`(`src/app/api/verification/request/route.ts:37`)
+  - 배지 타입: `verified_student/verified_worker/verified_user/expert_visa/expert_employment/trusted_answerer`(`src/lib/constants/badges.ts:1`)
+  - 승인 시 사용자 배지 세팅: `badgeType/isExpert/isVerified`(`src/app/api/admin/verifications/[id]/route.ts:108`)
+  - “certified” 계산: `isVerified || isExpert || badgeType` 기준(`src/app/api/posts/route.ts:358`)
+- 작업(권장)
+  - taxonomy/문구 SoT 확정
+    - 사용자용 의미(무엇이 “인증/전문가/신뢰 답변자”인지)와 운영자용 부여 기준을 1페이지로 고정
+    - 만료(`badgeExpiresAt`) 정책: 만료 시 표시/숨김 기준과 갱신 절차(운영 효율 기준으로 최소화)
+  - API 응답 일관화
+    - 유저 payload(프로필/추천/게시글 작성자)에 `badgeType/isExpert/isVerified/(선택)badgeExpiresAt`을 항상 포함하도록 정리(공용 serializer 권장)
+  - 운영 workflow 보강(필요 범위만)
+    - Admin 권한 모델: 지금은 단일 admin 토큰(`src/lib/admin/auth.ts:1`)이므로, 필요 시 역할 분리(모더레이터/인증 담당) 또는 최소 감사 로그 도입(누가 무엇을 승인/거부했는지)
+- 완료 기준
+  - 동일 사용자에 대해 프로필/피드/추천에서 배지 라벨이 일관되게 보임(“검증됨”만 남는 케이스 제거)
+  - 운영자가 어떤 경우에 어떤 배지를 부여해야 하는지 문서/툴팁이 일치함
 
 ---
 
