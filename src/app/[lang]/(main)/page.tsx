@@ -10,7 +10,8 @@ import { fetchCategories } from '@/repo/categories/fetch';
 import { queryKeys } from '@/repo/keys';
 import { fetchNews } from '@/repo/news/fetch';
 import { CATEGORY_GROUPS } from '@/lib/constants/categories';
-import { SITE_URL } from '@/lib/siteUrl';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 
 export const revalidate = 60;
 const categoryParents = Object.keys(CATEGORY_GROUPS);
@@ -53,71 +54,65 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   };
   const categoryFallback = categoryFallbacks[lang] ?? categoryFallbacks.ko;
 
-  const baseUrl = SITE_URL;
   const currentPage = Math.max(1, parseInt(page || '1') || 1);
-
-  const buildUrl = (locale: string) => {
-    const url = new URL(`${baseUrl}/${locale}`);
-    if (category && category !== 'all') {
-      url.searchParams.set('c', category);
-    }
-    if (category === 'subscribed' && sc && sc !== 'all') {
-      const isValidSubscribed = categoryParents.includes(sc) || categoryChildren.has(sc);
-      if (isValidSubscribed) {
-        url.searchParams.set('sc', sc);
-      }
-    }
-    if (currentPage > 1) {
-      url.searchParams.set('page', String(currentPage));
-    }
-    return url.toString();
-  };
-
-  const currentUrl = buildUrl(lang);
 
   let title = metadata.home.title;
   let description = metadata.home.description;
+  let categoryName: string | undefined;
 
   // 카테고리별 메타데이터
   if (category && category !== 'all') {
-    const categoryName = sidebar[category as keyof typeof sidebar] || category;
+    categoryName = sidebar[category as keyof typeof sidebar] || category;
     title = (metadata.category?.title || categoryFallback.title).replace('{category}', categoryName);
     description = (metadata.category?.description || categoryFallback.description)
       .replace('{category}', categoryName);
   }
 
-  return {
+  const search = new URLSearchParams();
+  if (category && category !== 'all') {
+    search.set('c', category);
+  }
+  if (category === 'subscribed' && sc && sc !== 'all') {
+    const isValidSubscribed = categoryParents.includes(sc) || categoryChildren.has(sc);
+    if (isValidSubscribed) {
+      search.set('sc', sc);
+    }
+  }
+  if (currentPage > 1) {
+    search.set('page', String(currentPage));
+  }
+  const searchString = search.toString();
+  const currentPath = `/${searchString ? `?${searchString}` : ''}`;
+
+  const subcategoryName =
+    category === 'subscribed' && sc && sc !== 'all'
+      ? (sidebar[sc as keyof typeof sidebar] || sc)
+      : undefined;
+
+  const baseKeywords = [
+    metadata?.keywords?.vietnam,
+    metadata?.keywords?.korean,
+    metadata?.keywords?.community,
+    metadata?.keywords?.qa,
+    metadata?.keywords?.question,
+    metadata?.keywords?.answer,
+  ].filter(Boolean);
+  const keywordResult = buildKeywords({
+    title,
+    content: description,
+    category: categoryName,
+    subcategory: subcategoryName,
+  });
+  const keywords = Array.from(new Set([...baseKeywords, ...flattenKeywords(keywordResult)]));
+
+  return buildPageMetadata({
+    locale: lang,
+    path: currentPath,
     title,
     description,
-
-    // Canonical URL
-    alternates: {
-      canonical: currentUrl,
-      languages: {
-        ko: buildUrl('ko'),
-        en: buildUrl('en'),
-        vi: buildUrl('vi'),
-      },
-    },
-
-    // Open Graph
-    openGraph: {
-      type: 'website',
-      title,
-      description,
-      url: currentUrl,
-      siteName: metadata.home.siteName,
-      locale: lang,
-    },
-
-    // Twitter Card
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-    },
-
-    // Robots
+    siteName: metadata.home.siteName,
+    keywords,
+    twitterCard: 'summary_large_image',
     robots: {
       index: true,
       follow: true,
@@ -128,18 +123,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
         'max-snippet': -1,
       },
     },
-
-    // Additional metadata
-    keywords: [
-      metadata.keywords.vietnam,
-      metadata.keywords.korean,
-      metadata.keywords.community,
-      metadata.keywords.qa,
-      metadata.keywords.question,
-      metadata.keywords.answer,
-      category || ''
-    ].filter(Boolean),
-  };
+  });
 }
 
 // 홈 페이지 서버 컴포넌트 - SSR with Hydration

@@ -51,14 +51,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const adoptionRate = Number(user.adoptionRate ?? 0);
     const scoreValue = Number(user.score ?? 0);
     const levelInfo = resolveLevel(scoreValue);
+    const createdAtValue = user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt;
     const [{ count: higherCount } = { count: 0 }] = await db
       .select({ count: sql<number>`count(*)` })
       .from(users)
       .where(
         or(
           sql`${scoreExpr} > ${scoreValue}`,
-          and(sql`${scoreExpr} = ${scoreValue}`, sql`${users.createdAt} > ${user.createdAt}`),
-          and(sql`${scoreExpr} = ${scoreValue}`, sql`${users.createdAt} = ${user.createdAt}`, sql`${users.id} > ${user.id}`)
+          and(sql`${scoreExpr} = ${scoreValue}`, sql`${users.createdAt} > ${createdAtValue}`),
+          and(sql`${scoreExpr} = ${scoreValue}`, sql`${users.createdAt} = ${createdAtValue}`, sql`${users.id} > ${user.id}`)
         )
       );
     const rank = Number(higherCount || 0) + 1;

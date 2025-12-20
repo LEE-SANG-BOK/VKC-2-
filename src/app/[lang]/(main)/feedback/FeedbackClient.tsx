@@ -59,10 +59,10 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
       satisfactionHint:
         t.satisfactionHint ||
         (isVi
-          ? 'Chọn trải nghiệm tổng thể của bạn.'
+          ? 'Hãy chia sẻ trải nghiệm tổng thể của bạn bên dưới.'
           : isEn
-            ? 'Choose your overall experience.'
-            : '전반적인 경험을 선택해 주세요.'),
+            ? 'Tell us about your overall experience below.'
+            : '전반적인 경험을 간단히 적어주세요.'),
       impactLabel: t.impactLabel || (isVi ? 'Mức độ ảnh hưởng' : isEn ? 'Impact' : '영향도'),
       impactHint:
         t.impactHint ||
@@ -120,13 +120,14 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
       detailRequired:
         t.detailRequired ||
         (isVi ? 'Vui lòng nhập chi tiết.' : isEn ? 'Please enter details.' : '상세 내용을 입력해주세요.'),
+      bugTitle: t.bugTitle || (isVi ? 'Báo lỗi' : isEn ? 'Bug report' : '버그 제보'),
       cancel: tCommon.cancel || (isVi ? 'Huỷ' : isEn ? 'Cancel' : '취소'),
     };
   }, [lang, t, tCommon]);
 
-  const ratingTitle = type === 'bug' ? copy.impactLabel : copy.satisfactionLabel;
-  const ratingHint = type === 'bug' ? copy.impactHint : copy.satisfactionHint;
-  const ratingLabels = type === 'bug' ? copy.impactLabels : copy.ratingLabels;
+  const showRating = type === 'feedback';
+  const ratingTitle = copy.satisfactionLabel;
+  const ratingLabels = copy.ratingLabels;
   const detailLabel = type === 'bug' ? copy.issueLabel : copy.improvementLabel;
   const detailPlaceholder = type === 'bug' ? copy.issuePlaceholder : copy.improvementPlaceholder;
 
@@ -142,7 +143,7 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
     const trimmedDetail = description.trim();
     const minDetail = 10;
 
-    if (!rating) {
+    if (showRating && !rating) {
       toast.error(copy.ratingRequired);
       return;
     }
@@ -151,7 +152,7 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
       toast.error(copy.detailRequired);
       return;
     }
-    const computedTitle = `${type === 'bug' ? copy.bugLabel : copy.feedbackLabel} ${rating}/5`;
+    const computedTitle = showRating ? `${copy.feedbackLabel} ${rating}/5` : copy.bugTitle;
 
     try {
       await submitFeedback.mutateAsync({
@@ -243,36 +244,35 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-3">
+                {showRating ? (
+                  <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                       {ratingTitle}
                     </label>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{ratingHint}</span>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                      {ratingLabels.map((label, index) => {
+                        const value = index + 1;
+                        const active = rating === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => setRating(value)}
+                            className={`flex flex-col items-center justify-center gap-1 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
+                              active
+                                ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200'
+                                : 'border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/60'
+                            }`}
+                          >
+                            <span className="text-base font-semibold">{value}</span>
+                            <span className="text-[11px] font-medium leading-tight text-center">{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    {ratingLabels.map((label, index) => {
-                      const value = index + 1;
-                      const active = rating === value;
-                      return (
-                        <button
-                          key={value}
-                          type="button"
-                          aria-pressed={active}
-                          onClick={() => setRating(value)}
-                          className={`flex flex-col items-center justify-center gap-1 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
-                            active
-                              ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200'
-                              : 'border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/60'
-                          }`}
-                        >
-                          <span className="text-base font-semibold">{value}</span>
-                          <span className="text-[11px] font-medium leading-tight text-center">{label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                ) : null}
 
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -285,6 +285,9 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
                     className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder={detailPlaceholder}
                   />
+                  {showRating ? (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{copy.satisfactionHint}</p>
+                  ) : null}
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">

@@ -20,6 +20,7 @@ import { logEvent } from '@/repo/events/mutation';
 import { useHiddenTargets } from '@/repo/hides/query';
 import { useHideTarget } from '@/repo/hides/mutation';
 import { useReportPost } from '@/repo/reports/mutation';
+import type { ReportType } from '@/repo/reports/types';
 import { ALLOWED_CATEGORY_SLUGS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
@@ -80,6 +81,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const t = (translations?.tooltips || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tPost = (translations?.post || {}) as Record<string, string>;
+  const tPostDetail = (translations?.postDetail || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
   const likeLabel = t.like || (locale === 'vi' ? 'Thích' : locale === 'en' ? 'Like' : '좋아요');
   const shareLabel = t.share || (locale === 'vi' ? 'Chia sẻ' : locale === 'en' ? 'Share' : '공유');
@@ -91,8 +93,18 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const sourcePrefix = tCommon.source || (locale === 'vi' ? 'Nguồn' : locale === 'en' ? 'Source' : '출처');
   const hideLabel = tCommon.hide || (locale === 'vi' ? 'Ẩn' : locale === 'en' ? 'Hide' : '숨김');
   const reportLabel = tCommon.report || (locale === 'vi' ? 'Báo cáo' : locale === 'en' ? 'Report' : '신고');
-  const reportSubmittedLabel = tCommon.reportSubmitted || (locale === 'vi' ? 'Báo cáo đã được gửi.' : locale === 'en' ? 'Report submitted.' : '신고가 접수되었습니다.');
-  const reportFailedLabel = tCommon.reportFailed || (locale === 'vi' ? 'Không thể gửi báo cáo.' : locale === 'en' ? 'Failed to submit report.' : '신고 처리 중 오류가 발생했습니다.');
+  const reportSubmittedLabel = tPostDetail.reportSubmitted || (locale === 'vi' ? 'Đã gửi báo cáo.' : locale === 'en' ? 'Report submitted.' : '신고가 접수되었습니다.');
+  const reportFailedLabel = tPostDetail.reportFailed || (locale === 'vi' ? 'Không thể gửi báo cáo.' : locale === 'en' ? 'Failed to submit report.' : '신고 처리 중 오류가 발생했습니다.');
+  const reportReasonRequiredLabel = tPostDetail.reportReasonRequired || (locale === 'vi' ? 'Vui lòng nhập ít nhất 10 ký tự cho lý do báo cáo.' : locale === 'en' ? 'Please enter at least 10 characters for the report reason.' : '신고 사유를 10자 이상 입력해주세요.');
+  const reportSpamLabel = tPostDetail.reportSpam || (locale === 'vi' ? 'Spam hoặc quảng cáo' : locale === 'en' ? 'Spam or advertising' : '스팸 또는 광고');
+  const reportHarassmentLabel = tPostDetail.reportHarassment || (locale === 'vi' ? 'Quấy rối hoặc ngôn từ thù ghét' : locale === 'en' ? 'Harassment or hate speech' : '괴롭힘 또는 혐오 발언');
+  const reportMisinformationLabel = tPostDetail.reportMisinformation || (locale === 'vi' ? 'Thông tin sai lệch' : locale === 'en' ? 'Misinformation' : '허위 정보');
+  const reportInappropriateLabel = tPostDetail.reportInappropriate || (locale === 'vi' ? 'Nội dung không phù hợp' : locale === 'en' ? 'Inappropriate content' : '부적절한 콘텐츠');
+  const reportOtherLabel = tPostDetail.reportOther || (locale === 'vi' ? 'Khác' : locale === 'en' ? 'Other' : '기타');
+  const reportPlaceholderLabel = tPostDetail.reportPlaceholder || (locale === 'vi' ? 'Vui lòng nhập lý do báo cáo.' : locale === 'en' ? 'Please describe the reason.' : '신고 사유를 입력해주세요');
+  const reportSubmitLabel = tCommon.reportSubmit || (locale === 'vi' ? 'Báo cáo' : locale === 'en' ? 'Report' : '신고하기');
+  const processingLabel = tCommon.processing || (locale === 'vi' ? 'Đang xử lý...' : locale === 'en' ? 'Processing...' : '처리중...');
+  const cancelLabel = tCommon.cancel || (locale === 'vi' ? 'Hủy' : locale === 'en' ? 'Cancel' : '취소');
   const hideFailedLabel = tCommon.hideFailed || (locale === 'vi' ? 'Không thể ẩn bài viết.' : locale === 'en' ? 'Failed to hide the post.' : '게시글을 숨길 수 없습니다.');
 
   const trustBadgePresentation = getTrustBadgePresentation({
@@ -195,9 +207,12 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const [localLikes, setLocalLikes] = useState(stats.likes);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showHideMenu, setShowHideMenu] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [selectedReportType, setSelectedReportType] = useState<ReportType | null>(null);
   const hideMenuRef = useRef<HTMLDivElement | null>(null);
   const isHidden = hiddenPostIds.has(String(id));
-  const hideEmoji = ':)';
+  const hideEmoji = '...';
   const localizeTag = (tag: string) => {
     const raw = tag?.replace(/^#/, '').trim();
     if (!raw) return '';
@@ -454,19 +469,34 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     await handleToggleHide(e);
   };
 
-  const handleReportFromMenu = async (e: React.MouseEvent) => {
+  const handleReportFromMenu = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowHideMenu(false);
     if (!session?.user) {
       openLoginPrompt();
       return;
     }
+    setSelectedReportType('spam');
+    setReportReason('');
+    setShowReportDialog(true);
+  };
+
+  const handleReportSubmit = async () => {
+    if (!selectedReportType) return;
+    if (selectedReportType === 'other' && reportReason.trim().length < 10) {
+      toast.error(reportReasonRequiredLabel);
+      return;
+    }
+    const reason = selectedReportType === 'other' ? reportReason : selectedReportType;
     try {
       await reportPostMutation.mutateAsync({
         postId: String(id),
-        data: { type: 'spam', reason: 'spam' },
+        data: { type: selectedReportType, reason },
       });
       toast.success(reportSubmittedLabel);
+      setShowReportDialog(false);
+      setSelectedReportType(null);
+      setReportReason('');
     } catch (error) {
       toast.error(reportFailedLabel);
     }
@@ -559,41 +589,42 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   }
 
   return (
-    <article
-      onClick={handleClick}
-      className={`question-card group ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
-        }`}
-    >
-      <div ref={hideMenuRef} className="absolute right-3 top-3 z-10">
-        <button
-          type="button"
-          onClick={handleHideMenuToggle}
-          aria-label={hideLabel}
-          className="inline-flex h-8 min-w-[32px] items-center justify-center rounded-full border border-gray-200 bg-white/90 px-2 text-sm font-semibold text-gray-600 shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-300 dark:hover:text-white"
-        >
-          {hideEmoji}
-        </button>
-        {showHideMenu ? (
-          <div className="mt-1 w-24 overflow-hidden rounded-lg border border-gray-200 bg-white text-sm shadow-lg dark:border-gray-700 dark:bg-gray-900">
-            <button
-              type="button"
-              onClick={handleHideFromMenu}
-              className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              {hideLabel}
-            </button>
-            <button
-              type="button"
-              onClick={handleReportFromMenu}
-              className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              {reportLabel}
-            </button>
-          </div>
-        ) : null}
-      </div>
-      <div className="question-card-main">
-        <div className="question-card-body">
+    <>
+      <article
+        onClick={handleClick}
+        className={`question-card group ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
+          }`}
+      >
+        <div ref={hideMenuRef} className="absolute right-3 top-3 z-10">
+          <button
+            type="button"
+            onClick={handleHideMenuToggle}
+            aria-label={hideLabel}
+            className="inline-flex h-8 min-w-[32px] items-center justify-center px-1 text-sm font-semibold text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            {hideEmoji}
+          </button>
+          {showHideMenu ? (
+            <div className="mt-1 w-24 overflow-hidden rounded-lg border border-gray-200 bg-white text-sm shadow-lg dark:border-gray-700 dark:bg-gray-900">
+              <button
+                type="button"
+                onClick={handleHideFromMenu}
+                className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                {hideLabel}
+              </button>
+              <button
+                type="button"
+                onClick={handleReportFromMenu}
+                className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                {reportLabel}
+              </button>
+            </div>
+          ) : null}
+        </div>
+        <div className="question-card-main">
+          <div className="question-card-body">
           {/* Author Info & Badges */}
           <div className="flex items-start gap-2 mb-3 min-w-0">
             <div className="flex items-start gap-2 min-w-0">
@@ -873,7 +904,98 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             ) : null}
           </div>
         </div>
-      </div>
-    </article>
+        </div>
+      </article>
+      {showReportDialog ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
+          onClick={() => {
+            setShowReportDialog(false);
+            setSelectedReportType(null);
+            setReportReason('');
+          }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 w-full sm:max-w-sm sm:rounded-xl rounded-t-xl shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                {reportLabel}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowReportDialog(false);
+                  setSelectedReportType(null);
+                  setReportReason('');
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5 space-y-2 max-h-[60vh] overflow-y-auto">
+              {[
+                { type: 'spam' as ReportType, label: reportSpamLabel, featured: true },
+                { type: 'harassment' as ReportType, label: reportHarassmentLabel },
+                { type: 'misinformation' as ReportType, label: reportMisinformationLabel },
+                { type: 'inappropriate' as ReportType, label: reportInappropriateLabel },
+                { type: 'other' as ReportType, label: reportOtherLabel },
+              ].map(({ type, label, featured }) => (
+                <button
+                  key={type}
+                  onClick={() => setSelectedReportType(type)}
+                  className={`w-full px-4 py-3 text-left rounded-lg text-sm transition-colors border ${
+                    selectedReportType === type
+                      ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold border-red-200 dark:border-red-800'
+                      : featured
+                      ? 'bg-red-50/60 dark:bg-red-900/10 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800 hover:bg-red-50'
+                      : 'text-gray-700 dark:text-gray-300 border-transparent hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+
+              {selectedReportType === 'other' ? (
+                <div className="pt-2">
+                  <textarea
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    placeholder={reportPlaceholderLabel}
+                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                    rows={3}
+                    autoFocus
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            <div className="p-4 sm:p-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowReportDialog(false);
+                  setSelectedReportType(null);
+                  setReportReason('');
+                }}
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                {cancelLabel}
+              </button>
+              <button
+                onClick={handleReportSubmit}
+                disabled={!selectedReportType || (selectedReportType === 'other' && !reportReason.trim()) || reportPostMutation.isPending}
+                className="flex-1 px-4 py-3 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {reportPostMutation.isPending ? processingLabel : reportSubmitLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

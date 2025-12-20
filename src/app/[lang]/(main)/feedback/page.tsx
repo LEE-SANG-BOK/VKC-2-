@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/config';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 import FeedbackClient from './FeedbackClient';
 
 interface PageProps {
@@ -33,10 +35,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   })();
 
-  return {
-    title: t.title || fallback.title,
-    description: t.description || fallback.description,
-  };
+  const title = t.title || fallback.title;
+  const description = t.description || fallback.description;
+  const keywords = flattenKeywords(buildKeywords({ title, content: description }));
+
+  return buildPageMetadata({
+    locale: lang,
+    path: '/feedback',
+    title,
+    description,
+    siteName: (meta?.home as Record<string, string>)?.siteName,
+    keywords,
+  });
 }
 
 export default async function FeedbackPage({ params }: PageProps) {
