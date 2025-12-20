@@ -370,7 +370,7 @@ $gh-address-comments
 
 ### P0
 
-- [ ] P0-0 (LEAD: Hot File 잠금/i18n 담당/게이트 고정)
+- [x] P0-0 (LEAD: Hot File 잠금/i18n 담당/게이트 고정)
 - [x] P0-1 (LEAD/WEB/FE: en UI 숨김 + alternates/sitemap 유지 + ko fallback)
 - [ ] P0-2 (FE/WEB: ko/vi 하드코딩 제거 + 클립 0)
 - [ ] P0-3 (FE: 모바일 키보드/스크롤 UX 하드닝)
@@ -378,7 +378,7 @@ $gh-address-comments
 - [ ] P0-5 (FE: A11y 최소 기준)
 - [ ] P0-6 (BE/WEB: rate limit + 429 UX)
 - [x] P0-7 (LEAD/WEB: Playwright 스모크/게이트)
-- [ ] P0-8 (LEAD/BE/WEB: 이벤트 스키마 + 수집)
+- [x] P0-8 (LEAD/BE/WEB: 이벤트 스키마 + 수집)
 - [ ] P0-9 (LEAD/FE: 크로스브라우징 QA)
 - [ ] P0-10 (LEAD/WEB/BE/FE: 가이드라인 v1)
 - [x] P0-11 (BE/WEB/FE: 숨김/신고 즉시 숨김)
@@ -962,13 +962,14 @@ $gh-address-comments
 
 - 플랜(체크리스트)
   - [x] [LEAD] Hot File 잠금/소유권 요약 1페이지 반영
-  - [ ] [LEAD] i18n 키 담당/요청 프로세스 확정
+  - [x] [LEAD] i18n 키 담당/요청 프로세스 확정
   - [x] [LEAD] 게이트(lint/type-check/build + Playwright) 고정
 
 - 목표: Hot File 충돌/번역키 충돌/통합 타이밍 문제를 구조적으로 차단
 - 작업
   - Hot File 단일 소유 재확인: Header/MainLayout/PostList/globals.css는 Lead만 머지
-  - i18n 키 추가 담당 1인 지정(Lead 권장): `messages/ko.json`, `messages/vi.json`만 의무
+  - i18n 키 추가 담당(Lead): `messages/ko.json`, `messages/vi.json`만 의무(신규 작업은 `en` 번역 키 추가/검수 없음)
+    - 신규 키는 `ko` 기준으로 추가 → `vi`는 가능한 범위에서 즉시 반영(미반영 시 QA에서 클립/하드코딩 재점검)
   - 통합 윈도우/릴리즈 게이트 고정: lint/type-check/build + Playwright 통과 후만 머지
 - 완료 기준: `docs/EXECUTION_PLAN.md`에 “잠금/소유/게이트”가 1페이지 요약으로 반영
 
@@ -1094,16 +1095,29 @@ $gh-address-comments
 #### (2025-12-20) [LEAD] P0-8 핵심 지표 이벤트 정의 + 수집 v1 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [LEAD] 이벤트 목록/스키마 정의
-  - [ ] [BE] `/api/events` 저장/검증
-  - [ ] [WEB] 핵심 트리거 연결
+  - [x] [LEAD] 이벤트 목록/스키마 정의
+  - [x] [BE] `/api/events` 저장/검증
+  - [x] [WEB] 핵심 트리거 연결
 
 - 목표: 출시 후 의사결정/운영이 가능한 최소 계측
 - 작업
+  - 이벤트 스키마(SoT)
+    - API: `POST /api/events` (`src/app/api/events/route.ts`)
+    - eventType: `view|search|post|answer|comment|like|bookmark|follow|report|share`
+    - entityType: `post|answer|comment|user|search`
+    - 저장 필드(요약): `eventType`, `entityType`, `entityId`, `userId?`, `sessionId?`, `ipHash?`, `locale?`, `referrer?`, `metadata?`
+    - 개인정보 최소화: IP는 해시로만 저장(`LOG_HASH_SALT` 기반), PII(이메일/전화번호/원문 텍스트) 적재 금지
   - 이벤트 목록/필드/트리거 정의(DAU, 질문/답변/댓글, 채택/해결, 신고, 인증 신청, 구독/알림 등)
   - `/api/events` 수집 + 저장(크기 제한/개인정보 최소화/검증)
   - 클라이언트는 핵심 트리거에만 연결(실패해도 UX 영향 0)
 - 완료 기준: 이벤트가 실제 적재되고(샘플 확인), “볼 지표”가 합의됨
+
+- 최근 구현(2025-12-21)
+  - 게시글 작성 이벤트 추가: `eventType='post'`로 글 작성 시점 계측
+  - 트리거 연결(예시)
+    - 글 작성: `src/repo/posts/mutation.ts`
+    - 답변/댓글/좋아요/북마크/팔로우/신고/공유/검색/조회: `src/repo/**/mutation.ts`, `src/app/[lang]/(main)/search/SearchClient.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/components/molecules/cards/PostCard.tsx`
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
 
 #### (2025-12-20) [LEAD] P0-9 크로스브라우징/반응형 QA 라운드 (P0)
 

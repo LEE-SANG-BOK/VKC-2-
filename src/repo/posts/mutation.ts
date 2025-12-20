@@ -26,9 +26,16 @@ export function useCreatePost() {
 
   return useMutation({
     mutationFn: (data: CreatePostRequest) => createPost(data),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      if (response?.success && response.data?.id) {
+        logEvent({
+          eventType: 'post',
+          entityType: 'post',
+          entityId: response.data.id,
+        });
+      }
     },
   });
 }
