@@ -5,7 +5,8 @@ import type { Locale } from '@/i18n/config';
 import MainLayout from '@/components/templates/MainLayout';
 import { queryKeys } from '@/repo/keys';
 import { fetchUserLeaderboard } from '@/repo/users/fetch';
-import { SITE_URL } from '@/lib/siteUrl';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 import LeaderboardClient from './LeaderboardClient';
 
 export const dynamic = 'force-dynamic';
@@ -51,45 +52,27 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const title = t.title || fallback.title;
   const description = t.description || fallback.description;
 
-  const baseUrl = SITE_URL;
+  const search = new URLSearchParams();
+  if (currentPage > 1) {
+    search.set('page', String(currentPage));
+  }
+  if (currentLimit !== defaultLimit) {
+    search.set('limit', String(currentLimit));
+  }
+  const searchString = search.toString();
+  const currentPath = `/leaderboard${searchString ? `?${searchString}` : ''}`;
 
-  const buildUrl = (locale: string) => {
-    const url = new URL(`/${locale}/leaderboard`, baseUrl);
-    if (currentPage > 1) {
-      url.searchParams.set('page', String(currentPage));
-    }
-    if (currentLimit !== defaultLimit) {
-      url.searchParams.set('limit', String(currentLimit));
-    }
-    return url.toString();
-  };
+  const keywordResult = buildKeywords({ title, content: description });
+  const keywords = flattenKeywords(keywordResult);
 
-  const currentUrl = buildUrl(lang);
-
-  return {
+  return buildPageMetadata({
+    locale: lang,
+    path: currentPath,
     title,
     description,
-    alternates: {
-      canonical: currentUrl,
-      languages: {
-        ko: buildUrl('ko'),
-        en: buildUrl('en'),
-        vi: buildUrl('vi'),
-      },
-    },
-    openGraph: {
-      type: 'website',
-      title,
-      description,
-      url: currentUrl,
-      siteName: (meta?.home as Record<string, string>)?.siteName || 'viet kconnect',
-      locale: lang,
-    },
-    twitter: {
-      card: 'summary',
-      title,
-      description,
-    },
+    siteName: (meta?.home as Record<string, string>)?.siteName || 'viet kconnect',
+    keywords,
+    twitterCard: 'summary',
     robots: {
       index: true,
       follow: true,
@@ -99,7 +82,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
         'max-snippet': -1,
       },
     },
-  };
+  });
 }
 
 export default async function LeaderboardPage({ params, searchParams }: PageProps) {
