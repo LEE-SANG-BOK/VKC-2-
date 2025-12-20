@@ -90,6 +90,12 @@ export const queryKeys = {
       [...queryKeys.notifications.lists(), 'infinite', filters] as const,
   },
 
+  // Hides
+  hides: {
+    all: ['hides'] as const,
+    list: (type?: 'post' | 'answer' | 'comment') => [...queryKeys.hides.all, 'list', type || 'all'] as const,
+  },
+
   // Search
   search: {
     all: ['search'] as const,
