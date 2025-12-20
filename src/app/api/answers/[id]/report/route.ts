@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { answers, reports } from '@/lib/db/schema';
-import { successResponse, unauthorizedResponse, notFoundResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { answers, reports, contentReports } from '@/lib/db/schema';
+import { successResponse, unauthorizedResponse, notFoundResponse, errorResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
+import { checkRateLimit } from '@/lib/api/rateLimit';
 import { eq } from 'drizzle-orm';
 
 interface RouteContext {
@@ -22,6 +23,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const user = await getSession(request);
     if (!user) {
       return unauthorizedResponse();
+    }
+
+    const rateLimit = await checkRateLimit({
+      table: reports,
+      userColumn: reports.reporterId,
+      createdAtColumn: reports.createdAt,
+      userId: user.id,
+      windowMs: 60 * 60 * 1000,
+      max: 5,
+    });
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(
+        '신고 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+        'REPORT_RATE_LIMITED',
+        rateLimit.retryAfterSeconds
+      );
     }
 
     const { id: answerId } = await context.params;
@@ -77,6 +94,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
         status: 'pending',
       })
       .returning();
+
+    await db
+      .insert(contentReports)
+      .values({
+        reporterId: user.id,
+        targetType: 'answer',
+        targetId: answerId,
+        type,
+        reason: finalReason,
+        status: 'pending',
+      })
+      .onConflictDoNothing();
 
     return successResponse(newReport, '신고가 접수되었습니다. 검토 후 조치하겠습니다.');
   } catch (error) {
