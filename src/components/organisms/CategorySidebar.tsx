@@ -246,7 +246,13 @@ export default function CategorySidebar({
     { id: 'following', icon: Users, count: 0 },
     { id: 'subscribed', icon: HeartHandshake, count: 0 },
     { id: 'leaderboard', icon: Trophy, count: 0, label: leaderboardLabel },
-    { id: 'feedback', icon: Bug, count: 0, label: feedbackLabel, className: 'px-5 text-xs gap-2' },
+    {
+      id: 'feedback',
+      icon: undefined,
+      count: 0,
+      label: feedbackLabel,
+      className: 'mx-4 my-1 justify-center gap-0 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-100 dark:hover:bg-blue-900/40',
+    },
     // { id: 'media', icon: Film, count: 0 }, // 미디어 전용 페이지 (숨김 상태)
   ];
 
@@ -408,20 +414,30 @@ export default function CategorySidebar({
               {menuTitleLabel}
             </h3>
           </div>
-          {menuCategories.map((category) => (
-            <CategoryItem
-              key={category.id}
-              id={category.id}
-              name={(category as { label?: string }).label || t[category.id] || menuLabelFallbacks[category.id] || category.id}
-              description={showInlineDescriptions ? tooltipSummary(menuTooltips[category.id]) : undefined}
-              icon={category.icon}
-              count={category.count}
-              isActive={activeCategory === category.id}
-              onClick={handleCategoryClick}
-              tooltip={undefined}
-              className={(category as { className?: string }).className}
-            />
-          ))}
+          {menuCategories.map((category) => {
+            const isFeedback = category.id === 'feedback';
+            const label = (category as { label?: string }).label || t[category.id] || menuLabelFallbacks[category.id] || category.id;
+            const description = isFeedback ? undefined : showInlineDescriptions ? tooltipSummary(menuTooltips[category.id]) : undefined;
+            const tooltip = isFeedback ? menuTooltips[category.id] : undefined;
+            const ariaLabel = isFeedback ? feedbackLabel : undefined;
+            const labelClassName = isFeedback ? 'text-center w-full' : undefined;
+            return (
+              <CategoryItem
+                key={category.id}
+                id={category.id}
+                name={label}
+                description={description}
+                icon={category.icon}
+                count={category.count}
+                isActive={activeCategory === category.id}
+                onClick={handleCategoryClick}
+                tooltip={tooltip}
+                ariaLabel={ariaLabel}
+                labelClassName={labelClassName}
+                className={(category as { className?: string }).className}
+              />
+            );
+          })}
         </div>
 
         {/* Divider */}
