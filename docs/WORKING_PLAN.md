@@ -33,6 +33,7 @@
 
 - 모바일 우선: 유입/재방문이 모바일 중심이라는 전제 하에, “모바일에서 완벽히 동작”을 1순위 품질 게이트로 둔다(터치 타깃/키보드/세이프에어리어/한손 내비).
 - 네트워크 편차: 지하철/실내 등 저속·불안정 구간을 기본 시나리오로 본다(이미지 경량화, 불필요 요청 제거, 로딩/오류/재시도 UX, 오프라인 폴백/캐시).
+- 성능 목표(CWV): `LCP ≤ 2.5s`, `INP ≤ 200ms`, `CLS ≤ 0.1`을 “Good” 기준으로 본다(측정/운영은 `P1-12`, 기준 확인: `https://wallaroomedia.com/blog/what-are-core-web-vitals/`).
 - 핵심 소비 패턴: 비자/취업/생활 Q&A를 “읽고 저장하고 다시 찾는” 흐름이 핵심이므로, 검색/목록/상세는 SSR 기반으로 빠르게 보이고(SEO 포함) 재방문 시 캐시/북마크/구독으로 다시 찾기 쉬워야 한다.
 - 재방문 동력: 알림/구독(앱 내)은 기본, PWA/이메일 등 외부 채널은 P1~P2에서 “운영 효율을 해치지 않는 방식”으로 확장한다.
 - 외부 공유: FB/메신저 중심 공유가 많으므로 OG/Twitter 메타 정합성은 P0에서 보장하고(중복 UI 제거 포함), 채널별 추가 연동은 P2에서 “운영자 큐레이션 콘텐츠”부터 단계적으로 한다.
@@ -403,7 +404,7 @@
   - why: 데스크톱 가독성/정렬 개선 + 좌측 사이드바 고정성 확보
   - what: 카드 본문/태그/액션에 `lg:pl-12` 적용, 2xl 메인 폭 960px로 축소, 좌측 레일 sticky 적용/overscroll 보강
 - 검증
-  - [ ] npm run lint
+  - [x] npm run lint
   - [ ] npm run type-check
   - [ ] npm run build
 - 변경 파일
@@ -655,6 +656,37 @@
   - 커밋 메시지 제안: [WEB] merge ko fallback into en dictionary
 - 다음 액션/의존성
   - FE 언어 스위처 en 숨김 진행 필요
+
+#### (2025-12-20) [WEB] P0-12 메타/키워드 빌더 v1 (P0)
+
+- 플랜(체크리스트)
+  - [x] 메타 빌더/키워드 빌더 도입
+  - [x] 게시글 상세/검색 generateMetadata 연결
+  - [ ] 추가 페이지 메타 이관(홈/프로필 등)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/[lang]/(main)/posts/[id]/page.tsx`, `src/app/[lang]/(main)/search/page.tsx`
+  - 재현/리스크: 메타/키워드 생성 로직이 페이지마다 중복됨
+- 변경 내용(why/what)
+  - why: 메타/키워드 생성 단일 소스로 통합
+  - what: `buildPageMetadata`/`buildKeywords` 도입, 상세/검색 메타에서 공용 빌더 사용
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/lib/seo/metadata.ts
+  - src/lib/seo/keywords.ts
+  - src/app/[lang]/(main)/posts/[id]/page.tsx
+  - src/app/[lang]/(main)/search/page.tsx
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-12 metadata/keywords builder
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint/type-check/build
+  - 의존성/선행 작업: 없음
+  - 커밋 메시지 제안: [WEB] add metadata/keywords builder
+- 다음 액션/의존성
+  - 홈/프로필 등 추가 메타 이관 필요
 
 ## P0 (출시 전: Launch blocking)
 
@@ -1144,11 +1176,13 @@
 #### (2025-12-20) [LEAD] P1-12 성능·접근성 감사 스크립트 정렬 (P1)
 
 - 목표: 존재하는 감사 스크립트가 “현재 라우트(`/[lang]`) + 현재 정책(ko/vi UI, en SEO)”에 맞게 실제로 돌 수 있게 정렬한다
+- 판정 기준(고정): `LCP ≤ 2.5s`, `INP ≤ 200ms`, `CLS ≤ 0.1`(모바일 우선). 기준 확인: `https://wallaroomedia.com/blog/what-are-core-web-vitals/`
 - 현황(코드 근거)
   - 감사 스크립트의 테스트 URL이 구 라우트(`/questions` 등)를 기준으로 되어 있음(`scripts/performance-audit.js:1`, `scripts/accessibility-audit.js:1`)
 - 작업(권장)
   - 타깃 URL을 현재 구조로 교체(예: `/{lang}` 홈, `/{lang}/search`, `/{lang}/posts/{id}` 등)
   - 네트워크 프로파일을 포함한 실행 규칙 정의(예: 모바일 viewport + 3G throttle 1회는 “정기 점검”)
+  - 결과의 pass/fail은 위 CWV 판정 기준으로 통일하고, 실패 시 이슈/백로그로 즉시 기록(릴리즈 차단은 아님)
   - 운영 방식 결정
     - 릴리즈 차단 게이트에 넣지 않고, “주간/야간 점검”으로 고정(실패 시 이슈 트래킹)
 - 완료 기준
@@ -1282,3 +1316,4 @@
 - 필수: Playwright 스모크 통과
 - 필수: Rate limit 동작 확인(429 + UX 처리)
 - 수동: P0-9 크로스브라우징 체크리스트 완료
+- 정기(비차단): `P1-12` 성능 감사(CWV) = `LCP ≤ 2.5s`, `INP ≤ 200ms`, `CLS ≤ 0.1`
