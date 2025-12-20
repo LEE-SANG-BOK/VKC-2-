@@ -127,6 +127,8 @@ export function useTrendingPosts(
   return useQuery({
     queryKey: queryKeys.posts.trending(period),
     queryFn: ({ signal }) => fetchTrendingPosts(period, limit, { signal }),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     ...options,
   });
 }
