@@ -203,7 +203,7 @@
 - [ ] P0-8 (LEAD/BE/WEB: 이벤트 스키마 + 수집)
 - [ ] P0-9 (LEAD/FE: 크로스브라우징 QA)
 - [ ] P0-10 (LEAD/WEB/BE/FE: 가이드라인 v1)
-- [ ] P0-11 (BE/WEB/FE: 숨김/신고 즉시 숨김)
+- [x] P0-11 (BE/WEB/FE: 숨김/신고 즉시 숨김)
 - [ ] P0-12 (WEB/BE/FE: 메타/키워드 파이프라인 통합)
 - [ ] P0-13 (FE/WEB: 라벨 제거 + 강조 UI)
 - [ ] P0-14 (FE/WEB: 피드백 UX 간소화)
@@ -357,6 +357,70 @@
   - src/components/organisms/CategorySidebar.tsx
 - 다음 액션/의존성
   - 모바일/데스크톱에서 인증 요약 라벨 길이별 레이아웃 확인 필요
+
+#### (2025-12-20) [FE] 프로필 통계 1행 유지 + 프로필 설정 헤더 정합 (P0-2)
+
+- 플랜(체크리스트)
+  - [x] 프로필 통계 5개를 모바일에서도 1행 유지(가로 스크롤 허용)
+  - [x] 프로필 설정 페이지 헤더를 메인 헤더 구성과 동일하게 노출
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`
+  - 재현/리스크: 모바일에서 통계 블록이 여러 줄로 쌓이며 컴팩트 레이아웃이 깨짐
+- 변경 내용(why/what)
+  - why: 모바일에서도 핵심 수치를 한 줄로 유지해 가독성/일관성 확보
+  - what: 통계 블록을 가로 스크롤 가능한 flex row로 전환, 프로필 설정은 기본 헤더 구성으로 정렬
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx
+- 다음 액션/의존성
+  - 모바일 프로필 통계 가로 스크롤 UX 확인 필요
+
+#### (2025-12-20) [WEB/BE] 맞춤 숨김 v1 + 신고 즉시 숨김 (P0-11)
+
+- 플랜(체크리스트)
+  - [x] /api/hides GET/POST/DELETE 추가 (content_reports 기반)
+  - [x] 신고 API에서 content_reports 동시 기록
+  - [x] 카드/상세에서 숨김 표시 + 숨김 해제
+  - [x] hide 쿼리/뮤테이션 + report 성공 시 hide 캐시 갱신
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: 신고는 reports 테이블만 기록, 사용자별 숨김 저장/렌더 경로 없음
+  - 재현/리스크: 신고 직후에도 리스트/상세에서 콘텐츠가 계속 노출됨
+- 변경 내용(why/what)
+  - why: 신고 즉시 숨김 요구 사항과 사용자 맞춤 숨김 v1 제공
+  - what: content_reports 기반 hides API/쿼리 추가, 카드/상세에서 숨김 상태 렌더, 신고 성공 시 hide 캐시 반영
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/api/hides/route.ts
+  - src/app/api/reports/route.ts
+  - src/app/api/posts/[id]/report/route.ts
+  - src/app/api/answers/[id]/report/route.ts
+  - src/app/api/comments/[id]/report/route.ts
+  - src/repo/hides/types.ts
+  - src/repo/hides/fetch.ts
+  - src/repo/hides/query.ts
+  - src/repo/hides/mutation.ts
+  - src/repo/keys.ts
+  - src/repo/reports/mutation.ts
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/cards/AnswerCard.tsx
+  - src/components/molecules/cards/CommentCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-11 숨김 v1 + 신고 즉시 숨김
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint/build 완료, type-check 미실행
+  - 의존성/선행 작업: 없음
+  - 커밋 메시지 제안: [WEB/BE] P0-11 hide v1 + report immediate hide
+- 다음 액션/의존성
+  - type-check 필요 시 실행
 
 ## P0 (출시 전: Launch blocking)
 
