@@ -4,12 +4,15 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'nextjs-toploader/app';
 import { useSession } from 'next-auth/react';
-import { ThumbsUp, CheckCircle, ExternalLink, BadgeCheck } from 'lucide-react';
+import { ThumbsUp, CheckCircle, ExternalLink } from 'lucide-react';
 import UserChip from '@/components/molecules/user/UserChip';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
 import { useToggleAnswerLike } from '@/repo/answers/mutation';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 import { useLoginPrompt } from '@/providers/LoginPromptProvider';
+import { useHiddenTargets } from '@/repo/hides/query';
+import { useHideTarget, useUnhideTarget } from '@/repo/hides/mutation';
+import { toast } from 'sonner';
 
 export interface AnswerCardProps {
   id: string;
@@ -44,8 +47,6 @@ export default function AnswerCard({
   likes,
   isLiked = false,
   isAdopted = false,
-  isOfficial = false,
-  reviewStatus,
   post,
   locale = 'ko',
   translations,
@@ -53,6 +54,9 @@ export default function AnswerCard({
   const router = useRouter();
   const { data: session } = useSession();
   const { openLoginPrompt } = useLoginPrompt();
+  const { idSet: hiddenAnswerIds } = useHiddenTargets('answer', Boolean(session?.user));
+  const hideTargetMutation = useHideTarget();
+  const unhideTargetMutation = useUnhideTarget();
   const postUrl = post?.id ? `/${locale}/posts/${post.id}` : '#';
   
   const tCommon = (translations?.common || {}) as Record<string, string>;
@@ -62,18 +66,11 @@ export default function AnswerCard({
   const noTitleLabel = tCommon.noTitle || (locale === 'vi' ? 'Không có tiêu đề' : locale === 'en' ? 'No title' : '제목 없음');
   const adoptedLabel = tCommon.adopted || (locale === 'vi' ? 'Đã chọn' : locale === 'en' ? 'Adopted' : '채택됨');
   const helpfulLabel = tCommon.helpful || (locale === 'vi' ? 'Hữu ích' : locale === 'en' ? 'Helpful' : '도움됨');
-  const answerBadgeFallbacks = locale === 'en'
-    ? { officialAnswer: 'Official answer', reviewedAnswer: 'Reviewed answer' }
-    : locale === 'vi'
-      ? { officialAnswer: 'Câu trả lời chính thức', reviewedAnswer: 'Câu trả lời đã kiểm duyệt' }
-      : { officialAnswer: '공식 답변', reviewedAnswer: '검수 답변' };
-  const officialAnswerLabel = tCommon.officialAnswer || answerBadgeFallbacks.officialAnswer;
-  const reviewedAnswerLabel = tCommon.reviewedAnswer || answerBadgeFallbacks.reviewedAnswer;
-  const showReviewBadge = isOfficial || reviewStatus === 'approved';
-  const reviewBadgeLabel = isOfficial ? officialAnswerLabel : reviewedAnswerLabel;
-  const reviewBadgeClassName = isOfficial
-    ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700'
-    : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700';
+  const hideLabel = tCommon.hide || (locale === 'vi' ? 'Ẩn' : locale === 'en' ? 'Hide' : '안보기');
+  const unhideLabel = tCommon.unhide || (locale === 'vi' ? 'Bỏ ẩn' : locale === 'en' ? 'Unhide' : '숨김 해제');
+  const hiddenAnswerLabel = tCommon.hiddenAnswer || (locale === 'vi' ? 'Câu trả lời đã được ẩn.' : locale === 'en' ? 'This answer is hidden.' : '숨긴 답변입니다.');
+  const hideFailedLabel = tCommon.hideFailed || (locale === 'vi' ? 'Không thể ẩn câu trả lời.' : locale === 'en' ? 'Failed to hide the answer.' : '답변을 숨길 수 없습니다.');
+  const unhideFailedLabel = tCommon.unhideFailed || (locale === 'vi' ? 'Không thể bỏ ẩn.' : locale === 'en' ? 'Failed to unhide.' : '숨김 해제에 실패했습니다.');
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -86,6 +83,7 @@ export default function AnswerCard({
   
   const [localIsLiked, setLocalIsLiked] = useState(isLiked);
   const [localLikes, setLocalLikes] = useState(likes);
+  const isHidden = hiddenAnswerIds.has(id);
   
   const toggleLikeMutation = useToggleAnswerLike();
   
@@ -112,6 +110,44 @@ export default function AnswerCard({
       console.error('Failed to toggle like:', error);
     }
   };
+
+  const handleToggleHide = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!session?.user) {
+      openLoginPrompt();
+      return;
+    }
+
+    try {
+      if (isHidden) {
+        await unhideTargetMutation.mutateAsync({ targetType: 'answer', targetId: id });
+      } else {
+        await hideTargetMutation.mutateAsync({ targetType: 'answer', targetId: id });
+      }
+    } catch (error) {
+      console.error('Failed to toggle hide:', error);
+      toast.error(isHidden ? unhideFailedLabel : hideFailedLabel);
+    }
+  };
+
+  if (isHidden) {
+    return (
+      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm text-gray-500 dark:text-gray-400">{hiddenAnswerLabel}</span>
+          <button
+            type="button"
+            onClick={handleToggleHide}
+            className="rounded-full px-3 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            {unhideLabel}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
@@ -152,12 +188,6 @@ export default function AnswerCard({
               <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {publishedAt}
               </span>
-              {showReviewBadge && (
-                <span className={`flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border ${reviewBadgeClassName}`}>
-                  <BadgeCheck className="w-3 h-3" />
-                  {reviewBadgeLabel}
-                </span>
-              )}
               {isAdopted && (
                 <span className="flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-semibold rounded-full border border-green-200 dark:border-green-700">
                   <CheckCircle className="w-3 h-3" />
@@ -186,6 +216,13 @@ export default function AnswerCard({
             >
               <ThumbsUp className={`h-4 w-4 ${localIsLiked ? 'fill-current' : ''}`} />
               <span className="text-sm font-medium">{helpfulLabel} {localLikes}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleHide}
+              className="text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              {hideLabel}
             </button>
           </div>
         </div>

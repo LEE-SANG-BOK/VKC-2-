@@ -1,8 +1,12 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { verificationRequests } from '@/lib/db/schema';
-import { successResponse, unauthorizedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { successResponse, unauthorizedResponse, errorResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
+import { checkRateLimit } from '@/lib/api/rateLimit';
+
+const verificationRateLimitWindowMs = 24 * 60 * 60 * 1000;
+const verificationRateLimitMax = 2;
 
 function normalizeDocumentPath(input: unknown): string | null {
   if (typeof input !== 'string') return null;
@@ -54,6 +58,22 @@ export async function POST(request: NextRequest) {
     const user = await getSession(request);
     if (!user) {
       return unauthorizedResponse();
+    }
+
+    const rateLimit = await checkRateLimit({
+      table: verificationRequests,
+      userColumn: verificationRequests.userId,
+      createdAtColumn: verificationRequests.submittedAt,
+      userId: user.id,
+      windowMs: verificationRateLimitWindowMs,
+      max: verificationRateLimitMax,
+    });
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(
+        '인증 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+        'VERIFICATION_RATE_LIMITED',
+        rateLimit.retryAfterSeconds
+      );
     }
 
     const body = await request.json();

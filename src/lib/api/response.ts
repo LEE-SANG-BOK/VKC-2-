@@ -48,6 +48,27 @@ export function errorResponse(error: string, code?: string, status = 400): NextR
   return response;
 }
 
+export function rateLimitResponse(
+  message = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+  code = 'RATE_LIMITED',
+  retryAfterSeconds?: number
+): NextResponse<ApiResponse> {
+  const response = NextResponse.json(
+    {
+      success: false,
+      error: message,
+      code,
+    },
+    { status: 429 }
+  );
+
+  response.headers.set('Cache-Control', 'no-store');
+  if (retryAfterSeconds) {
+    response.headers.set('Retry-After', String(retryAfterSeconds));
+  }
+  return response;
+}
+
 /**
  * 페이지네이션 응답
  */

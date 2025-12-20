@@ -2,13 +2,17 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { comments, answers } from '@/lib/db/schema';
-import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
+import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
+import { checkRateLimit } from '@/lib/api/rateLimit';
 import { checkUserStatus } from '@/lib/user-status';
 import { eq, asc } from 'drizzle-orm';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
+
+const commentRateLimitWindowMs = 60 * 60 * 1000;
+const commentRateLimitMax = 40;
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -64,6 +68,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const userStatus = await checkUserStatus(user.id);
     if (!userStatus.isActive) {
       return forbiddenResponse(userStatus.message || 'Account restricted');
+    }
+
+    const rateLimit = await checkRateLimit({
+      table: comments,
+      userColumn: comments.authorId,
+      createdAtColumn: comments.createdAt,
+      userId: user.id,
+      windowMs: commentRateLimitWindowMs,
+      max: commentRateLimitMax,
+    });
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(
+        '댓글 작성 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+        'COMMENT_RATE_LIMITED',
+        rateLimit.retryAfterSeconds
+      );
     }
 
     const { id: answerId } = await context.params;

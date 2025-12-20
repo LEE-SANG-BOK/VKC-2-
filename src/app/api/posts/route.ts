@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { posts, users, categorySubscriptions, categories, follows, topicSubscriptions, answers, comments, likes, bookmarks } from '@/lib/db/schema';
-import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api/response';
+import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
+import { checkRateLimit } from '@/lib/api/rateLimit';
 import { checkUserStatus } from '@/lib/user-status';
 import { desc, eq, and, or, sql, inArray, SQL, lt, isNull } from 'drizzle-orm';
 import dayjs from 'dayjs';
@@ -14,6 +15,9 @@ import { ACTIVE_GROUP_PARENT_SLUGS, DEPRECATED_GROUP_PARENT_SLUGS, getChildrenFo
 import { isExpertBadgeType } from '@/lib/constants/badges';
 import { getFollowingIdSet } from '@/lib/api/follow';
 import { postListSelect, serializePostPreview } from '@/lib/api/post-list';
+
+const postRateLimitWindowMs = 60 * 60 * 1000;
+const postRateLimitMax = 8;
 
 const resolveTrust = (author: any, createdAt: Date | string) => {
   const months = dayjs().diff(createdAt, 'month', true);
@@ -615,6 +619,22 @@ export async function POST(request: NextRequest) {
     const userStatus = await checkUserStatus(user.id);
     if (!userStatus.isActive) {
       return forbiddenResponse(userStatus.message || 'Account restricted');
+    }
+
+    const rateLimit = await checkRateLimit({
+      table: posts,
+      userColumn: posts.authorId,
+      createdAtColumn: posts.createdAt,
+      userId: user.id,
+      windowMs: postRateLimitWindowMs,
+      max: postRateLimitMax,
+    });
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(
+        '게시글 작성 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+        'POST_RATE_LIMITED',
+        rateLimit.retryAfterSeconds
+      );
     }
 
     const body = await request.json();

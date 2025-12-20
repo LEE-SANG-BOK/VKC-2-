@@ -14,6 +14,8 @@ interface CategoryItemProps {
   tooltip?: ReactNode;
   tooltipPosition?: 'top' | 'below' | 'right' | 'bottom-right';
   tooltipTouchBehavior?: 'tap' | 'longPress';
+  ariaLabel?: string;
+  labelClassName?: string;
 }
 
 export default function CategoryItem({
@@ -28,6 +30,8 @@ export default function CategoryItem({
   tooltip,
   tooltipPosition = 'right',
   tooltipTouchBehavior,
+  ariaLabel,
+  labelClassName = '',
 }: CategoryItemProps) {
   const hasIcon = Boolean(Icon);
   const baseClasses = `flex items-center min-w-0 ${hasIcon ? 'gap-3' : 'gap-1'} text-sm font-medium transition-all duration-200`;
@@ -40,6 +44,7 @@ export default function CategoryItem({
   const button = (
     <button
       onClick={() => onClick(id)}
+      aria-label={ariaLabel}
       className={`${baseClasses} ${defaultWidth} ${defaultPadding} ${defaultVerticalPadding} ${className}
         ${!hasCustomColors && isActive
           ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border-l-3 border-blue-600 dark:border-blue-400'
@@ -50,7 +55,7 @@ export default function CategoryItem({
     >
       {Icon ? <Icon className="w-5 h-5 flex-shrink-0" /> : null}
       <span className="flex-1 min-w-0 text-left">
-        <span className="block truncate">{name}</span>
+        <span className={`block truncate ${labelClassName}`}>{name}</span>
         {description ? (
           <span className="block text-xs font-normal text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">
             {description}

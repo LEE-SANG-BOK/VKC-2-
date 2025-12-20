@@ -2,8 +2,9 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { answers, posts, likes, users } from '@/lib/db/schema';
-import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, paginatedResponse } from '@/lib/api/response';
+import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, paginatedResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
+import { checkRateLimit } from '@/lib/api/rateLimit';
 import { checkUserStatus } from '@/lib/user-status';
 import { eq, desc, sql, and, inArray, or, lt, type SQL } from 'drizzle-orm';
 import { createAnswerNotification } from '@/lib/notifications/create';
@@ -11,6 +12,9 @@ import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 import { isExpertBadgeType } from '@/lib/constants/badges';
+
+const answerRateLimitWindowMs = 60 * 60 * 1000;
+const answerRateLimitMax = 20;
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -269,6 +273,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const userStatus = await checkUserStatus(user.id);
     if (!userStatus.isActive) {
       return forbiddenResponse(userStatus.message || 'Account restricted');
+    }
+
+    const rateLimit = await checkRateLimit({
+      table: answers,
+      userColumn: answers.authorId,
+      createdAtColumn: answers.createdAt,
+      userId: user.id,
+      windowMs: answerRateLimitWindowMs,
+      max: answerRateLimitMax,
+    });
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(
+        '답변 작성 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+        'ANSWER_RATE_LIMITED',
+        rateLimit.retryAfterSeconds
+      );
     }
 
     const userRecord = await db.query.users.findFirst({

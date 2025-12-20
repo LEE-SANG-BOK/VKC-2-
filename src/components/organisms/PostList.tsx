@@ -424,7 +424,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
         <button
           type="button"
           onClick={scrollToRecommended}
-          className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-500 dark:to-indigo-400 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:shadow-md hover:from-blue-500 hover:to-indigo-500 transition-all"
+          className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-500 dark:to-indigo-400 px-4 py-3.5 text-base font-semibold text-white shadow-md hover:-translate-y-0.5 hover:shadow-lg hover:from-blue-500 hover:to-indigo-500 transition-all"
         >
           <Sparkles className="h-4 w-4" />
           {recommendedCtaLabel}
@@ -518,8 +518,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                     imageCount={(post as any).imageCount}
                     certifiedResponderCount={(post as any).certifiedResponderCount}
                     otherResponderCount={(post as any).otherResponderCount}
-                    officialAnswerCount={(post as any).officialAnswerCount}
-                    reviewedAnswerCount={(post as any).reviewedAnswerCount}
                     trustBadge={(post as any).trustBadge}
                     trustWeight={(post as any).trustWeight}
                     translations={translations}

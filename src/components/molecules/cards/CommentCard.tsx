@@ -10,6 +10,9 @@ import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
 import { useToggleCommentLike } from '@/repo/comments/mutation';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 import { useLoginPrompt } from '@/providers/LoginPromptProvider';
+import { useHiddenTargets } from '@/repo/hides/query';
+import { useHideTarget, useUnhideTarget } from '@/repo/hides/mutation';
+import { toast } from 'sonner';
 
 export interface CommentCardProps {
   id: string;
@@ -47,6 +50,9 @@ export default function CommentCard({
   const router = useRouter();
   const { data: session } = useSession();
   const { openLoginPrompt } = useLoginPrompt();
+  const { idSet: hiddenCommentIds } = useHiddenTargets('comment', Boolean(session?.user));
+  const hideTargetMutation = useHideTarget();
+  const unhideTargetMutation = useUnhideTarget();
   const postUrl = post?.id ? `/${locale}/posts/${post.id}` : '#';
   
   const tCommon = (translations?.common || {}) as Record<string, string>;
@@ -54,6 +60,11 @@ export default function CommentCard({
   const originalPostLabel = tCommon.originalPost || (locale === 'vi' ? 'Bài viết gốc' : locale === 'en' ? 'Original post' : '원글');
   const deletedPostLabel = tCommon.deletedPost || (locale === 'vi' ? 'Bài viết đã bị xóa' : locale === 'en' ? 'Deleted post' : '삭제된 게시글');
   const noTitleLabel = tCommon.noTitle || (locale === 'vi' ? 'Không có tiêu đề' : locale === 'en' ? 'No title' : '제목 없음');
+  const hideLabel = tCommon.hide || (locale === 'vi' ? 'Ẩn' : locale === 'en' ? 'Hide' : '안보기');
+  const unhideLabel = tCommon.unhide || (locale === 'vi' ? 'Bỏ ẩn' : locale === 'en' ? 'Unhide' : '숨김 해제');
+  const hiddenCommentLabel = tCommon.hiddenComment || (locale === 'vi' ? 'Bình luận đã được ẩn.' : locale === 'en' ? 'This comment is hidden.' : '숨긴 댓글입니다.');
+  const hideFailedLabel = tCommon.hideFailed || (locale === 'vi' ? 'Không thể ẩn bình luận.' : locale === 'en' ? 'Failed to hide the comment.' : '댓글을 숨길 수 없습니다.');
+  const unhideFailedLabel = tCommon.unhideFailed || (locale === 'vi' ? 'Không thể bỏ ẩn.' : locale === 'en' ? 'Failed to unhide.' : '숨김 해제에 실패했습니다.');
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -66,6 +77,7 @@ export default function CommentCard({
   
   const [localIsLiked, setLocalIsLiked] = useState(isLiked);
   const [localLikes, setLocalLikes] = useState(likes);
+  const isHidden = hiddenCommentIds.has(id);
   
   const toggleLikeMutation = useToggleCommentLike();
   
@@ -92,6 +104,44 @@ export default function CommentCard({
       console.error('Failed to toggle like:', error);
     }
   };
+
+  const handleToggleHide = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!session?.user) {
+      openLoginPrompt();
+      return;
+    }
+
+    try {
+      if (isHidden) {
+        await unhideTargetMutation.mutateAsync({ targetType: 'comment', targetId: id });
+      } else {
+        await hideTargetMutation.mutateAsync({ targetType: 'comment', targetId: id });
+      }
+    } catch (error) {
+      console.error('Failed to toggle hide:', error);
+      toast.error(isHidden ? unhideFailedLabel : hideFailedLabel);
+    }
+  };
+
+  if (isHidden) {
+    return (
+      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm text-gray-500 dark:text-gray-400">{hiddenCommentLabel}</span>
+          <button
+            type="button"
+            onClick={handleToggleHide}
+            className="rounded-full px-3 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            {unhideLabel}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
@@ -152,6 +202,13 @@ export default function CommentCard({
             >
               <ThumbsUp className={`h-4 w-4 ${localIsLiked ? 'fill-current' : ''}`} />
               <span>{localLikes}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleHide}
+              className="text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              {hideLabel}
             </button>
           </div>
         </div>
