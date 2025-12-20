@@ -681,7 +681,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             </div>
           </div>
 
-          <div className="lg:pl-12">
+          <div className="pl-12">
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
                 {title}
@@ -728,7 +728,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2 lg:pl-12">
+        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2 pl-12">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -753,7 +753,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
       <div className="question-card-actions">
         <div className="question-card-footer-fixed !flex-nowrap !gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1 flex-nowrap lg:pl-12">
+          <div className="flex items-center gap-2 min-w-0 flex-1 flex-nowrap pl-12">
             <button
               type="button"
               onClick={handleAnswerCountClick}
