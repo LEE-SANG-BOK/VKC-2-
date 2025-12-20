@@ -365,18 +365,16 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
       : ['정보', 'TIP', '가이드'];
 
   const templateSections = useMemo(() => {
-    const sections = [
-      { label: templateConditionLabel, value: templateCondition.trim() },
-      { label: templateGoalLabel, value: templateGoal.trim() },
-      { label: templateBackgroundLabel, value: templateBackground.trim() },
-    ];
-    return sections.filter((section) => section.value.length > 0);
-  }, [templateBackground, templateBackgroundLabel, templateCondition, templateConditionLabel, templateGoal, templateGoalLabel]);
+    const sections = [templateCondition, templateGoal, templateBackground]
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+    return sections;
+  }, [templateBackground, templateCondition, templateGoal]);
 
   const templateHtml = useMemo(() => {
     if (templateSections.length === 0) return '';
     return templateSections
-      .map((section) => `<h3>${escapeHtml(section.label)}</h3><p>${formatTemplateHtml(section.value)}</p>`)
+      .map((section) => `<p><strong>${formatTemplateHtml(section)}</strong></p>`)
       .join('');
   }, [templateSections]);
 
@@ -913,7 +911,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
               ) : null}
 
               {postType === 'question' ? (
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-4 space-y-4">
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3 space-y-3">
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                       {templateTitleLabel}
@@ -925,15 +923,15 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                       {templateNoteLabel}
                     </p>
                   </div>
-                  <div className="grid gap-3">
+                  <div className="grid gap-2">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">
+                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
                         {templateConditionLabel}
                       </label>
                       <textarea
                         value={templateCondition}
                         onChange={(e) => setTemplateCondition(e.target.value)}
-                        rows={3}
+                        rows={2}
                         readOnly={!user}
                         onFocus={() => {
                           if (!user) openLoginPrompt();
@@ -941,18 +939,18 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                         onClick={() => {
                           if (!user) openLoginPrompt();
                         }}
-                        className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                        className={`w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
                         placeholder={templateConditionPlaceholder}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">
+                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
                         {templateGoalLabel}
                       </label>
                       <textarea
                         value={templateGoal}
                         onChange={(e) => setTemplateGoal(e.target.value)}
-                        rows={3}
+                        rows={2}
                         readOnly={!user}
                         onFocus={() => {
                           if (!user) openLoginPrompt();
@@ -960,18 +958,18 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                         onClick={() => {
                           if (!user) openLoginPrompt();
                         }}
-                        className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                        className={`w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
                         placeholder={templateGoalPlaceholder}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">
+                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
                         {templateBackgroundLabel}
                       </label>
                       <textarea
                         value={templateBackground}
                         onChange={(e) => setTemplateBackground(e.target.value)}
-                        rows={3}
+                        rows={2}
                         readOnly={!user}
                         onFocus={() => {
                           if (!user) openLoginPrompt();
@@ -979,21 +977,19 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                         onClick={() => {
                           if (!user) openLoginPrompt();
                         }}
-                        className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                        className={`w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
                         placeholder={templateBackgroundPlaceholder}
                       />
                     </div>
                   </div>
                   {templateSections.length > 0 ? (
-                    <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-3 space-y-2">
-                      {templateSections.map((section) => (
-                        <div key={section.label} className="text-xs text-gray-600 dark:text-gray-300">
-                          <div className="font-semibold text-gray-700 dark:text-gray-200">
-                            {section.label}
-                          </div>
-                          <div className="whitespace-pre-line">
-                            {section.value}
-                          </div>
+                    <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-2.5 space-y-1.5">
+                      {templateSections.map((section, index) => (
+                        <div
+                          key={`${index}-${section.slice(0, 8)}`}
+                          className="rounded-md bg-blue-50/70 dark:bg-blue-900/30 px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 dark:text-blue-200 whitespace-pre-line"
+                        >
+                          {section}
                         </div>
                       ))}
                     </div>
