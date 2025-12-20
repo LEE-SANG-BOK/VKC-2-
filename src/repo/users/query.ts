@@ -143,6 +143,8 @@ export function useUserLeaderboard(
   return useQuery({
     queryKey: queryKeys.users.leaderboard(filters),
     queryFn: ({ signal }) => fetchUserLeaderboard(filters, { signal }),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     ...options,
   });
 }

@@ -10,6 +10,8 @@ import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 import { stripHtml } from '@/utils/htmlToText';
 import { buildCategoryPopularFilters, buildRelatedPostFilters } from '@/utils/postRecommendationFilters';
 import { SITE_URL } from '@/lib/siteUrl';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
+import { buildPageMetadata } from '@/lib/seo/metadata';
 
 // 동적 라우트 설정
 export const dynamicParams = true;
@@ -54,52 +56,36 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const baseUrl = SITE_URL;
-  const currentUrl = `${baseUrl}/${lang}/posts/${id}`;
-
-  const description = stripHtml(post.content || '').substring(0, 160);
+  const contentText = stripHtml(post.content || '');
+  const description = contentText.substring(0, 160);
   const titleSuffix = t.titleSuffix || 'viet kconnect';
   const title = `${post.title} | ${titleSuffix}`;
   const ogImageSrc = normalizePostImageSrc(post.thumbnail) || normalizePostImageSrc(post.thumbnails?.[0]) || '/brand-logo.png';
   const ogImage = ogImageSrc.startsWith('/') ? `${baseUrl}${ogImageSrc}` : ogImageSrc;
+  const keywordResult = buildKeywords({
+    title: post.title,
+    content: contentText,
+    tags: post.tags,
+    category: post.category,
+    subcategory: post.subcategory,
+  });
+  const keywords = flattenKeywords(keywordResult, 12);
+  const authorName = post.author?.displayName || post.author?.name || '';
 
-  return {
+  return buildPageMetadata({
+    locale: lang as Locale,
+    path: `/posts/${id}`,
     title,
     description,
-
-    // Canonical URL
-    alternates: {
-      canonical: currentUrl,
-      languages: {
-        ko: `${baseUrl}/ko/posts/${id}`,
-        en: `${baseUrl}/en/posts/${id}`,
-        vi: `${baseUrl}/vi/posts/${id}`,
-      },
-    },
-
-    // Open Graph
-    openGraph: {
-      type: 'article',
-      title,
-      description,
-      url: currentUrl,
-      siteName: t.siteName || 'viet kconnect',
-      images: ogImage ? [ogImage] : [],
-      publishedTime: post.createdAt,
-      authors: [post.author?.displayName || post.author?.name || ''],
-      tags: post.tags,
-      locale: lang,
-    },
-
-    // Twitter Card
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: ogImage ? [ogImage] : [],
-      creator: post.author?.displayName ? `@${post.author.displayName}` : undefined,
-    },
-
-    // Robots
+    siteName: t.siteName || 'viet kconnect',
+    images: ogImage ? [ogImage] : [],
+    type: 'article',
+    keywords,
+    tags: keywords,
+    authors: authorName ? [authorName] : undefined,
+    publishedTime: post.createdAt,
+    category: post.category,
+    twitterCard: 'summary_large_image',
     robots: {
       index: true,
       follow: true,
@@ -110,12 +96,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         'max-snippet': -1,
       },
     },
-
-    // Additional metadata
-    authors: [{ name: post.author?.displayName || post.author?.name || '' }],
-    keywords: post.tags,
-    category: post.category,
-  };
+  });
 }
 
 // Static Params 생성 (정적 생성을 위한 경로 목록)

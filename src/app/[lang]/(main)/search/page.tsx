@@ -1,12 +1,13 @@
 import { Metadata } from 'next';
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import { getDictionary } from '@/i18n/get-dictionary';
-import { i18n, type Locale } from '@/i18n/config';
+import { type Locale } from '@/i18n/config';
 import { fetchPosts } from '@/repo/posts/fetch';
 import { fetchCategories } from '@/repo/categories/fetch';
 import { queryKeys } from '@/repo/keys';
 import SearchClient from './SearchClient';
-import { SITE_URL } from '@/lib/siteUrl';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
+import { buildPageMetadata } from '@/lib/seo/metadata';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,10 +55,8 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
     };
   })();
 
-  const baseUrl = SITE_URL;
-  const currentUrl = query 
-    ? `${baseUrl}/${lang}/search?q=${encodeURIComponent(query)}`
-    : `${baseUrl}/${lang}/search`;
+  const encodedQuery = query ? encodeURIComponent(query) : '';
+  const currentPath = encodedQuery ? `/search?q=${encodedQuery}` : '/search';
 
   const title = query
     ? t.titleWithQuery?.replace('{query}', query) || fallback.titleWithQuery.replace('{query}', query)
@@ -66,17 +65,17 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const description = query
     ? t.descriptionWithQuery?.replace('{query}', query) || fallback.descriptionWithQuery.replace('{query}', query)
     : t.descriptionDefault || fallback.descriptionDefault;
+  const keywordResult = buildKeywords({ title: query || '' });
+  const keywords = flattenKeywords(keywordResult, 8);
 
-  const alternateLanguages: Record<string, string> = {};
-  i18n.locales.forEach((locale) => {
-    alternateLanguages[locale] = query
-      ? `${baseUrl}/${locale}/search?q=${encodeURIComponent(query)}`
-      : `${baseUrl}/${locale}/search`;
-  });
-
-  return {
+  return buildPageMetadata({
+    locale: lang,
+    path: currentPath,
     title,
     description,
+    siteName: t.siteName || 'viet kconnect',
+    keywords: keywords.length ? keywords : undefined,
+    twitterCard: 'summary',
     robots: {
       index: query ? false : true,
       follow: true,
@@ -86,24 +85,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
         'max-snippet': -1,
       },
     },
-    alternates: {
-      canonical: currentUrl,
-      languages: alternateLanguages,
-    },
-    openGraph: {
-      type: 'website',
-      title,
-      description,
-      url: currentUrl,
-      siteName: t.siteName || 'viet kconnect',
-      locale: lang,
-    },
-    twitter: {
-      card: 'summary',
-      title,
-      description,
-    },
-  };
+  });
 }
 
 export default async function SearchPage({ params, searchParams }: PageProps) {

@@ -33,6 +33,7 @@
 
 - 모바일 우선: 유입/재방문이 모바일 중심이라는 전제 하에, “모바일에서 완벽히 동작”을 1순위 품질 게이트로 둔다(터치 타깃/키보드/세이프에어리어/한손 내비).
 - 네트워크 편차: 지하철/실내 등 저속·불안정 구간을 기본 시나리오로 본다(이미지 경량화, 불필요 요청 제거, 로딩/오류/재시도 UX, 오프라인 폴백/캐시).
+- 성능 목표(CWV): `LCP ≤ 2.5s`, `INP ≤ 200ms`, `CLS ≤ 0.1`을 “Good” 기준으로 본다(측정/운영은 `P1-12`, 기준 확인: `https://wallaroomedia.com/blog/what-are-core-web-vitals/`).
 - 핵심 소비 패턴: 비자/취업/생활 Q&A를 “읽고 저장하고 다시 찾는” 흐름이 핵심이므로, 검색/목록/상세는 SSR 기반으로 빠르게 보이고(SEO 포함) 재방문 시 캐시/북마크/구독으로 다시 찾기 쉬워야 한다.
 - 재방문 동력: 알림/구독(앱 내)은 기본, PWA/이메일 등 외부 채널은 P1~P2에서 “운영 효율을 해치지 않는 방식”으로 확장한다.
 - 외부 공유: FB/메신저 중심 공유가 많으므로 OG/Twitter 메타 정합성은 P0에서 보장하고(중복 UI 제거 포함), 채널별 추가 연동은 P2에서 “운영자 큐레이션 콘텐츠”부터 단계적으로 한다.
@@ -215,7 +216,7 @@
 - [ ] P0-12 (WEB/BE/FE: 메타/키워드 파이프라인 통합)
 - [ ] P0-13 (FE/WEB: 라벨 제거 + 강조 UI)
 - [ ] P0-14 (FE/WEB: 피드백 UX 간소화)
-- [ ] P0-15 (FE/WEB: 게시글 상세 액션/추천 정리)
+- [x] P0-15 (FE/WEB: 게시글 상세 액션/추천 정리)
 - [ ] P0-16 (FE/LEAD: 카드 헤더 정렬 + 데스크톱 폭 제한)
 - [ ] P0-17 (LEAD/FE: 좌측 사이드바 고정 + 독립 스크롤)
 - [ ] P0-18 (LEAD/FE: 헤더 뒤로가기 줄바꿈/정렬)
@@ -330,7 +331,7 @@
   - why:
   - what:
 - 검증
-  - [ ] npm run lint
+  - [x] npm run lint
   - [ ] npm run type-check
   - [ ] npm run build
 - 변경 파일
@@ -359,7 +360,7 @@
   - why: 인증 요약 설명을 클릭 가능한 CTA로 노출해 의미를 명확히 하고, 모바일에서도 액션 행을 한 줄로 유지
   - what: 인증 요약 라벨을 Tooltip+버튼으로 재구성, 액션 행은 nowrap/auto 폭으로 정렬, 템플릿 입력 패딩/행 수 축소
 - 검증
-  - [ ] npm run lint
+  - [x] npm run lint
   - [ ] npm run type-check
   - [ ] npm run build
 - 변경 파일
@@ -381,7 +382,7 @@
   - why: 모바일에서도 핵심 수치를 한 줄로 유지해 가독성/일관성 확보
   - what: 통계 블록을 가로 스크롤 가능한 flex row로 전환, 프로필 설정은 기본 헤더 구성으로 정렬
 - 검증
-  - [ ] npm run lint
+  - [x] npm run lint
   - [ ] npm run type-check
   - [ ] npm run build
 - 변경 파일
@@ -403,7 +404,7 @@
   - why: 데스크톱 가독성/정렬 개선 + 좌측 사이드바 고정성 확보
   - what: 카드 본문/태그/액션에 `lg:pl-12` 적용, 2xl 메인 폭 960px로 축소, 좌측 레일 sticky 적용/overscroll 보강
 - 검증
-  - [ ] npm run lint
+  - [x] npm run lint
   - [ ] npm run type-check
   - [ ] npm run build
 - 변경 파일
@@ -421,6 +422,34 @@
 - 다음 액션/의존성
   - 데스크톱/태블릿에서 카드 폭/정렬 체감 확인
   - 좌측 사이드바 스크롤 분리 동작 확인
+
+#### (2025-12-20) [FE] 숨김/신고 빠른 메뉴 + 숨김 카드 제거 (P0-11)
+
+- 플랜(체크리스트)
+  - [x] 숨김 버튼을 `:)`로 통일하고 카드 우상단 고정
+  - [x] 소형 메뉴(숨김/신고)로 통합
+  - [x] 숨김 처리된 카드 자체를 제거(플레이스홀더 미노출)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/molecules/cards/PostCard.tsx`
+  - 재현/리스크: 이미지 유무에 따라 숨김 버튼 위치가 흔들림, 숨김 처리 후 “숨긴 게시글입니다” 카드가 남아 UI 노이즈 발생
+- 변경 내용(why/what)
+  - why: 위치 일관성 확보 + 숨김 처리 시 리스트 가독성 유지
+  - what: 우상단 고정 메뉴로 변경, 숨김/신고 단일 메뉴 제공, 숨김 시 렌더 제거
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): 숨김/신고 빠른 메뉴 + 숨김 카드 제거
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint/build 권장
+  - 의존성/선행 작업: 없음
+  - 커밋 메시지 제안: `[FE] replace hide placeholder with quick menu`
+- 다음 액션/의존성
+  - 신고 기본 타입 고정(현재 spam) 정책 합의 필요
 
 #### (2025-12-20) [FE] 게시글 안보기 아이콘화 + 우상단 배치 (P0-13)
 
@@ -440,8 +469,39 @@
   - [ ] npm run build
 - 변경 파일
   - src/components/molecules/cards/PostCard.tsx
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): 게시글 안보기 이모지 버튼 상단 배치
+  - 필요한 파일 목록: `src/components/molecules/cards/PostCard.tsx`
+  - 필요 검증(lint/type-check/build/기타): lint, type-check, build
+  - 의존성/선행 작업: 없음
+  - 커밋 메시지 제안: `[FE] PostCard 안보기 이모지 버튼 상단 배치`
 - 다음 액션/의존성
   - 카드 상단 여백과 겹침 여부 확인 필요
+
+#### (2025-12-20) [FE] 구독 카테고리 필터 여백 보강 (P0-2)
+
+- 플랜(체크리스트)
+  - [x] 구독 카테고리 알약과 카드 사이 간격 확대
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/organisms/PostList.tsx`
+  - 재현/리스크: 구독 카테고리 알약 줄과 카드 상단이 밀착되어 답답하게 보임
+- 변경 내용(why/what)
+  - why: 필터 영역과 카드 영역 간 시각적 분리 강화
+  - what: 구독 카테고리 필터 래퍼 `mb-3` → `mb-4`
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/components/organisms/PostList.tsx
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): 구독 카테고리 필터 여백 보강
+  - 필요한 파일 목록: `src/components/organisms/PostList.tsx`
+  - 필요 검증(lint/type-check/build/기타): lint, type-check, build
+  - 의존성/선행 작업: Hot File(Lead 머지 필요)
+  - 커밋 메시지 제안: `[FE] 구독 카테고리 필터 여백 보강`
+- 다음 액션/의존성
+  - Hot File 변경이라 Lead 머지 타이밍 확인 필요
 
 #### (2025-12-20) [WEB/BE] 맞춤 숨김 v1 + 신고 즉시 숨김 (P0-11)
 
@@ -514,6 +574,120 @@
 - 다음 액션/의존성
   - FE 이미지 표준화 작업 병행 필요
 
+#### (2025-12-20) [WEB] P0-15 상세 공유/신고/추천 정리 (P0)
+
+- 플랜(체크리스트)
+  - [x] 공유 버튼을 하단 CTA로 스크롤 이동
+  - [x] 신고 버튼 아이콘-only + 중립 톤으로 정리
+  - [x] 추천 섹션 1개만 노출 + 구분선 추가
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`
+  - 재현/리스크: 공유/신고 UI 중복 및 과한 강조, 추천 섹션 2개 동시 노출
+- 변경 내용(why/what)
+  - why: 중복 동선 제거 + 과한 강조 완화 + 화면 규칙 1개화
+  - what: 공유 모달 제거 및 CTA 스크롤로 통합, 신고 버튼 톤다운, 추천 섹션 단일화/구분선 추가
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-15 상세 공유/신고/추천 정리
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint/type-check/build
+  - 의존성/선행 작업: 없음
+  - 커밋 메시지 제안: [WEB] simplify post detail share/report/recs
+- 다음 액션/의존성
+  - 추천 섹션 노출 기준(related >= 2) 검토 필요 시 조정
+
+#### (2025-12-20) [WEB] Trending/Leaderboard 쿼리 캐시 튜닝 (P0-4)
+
+- 플랜(체크리스트)
+  - [x] Trending/Leaderboard staleTime 기본값 추가
+  - [x] refetchOnWindowFocus 기본값 false
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/repo/posts/query.ts`, `src/repo/users/query.ts`
+  - 재현/리스크: 포커스 전환/탭 복귀 시 불필요한 재요청 발생
+- 변경 내용(why/what)
+  - why: 리스트/랭킹 재요청 감소로 체감 성능 개선
+  - what: trending/leaderboard 쿼리에 기본 staleTime + refetchOnWindowFocus false 설정
+- 검증
+  - [ ] npm run lint (eslint 패키지 누락으로 실패 기록)
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/repo/posts/query.ts
+  - src/repo/users/query.ts
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): Trending/Leaderboard 쿼리 캐시 기본값 튜닝
+  - 필요한 파일 목록: `src/repo/posts/query.ts`, `src/repo/users/query.ts`
+  - 필요 검증(lint/type-check/build/기타): lint 실패 기록, type-check/build 미실행
+  - 의존성/선행 작업: 없음
+  - 커밋 메시지 제안: `[WEB] tune trending/leaderboard query cache`
+- 다음 액션/의존성
+  - 로컬 lint 환경 재검증 필요
+
+#### (2025-12-20) [WEB] P0-1 en fallback 병합 (P0)
+
+- 플랜(체크리스트)
+  - [x] en 딕셔너리에 ko fallback 병합
+  - [x] sitemap/alternates en 노출 유지 확인
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/i18n/get-dictionary.ts`
+  - 재현/리스크: en 키 누락 시 UI 문구가 비는 경우 발생
+- 변경 내용(why/what)
+  - why: en 신규 키 추가 없이도 렌더 깨짐 방지
+  - what: en 로드 시 ko 딕셔너리와 deep merge로 fallback 채움
+- 검증
+  - [ ] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/i18n/get-dictionary.ts
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-1 en fallback merge
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint/type-check/build
+  - 의존성/선행 작업: 없음
+  - 커밋 메시지 제안: [WEB] merge ko fallback into en dictionary
+- 다음 액션/의존성
+  - FE 언어 스위처 en 숨김 진행 필요
+
+#### (2025-12-20) [WEB] P0-12 메타/키워드 빌더 v1 (P0)
+
+- 플랜(체크리스트)
+  - [x] 메타 빌더/키워드 빌더 도입
+  - [x] 게시글 상세/검색 generateMetadata 연결
+  - [ ] 추가 페이지 메타 이관(홈/프로필 등)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/[lang]/(main)/posts/[id]/page.tsx`, `src/app/[lang]/(main)/search/page.tsx`
+  - 재현/리스크: 메타/키워드 생성 로직이 페이지마다 중복됨
+- 변경 내용(why/what)
+  - why: 메타/키워드 생성 단일 소스로 통합
+  - what: `buildPageMetadata`/`buildKeywords` 도입, 상세/검색 메타에서 공용 빌더 사용
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/lib/seo/metadata.ts
+  - src/lib/seo/keywords.ts
+  - src/app/[lang]/(main)/posts/[id]/page.tsx
+  - src/app/[lang]/(main)/search/page.tsx
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-12 metadata/keywords builder
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint/type-check/build
+  - 의존성/선행 작업: 없음
+  - 커밋 메시지 제안: [WEB] add metadata/keywords builder
+- 다음 액션/의존성
+  - 홈/프로필 등 추가 메타 이관 필요
+
 ## P0 (출시 전: Launch blocking)
 
 #### (2025-12-20) [LEAD] P0-0 운영/병렬 규칙 고정 (P0)
@@ -534,7 +708,7 @@
 
 - 플랜(체크리스트)
   - [ ] [FE] LanguageSwitcher en 숨김(ko/vi만 노출)
-  - [ ] [WEB] sitemap/alternates en 유지 + locale fallback 병합
+  - [x] [WEB] sitemap/alternates en 유지 + locale fallback 병합
   - [ ] [LEAD] QA 기준(ko/vi UI, en SEO 유지) 문서 반영
 
 - 목표: 사용자는 `ko/vi`만 보되, 검색엔진은 `en` URL을 계속 발견/색인 가능
@@ -713,7 +887,7 @@
 #### (2025-12-20) [WEB] P0-12 SEO 메타 자동화 + 키워드 파이프라인 통합 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [WEB] 메타 빌더/키워드 빌더 도입
+  - [x] [WEB] 메타 빌더/키워드 빌더 도입
   - [ ] [BE] 키워드 API/연동 정리
   - [ ] [FE] UI 해시태그/추천 표시 연동
 
@@ -1002,11 +1176,13 @@
 #### (2025-12-20) [LEAD] P1-12 성능·접근성 감사 스크립트 정렬 (P1)
 
 - 목표: 존재하는 감사 스크립트가 “현재 라우트(`/[lang]`) + 현재 정책(ko/vi UI, en SEO)”에 맞게 실제로 돌 수 있게 정렬한다
+- 판정 기준(고정): `LCP ≤ 2.5s`, `INP ≤ 200ms`, `CLS ≤ 0.1`(모바일 우선). 기준 확인: `https://wallaroomedia.com/blog/what-are-core-web-vitals/`
 - 현황(코드 근거)
   - 감사 스크립트의 테스트 URL이 구 라우트(`/questions` 등)를 기준으로 되어 있음(`scripts/performance-audit.js:1`, `scripts/accessibility-audit.js:1`)
 - 작업(권장)
   - 타깃 URL을 현재 구조로 교체(예: `/{lang}` 홈, `/{lang}/search`, `/{lang}/posts/{id}` 등)
   - 네트워크 프로파일을 포함한 실행 규칙 정의(예: 모바일 viewport + 3G throttle 1회는 “정기 점검”)
+  - 결과의 pass/fail은 위 CWV 판정 기준으로 통일하고, 실패 시 이슈/백로그로 즉시 기록(릴리즈 차단은 아님)
   - 운영 방식 결정
     - 릴리즈 차단 게이트에 넣지 않고, “주간/야간 점검”으로 고정(실패 시 이슈 트래킹)
 - 완료 기준
@@ -1140,3 +1316,4 @@
 - 필수: Playwright 스모크 통과
 - 필수: Rate limit 동작 확인(429 + UX 처리)
 - 수동: P0-9 크로스브라우징 체크리스트 완료
+- 정기(비차단): `P1-12` 성능 감사(CWV) = `LCP ≤ 2.5s`, `INP ≤ 200ms`, `CLS ≤ 0.1`
