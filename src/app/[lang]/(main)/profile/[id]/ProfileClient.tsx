@@ -702,26 +702,28 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                 </div>
               ) : null}
 
-              <div className="grid grid-cols-5 gap-2 sm:gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div className="min-w-0 text-center cursor-pointer hover:opacity-80 transition-opacity">
-                  <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{followersCount}</div>
-                  <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.followers}</div>
-                </div>
-                <div className="min-w-0 text-center cursor-pointer hover:opacity-80 transition-opacity">
-                  <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.following}</div>
-                  <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.following}</div>
-                </div>
-                <div className="min-w-0 text-center">
-                  <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.posts}</div>
-                  <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.posts}</div>
-                </div>
-                <div className="min-w-0 text-center">
-                  <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.accepted}</div>
-                  <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.accepted}</div>
-                </div>
-                <div className="min-w-0 text-center">
-                  <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.comments}</div>
-                  <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.comments}</div>
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide">
+                  <div className="flex min-w-[72px] flex-1 flex-col items-center text-center cursor-pointer hover:opacity-80 transition-opacity">
+                    <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{followersCount}</div>
+                    <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.followers}</div>
+                  </div>
+                  <div className="flex min-w-[72px] flex-1 flex-col items-center text-center cursor-pointer hover:opacity-80 transition-opacity">
+                    <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.following}</div>
+                    <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.following}</div>
+                  </div>
+                  <div className="flex min-w-[72px] flex-1 flex-col items-center text-center">
+                    <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.posts}</div>
+                    <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.posts}</div>
+                  </div>
+                  <div className="flex min-w-[72px] flex-1 flex-col items-center text-center">
+                    <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.accepted}</div>
+                    <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.accepted}</div>
+                  </div>
+                  <div className="flex min-w-[72px] flex-1 flex-col items-center text-center">
+                    <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{initialProfile.stats.comments}</div>
+                    <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.comments}</div>
+                  </div>
                 </div>
               </div>
             </div>
