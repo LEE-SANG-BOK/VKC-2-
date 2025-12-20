@@ -363,7 +363,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   return (
     <div className="pt-0 pb-4">
       {selectedCategory === 'subscribed' && topicSubscriptions.length > 0 ? (
-        <div className="mb-3">
+        <div className="mb-4">
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
             <button
               type="button"
