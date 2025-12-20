@@ -374,7 +374,7 @@ $gh-address-comments
 - [x] P0-1 (LEAD/WEB/FE: en UI 숨김 + alternates/sitemap 유지 + ko fallback)
 - [ ] P0-2 (FE/WEB: ko/vi 하드코딩 제거 + 클립 0)
 - [ ] P0-3 (FE: 모바일 키보드/스크롤 UX 하드닝)
-- [ ] P0-4 (WEB/FE: 이미지 표준화 + 코드 스플리팅 + Query 튜닝)
+- [x] P0-4 (WEB/FE: 이미지 표준화 + 코드 스플리팅 + Query 튜닝)
 - [x] P0-5 (FE: A11y 최소 기준)
 - [x] P0-6 (BE/WEB: rate limit + 429 UX)
 - [x] P0-7 (LEAD/WEB: Playwright 스모크/게이트)
@@ -1019,7 +1019,7 @@ $gh-address-comments
 #### (2025-12-20) [WEB] P0-4 퍼포먼스 1차(저사양/저속) (P0)
 
 - 플랜(체크리스트)
-  - [ ] [FE] 이미지 sizes/lazy/placeholder 통일
+  - [x] [FE] 이미지 sizes/lazy/placeholder 통일
   - [x] [WEB] dynamic import 확대(에디터/모달/관리자)
   - [x] [WEB] Query enabled/staleTime 튜닝
 
@@ -1032,8 +1032,10 @@ $gh-address-comments
 
 - 최근 구현(2025-12-21)
   - 좋아요/북마크 토글 이후 `refetchQueries(type='all')` 제거(불필요 네트워크/데이터 사용 감소)
+  - 이미지 표준화: `DEFAULT_BLUR_DATA_URL` 단일화 + 아바타/배너/뉴스 썸네일에 `sizes`/placeholder 적용, `<img>` 기반 모달 프리뷰를 `next/image`로 교체
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/repo/posts/mutation.ts`, `src/repo/answers/mutation.ts`, `src/repo/comments/mutation.ts`
+  - 변경: `src/components/atoms/Avatar.tsx`, `src/components/organisms/NoticeBanner.tsx`, `src/components/organisms/NewsSection.tsx`, `src/components/molecules/cards/NewsCard.tsx`
 
 #### (2025-12-20) [FE] P0-5 A11y 최소 기준(출시 차단만) (P0)
 
