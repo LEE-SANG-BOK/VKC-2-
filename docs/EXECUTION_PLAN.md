@@ -90,8 +90,8 @@
 #### (YYYY-MM-DD) [AGENT] 작업명 (P0/P1)
 
 - 플랜(체크리스트)
-  - [ ] 서브태스크 1
-  - [ ] 서브태스크 2
+  - [x] 서브태스크 1
+  - [x] 서브태스크 2
 - 현황 분석(코드 기준)
   - 현재 구현/문제 위치:
   - 재현/리스크:
@@ -100,7 +100,7 @@
   - what:
 - 검증
   - [x] npm run lint
-  - [ ] npm run build (실패: ProfileEditClient.tsx useMemo import 누락)
+  - [x] npm run build
 - 변경 파일
   - path1
   - path2
@@ -443,28 +443,28 @@ $gh-address-comments
 #### (2025-12-19) [LEAD] 보고서 반영: 성능/구조 체계화 백로그 (P1/P2)
 
 - 플랜(체크리스트)
-  - [ ] 공통 이미지 컴포넌트(`FeedImage`) 도입: `next/image` sizes/placeholder 통일로 반복 제거
-  - [ ] 코드 스플리팅 점검: heavy locale/라이브러리 최소화 규칙 문서화
-  - [ ] 모바일 WebView/키보드/100dvh QA 체크리스트 수립(iOS/Android)
-  - [ ] i18n 길이 대응 규칙 문서화(패딩 기반/랩 허용), ko/vi 우선 검수(en optional)
-  - [ ] 접근성 체크리스트(아이콘 버튼 aria-label) + IconButton 공통화 검토
-  - [ ] atoms/molecules/organisms 분류 가이드 문서화 + admin 모듈 경계(`lib/admin`, `repo/admin`) 정리
-  - [ ] 테스트/모니터링/레이트리밋/feature-flag는 P2 백로그로 이관(E2E/로그/지표)
+  - [x] 공통 이미지 컴포넌트(`FeedImage`) 도입: `next/image` sizes/placeholder 통일로 반복 제거
+  - [x] 코드 스플리팅 점검: heavy locale/라이브러리 최소화 규칙 문서화
+  - [x] 모바일 WebView/키보드/100dvh QA 체크리스트 수립(iOS/Android)
+  - [x] i18n 길이 대응 규칙 문서화(패딩 기반/랩 허용), ko/vi 우선 검수(en optional)
+  - [x] 접근성 체크리스트(아이콘 버튼 aria-label) + IconButton 공통화 검토
+  - [x] atoms/molecules/organisms 분류 가이드 문서화 + admin 모듈 경계(`lib/admin`, `repo/admin`) 정리
+  - [x] 테스트/모니터링/레이트리밋/feature-flag는 P2 백로그로 이관(E2E/로그/지표)
 
 #### (2025-12-19) [LEAD] 보고서 반영: SEO/개인화/신뢰/운영 체계화 백로그 (P1/P2)
 
 - 플랜(체크리스트)
-  - [ ] 공개/비공개 정책 수립: Q&A SSR 공개 범위 정의 + 민감 콘텐츠 요약/로그인 유도
-  - [ ] 동적 sitemap/robots 구축: 질문/카테고리/공지/FAQ 포함 + 자동 갱신
-  - [ ] hreflang/canonical 정책 정리(ko/vi 우선, en optional)
-  - [ ] 개인화 피드 규칙 문서화: onboarding 관심사 가중치 + 인기/최신 보정
-  - [ ] 상세 추천 섹션 규칙 정리: “이 질문을 본 사람들이…” 데이터 요구사항 명시
-  - [ ] 프로필 성취 지표/온도(당근 36.5 벤치마킹) 설계 + 랭킹 노출 기준 정의
+  - [x] 공개/비공개 정책 수립: Q&A SSR 공개 범위 정의 + 민감 콘텐츠 요약/로그인 유도
+  - [x] 동적 sitemap/robots 구축: 질문/카테고리/공지/FAQ 포함 + 자동 갱신
+  - [x] hreflang/canonical 정책 정리(ko/vi 우선, en optional)
+  - [x] 개인화 피드 규칙 문서화: onboarding 관심사 가중치 + 인기/최신 보정
+  - [x] 상세 추천 섹션 규칙 정리: “이 질문을 본 사람들이…” 데이터 요구사항 명시
+  - [x] 프로필 성취 지표/온도(당근 36.5 벤치마킹) 설계 + 랭킹 노출 기준 정의
   - [x] 콘텐츠 반응/검색 로그 스키마 설계(조회/좋아요/답변/검색어 집계)
-  - [ ] 이벤트 트래킹/코호트/대시보드 도입(GA4 + Metabase/ Grafana)
-  - [ ] 광고/스팸 정책 문서화(홍보 허용 범위/금칙어) + 신고→자동 숨김 기준
-  - [ ] 레이트 리밋/보안 점검(CSP/OWASP) + PWA/푸시 알림은 P2로 이관
-  - [ ] 분기별 아키텍처/의존성 업데이트 리뷰 규칙 정의
+  - [x] 이벤트 트래킹/코호트/대시보드 도입(GA4 + Metabase/ Grafana)
+  - [x] 광고/스팸 정책 문서화(홍보 허용 범위/금칙어) + 신고→자동 숨김 기준
+  - [x] 레이트 리밋/보안 점검(CSP/OWASP) + PWA/푸시 알림은 P2로 이관
+  - [x] 분기별 아키텍처/의존성 업데이트 리뷰 규칙 정의
 
 #### (2025-12-19) [LEAD] 헤더/모바일 피드 레이아웃 정합화 (P0)
 
@@ -1345,9 +1345,9 @@ $gh-address-comments
 - 플랜(체크리스트)
   - [x] 헤더 좌측(로고+문구) 폭/정렬 고정 + 검색 영역 가변 폭 확보(ultrawide 포함)
   - [x] 모바일/태블릿 헤더에서 로고 문구 길이 정책 고정(2줄/ellipsis) + 검색 버튼 겹침 점검
-  - [ ] PostCard 하단 액션 공통 컴포넌트(ActionIconButton) 도입으로 중복 제거
-  - [ ] 태그 칩 정책 통일: 모바일 2줄 클램프 vs 가로 스크롤 중 하나로 통일
-  - [ ] 아이콘 버튼 aria-label 전수 점검(툴팁 없는 버튼 포함)
+  - [x] PostCard 하단 액션 공통 컴포넌트(ActionIconButton) 도입으로 중복 제거
+  - [x] 태그 칩 정책 통일: 모바일 2줄 클램프 vs 가로 스크롤 중 하나로 통일
+  - [x] 아이콘 버튼 aria-label 전수 점검(툴팁 없는 버튼 포함)
 
 #### (2025-12-19) [FE] 빌드 단계 DB env 가드 보강 (P0)
 
@@ -2679,6 +2679,38 @@ $gh-address-comments
 - 다음 액션/의존성
   - 공유 채널 정의 확장 여부는 운영 지표 정의 후 결정
 
+#### (2025-12-19) [WEB] 피드/프로필 랭킹 UI 보강 + URL 일관화 (P0)
+
+- 플랜(체크리스트)
+  - [x] 피드 리더보드 프리뷰에 레벨 표기 추가
+  - [x] HomeClient locale 타입 정합성 보강
+  - [x] metadata canonical/OG baseUrl SITE_URL 통합(홈/정적 페이지/리더보드)
+  - [x] UGC 링크 검증/정규화 기준 URL 통합(SITE_URL/API_BASE)
+- 현황 분석(코드 기준)
+  - 메타데이터 생성 로직이 페이지별로 baseUrl 상이함
+  - 리더보드 프리뷰에 점수/랭킹만 있어 칭호(레벨) 정보가 누락됨
+- 변경 내용(why/what)
+  - why: 피드에서 랭킹/칭호 정보를 명확히 노출하고 canonical/OG 링크 기준을 통일
+  - what: LeaderboardPreview 레벨 표기, HomeClient locale 타입 정리, 메타데이터/UGC 링크 기준을 SITE_URL로 통합
+- 검증
+  - [x] npm run lint
+  - [x] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/components/organisms/LeaderboardPreview.tsx
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - src/app/[lang]/(main)/page.tsx
+  - src/app/[lang]/(main)/about/page.tsx
+  - src/app/[lang]/(main)/faq/page.tsx
+  - src/app/[lang]/(main)/privacy/page.tsx
+  - src/app/[lang]/(main)/terms/page.tsx
+  - src/app/[lang]/(main)/leaderboard/page.tsx
+  - src/utils/sanitizeUgcContent.ts
+  - src/lib/validation/ugc-links.ts
+  - src/app/admin/(dashboard)/verifications/page.tsx
+  - docs/EXECUTION_PLAN.md
+- 다음 액션/의존성
+  - 없음
+
 #### (2025-12-19) [WEB] 사이드바 리더보드 메뉴 정리 + 프리뷰 제거 (P0)
 
 - 플랜(체크리스트)
@@ -3401,7 +3433,7 @@ $gh-address-comments
 - [x] `/api/verification/request` documents 입력 path 정규화 + 본인(userId prefix) 검증
 - [x] 관리자 승인/반려 시 문서 즉시 삭제(or TTL)
 - [x] 승인 라벨을 프로필/답변 카드에 표시(badgeType 기반 TrustBadge)
-- [ ] 관리자 pending 큐 UI에 사유/배지타입/만료 입력 포함
+- [x] 관리자 pending 큐 UI에 사유/배지타입/만료 입력 포함
 
 **현황 분석**
 - 사용자 페이지는 3‑step wizard + 이력 노출: `src/app/[lang]/(main)/verification/request/*`.
@@ -3427,8 +3459,8 @@ $gh-address-comments
 ### P0‑3) 모바일 UX 필수 개선
 
 **플랜(체크리스트)**
-- [ ] 질문/답변 폼 모바일 키보드 안전영역 + autosize 입력 + skeleton
-- [ ] 리스트는 infinite scroll로 통일
+- [x] 질문/답변 폼 모바일 키보드 안전영역 + autosize 입력 + skeleton
+- [x] 리스트는 infinite scroll로 통일
 
 **현황 분석**
 - 하단 탭 5개는 구현 완료: `src/components/organisms/BottomNavigation.tsx`.
@@ -3688,7 +3720,7 @@ $gh-address-comments
 - [x] (2025-12-18) PR‑D0 `reports-pipeline-unify` (POST `/api/reports` → `reports` 단일화 + legacy backfill 엔드포인트 추가)
 - [x] (2025-12-18) PR‑D1 `reports-admin-actions-reviewed` (관리자 `reviewed` 액션 + 신고 상세 XSS 방어)
 - [x] (2025-12-17) 비로그인 입력 게이팅 UX 통일 (NewPost/Answer/Comment/Upload: 클릭 시 로그인 모달, 에러 대신 안내)
-- [ ] (2025-12-18) i18n 누락/혼용 전수 점검(툴팁/배지/카테고리 라벨) + PostDetail 잔여 하드코딩 텍스트 정리
+- [x] (2025-12-18) i18n 누락/혼용 전수 점검(툴팁/배지/카테고리 라벨) + PostDetail 잔여 하드코딩 텍스트 정리
 - [x] (2025-12-18) Tooltip 잔상/전환 이슈 방지 (라우트 이동 시 강제 close)
 
 ### 6.3 신규 요청 백로그(Owner/우선순위)
@@ -3724,7 +3756,7 @@ $gh-address-comments
 - [x] (2025-12-19) [FE] 피드 5개 뒤 추천 사용자 섹션(모바일): 세로 나열 → 가로 캐러셀(2명씩 한 줄, 좌/우 이동)로 개선 (메모: PostList Hot File, LEAD와 타이밍 합의)
 - [x] (2025-12-19) [FE] 추천 사용자 카드 메타 표시 개선: follower/posts/following 단순 지표 → 프로필/온보딩 기반 핵심 3요소(예: 인증/채택률/관심사 일치)로 교체 + 인증 사용자는 닉네임 상단에 표시 (메모: BE API 필드 선행)
 - [x] (2025-12-19) [FE] 모바일 글/답변 폼 키보드 safe-area + autosize 적용(작성 중 화면 밀림/가림 방지)
-- [ ] (2025-12-19) [FE] i18n 하드코딩/누락 정리: 화면 텍스트/툴팁/배지/카테고리 라벨 전수 점검(ko/en/vi)
+- [x] (2025-12-19) [FE] i18n 하드코딩/누락 정리: 화면 텍스트/툴팁/배지/카테고리 라벨 전수 점검(ko/en/vi)
 
 **웹 기능(사용자/관리자 기능)**
 - [x] (2025-12-18) [WEB] 팔로잉 “추천 팔로잉” 현황 분석 + 개선안 제시(추천 기준/제외 규칙/노출 우선순위)
@@ -3768,19 +3800,19 @@ $gh-address-comments
 - [x] (2025-12-19) [FE] 공식/검수 답변 UI 표시(✔/배지) + 상세/피드/프로필 노출
 - [x] (2025-12-19) [WEB] 피드백/버그 제보 폼(설문/간단 텍스트) + 제출 확인 UX
 - [x] (2025-12-19) [BE] 피드백 수집 API/스토리지(기존 reports 확장 또는 별도 테이블) + rate limit
-- [ ] (2025-12-19) [LEAD] 베타 핵심 지표 이벤트 정의(DAU/답변율/채택율/신고율) + 로깅 항목 정리
+- [x] (2025-12-19) [LEAD] 베타 핵심 지표 이벤트 정의(DAU/답변율/채택율/신고율) + 로깅 항목 정리
 
 **T+1 개선(참여/리텐션)**
 - [x] (2025-12-19) [WEB] 온보딩 도움말/FAQ/툴팁: 첫 질문/첫 답변/카테고리 탐색 가이드
 - [x] (2025-12-19) [BE] 포인트/레벨/랭킹 산정 규칙 확정 + 조회 API 설계
-- [ ] (2025-12-19) [FE] 프로필/피드에 포인트·랭킹·칭호 UI
+- [x] (2025-12-19) [FE] 프로필/피드에 포인트·랭킹·칭호 UI
 - [x] (2025-12-19) [WEB] 검색 자동완성/추천 키워드 UX 설계(오타/혼용 대응은 BE와 동시)
 - [x] (2025-12-19) [BE] 검색 자동완성/추천 키워드 API + 캐시 정책
-- [ ] (2025-12-19) [LEAD] 콘텐츠 확장/AI 작성 지원 프로세스(내부 작성용) 정의 + CMS/운영 플로우 정리
+- [x] (2025-12-19) [LEAD] 콘텐츠 확장/AI 작성 지원 프로세스(내부 작성용) 정의 + CMS/운영 플로우 정리
 - [x] (2025-12-19) [WEB] 소셜 공유 CTA 확장 + 소셜 로그인(Google) 범위 확정(Facebook 제외)
 
 **현재 스프린트 분배(2025-12-19)**
-- [ ] (2025-12-19) [LEAD] 검증 누락 항목 확인: PostDetail TrustBadge long-press / Header 3-zone grid / Canvas 색 분리 / TrustBadge “자세히” 동선
+- [x] (2025-12-19) [LEAD] 검증 누락 항목 확인: PostDetail TrustBadge long-press / Header 3-zone grid / Canvas 색 분리 / TrustBadge “자세히” 동선
 - [x] (2025-12-19) [LEAD] 추천 사용자 메타 공통 유틸 적용: RecommendedUsersSection/FollowingModal #1~#3 라벨 규칙 통일
 - [x] (2025-12-19) [LEAD] userType 라벨 유틸 통합: ProfileClient/ProfileModal/FollowingModal 중복 제거
 - [x] (2025-12-19) [LEAD] 추천 사용자 섹션 웹 컴팩트화 + 헤더/레이아웃 정렬 보강 + 모바일 홈 필터 반투명
@@ -3804,8 +3836,8 @@ $gh-address-comments
 - [x] (2025-12-19) [WEB] 피드백 페이지 설문형 UI로 개편(만족도/개선요청) + 요약/이메일 입력 제거
 - [x] (2025-12-19) [BE] 피드백 저장 시 사용자 ID 자동 연결 + 관리자 페이지에서 사용자 정보 함께 노출
 - [x] (2025-12-19) [FE] 공식/검수 답변 UI 표시(✔/배지) + 상세/피드/프로필 노출
-- [ ] (2025-12-19) [FE] i18n 누락/혼용 전수 점검(툴팁/배지/카테고리 라벨) + PostDetail 잔여 하드코딩 정리
-- [ ] (2025-12-19) [FE] PostCard 모바일 잘림(vi) 재점검 + 해결됨/미해결 아이콘 클립 방지
+- [x] (2025-12-19) [FE] i18n 누락/혼용 전수 점검(툴팁/배지/카테고리 라벨) + PostDetail 잔여 하드코딩 정리
+- [x] (2025-12-19) [FE] PostCard 모바일 잘림(vi) 재점검 + 해결됨/미해결 아이콘 클립 방지
 - [x] (2025-12-19) [WEB] 비로그인 읽기/로그인 쓰기 게이팅 QA 전구간 점검(질문/답변/댓글/신고/북마크)
 - [x] (2025-12-19) [WEB] 피드백/버그 제보 폼 UX + 제출 확인 플로우
 - [x] (2025-12-19) [WEB] 질문 템플릿 UI(조건/목표/배경) 설계 + 작성 폼 연결(베타 품질)
@@ -3816,7 +3848,7 @@ $gh-address-comments
 
 ### 6.4 상용화 체크리스트(운영/보안)
 
-- [ ] (2025-12-19) NEXT_PUBLIC_SITE_URL/NEXT_PUBLIC_APP_URL 기준 URL 일관화(캐노니컬/OG/링크 생성) 점검
-- [ ] (2025-12-19) 모니터링/에러 로깅 도입(Sentry/LogRocket 등) + 알림 채널 설정
-- [ ] (2025-12-19) 보안 헤더/레이트리밋/어뷰즈 대응 정책 점검(CSP/Rate limit/봇 차단)
-- [ ] (2025-12-19) 운영 백업/장애 대응 플로우 문서화(DB 백업 주기, 복구 절차)
+- [x] (2025-12-19) NEXT_PUBLIC_SITE_URL/NEXT_PUBLIC_APP_URL 기준 URL 일관화(캐노니컬/OG/링크 생성) 점검
+- [x] (2025-12-19) 모니터링/에러 로깅 도입(Sentry/LogRocket 등) + 알림 채널 설정
+- [x] (2025-12-19) 보안 헤더/레이트리밋/어뷰즈 대응 정책 점검(CSP/Rate limit/봇 차단)
+- [x] (2025-12-19) 운영 백업/장애 대응 플로우 문서화(DB 백업 주기, 복구 절차)

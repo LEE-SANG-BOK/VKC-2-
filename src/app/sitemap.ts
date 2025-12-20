@@ -1,9 +1,10 @@
 import { MetadataRoute } from 'next';
 import { desc } from 'drizzle-orm';
 import { CATEGORY_GROUP_SLUGS } from '@/lib/constants/category-groups';
+import { SITE_URL } from '@/lib/siteUrl';
 
 const locales = ['ko', 'en', 'vi'];
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+const baseUrl = SITE_URL;
 
 async function fetchPostsForSitemap() {
   const skipDb = process.env.SKIP_SITEMAP_DB === 'true';

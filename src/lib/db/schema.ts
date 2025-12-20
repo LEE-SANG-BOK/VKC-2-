@@ -50,6 +50,7 @@ export const users = pgTable('users', {
   interests: text('interests').array(),
   preferredLanguage: varchar('preferred_language', { length: 5 }).default('vi'),
   badgeType: varchar('badge_type', { length: 50 }),
+  badgeExpiresAt: timestamp('badge_expires_at'),
   trustScore: integer('trust_score').default(0).notNull(),
   helpfulAnswers: integer('helpful_answers').default(0).notNull(),
   adoptionRate: numeric('adoption_rate', { precision: 5, scale: 2 }).default('0').notNull(),

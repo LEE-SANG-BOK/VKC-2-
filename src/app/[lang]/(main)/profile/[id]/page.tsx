@@ -10,6 +10,7 @@ import { PaginatedResponse, UserPost, UserAnswer, UserComment } from '@/repo/use
 import { queryKeys } from '@/repo/keys';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 import { API_BASE } from '@/lib/apiBase';
+import { SITE_URL } from '@/lib/siteUrl';
 
 export const dynamicParams = true;
 export const revalidate = 60;
@@ -78,7 +79,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+  const baseUrl = SITE_URL;
   const currentUrl = `${baseUrl}/${lang}/profile/${id}`;
 
   const avatarSrc = normalizePostImageSrc(profile.avatar);
@@ -159,7 +160,7 @@ export default async function ProfilePage({ params }: PageProps) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+  const baseUrl = SITE_URL;
   const profileUrl = `${baseUrl}/${lang}/profile/${id}`;
 
   const queryClient = new QueryClient();

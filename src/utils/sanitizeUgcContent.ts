@@ -1,3 +1,6 @@
+import { API_BASE } from '@/lib/apiBase';
+import { SITE_URL } from '@/lib/siteUrl';
+
 /**
  * UGC 링크 안전화 유틸리티
  * 사용자 생성 콘텐츠(댓글, 게시글 등)의 링크에 rel="ugc" 속성을 추가하여
@@ -40,7 +43,7 @@ export function sanitizeUgcLinks(
   };
 
   const defaultInternalDomains = [
-    ...[process.env.NEXT_PUBLIC_APP_URL, process.env.NEXT_PUBLIC_SITE_URL]
+    ...[API_BASE, SITE_URL]
       .filter(Boolean)
       .map((value) => toHostname(String(value))),
     'example.com',
@@ -69,7 +72,7 @@ export function sanitizeUgcLinks(
       const existingRel = /rel=["']([^"']*)["']/i.exec(beforeHref + afterHref);
 
       // URL 파싱하여 내부/외부 도메인 확인
-      const url = new URL(href, process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com');
+      const url = new URL(href, SITE_URL);
       const isInternal = allInternalDomains.some(domain =>
         url.hostname === domain || url.hostname.endsWith(`.${domain}`)
       );

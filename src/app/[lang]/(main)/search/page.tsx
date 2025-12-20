@@ -6,6 +6,7 @@ import { fetchPosts } from '@/repo/posts/fetch';
 import { fetchCategories } from '@/repo/categories/fetch';
 import { queryKeys } from '@/repo/keys';
 import SearchClient from './SearchClient';
+import { SITE_URL } from '@/lib/siteUrl';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
     };
   })();
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vietkconnect.com';
+  const baseUrl = SITE_URL;
   const currentUrl = query 
     ? `${baseUrl}/${lang}/search?q=${encodeURIComponent(query)}`
     : `${baseUrl}/${lang}/search`;
