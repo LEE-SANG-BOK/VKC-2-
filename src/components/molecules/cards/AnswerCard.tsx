@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'nextjs-toploader/app';
 import { useSession } from 'next-auth/react';
-import { ThumbsUp, CheckCircle, ExternalLink, BadgeCheck } from 'lucide-react';
+import { ThumbsUp, CheckCircle, ExternalLink } from 'lucide-react';
 import UserChip from '@/components/molecules/user/UserChip';
 import { createSafeUgcMarkup } from '@/utils/sanitizeUgcContent';
 import { useToggleAnswerLike } from '@/repo/answers/mutation';
@@ -44,8 +44,6 @@ export default function AnswerCard({
   likes,
   isLiked = false,
   isAdopted = false,
-  isOfficial = false,
-  reviewStatus,
   post,
   locale = 'ko',
   translations,
@@ -62,18 +60,6 @@ export default function AnswerCard({
   const noTitleLabel = tCommon.noTitle || (locale === 'vi' ? 'Không có tiêu đề' : locale === 'en' ? 'No title' : '제목 없음');
   const adoptedLabel = tCommon.adopted || (locale === 'vi' ? 'Đã chọn' : locale === 'en' ? 'Adopted' : '채택됨');
   const helpfulLabel = tCommon.helpful || (locale === 'vi' ? 'Hữu ích' : locale === 'en' ? 'Helpful' : '도움됨');
-  const answerBadgeFallbacks = locale === 'en'
-    ? { officialAnswer: 'Official answer', reviewedAnswer: 'Reviewed answer' }
-    : locale === 'vi'
-      ? { officialAnswer: 'Câu trả lời chính thức', reviewedAnswer: 'Câu trả lời đã kiểm duyệt' }
-      : { officialAnswer: '공식 답변', reviewedAnswer: '검수 답변' };
-  const officialAnswerLabel = tCommon.officialAnswer || answerBadgeFallbacks.officialAnswer;
-  const reviewedAnswerLabel = tCommon.reviewedAnswer || answerBadgeFallbacks.reviewedAnswer;
-  const showReviewBadge = isOfficial || reviewStatus === 'approved';
-  const reviewBadgeLabel = isOfficial ? officialAnswerLabel : reviewedAnswerLabel;
-  const reviewBadgeClassName = isOfficial
-    ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700'
-    : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700';
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -152,12 +138,6 @@ export default function AnswerCard({
               <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {publishedAt}
               </span>
-              {showReviewBadge && (
-                <span className={`flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border ${reviewBadgeClassName}`}>
-                  <BadgeCheck className="w-3 h-3" />
-                  {reviewBadgeLabel}
-                </span>
-              )}
               {isAdopted && (
                 <span className="flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-semibold rounded-full border border-green-200 dark:border-green-700">
                   <CheckCircle className="w-3 h-3" />

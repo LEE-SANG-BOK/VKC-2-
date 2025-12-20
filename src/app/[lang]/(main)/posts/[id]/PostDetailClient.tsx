@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
-import { MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, HelpCircle, CheckCircle, ThumbsUp, AlertTriangle, Link as LinkIcon, BadgeCheck } from 'lucide-react';
+import { MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, HelpCircle, CheckCircle, ThumbsUp, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import Avatar from '@/components/atoms/Avatar';
 import UserChip from '@/components/molecules/user/UserChip';
 import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
@@ -239,13 +239,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const loadingLabel = tPost.loading || (locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...');
   const uncategorizedLabel = tCommon.uncategorized || (locale === 'vi' ? 'Chưa phân loại' : locale === 'en' ? 'Uncategorized' : '미지정');
   const anonymousLabel = tCommon.anonymous || (locale === 'vi' ? 'Người dùng ẩn danh' : locale === 'en' ? 'Anonymous user' : '익명 사용자');
-  const answerBadgeFallbacks = locale === 'en'
-    ? { officialAnswer: 'Official answer', reviewedAnswer: 'Reviewed answer' }
-    : locale === 'vi'
-      ? { officialAnswer: 'Câu trả lời chính thức', reviewedAnswer: 'Câu trả lời đã kiểm duyệt' }
-      : { officialAnswer: '공식 답변', reviewedAnswer: '검수 답변' };
-  const officialAnswerLabel = tPostDetail.officialAnswer || tCommon.officialAnswer || answerBadgeFallbacks.officialAnswer;
-  const reviewedAnswerLabel = tPostDetail.reviewedAnswer || tCommon.reviewedAnswer || answerBadgeFallbacks.reviewedAnswer;
   const shareCtaTitle =
     tPostDetail.shareCtaTitle ||
     (locale === 'vi' ? 'Chia sẻ bài viết' : locale === 'en' ? 'Share this post' : '이 글을 공유해 주세요');
@@ -756,8 +749,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     imageCount: item.imageCount,
     certifiedResponderCount: item.certifiedResponderCount,
     otherResponderCount: item.otherResponderCount,
-    officialAnswerCount: item.officialAnswerCount,
-    reviewedAnswerCount: item.reviewedAnswerCount,
     trustBadge: item.trustBadge,
     trustWeight: item.trustWeight,
     translations: translations || {},
@@ -2532,19 +2523,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                 <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                   {formatDateTime(answer.publishedAt, locale)}
                                 </span>
-                                {(() => {
-                                  if (!answer.isOfficial && answer.reviewStatus !== 'approved') return null;
-                                  const label = answer.isOfficial ? officialAnswerLabel : reviewedAnswerLabel;
-                                  const badgeClassName = answer.isOfficial
-                                    ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700'
-                                    : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700';
-                                  return (
-                                    <span className={`flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border whitespace-nowrap ${badgeClassName}`}>
-                                      <BadgeCheck className="w-3 h-3" />
-                                      {label}
-                                    </span>
-                                  );
-                                })()}
                                 {answer.isAdopted && (
                                   <span className="flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-semibold rounded-full border border-green-200 dark:border-green-700 whitespace-nowrap">
                                     <CheckCircle className="w-3 h-3" />

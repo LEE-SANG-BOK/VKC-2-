@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { BadgeCheck, Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
+import { Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
 import ActionIconButton from '@/components/atoms/ActionIconButton';
@@ -65,7 +65,7 @@ interface PostCardProps {
   reviewedAnswerCount?: number;
 }
 
-export default function PostCard({ id, author, title, excerpt, tags, stats, category, subcategory, thumbnail, thumbnails, publishedAt, isQuestion, isAdopted, isLiked: initialIsLiked, isBookmarked: initialIsBookmarked, sourceLabel, trustBadge, translations, imageCount: imageCountProp, certifiedResponderCount, otherResponderCount, officialAnswerCount, reviewedAnswerCount }: PostCardProps) {
+export default function PostCard({ id, author, title, excerpt, tags, stats, category, subcategory, thumbnail, thumbnails, publishedAt, isQuestion, isAdopted, isLiked: initialIsLiked, isBookmarked: initialIsBookmarked, sourceLabel, trustBadge, translations, imageCount: imageCountProp, certifiedResponderCount, otherResponderCount }: PostCardProps) {
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
@@ -83,13 +83,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const linkCopiedLabel = t.linkCopied || (locale === 'vi' ? 'Đã sao chép liên kết!' : locale === 'en' ? 'Link copied!' : '링크가 복사되었습니다!');
   const copyFailedLabel = t.copyFailed || (locale === 'vi' ? 'Không thể sao chép liên kết.' : locale === 'en' ? 'Failed to copy link.' : '복사에 실패했습니다.');
   const sourcePrefix = tCommon.source || (locale === 'vi' ? 'Nguồn' : locale === 'en' ? 'Source' : '출처');
-  const answerBadgeFallbacks = locale === 'en'
-    ? { officialAnswer: 'Official answer', reviewedAnswer: 'Reviewed answer' }
-    : locale === 'vi'
-      ? { officialAnswer: 'Câu trả lời chính thức', reviewedAnswer: 'Câu trả lời đã kiểm duyệt' }
-      : { officialAnswer: '공식 답변', reviewedAnswer: '검수 답변' };
-  const officialAnswerLabel = tCommon.officialAnswer || answerBadgeFallbacks.officialAnswer;
-  const reviewedAnswerLabel = tCommon.reviewedAnswer || answerBadgeFallbacks.reviewedAnswer;
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -117,22 +110,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
   const certifiedCount = Math.max(0, certifiedResponderCount ?? 0);
   const otherCount = Math.max(0, otherResponderCount ?? 0);
-  const officialCount = Math.max(0, officialAnswerCount ?? 0);
-  const reviewedCount = Math.max(0, reviewedAnswerCount ?? 0);
-  const verifiedSummaryTooltip = tTrust.verifiedUserTooltip || tTrust.verifiedTooltip || (locale === 'vi'
-    ? 'Câu trả lời từ người dùng đã xác minh danh tính.'
-    : locale === 'en'
-      ? 'Answers from users whose identity has been verified.'
-      : '신분이 확인된 사용자의 답변입니다.');
   const responseNoun = isQuestion
     ? (locale === 'en' ? 'answers' : tCommon.answer || (locale === 'vi' ? 'Trả lời' : '답변'))
     : (locale === 'en' ? 'comments' : tCommon.comment || (locale === 'vi' ? 'Bình luận' : '댓글'));
-  const responseNounCompact = locale === 'vi'
-    ? (isQuestion ? 'trả lời' : 'bình luận')
-    : responseNoun;
-  const certifiedCompactLabel = certifiedCount > 0
-    ? `+${certifiedCount} ${responseNounCompact}`
-    : '';
   const certifiedSummaryLabel = certifiedCount > 0
     ? (otherCount > 0
       ? (tPost.certifiedResponderSummary
@@ -141,7 +121,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             .replace('{others}', String(otherCount))
             .replace('{noun}', responseNoun)
         : locale === 'vi'
-          ? `${responseNoun} từ ${certifiedCount} người dùng đã xác minh và ${otherCount} người khác`
+          ? `Có ${responseNoun.toLowerCase()} từ ${certifiedCount} người dùng đã xác minh và ${otherCount} người khác`
           : locale === 'en'
             ? `${certifiedCount} certified users + ${otherCount} others left ${responseNoun}`
             : `인증 사용자 ${certifiedCount}명 외 ${otherCount}명의 ${responseNoun}이 있습니다`)
@@ -150,16 +130,19 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             .replace('{certified}', String(certifiedCount))
             .replace('{noun}', responseNoun)
         : locale === 'vi'
-          ? `${responseNoun} từ ${certifiedCount} người dùng đã xác minh`
+          ? `Có ${responseNoun.toLowerCase()} từ ${certifiedCount} người dùng đã xác minh`
           : locale === 'en'
             ? `${certifiedCount} certified users left ${responseNoun}`
             : `인증 사용자 ${certifiedCount}명의 ${responseNoun}이 있습니다`))
     : '';
-  const buildBadgeLabel = (label: string, count: number) => (count > 1 ? `${label} ${count}` : label);
-  const showOfficialBadge = isQuestion && officialCount > 0;
-  const showReviewedBadge = isQuestion && reviewedCount > 0;
-  const officialBadgeLabel = showOfficialBadge ? buildBadgeLabel(officialAnswerLabel, officialCount) : '';
-  const reviewedBadgeLabel = showReviewedBadge ? buildBadgeLabel(reviewedAnswerLabel, reviewedCount) : '';
+  const verifiedSummaryTooltip = tTrust.verifiedUserTooltip || tTrust.verifiedTooltip || (locale === 'vi'
+    ? 'Câu trả lời từ người dùng đã xác minh danh tính.'
+    : locale === 'en'
+      ? 'Answers from users whose identity has been verified.'
+      : '신분이 확인된 사용자의 답변입니다.');
+  const certifiedTooltipContent = certifiedSummaryLabel
+    ? `${certifiedSummaryLabel} - ${verifiedSummaryTooltip}`
+    : verifiedSummaryTooltip;
 
   const anonymousFallback = tCommon.anonymous || (locale === 'vi' ? 'Người dùng' : locale === 'en' ? 'User' : '사용자');
   const safeName = (raw?: string) => safeDisplayName(raw, anonymousFallback);
@@ -634,8 +617,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       ) : null}
 
       <div className="question-card-actions">
-        <div className="question-card-footer-fixed">
-          <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
+        <div className="question-card-footer-fixed !flex-nowrap !gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1 flex-nowrap">
             <button
               type="button"
               onClick={handleAnswerCountClick}
@@ -645,34 +628,22 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span className="truncate tabular-nums">{responseCount}</span>
             </button>
-            {showOfficialBadge ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-blue-600 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300 min-w-0 max-w-full">
-                <BadgeCheck className="h-3 w-3 shrink-0" />
-                <span className="min-w-0 break-words whitespace-normal leading-tight">{officialBadgeLabel}</span>
-              </span>
-            ) : null}
-            {showReviewedBadge ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-emerald-600 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 min-w-0 max-w-full">
-                <BadgeCheck className="h-3 w-3 shrink-0" />
-                <span className="min-w-0 break-words whitespace-normal leading-tight">{reviewedBadgeLabel}</span>
-              </span>
-            ) : null}
             {certifiedSummaryLabel ? (
-              <Tooltip content={verifiedSummaryTooltip} position="top">
-                <>
-                  <span className="inline-flex flex-wrap items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-200 min-w-0 md:hidden leading-tight">
-                    <CircleCheck className="h-3 w-3 shrink-0" />
-                    <span className="min-w-0 break-words whitespace-normal sm:truncate">{certifiedCompactLabel}</span>
-                  </span>
-                  <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-200 min-w-0 leading-tight">
-                    <CircleCheck className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{certifiedSummaryLabel}</span>
-                  </span>
-                </>
+              <Tooltip content={certifiedTooltipContent} position="top">
+                <button
+                  type="button"
+                  onClick={handleAnswerCountClick}
+                  aria-label={certifiedTooltipContent}
+                  title={certifiedSummaryLabel}
+                  className="group inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/70 px-2 py-1 text-[11px] font-semibold text-blue-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-100/80 hover:text-blue-800 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-blue-900/60 dark:bg-blue-900/30 dark:text-blue-200 dark:hover:border-blue-700 dark:hover:bg-blue-900/50 dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[220px] sm:max-w-none"
+                >
+                  <CircleCheck className="h-3 w-3 shrink-0 transition-transform duration-200 group-hover:scale-110 group-hover:animate-pulse" />
+                  <span className="truncate">{certifiedSummaryLabel}</span>
+                </button>
               </Tooltip>
             ) : null}
           </div>
-          <div className="question-card-actions-row shrink-0">
+          <div className="question-card-actions-row shrink-0 !w-auto !ml-auto !flex-nowrap !gap-2">
             <Tooltip content={likeLabel} position="top">
               <ActionIconButton
                 icon={<ThumbsUp className={`w-4 h-4 ${localIsLiked ? 'fill-current' : ''}`} />}
