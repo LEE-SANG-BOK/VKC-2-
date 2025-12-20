@@ -5,6 +5,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import { Bug, MessageSquare, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSubmitFeedback } from '@/repo/feedback/mutation';
+import { ApiError } from '@/lib/api/errors';
 
 interface FeedbackClientProps {
   translations: Record<string, unknown>;
@@ -17,6 +18,7 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
 
   const t = (translations?.feedback || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tErrors = (translations?.errors || {}) as Record<string, string>;
 
   const [type, setType] = useState<'feedback' | 'bug'>('feedback');
   const [rating, setRating] = useState<number | null>(null);
@@ -145,6 +147,15 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
       });
       setSubmitted(true);
     } catch (error) {
+      if (error instanceof ApiError) {
+        const translated =
+          (error.code && tErrors[error.code]) ||
+          (error.status === 429 && tErrors.RATE_LIMITED) ||
+          '';
+        const suffix = error.retryAfterSeconds ? ` (${error.retryAfterSeconds}s)` : '';
+        toast.error((translated || error.message || copy.submitError) + suffix);
+        return;
+      }
       toast.error(error instanceof Error ? error.message : copy.submitError);
     }
   };

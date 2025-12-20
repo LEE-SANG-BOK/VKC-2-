@@ -1,5 +1,5 @@
 import type { Comment, ApiResponse, CreateCommentRequest, UpdateCommentRequest } from './types';
-import { ApiError, AccountRestrictedError } from '@/lib/api/errors';
+import { ApiError, AccountRestrictedError, getRetryAfterSeconds } from '@/lib/api/errors';
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 export async function fetchPostComments(postId: string): Promise<ApiResponse<Comment[]>> {
@@ -26,7 +26,12 @@ export async function createPostComment(postId: string, data: CreateCommentReque
     if (res.status === 403) {
       throw new AccountRestrictedError(error.error || 'Account restricted');
     }
-    throw new ApiError(error.error || 'Failed to create comment', res.status, error.code);
+    throw new ApiError(
+      error.error || 'Failed to create comment',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();
@@ -41,7 +46,12 @@ export async function updateComment(id: string, data: UpdateCommentRequest): Pro
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || 'Failed to update comment');
+    throw new ApiError(
+      error.error || 'Failed to update comment',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();
@@ -54,7 +64,12 @@ export async function deleteComment(id: string): Promise<ApiResponse<null>> {
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || 'Failed to delete comment');
+    throw new ApiError(
+      error.error || 'Failed to delete comment',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();
@@ -67,7 +82,12 @@ export async function toggleCommentLike(commentId: string): Promise<ApiResponse<
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || 'Failed to toggle like');
+    throw new ApiError(
+      error.error || 'Failed to toggle like',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();

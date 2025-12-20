@@ -376,7 +376,7 @@ $gh-address-comments
 - [ ] P0-3 (FE: 모바일 키보드/스크롤 UX 하드닝)
 - [ ] P0-4 (WEB/FE: 이미지 표준화 + 코드 스플리팅 + Query 튜닝)
 - [ ] P0-5 (FE: A11y 최소 기준)
-- [ ] P0-6 (BE/WEB: rate limit + 429 UX)
+- [x] P0-6 (BE/WEB: rate limit + 429 UX)
 - [x] P0-7 (LEAD/WEB: Playwright 스모크/게이트)
 - [x] P0-8 (LEAD/BE/WEB: 이벤트 스키마 + 수집)
 - [ ] P0-9 (LEAD/FE: 크로스브라우징 QA)
@@ -1050,9 +1050,9 @@ $gh-address-comments
 #### (2025-12-20) [BE] P0-6 Rate limit 필수 적용(쓰기 API 우선) (P0)
 
 - 플랜(체크리스트)
-  - [ ] [BE] rate limit 유틸 + 정책 정의
-  - [ ] [WEB] 429 UX 처리(토스트/재시도 안내)
-  - [ ] [LEAD] 적용 엔드포인트 목록 확정
+  - [x] [BE] 429 응답 스키마/Retry-After 통일(피드백 포함)
+  - [x] [WEB] 429 UX 처리(ko/vi 에러키 + Retry-After 표시)
+  - [x] [LEAD] 적용 엔드포인트 목록 확정
 
 - 목표: 스팸/남용 방어(출시 직후 가장 흔한 장애 요인)
 - 작업
@@ -1061,6 +1061,16 @@ $gh-address-comments
   - 적용 우선순위(필수): 글/답변/댓글/신고/피드백/인증 요청 + 비용 큰 읽기(검색/키워드 추천 등)
   - 429 응답 규격 통일 + 프론트 UX 처리(토스트/재시도 안내, `Retry-After` 준수)
 - 완료 기준: 지정된 엔드포인트에서 임계치 초과 시 429 + 클라이언트 UX 처리 완료
+
+- 최근 구현(2025-12-21)
+  - 429 응답 표준화
+    - `POST /api/feedback`: rateLimitResponse + Retry-After 적용
+    - `middleware.ts`: write-method 429 응답 스키마 통일(이전 작업)
+  - 429 UX 처리(클라)
+    - ApiError에 `retryAfterSeconds` 추가 + fetch 레이어에서 `Retry-After` 전달
+    - ko/vi errors에 `*_RATE_LIMITED` 키 추가 후 토스트에 반영
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/api/feedback/route.ts`, `src/lib/api/errors.ts`, `src/repo/**/fetch.ts`, `src/app/[lang]/(main)/feedback/FeedbackClient.tsx`, `src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx`, `messages/ko.json`, `messages/vi.json`
 
 #### (2025-12-20) [LEAD] P0-7 Playwright 필수 도입(릴리즈 게이트) (P0)
 

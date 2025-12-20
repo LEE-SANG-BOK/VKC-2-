@@ -797,6 +797,14 @@
     "COMMENT_LOW_QUALITY": "Bình luận quá đơn giản hoặc lặp lại. Vui lòng chỉnh sửa.",
     "COMMENT_PARENT_NOT_FOUND": "Không tìm thấy bình luận gốc.",
     "COMMENT_PARENT_MISMATCH": "Yêu cầu không hợp lệ.",
-    "CONTENT_PROHIBITED": "Phát hiện từ ngữ cấm, quảng cáo hoặc thông tin liên hệ. Vui lòng chỉnh sửa."
+    "CONTENT_PROHIBITED": "Phát hiện từ ngữ cấm, quảng cáo hoặc thông tin liên hệ. Vui lòng chỉnh sửa.",
+    "RATE_LIMITED": "Bạn gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
+    "POST_RATE_LIMITED": "Bạn đăng bài quá nhiều lần. Vui lòng thử lại sau.",
+    "ANSWER_RATE_LIMITED": "Bạn gửi câu trả lời quá nhiều lần. Vui lòng thử lại sau.",
+    "COMMENT_RATE_LIMITED": "Bạn bình luận quá nhiều lần. Vui lòng thử lại sau.",
+    "REPORT_RATE_LIMITED": "Bạn gửi báo cáo quá nhiều lần. Vui lòng thử lại sau.",
+    "FEEDBACK_RATE_LIMITED": "Bạn gửi phản hồi quá nhiều lần. Vui lòng thử lại sau.",
+    "VERIFICATION_RATE_LIMITED": "Bạn gửi yêu cầu xác minh quá nhiều lần. Vui lòng thử lại sau.",
+    "PROBE_RATE_LIMITED": "Bạn gửi quá nhiều yêu cầu. Vui lòng thử lại sau."
   }
 }

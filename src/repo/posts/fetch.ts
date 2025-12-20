@@ -13,7 +13,7 @@ import type {
   UpdatePostRequest,
   PostFilters,
 } from './types';
-import { ApiError, AccountRestrictedError } from '@/lib/api/errors';
+import { ApiError, AccountRestrictedError, getRetryAfterSeconds } from '@/lib/api/errors';
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 type FetchOptions = {
@@ -243,7 +243,12 @@ export async function createPost(data: CreatePostRequest): Promise<ApiResponse<P
     if (res.status === 403) {
       throw new AccountRestrictedError(error.error || 'Account restricted');
     }
-    throw new ApiError(error.error || error.message || 'Failed to create post', res.status, error.code);
+    throw new ApiError(
+      error.error || error.message || 'Failed to create post',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();
@@ -264,7 +269,12 @@ export async function updatePost(id: string, data: UpdatePostRequest): Promise<A
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.message || 'Failed to update post');
+    throw new ApiError(
+      error.error || error.message || 'Failed to update post',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();
@@ -280,7 +290,12 @@ export async function deletePost(id: string): Promise<ApiResponse<null>> {
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.message || 'Failed to delete post');
+    throw new ApiError(
+      error.error || error.message || 'Failed to delete post',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();
@@ -296,7 +311,12 @@ export async function togglePostLike(postId: string): Promise<ApiResponse<{ isLi
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.message || 'Failed to toggle like');
+    throw new ApiError(
+      error.error || error.message || 'Failed to toggle like',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();
@@ -314,7 +334,12 @@ export async function togglePostBookmark(
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.message || 'Failed to toggle bookmark');
+    throw new ApiError(
+      error.error || error.message || 'Failed to toggle bookmark',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();
@@ -331,7 +356,12 @@ export async function incrementPostView(postId: string): Promise<ApiResponse<{ v
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.message || 'Failed to increment view');
+    throw new ApiError(
+      error.error || error.message || 'Failed to increment view',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();

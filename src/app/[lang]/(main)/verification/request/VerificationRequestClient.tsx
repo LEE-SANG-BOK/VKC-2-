@@ -24,6 +24,7 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
   const { status } = useSession();
   const t = (translations?.verification || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tErrors = (translations?.errors || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
   const fallback = useMemo(() => {
     if (lang === 'en') {
@@ -490,6 +491,16 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
               VERIFICATION_DOCUMENT_NOT_OWNED: documentNotOwnedErrorLabel,
             }[error.code]
           : null;
+
+      if (error instanceof ApiError) {
+        const fallbackMessage =
+          (error.code && tErrors[error.code]) ||
+          (error.status === 429 && tErrors.RATE_LIMITED) ||
+          '';
+        const suffix = error.retryAfterSeconds ? ` (${error.retryAfterSeconds}s)` : '';
+        toast.error((translated || fallbackMessage || error.message || submitErrorLabel) + suffix);
+        return;
+      }
 
       toast.error(translated || (error instanceof Error ? error.message : submitErrorLabel));
     } finally {

@@ -1,4 +1,5 @@
 import type { FeedbackPayload, FeedbackReceipt, ApiResponse } from './types';
+import { ApiError, getRetryAfterSeconds } from '@/lib/api/errors';
 
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -25,7 +26,12 @@ export async function submitFeedback(
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || error.error || '피드백 제출에 실패했습니다.');
+    throw new ApiError(
+      error.error || error.message || '피드백 제출에 실패했습니다.',
+      res.status,
+      error.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return res.json();
