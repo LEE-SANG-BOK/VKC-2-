@@ -377,7 +377,7 @@ $gh-address-comments
 - [ ] P0-4 (WEB/FE: 이미지 표준화 + 코드 스플리팅 + Query 튜닝)
 - [ ] P0-5 (FE: A11y 최소 기준)
 - [ ] P0-6 (BE/WEB: rate limit + 429 UX)
-- [ ] P0-7 (LEAD/WEB: Playwright 스모크/게이트)
+- [x] P0-7 (LEAD/WEB: Playwright 스모크/게이트)
 - [ ] P0-8 (LEAD/BE/WEB: 이벤트 스키마 + 수집)
 - [ ] P0-9 (LEAD/FE: 크로스브라우징 QA)
 - [ ] P0-10 (LEAD/WEB/BE/FE: 가이드라인 v1)
@@ -1058,8 +1058,8 @@ $gh-address-comments
 #### (2025-12-20) [LEAD] P0-7 Playwright 필수 도입(릴리즈 게이트) (P0)
 
 - 플랜(체크리스트)
-  - [ ] [WEB] Playwright 스모크 시나리오 작성
-  - [ ] [LEAD] 릴리즈 게이트/CI 연결 문서화
+  - [x] [WEB] Playwright 스모크 시나리오 작성
+  - [x] [LEAD] 릴리즈 게이트/CI 연결 문서화
 
 - 목표: 최소 자동화로 “깨짐”을 배포 전에 잡는다
 - 작업
@@ -1070,13 +1070,20 @@ $gh-address-comments
     - 검색 페이지/상세 진입
     - 글쓰기 시도 → 로그인 모달/게이팅 동작 확인
     - Rate limit 429 동작(테스트 가능한 조건/엔드포인트 포함)
+- 구현(코드 변경)
+  - Playwright 도입
+    - `package.json`에 `test:e2e` 추가
+    - `playwright.config.ts` 추가(로컬은 `dev`, CI는 `start` 기반)
+    - `e2e/smoke.spec.ts` 스모크 3종(정적 페이지, 언어 스위치, rate limit 429)
+  - Rate limit 스모크용 probe 엔드포인트
+    - `src/app/api/probe/rate-limit/route.ts` (env `ENABLE_PROBE_ENDPOINTS=true`일 때만 활성)
+  - CI 게이트 연결
+    - `.github/workflows/ci.yml`에 Playwright 브라우저 설치 + `npm run test:e2e` 추가
 - 릴리즈 게이트 설계(필수, C)
-  - CI(PR): 정적 게이트만 유지(항상 필수)
-    - `npm run lint` → `npm run type-check` → `SKIP_SITEMAP_DB=true npm run build` (`.github/workflows/ci.yml:1`)
-  - Release(Staging): E2E 게이트(항상 필수)
-    - Playwright 스모크(Chromium + WebKit + Mobile viewport 1종)
-    - Rate limit 스모크(429): 미인증/무DB로도 검증 가능한 방식 우선(예: `POST /api/__probe__` 반복 호출로 middleware 429 확인, `middleware.ts:1`)
-    - 성공/실패 기준을 “배포 전 체크리스트”에 고정(실패 시 배포 중단)
+  - CI(PR): “정적 + E2E” 게이트(항상 필수)
+    - `npm run lint` → `npm run type-check` → `SKIP_SITEMAP_DB=true npm run build` → `npm run test:e2e` (`.github/workflows/ci.yml:1`)
+    - E2E에는 429 스모크(`GET /api/probe/rate-limit`) 포함
+  - Release(Staging): 동일 스모크를 스테이징 URL로 재실행(필요 시 `E2E_BASE_URL` 사용)
   - Local(개발자): 빠른 게이트 + 필요 시 E2E
     - 빠른 게이트는 항상 수행, E2E는 “스테이징 URL 또는 로컬 데이터 환경”이 준비된 경우에만 수행
   - 스크립트 정렬(필요)

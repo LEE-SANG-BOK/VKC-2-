@@ -20,7 +20,13 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy
       SUPABASE_SERVICE_ROLE_KEY: dummy
+      NEXTAUTH_URL: https://example.com
+      NEXTAUTH_SECRET: dummy
+      AUTH_TRUST_HOST: 'true'
+      GOOGLE_CLIENT_ID: dummy
+      GOOGLE_CLIENT_SECRET: dummy
       SKIP_SITEMAP_DB: 'true'
+      ENABLE_PROBE_ENDPOINTS: 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +47,12 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: E2E (Playwright)
+        run: npm run test:e2e
 
       - name: Audit
         run: npm audit --audit-level=moderate

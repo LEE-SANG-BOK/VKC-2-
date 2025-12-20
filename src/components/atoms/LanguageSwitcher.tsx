@@ -48,9 +48,11 @@ export default function LanguageSwitcher() {
   }, []);
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef} data-testid="language-switcher">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Language"
+        data-testid="language-switcher-toggle"
         className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 sm:py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-300"
       >
         <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -59,11 +61,15 @@ export default function LanguageSwitcher() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-32 sm:w-40 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div
+          className="absolute right-0 mt-2 w-32 sm:w-40 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+          data-testid="language-switcher-menu"
+        >
           {visibleLocales.map((locale) => (
             <button
               key={locale}
               onClick={() => handleLocaleChange(locale)}
+              data-testid={`language-option-${locale}`}
               className={`w-full text-left px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors first:rounded-t-lg last:rounded-b-lg ${currentLocale === locale ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-300'
                 }`}
             >

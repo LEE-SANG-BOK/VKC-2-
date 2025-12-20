@@ -19,6 +19,7 @@
     "audit:accessibility": "node scripts/accessibility-audit.js",
     "audit:performance": "node scripts/performance-audit.js",
     "audit:full": "npm run audit:accessibility && npm run audit:performance",
+    "test:e2e": "playwright test",
     "quality": "node scripts/guardians/quality-guardian.js",
     "workflow": "node scripts/management/workflow-manager.js",
     "github:auto": "node scripts/automation/github-auto-issue.js"
@@ -70,6 +71,7 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/minimatch": "^5.1.2",
     "@types/node": "^20",
