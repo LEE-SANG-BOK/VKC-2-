@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, HelpCircle, CheckCircle, ThumbsUp, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -432,8 +431,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const adoptSuccessLabel = tCommon.adopt || postDetailFallbacks.adoptSuccess;
   const adoptFailedLabel = tPostDetail.adoptFailed || postDetailFallbacks.adoptFailed;
   const linkCopiedLabel = tPostDetail.linkCopied || postDetailFallbacks.linkCopied;
-  const closeLabel = tCommon.close || postDetailFallbacks.close;
-  const copyLinkActionLabel = tCommon.copyLink || postDetailFallbacks.copyLink;
   const reportTargetPostLabel = tCommon.post || postDetailFallbacks.postLabel;
   const reportTargetReplyLabel = tCommon.reply || postDetailFallbacks.replyLabel;
   const reportTargetCommentLabel = tCommon.comment || postDetailFallbacks.commentLabel;
@@ -720,8 +717,9 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       })
       .slice(0, 4);
   }, [categoryPopularQuery.data?.data, post.id, relatedPosts]);
-  const showRelatedSection = Boolean(relatedFilters);
-  const showCategorySection = Boolean(categoryFilters);
+  const relatedMinCount = 2;
+  const showRelatedSection = Boolean(relatedFilters) && (relatedPostsQuery.isLoading || relatedPosts.length >= relatedMinCount);
+  const showCategorySection = Boolean(categoryFilters) && !showRelatedSection;
   const showRecommendations = showRelatedSection || showCategorySection;
 
   const trustBadgePresentation = getTrustBadgePresentation({
@@ -950,6 +948,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const answersRef = useRef<HTMLDivElement | null>(null);
+  const shareCtaRef = useRef<HTMLDivElement | null>(null);
   const answersLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const commentsLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const answersHashHandledRef = useRef(false);
@@ -959,7 +958,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const [editPostContent, setEditPostContent] = useState('');
   const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
   const [editAnswerContent, setEditAnswerContent] = useState('');
-  const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [showAnswerEditor, setShowAnswerEditor] = useState(true);
   const [helpfulLoadingId, setHelpfulLoadingId] = useState<string | null>(null);
 
@@ -1669,7 +1667,9 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   };
 
   const handleShare = () => {
-    setShareMenuOpen(true);
+    if (!shareCtaRef.current) return;
+    shareCtaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    shareCtaRef.current.focus({ preventScroll: true });
   };
 
   const openReportDialog = (type: 'post' | 'comment' | 'answer', id: string) => {
@@ -2066,7 +2066,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       locale,
       metadata: { channel: 'facebook' },
     });
-    setShareMenuOpen(false);
   };
 
   const handleShareX = () => {
@@ -2079,7 +2078,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       locale,
       metadata: { channel: 'x' },
     });
-    setShareMenuOpen(false);
   };
 
   const handleShareTelegram = () => {
@@ -2092,7 +2090,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       locale,
       metadata: { channel: 'telegram' },
     });
-    setShareMenuOpen(false);
   };
 
   const handleCopyLink = async () => {
@@ -2110,7 +2107,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     } catch (error) {
       console.error('Failed to copy link', error);
     } finally {
-      setShareMenuOpen(false);
     }
   };
 
@@ -2339,16 +2335,20 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             <Tooltip content={reportLabel} position="top">
               <button
                 onClick={() => openReportDialog('post', post.id)}
-                className="ml-auto flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 border border-red-100 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-800/50 transition-colors"
+                aria-label={reportLabel}
+                className="ml-auto inline-flex items-center justify-center rounded-full p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
               >
                 <Flag className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="font-semibold text-sm sm:text-base">{reportLabel}</span>
               </button>
             </Tooltip>
           </div>
             )}
             {!isEditingPost && (
-              <div className="mt-4 sm:mt-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-4 sm:p-5">
+              <div
+                ref={shareCtaRef}
+                tabIndex={-1}
+                className="mt-4 sm:mt-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-4 sm:p-5"
+              >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">{shareCtaTitle}</p>
@@ -3360,7 +3360,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           )}
         </section>
         {showRecommendations ? (
-          <section className="mt-8 sm:mt-10 space-y-8">
+          <section className="mt-8 sm:mt-10 space-y-8 border-t border-gray-200 dark:border-gray-700 pt-8 sm:pt-10">
             {showRelatedSection ? (
               <div className="space-y-4">
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
@@ -3408,43 +3408,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           </section>
         ) : null}
       </main>
-
-      {shareMenuOpen && typeof document !== 'undefined'
-        ? createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShareMenuOpen(false)}>
-            <div
-              className="w-full max-w-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">{shareLabel}</span>
-                <button
-                  onClick={() => setShareMenuOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                  aria-label={closeLabel}
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
-                <button onClick={handleShareFacebook} className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
-                  Facebook
-                </button>
-                <button onClick={handleShareX} className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
-                  X (Twitter)
-                </button>
-                <button onClick={handleShareTelegram} className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
-                  Telegram
-                </button>
-                <button onClick={handleCopyLink} className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
-                  {copyLinkActionLabel}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )
-        : null}
 
       {/* Report Dialog */}
       {showReportDialog && (
