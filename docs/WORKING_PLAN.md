@@ -961,9 +961,9 @@ $gh-address-comments
 #### (2025-12-20) [LEAD] P0-0 운영/병렬 규칙 고정 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [LEAD] Hot File 잠금/소유권 요약 1페이지 반영
+  - [x] [LEAD] Hot File 잠금/소유권 요약 1페이지 반영
   - [ ] [LEAD] i18n 키 담당/요청 프로세스 확정
-  - [ ] [LEAD] 게이트(lint/type-check/build + Playwright) 고정
+  - [x] [LEAD] 게이트(lint/type-check/build + Playwright) 고정
 
 - 목표: Hot File 충돌/번역키 충돌/통합 타이밍 문제를 구조적으로 차단
 - 작업

@@ -11,6 +11,28 @@
 
 ## 0. 작업 운영 원칙
 
+### 0.0 운영 1페이지 요약(SoT)
+
+- 작업 위치/브랜치
+  - 워크트리: `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2`
+  - 브랜치: `codex-integration` (단일 워크트리/단일 브랜치/단일 PR로 누적 진행)
+- Hot File(충돌 방지: LEAD만 최종 머지)
+  - `src/components/organisms/Header.tsx`
+  - `src/components/templates/MainLayout.tsx`
+  - `src/components/organisms/PostList.tsx`
+  - `src/app/globals.css`
+- 공유 충돌 파일(사전 합의 후만)
+  - `messages/ko.json`, `messages/vi.json`
+  - `src/repo/keys.ts`
+  - `src/app/[lang]/layout.tsx`, `src/app/sitemap.ts`
+  - `middleware.ts`, `next.config.ts`
+- 머지 게이트(필수)
+  - `npm run lint` → `npm run type-check` → `SKIP_SITEMAP_DB=true npm run build` → `npm run test:e2e`
+- 커밋/푸시 규칙
+  - 1요청=1커밋(스코프 prefix: `[LEAD]`/`[FE]`/`[WEB]`/`[BE]`)
+  - 워킹트리 더티 상태를 길게 유지하지 않고, 작업 단위가 끝나면 즉시 커밋/푸시
+  - PR은 하나만 유지하고(누적 push), CI 통과 커밋 단위로 병합 타이밍을 결정
+
 ### 0.1 스택/아키텍처 고정(변경 금지)
 - Next.js(App Router) + Supabase(Postgres/Storage/Auth) + Drizzle ORM + TanStack Query
 - NextAuth(Google) 구조 유지
@@ -34,16 +56,14 @@
 - (주의) Codex CLI 환경에서 `.git/index.lock` 생성이 막혀 `git add/commit/push`가 실패할 수 있음 → 이 경우 **로컬 터미널에서 수동으로** 커밋/푸시 진행
 
 #### 0.3.1 브랜치/워크트리 현황·커밋 전략(2025-12-20 기준)
-- 주 워크트리: `/Users/bk/Desktop/VKC-2-` (공통 브랜치: `codex-integration`)
+- 주 워크트리: `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2` (공통 브랜치: `codex-integration`)
 - 운영 원칙: 단일 워크트리/단일 브랜치 고정, 커밋/푸시는 **LEAD만 수행**
-- 커밋/PR 전략: 스코프별 단일 커밋 묶음 → i18n 키 추가 포함 → `npm run lint` → `SKIP_SITEMAP_DB=true npm run build` → `docs/EXECUTION_PLAN.md`, `HANDOVER.md` 갱신 → 로컬 터미널에서 커밋/푸시 → 단일 PR 유지, `@codex` 멘션 후 CI 통과 시 머지. 머지 후 모든 워크트리 `git pull origin main` 동기화.
+- 커밋/PR 전략: 1요청=1커밋 → `npm run lint` → `npm run type-check` → `SKIP_SITEMAP_DB=true npm run build` → `npm run test:e2e` → 문서 갱신 → 커밋/푸시 → 단일 PR 유지, CI 통과 시 머지 타이밍 결정.
 
 #### 0.3.2 진행 중 브랜치/워크트리 메모(커밋/머지 상태)
-- `/Users/bk/Desktop/VKC-2-`
-  - 브랜치: `main` (PR #19 merge 완료, 로컬/원격 동기화 완료)
-  - 워크트리: clean
 - `/Users/bk/Desktop/viet-kconnect-renew-nextjs-main 2`
-  - 브랜치: `codex-subscriptions` (dirty) → **백업 전용**, merge/커밋 금지
+  - 브랜치: `codex-integration`
+  - 원칙: PR 머지 전까지는 이 워크트리만 사용(다른 더티 워크트리 병행 금지)
 
 #### 0.3.3 Codex End-to-End 플로우(5.2 xh 기준)
 - 로컬 설계/착수: 스캐폴딩 → 타입 정의 → 핵심 로직 초안.
@@ -57,18 +77,18 @@
 - 결론: 프롬프트에 “`docs/EXECUTION_PLAN.md` 읽고 절차대로 진행”만 넣는 것으로는 **불충분**. 아래 **게이트 절차를 항상 실행**하면 혼선 대부분 해결됨.
 - 작업 시작 전(Preflight)
   - `pwd`로 작업 워크트리 확인 → 활성 워크트리 1개만 사용.
-  - `git status -sb`가 clean일 때만 작업 시작(더티면 `stash`/백업 브랜치로 분리).
-  - `git fetch origin` 후 `git diff --stat origin/main`이 **빈 상태**인지 확인.
-  - 항상 `git switch main && git pull origin main` → `git switch -c <새-브랜치>`.
+  - `git status -sb`가 clean일 때만 작업 시작(더티면 스코프를 분리해 먼저 커밋/푸시).
+  - `git fetch origin` 후 `origin/codex-integration` 기준으로 최신 상태인지 확인.
+  - 머지 직전에는 필요 시 `origin/main`을 병합해 충돌을 선제 해결(작업 시작 전에만 수행).
 - 작업 중(스코프 고정)
   - FE/WEB/BE 범위 혼합 금지. 필요 시 커밋을 분리하거나 PR을 분할.
   - 변경 파일 목록을 문서에 기록하고, “활성 브랜치” vs “백업 브랜치”를 명확히 구분.
 - PR 전(품질 게이트)
-  - `npm run lint` → `SKIP_SITEMAP_DB=true npm run build` 통과 여부 기록.
+  - `npm run lint` → `npm run type-check` → `SKIP_SITEMAP_DB=true npm run build` → `npm run test:e2e` 통과 여부 기록.
   - `git status -sb`에서 **의도된 파일만 남았는지** 확인.
 - 머지 후(동기화)
-  - `git switch main && git pull origin main`로 모든 워크트리 동기화.
-  - 오래된 더티 브랜치는 **merge 금지**. 필요한 파일만 선별 이관.
+  - `git pull origin main` 또는 PR 자동 동기화 결과에 맞춰 최신 상태로 정리.
+  - 오래된 더티 워크트리는 **merge 금지**. 필요한 파일만 선별 이관.
 
 ### 0.4 역할/분업(필수, 충돌 최소화)
 - **[LEAD/Codex] (고정)**: 우선순위/플랜 수립 → 분업/소유권 관리 → 품질 게이트(`lint/build`) → 커밋/푸시/PR 관리 → `HANDOVER.md` + `docs/EXECUTION_PLAN.md` 갱신
