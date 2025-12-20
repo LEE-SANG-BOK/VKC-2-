@@ -474,6 +474,34 @@
   - 커밋 메시지 제안: [WEB/BE] P0-11 hide v1 + report immediate hide
 - 다음 액션/의존성
   - type-check 필요 시 실행
+#### (2025-12-20) [WEB] P0-4 퍼포먼스 1차(에디터 스플릿 + 쿼리 튜닝) (P0)
+
+- 플랜(체크리스트)
+  - [x] PostDetail RichTextEditor dynamic import
+  - [x] follow/status/score 쿼리 staleTime/gcTime 기본값 튜닝
+  - [ ] 이미지 sizes/lazy/placeholder 통일(이관 필요)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/repo/users/query.ts`
+  - 재현/리스크: 상세 진입 시 에디터 번들이 선로드, 팔로우/점수 쿼리 재요청 빈도
+- 변경 내용(why/what)
+  - why: 초기 로딩 JS 축소 + 불필요 refetch 감소
+  - what: 상세 에디터 dynamic import, user score/followStatus 기본 staleTime/gcTime 적용
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [ ] npm run build
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/repo/users/query.ts
+  - docs/WORKING_PLAN.md
+- 커밋 준비(필수)
+  - 커밋 스코프(요청 1건): P0-4 editor split + query tuning
+  - 필요한 파일 목록: 위 변경 파일
+  - 필요 검증(lint/type-check/build/기타): lint 완료, type-check/build 미실행
+  - 의존성/선행 작업: FE 이미지 표준화 후속
+- 커밋 메시지 제안: [WEB] split editor + tune user queries
+- 다음 액션/의존성
+  - FE 이미지 표준화 작업 병행 필요
 
 ## P0 (출시 전: Launch blocking)
 
@@ -538,8 +566,8 @@
 
 - 플랜(체크리스트)
   - [ ] [FE] 이미지 sizes/lazy/placeholder 통일
-  - [ ] [WEB] dynamic import 확대(에디터/모달/관리자)
-  - [ ] [WEB] Query enabled/staleTime 튜닝
+  - [x] [WEB] dynamic import 확대(에디터/모달/관리자)
+  - [x] [WEB] Query enabled/staleTime 튜닝
 
 - 목표: 초기 로딩/스크롤 체감 개선(이미지/무거운 UI 중심 + 불필요 API 호출 감소)
 - 작업
