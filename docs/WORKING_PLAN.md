@@ -388,7 +388,7 @@ $gh-address-comments
 - [x] P0-15 (FE/WEB: 게시글 상세 액션/추천 정리)
 - [ ] P0-16 (FE/LEAD: 카드 헤더 정렬 + 데스크톱 폭 제한)
 - [ ] P0-17 (LEAD/FE: 좌측 사이드바 고정 + 독립 스크롤)
-- [ ] P0-18 (LEAD/FE: 헤더 뒤로가기 줄바꿈/정렬)
+- [x] P0-18 (LEAD/FE: 헤더 뒤로가기 줄바꿈/정렬)
 - [x] P0-19 (WEB/FE/BE: 랭킹 온도-only + Event 자리)
 - [x] P0-20 (BE/WEB: UGC 무해화 + 링크 정책 단일화)
 - [x] P0-21 (LEAD/WEB: `next/image` 원격 allowlist + https-only)
@@ -1298,6 +1298,15 @@ $gh-address-comments
     - (우선순위 1) 뒤로 버튼은 icon-only(+Tooltip) 또는 `whitespace-nowrap` + 텍스트 축약(예: `sm:inline` 이상에서만 텍스트)
     - (우선순위 2) `showBackButton`에서는 브랜드 소개 문구를 숨기거나(또는 더 짧게) 좌측 공간을 “뒤로 버튼”에 양보
     - (우선순위 3) 필요한 경우에만 좌측 고정 폭을 조건부로 확장(예: 320→360)하되, 전체 그리드 정렬이 깨지지 않게 제한
+- 구현(코드 변경)
+  - 뒤로 버튼: 모바일은 icon-only, `sm+`에서만 텍스트 노출 + `whitespace-nowrap`로 다국어 줄바꿈 방지
+  - `showBackButton`일 때 브랜드 소개(서브 텍스트)는 모바일에서 숨김 처리(폭 확보)
+  - `src/components/organisms/Header.tsx`
+- 검증(로컬)
+  - `npm run lint`
+  - `npm run type-check`
+  - `SKIP_SITEMAP_DB=true npm run build`
+  - `npm run test:e2e`
 - 완료 기준
   - 데스크톱/모바일에서 `Quay lại` 포함 모든 로케일의 “뒤로가기”가 줄바꿈되지 않음(또는 의도적으로 icon-only)
   - 헤더 높이/정렬이 안정(줄바꿈으로 인한 CLS/라인깨짐 0)

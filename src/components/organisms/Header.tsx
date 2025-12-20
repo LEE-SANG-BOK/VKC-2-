@@ -133,10 +133,11 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
           {showBackButton && (
             <button
               onClick={() => router.back()}
-              className="p-1.5 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-300 text-gray-600 dark:text-gray-400"
+              className="shrink-0 inline-flex items-center gap-1.5 p-1.5 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-300 text-gray-600 dark:text-gray-400 whitespace-nowrap"
               aria-label={goBackLabel}
             >
-              <span className="text-lg sm:text-base">←</span> {goBackLabel}
+              <span aria-hidden className="text-lg sm:text-base">←</span>
+              <span className="hidden sm:inline text-sm font-medium">{goBackLabel}</span>
             </button>
           )}
           {!showBackButton && (
@@ -158,7 +159,9 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
                 <Logo />
               </div>
             </div>
-            <span className="inline-block max-w-[96px] sm:max-w-[160px] text-[9px] sm:text-[11px] text-gray-500 dark:text-gray-400 leading-tight line-clamp-2">
+            <span
+              className={`inline-block max-w-[96px] sm:max-w-[160px] text-[9px] sm:text-[11px] text-gray-500 dark:text-gray-400 leading-tight line-clamp-2 ${showBackButton ? 'hidden sm:inline-block' : ''}`}
+            >
               {tTooltip.brandIntro || brandIntroFallback}
             </span>
           </div>
