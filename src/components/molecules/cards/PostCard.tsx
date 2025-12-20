@@ -90,6 +90,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const sourcePrefix = tCommon.source || (locale === 'vi' ? 'Nguồn' : locale === 'en' ? 'Source' : '출처');
   const hideLabel = tCommon.hide || (locale === 'vi' ? 'Ẩn' : locale === 'en' ? 'Hide' : '안보기');
   const unhideLabel = tCommon.unhide || (locale === 'vi' ? 'Bỏ ẩn' : locale === 'en' ? 'Unhide' : '숨김 해제');
+  const hideActionLabel = isHidden ? unhideLabel : hideLabel;
+  const hideEmoji = isHidden ? '👀' : '🙈';
   const hiddenPostLabel = tCommon.hiddenPost || (locale === 'vi' ? 'Bài viết đã được ẩn.' : locale === 'en' ? 'This post is hidden.' : '숨긴 게시글입니다.');
   const hideFailedLabel = tCommon.hideFailed || (locale === 'vi' ? 'Không thể ẩn bài viết.' : locale === 'en' ? 'Failed to hide the post.' : '게시글을 숨길 수 없습니다.');
   const unhideFailedLabel = tCommon.unhideFailed || (locale === 'vi' ? 'Không thể bỏ ẩn.' : locale === 'en' ? 'Failed to unhide.' : '숨김 해제에 실패했습니다.');
@@ -520,13 +522,16 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         <div className="question-card-main">
           <div className="flex items-center justify-between gap-3 px-2 py-2">
             <span className="text-sm text-gray-500 dark:text-gray-400">{hiddenPostLabel}</span>
-            <button
-              type="button"
-              onClick={handleToggleHide}
-              className="rounded-full px-3 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              {unhideLabel}
-            </button>
+            <Tooltip content={hideActionLabel} position="top">
+              <button
+                type="button"
+                onClick={handleToggleHide}
+                aria-label={hideActionLabel}
+                className="rounded-full p-1.5 text-base leading-none text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                {hideEmoji}
+              </button>
+            </Tooltip>
           </div>
         </div>
       </article>
@@ -594,6 +599,18 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   <span>{formatDateTime(publishedAt, locale)}</span>
                 </div>
               </div>
+            </div>
+            <div className="ml-auto shrink-0">
+              <Tooltip content={hideActionLabel} position="top">
+                <button
+                  type="button"
+                  onClick={handleToggleHide}
+                  aria-label={hideActionLabel}
+                  className="rounded-full p-1.5 text-base leading-none text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                >
+                  {hideEmoji}
+                </button>
+              </Tooltip>
             </div>
           </div>
 
@@ -776,13 +793,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
               </button>
             </Tooltip>
-            <button
-              type="button"
-              onClick={handleToggleHide}
-              className="inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
-            >
-              {hideLabel}
-            </button>
             {isQuestion ? (
               <>
                 <Tooltip

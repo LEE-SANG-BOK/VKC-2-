@@ -15,6 +15,7 @@
 - [BE] 맞춤 숨김 API `/api/hides` 추가(게시글/답변/댓글)
 - [WEB] hides repo hooks 추가 + 신고 시 즉시 숨김 캐시 반영
 - [FE] 게시글/답변/댓글 숨김/해제 UI 적용(PostCard/AnswerCard/CommentCard/PostDetail)
+- [FE] PostCard “안보기” 텍스트 버튼 제거, 우상단 이모지 토글 + Tooltip로 전환
 - [FE] 질문 템플릿 라벨 제거(조건/목표/배경) + 값 강조 표시, 피드백 폼 간소화, 사이드바 피드백 이모지+툴팁 전환
 - [FE] PostCard 인증 요약 라벨을 클릭형 CTA(hover 강조)로 전환 + 답변/댓글 앵커 이동, 모바일 액션 행 1줄 유지
 - [FE] 질문 템플릿 입력 영역 컴팩트화(행 수 축소/패딩 축소) + 사이드바 피드백 메뉴 텍스트 버튼화

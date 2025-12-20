@@ -4106,3 +4106,22 @@ $gh-address-comments
   - src/components/molecules/cards/CommentCard.tsx
   - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
   - docs/EXECUTION_PLAN.md
+
+#### (2025-12-20) [FE] 게시글 안보기 아이콘화 + 우상단 배치 (P0-13)
+
+- 플랜(체크리스트)
+  - [x] 하단 텍스트 버튼 제거
+  - [x] 우상단 이모지 버튼 + Tooltip 제공
+  - [x] 숨김 상태에도 동일한 토글 UI 적용
+- 현황 분석(코드 기준)
+  - 기존 카드 하단 액션에 “안보기” 텍스트가 섞여 시각 균형 저하
+- 변경 내용(why/what)
+  - why: 카드 하단 액션 통일 + 숨김 동선 상단 분리
+  - what: 우상단 이모지 버튼으로 숨김/해제 토글, 하단 텍스트 버튼 제거
+- 검증
+  - [ ] npm run lint
+  - [ ] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - docs/EXECUTION_PLAN.md
+  - HANDOVER.md
