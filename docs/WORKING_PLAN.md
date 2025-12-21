@@ -1946,6 +1946,32 @@ $gh-address-comments
   - messages/vi.json
   - messages/en.json
 
+#### (2025-12-21) [FE/WEB] 모바일 뷰포트(dvh) + 입력 폼(iOS zoom) 하드닝 (P0-3)
+
+- 플랜(체크리스트)
+  - [x] 주요 페이지/레이아웃의 `min-h-screen`을 `100dvh` 대응으로 보강
+  - [x] PostDetail 주요 textarea 폰트 크기를 `16px`로 상향(모바일 iOS 입력 시 자동 확대 방지)
+  - [x] 모달 로딩 오버레이 max-height를 `dvh` 기준으로 정규화
+- 변경 내용(why/what)
+  - why: iOS/웹뷰에서 키보드/주소창 변화로 인한 높이 계산 오류와 입력 시 자동 확대(zoom)로 UX가 깨질 수 있음
+  - what: `min-h-[100dvh]`를 핵심 래퍼에 추가하고, 작성/신고 textarea는 `text-base`로 통일
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/components/templates/MainLayout.tsx
+  - src/components/molecules/user/UserProfile.tsx
+  - src/app/[lang]/(auth)/login/LoginClient.tsx
+  - src/app/[lang]/(auth)/signup/SignupClient.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/app/[lang]/(main)/notifications/NotificationsClient.tsx
+  - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
+  - src/app/[lang]/(main)/verification/history/VerificationHistoryClient.tsx
+
 ---
 
 ## Testing and validation (게이트)
