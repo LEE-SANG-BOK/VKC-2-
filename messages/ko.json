@@ -239,7 +239,14 @@
     "subscribeError": "구독 처리 중 오류가 발생했습니다."
   },
   "news": {
-    "title": "추천 콘텐츠"
+    "title": "추천 콘텐츠",
+    "openExternal": "외부 링크 열기",
+    "close": "닫기"
+  },
+  "noticeBanner": {
+    "badge": "공지",
+    "openExternal": "외부 링크 열기",
+    "close": "닫기"
   },
   "media": {
     "title": "미디어",

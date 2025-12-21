@@ -30,30 +30,9 @@ export default function NoticeBanner({ translations, lang, limit = 2 }: NoticeBa
       .slice(0, limit);
   }, [limit, newsItems]);
 
-  const labelFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        badge: 'Notice',
-        openExternal: 'Open link',
-        close: 'Close',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        badge: 'Thông báo',
-        openExternal: 'Mở liên kết',
-        close: 'Đóng',
-      };
-    }
-    return {
-      badge: '공지',
-      openExternal: '외부 링크 열기',
-      close: '닫기',
-    };
-  }, [locale]);
-  const badgeLabel = t.badge || labelFallbacks.badge;
-  const openExternalLabel = t.openExternal || labelFallbacks.openExternal;
-  const closeLabel = t.close || labelFallbacks.close;
+  const badgeLabel = t.badge || '';
+  const openExternalLabel = t.openExternal || '';
+  const closeLabel = t.close || '';
 
   if (isLoading) {
     return (

@@ -9,7 +9,7 @@ import { NewsItem } from '@/repo/news/types';
 import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface TranslationsType {
-  news?: { title?: string };
+  news?: { title?: string; close?: string; openExternal?: string };
 }
 
 interface NewsSectionProps {
@@ -20,10 +20,9 @@ interface NewsSectionProps {
 export default function NewsSection({ translations, lang }: NewsSectionProps) {
   const locale = lang || 'vi';
   const t = translations?.news || {};
-  const title =
-    t.title || (locale === 'vi' ? 'Nội dung nổi bật' : locale === 'en' ? 'Featured content' : '추천 콘텐츠');
-  const closeLabel = locale === 'vi' ? 'Đóng' : locale === 'en' ? 'Close' : '닫기';
-  const openExternalLabel = locale === 'vi' ? 'Mở liên kết' : locale === 'en' ? 'Open link' : '외부 링크 열기';
+  const title = t.title || '';
+  const closeLabel = t.close || '';
+  const openExternalLabel = t.openExternal || '';
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<NewsItem | null>(null);

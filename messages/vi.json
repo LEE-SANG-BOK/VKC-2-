@@ -239,7 +239,14 @@
     "subscribeError": "Lỗi khi cập nhật theo dõi."
   },
   "news": {
-    "title": "Nội dung nổi bật"
+    "title": "Nội dung nổi bật",
+    "openExternal": "Mở liên kết",
+    "close": "Đóng"
+  },
+  "noticeBanner": {
+    "badge": "Thông báo",
+    "openExternal": "Mở liên kết",
+    "close": "Đóng"
   },
   "media": {
     "title": "Media",
