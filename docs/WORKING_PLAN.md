@@ -1972,6 +1972,42 @@ $gh-address-comments
   - src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx
   - src/app/[lang]/(main)/verification/history/VerificationHistoryClient.tsx
 
+#### (2025-12-21) [FE] 홈 피드 post-first + 공지/뉴스는 사이드바로 이동
+
+- 플랜(체크리스트)
+  - [x] 홈 메인 컬럼에서 `PostList` 위 블록 제거(게시글이 첫 콘텐츠)
+  - [x] 공지/뉴스 노출은 좌측 사이드바(홈에서만)로 이동
+- 변경 내용(why/what)
+  - why: 메인 피드 상단이 배너/뉴스로 분산되면 게시글 소비 흐름이 끊기고 UI가 복잡해짐
+  - what: `HomeClient`는 `PostList`만 렌더하고, 공지/뉴스는 `CategorySidebar`의 홈 전용 섹션에서 제공
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - src/components/organisms/CategorySidebar.tsx
+
+#### (2025-12-21) [WEB] 글쓰기 #태그 자동생성: 모더레이션 입력값/카테고리 기반 공용화
+
+- 플랜(체크리스트)
+  - [x] 태그 생성 로직을 공용 유틸로 분리(중복 제거)
+  - [x] 모더레이션(조건/목표/배경) 입력값이 있으면 키워드에 반영
+  - [x] 모더레이션 미입력 시 카테고리/세부분류 seed 기반 랜덤 추천(세션 seed로 안정화)
+  - [x] 사용자가 태그를 수동 편집하면 자동 갱신 중단(`manualTagEdit`)
+- 변경 내용(why/what)
+  - why: 태그 추천이 카테고리 선택 시 1회만 생성되고, 모더레이션 입력과 연동되지 않아 품질/일관성이 떨어짐
+  - what: `generatePostTags()`를 도입해 “카테고리 seed + 키워드 추출 + fallback” 파이프라인으로 통합하고, 자동 갱신 규칙을 명확히 함
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/lib/seo/postTags.ts
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+
 ---
 
 ## Testing and validation (게이트)

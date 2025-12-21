@@ -15,8 +15,7 @@ import Modal from '@/components/atoms/Modal';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
 import GuidelinesModal from '@/components/molecules/modals/GuidelinesModal';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
-import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
-import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
+import { generatePostTags } from '@/lib/seo/postTags';
 import type { Locale } from '@/i18n/config';
 import { UGC_LIMITS, extractPlainText, getPlainTextLength, isLowQualityText } from '@/lib/validation/ugc';
 
@@ -99,6 +98,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const [templateGoal, setTemplateGoal] = useState('');
   const [templateBackground, setTemplateBackground] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [tagSeed] = useState(() => Math.floor(Math.random() * 1_000_000_000));
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasBannedWords, setHasBannedWords] = useState(false);
@@ -398,11 +398,6 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const submitQuestionLabel = t.submitQuestion || uiFallbacks.submitQuestion;
   const submitShareLabel = t.submitShare || uiFallbacks.submitShare;
   const cancelLabel = t.cancel || uiFallbacks.cancel;
-  const fallbackTagSeeds = lang === 'vi'
-    ? ['Thông tin', 'TIP', 'Hướng dẫn']
-    : lang === 'en'
-      ? ['Info', 'TIP', 'Guide']
-      : ['정보', 'TIP', '가이드'];
 
   const templateSections = useMemo(() => {
     const sections = [templateCondition, templateGoal, templateBackground]
@@ -597,54 +592,20 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     }
   }, [parentCategory, parentOptions, childCategory]);
 
-  const localizeTag = (tag: string) => {
-    return localizeCommonTagLabel(tag, lang);
-  };
-
-  const resolveLocalizedLabel = (slug?: string) => {
-    if (!slug) return '';
-    const legacy = LEGACY_CATEGORIES.find((c) => c.slug === slug);
-    if (legacy) {
-      if (lang === 'vi' && legacy.name_vi) return legacy.name_vi;
-      if (lang === 'en' && legacy.name_en) return legacy.name_en;
-      return legacy.name || legacy.slug;
-    }
-    const childOptions = childCategories as Array<{ slug: string; label?: string }>;
-    const option = parentOptions.find((p) => p.slug === slug) || childOptions.find((child) => child.slug === slug);
-    return option?.label || '';
-  };
-
   const buildDefaultTags = () => {
-    const childOptions = childCategories as Array<{ slug: string; name?: string; id?: string }>;
-    const child = childOptions.find((childOption) => childOption.slug === childCategory);
-    const parentLabel = resolveLocalizedLabel(parentCategory) || selectedParent?.label;
-    const childLabel = resolveLocalizedLabel(child?.slug) || child?.name;
-    const keywordCandidates = flattenKeywords(
-      buildKeywords({
-        title,
-        content: extractPlainText(resolvedContentWithThumbnail),
-        category: parentLabel,
-        subcategory: childLabel,
-      }),
-      8
-    );
-
-    // 카테고리/세부분류를 우선 포함
-    const base = [
-      childLabel,
-      parentLabel,
-      ...keywordCandidates,
-      defaultTagLabel,
-    ].filter(Boolean) as string[];
-    const localized = base.map(localizeTag);
-    const unique = Array.from(new Set(localized));
-    const fallback = [...fallbackTagSeeds, parentLabel, childLabel, defaultTagLabel].filter(Boolean) as string[];
-    while (unique.length < 3 && fallback.length > 0) {
-      const next = fallback.shift() as string;
-      const localizedNext = localizeTag(next);
-      if (!unique.includes(localizedNext)) unique.push(localizedNext);
-    }
-    return unique.slice(0, 5);
+    return generatePostTags({
+      locale: lang,
+      title,
+      categorySlug: parentCategory || null,
+      subcategorySlug: childCategory || null,
+      moderation: {
+        condition: templateCondition,
+        goal: templateGoal,
+        background: templateBackground,
+      },
+      defaultTag: defaultTagLabel,
+      seed: tagSeed,
+    });
   };
 
   // 최근 선택 카테고리 복원
@@ -676,14 +637,28 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     }
   }, [childCategory]);
 
-  // tags 자동 세팅: 태그가 비어 있고 카테고리가 선택된 경우만
+  // tags 자동 세팅: manualTagEdit가 false인 동안은 자동 갱신
   useEffect(() => {
-    if (!parentOptions || parentOptions.length === 0 || tags.length > 0 || !parentCategory) return;
+    if (!parentOptions || parentOptions.length === 0 || !parentCategory || manualTagEdit) return;
     const defaults = buildDefaultTags();
-    if (defaults.length > 0 && !manualTagEdit) {
-      setTags(defaults);
-    }
-  }, [parentCategory, childCategory, parentOptions, tags.length, manualTagEdit]);
+    if (defaults.length === 0) return;
+    setTags((current) => {
+      const same = current.length === defaults.length && current.every((value, index) => value === defaults[index]);
+      return same ? current : defaults;
+    });
+  }, [
+    parentCategory,
+    childCategory,
+    title,
+    templateCondition,
+    templateGoal,
+    templateBackground,
+    manualTagEdit,
+    defaultTagLabel,
+    lang,
+    parentOptions,
+    tagSeed,
+  ]);
 
   const handleCancel = () => {
     if (title || content || tags.length > 0 || templateCondition || templateGoal || templateBackground) {

@@ -4,10 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import MainLayout from '@/components/templates/MainLayout';
-import NewsSection from '@/components/organisms/NewsSection';
 import AdminPostRail from '@/components/organisms/AdminPostRail';
 import PostList from '@/components/organisms/PostList';
-import NoticeBanner from '@/components/organisms/NoticeBanner';
 import type { Locale } from '@/i18n/config';
 import { useMyProfile } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
@@ -82,12 +80,6 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
     >
       <div className="flex flex-col gap-1 pb-4">
         <h1 className="sr-only">{homeHeading}</h1>
-        <NoticeBanner translations={dict} lang={lang} />
-        <div className="space-y-1">
-          <div className="lg:hidden">
-            <NewsSection translations={dict} lang={lang} />
-          </div>
-        </div>
         <PostList selectedCategory={resolvedCategory} translations={dict} />
       </div>
 
