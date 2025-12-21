@@ -1014,6 +1014,7 @@ $gh-address-comments
   - 공용 `common`에 `previous/next/learnMore`를 추가하고 주요 화면에서 locale 분기 하드코딩 제거(카드/상세/프로필/인증/글쓰기 가이드)
   - 인증 신청(VerificationRequest) step 라벨/재신청 버튼/유형 선택 에러 + 글쓰기(NewPost) 썸네일 선택 문구를 messages 키로 추가하고 locale 분기 하드코딩 fallback 제거
   - 검색/구독/게시글 상세(SSR)에서 `question/share/uncategorized/anonymous` locale 분기 fallback 제거 → translations 키 단일화
+  - 헤더/로고(Header/Logo)에서 locale 분기 하드코딩 fallback 제거 + 뒤로가기 라벨을 truncate 처리해 모바일/좁은 폭 줄바꿈 방지
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
   - 변경: `src/app/api/posts/[id]/report/route.ts`, `src/app/api/answers/[id]/report/route.ts`, `src/app/api/comments/[id]/report/route.ts`, `messages/ko.json`, `messages/vi.json`
