@@ -220,36 +220,11 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     return deduped;
   }, [recommendedUsers]);
 
-  const scoreFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        points: 'Points',
-        title: 'Title',
-        rank: 'Rank',
-        leaderboard: 'Leaderboard',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        points: 'Điểm',
-        title: 'Danh hiệu',
-        rank: 'Xếp hạng',
-        leaderboard: 'Bảng xếp hạng',
-      };
-    }
-    return {
-      points: '포인트',
-      title: '칭호',
-      rank: '랭킹',
-      leaderboard: '리더보드',
-    };
-  }, [locale]);
-
   const scoreLabels = {
-    points: tProfile.points || scoreFallbacks.points,
-    title: tProfile.title || scoreFallbacks.title,
-    rank: tProfile.rank || scoreFallbacks.rank,
-    leaderboard: tProfile.leaderboard || scoreFallbacks.leaderboard,
+    points: tProfile.points || '',
+    title: tProfile.title || '',
+    rank: tProfile.rank || '',
+    leaderboard: tProfile.leaderboard || '',
   };
 
   const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
@@ -258,12 +233,9 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const scoreSummary = scoreData?.data;
   const rankValue = scoreSummary?.rank ?? null;
   const progressPercent = scoreSummary ? Math.round(scoreSummary.levelProgress * 100) : 0;
+  const levelFormat = tProfile.levelFormat || '';
   const titleValue = scoreSummary
-    ? locale === 'vi'
-      ? `Cấp ${scoreSummary.level}`
-      : locale === 'en'
-        ? `Level ${scoreSummary.level}`
-        : `Lv. ${scoreSummary.level}`
+    ? levelFormat.replace('{level}', String(scoreSummary.level))
     : '';
 
   const shouldFetchInteractions = Boolean(session?.user) && !filterForQueryResolved && allPosts.length > 0;
@@ -406,7 +378,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
               onChange={(e) => handleChildCategoryChange(e.target.value)}
               className="w-auto px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
             >
-              <option value="all">{t.allSubcategories || (locale === 'vi' ? 'Tất cả danh mục con' : locale === 'en' ? 'All subcategories' : '전체 하위 카테고리')}</option>
+              <option value="all">{t.allSubcategories || ''}</option>
               {childCategories.map((child) => (
                 <option key={child.slug} value={child.slug}>
                   {getCategoryName(child, locale)}
