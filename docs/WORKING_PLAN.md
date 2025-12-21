@@ -2014,6 +2014,75 @@ $gh-address-comments
   - src/lib/seo/postTags.ts
   - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
 
+#### (2025-12-22) [FE] 모바일 홈 추천 콘텐츠 재배치 + 피드 상단 점수 카드 제거
+
+- 플랜(체크리스트)
+  - [x] 모바일 드로어(좌측)에서 추천 콘텐츠 제거
+  - [x] 모바일 홈 메인에서 추천 콘텐츠 노출(우측 레일의 모바일 대체)
+  - [x] 피드 상단 포인트/Lv/랭킹 카드 제거(게시글 소비 흐름 우선)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/organisms/CategorySidebar.tsx`(모바일 홈 드로어), `src/components/organisms/PostList.tsx`(피드 상단 점수 카드)
+  - 재현/리스크: 모바일에서 드로어에 추천 콘텐츠가 들어오면 “메인=게시글” 규칙이 깨지고, 상단 점수 카드로 인해 피드 첫 화면이 분산됨
+- 변경 내용(why/what)
+  - why: 홈은 “게시글 위주”를 유지하되, 추천 콘텐츠는 드로어가 아니라 메인(모바일)에서 접근 가능해야 함
+  - what: 모바일 홈은 `NewsSection`을 메인 상단 카드로 노출(`lg:hidden`), 드로어에서는 제거, 피드 상단 점수 카드 제거
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] PORT=3001 npm run test:e2e
+- 변경 파일
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/organisms/PostList.tsx
+- 커밋
+  - `[FE] move featured content to home and remove score widget` (ce170f6)
+
+#### (2025-12-22) [FE] PostCard 모바일 액션 밀집/겹침 개선 + 태그/칩 클립 보정
+
+- 플랜(체크리스트)
+  - [x] `...`(숨김/신고) 메뉴가 썸네일과 겹치지 않게 위치 조정
+  - [x] 인증 답변 안내 라벨을 모바일에서 컴팩트 표기로 전환(툴팁은 상세 유지)
+  - [x] 액션 행 `nowrap` 강제 제거로 모바일 줄바꿈/정렬을 CSS 규칙에 위임
+  - [x] 가로 스크롤 칩/태그 우측 클립 방지(`pr` + `scroll-px`)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/molecules/cards/PostCard.tsx`(액션/메뉴), `src/components/organisms/NewsSection.tsx`(가로 스크롤), `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`(태그)
+  - 재현/리스크: 모바일에서 `...` 버튼이 썸네일 영역에 겹치고, 인증 답변 문구가 길어 액션이 밀집됨
+- 변경 내용(why/what)
+  - why: 모바일에서 “터치 타깃 44px” 유지하면서도 액션이 겹치지 않게 정돈해야 함
+  - what: `...` 메뉴를 카드 상단(작성자 라인)으로 이동, 인증 라벨은 `certifiedResponderCompact`로 모바일 표기, 가로 스크롤은 `pr-3 scroll-px-3`로 클립 방지
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] PORT=3001 npm run test:e2e
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/components/organisms/NewsSection.tsx
+- 커밋
+  - `[FE] harden mobile post cards and horizontal chips` (df850ab)
+
+#### (2025-12-22) [BE] 추천 사용자 API 500(빈 interests) 수정
+
+- 플랜(체크리스트)
+  - [x] viewer interests가 비어도 SQL이 유효하도록 배열 표현을 안전하게 구성
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/api/users/recommended/route.ts`
+  - 재현/리스크: interests가 비어 있을 때 `array_length(()::text[], 1)` 형태로 생성되며 Postgres syntax error로 500 발생
+- 변경 내용(why/what)
+  - why: 추천 사용자 섹션은 홈/팔로잉 플로우 핵심이며, 500은 즉시 사용자 경험을 깨뜨림
+  - what: `viewerInterestsArray = ARRAY[...]::text[] | ARRAY[]::text[]`로 고정하고 overlap 조건은 해당 배열을 사용
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] PORT=3001 npm run test:e2e
+- 변경 파일
+  - src/app/api/users/recommended/route.ts
+- 커밋
+  - `[BE] fix recommended users when interests empty` (d769ff9)
+
 ---
 
 ## Testing and validation (게이트)
