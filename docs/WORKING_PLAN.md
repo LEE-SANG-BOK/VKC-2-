@@ -1050,6 +1050,9 @@ $gh-address-comments
   - 변경: `src/components/organisms/Header.tsx`, `src/components/molecules/user/UserProfile.tsx`
   - 변경: `src/components/molecules/modals/ProfileModal.tsx`, `src/components/molecules/modals/MyPostsModal.tsx`, `src/components/molecules/modals/FollowingModal.tsx`, `src/components/molecules/modals/BookmarksModal.tsx`, `src/components/molecules/modals/SettingsModal.tsx`
   - 변경: `messages/ko.json`, `messages/vi.json`
+  - trust-badges 가이드(`/guide/trust-badges`)의 `locale ===` 분기 제거: 메타 fallback은 locale map으로, CTA는 `bottomNav.home` + `sidebar.verificationRequest`, 배지 라벨/툴팁은 `trustBadges.*`만 사용
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/[lang]/guide/trust-badges/page.tsx`
 
 #### (2025-12-20) [FE] P0-3 모바일 키보드/스크롤(WebView 포함) UX 하드닝 (P0)
 
