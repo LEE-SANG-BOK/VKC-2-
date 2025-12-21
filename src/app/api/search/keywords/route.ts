@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - (hasQuery ? 180 : 30));
 
-    const dateCondition = hasQuery ? sql`true` : sql`posts.created_at >= ${dateFrom}`;
+    const dateCondition = hasQuery ? sql`true` : sql`posts.created_at >= ${dateFrom.toISOString()}`;
     const tagCondition = hasQuery ? sql`tag ILIKE ${likeQuery}` : sql`true`;
     const categoryCondition = hasQuery ? sql`category ILIKE ${likeQuery}` : sql`true`;
     const subcategoryCondition = hasQuery ? sql`subcategory ILIKE ${likeQuery}` : sql`true`;
