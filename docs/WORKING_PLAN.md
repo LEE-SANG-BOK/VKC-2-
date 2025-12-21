@@ -1021,6 +1021,7 @@ $gh-address-comments
   - 사이드바(CategorySidebar) `상위 기여자(Event)` 라벨을 messages로 고정하고 locale 분기 제거
   - 공지 배너(NoticeBanner)·뉴스 섹션(NewsSection) 라벨을 messages로 이동(공지/외부 링크/닫기)
   - 커뮤니티 랭킹(LeaderboardClient) 카피를 messages로 이동하고 locale 분기 fallback 제거(랭킹 안내/이벤트 영역 포함)
+  - 에디터(RichTextEditor) 툴바/업로드/링크 UI 문구를 messages로 이동하고 locale 분기 fallback 제거
   - 홈 피드(PostList)·추천 사용자(RecommendedUsersSection) 라벨을 dictionary 섹션(profile/post/common) 기준으로 재정렬하고 locale 분기 fallback 제거(추천 CTA 키 추가 포함)
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
