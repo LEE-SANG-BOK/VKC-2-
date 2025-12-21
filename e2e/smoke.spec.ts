@@ -16,6 +16,18 @@ test('renders about page (en)', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toContainText('About');
 });
 
+test('renders new post page (ko)', async ({ page }) => {
+  await page.goto('/ko/posts/new');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('질문하기');
+  await expect(page.getByText('커뮤니티 가이드')).toBeVisible();
+});
+
+test('renders new post page (vi)', async ({ page }) => {
+  await page.goto('/vi/posts/new');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Đặt câu hỏi');
+  await expect(page.getByText('Hướng dẫn cộng đồng')).toBeVisible();
+});
+
 test('language switcher hides en and can switch ko↔vi', async ({ page }) => {
   await page.goto('/ko/about');
 
