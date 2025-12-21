@@ -1053,6 +1053,11 @@ $gh-address-comments
   - trust-badges 가이드(`/guide/trust-badges`)의 `locale ===` 분기 제거: 메타 fallback은 locale map으로, CTA는 `bottomNav.home` + `sidebar.verificationRequest`, 배지 라벨/툴팁은 `trustBadges.*`만 사용
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/app/[lang]/guide/trust-badges/page.tsx`
+  - 잔여 `locale === 'en'/'vi'` 분기 제거(정리): ShareButton/CardNews/Shorts/NotificationModal/날짜·배지·태그·카테고리 유틸 + 루트 레이아웃 메타 fallback → locale map/키 기반으로 통일(`src/i18n/get-dictionary.ts`의 en fallback merge는 유지)
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/components/molecules/actions/ShareButton.tsx`, `src/components/organisms/CardNewsShowcase.tsx`, `src/components/organisms/ShortFormPlaylist.tsx`, `src/components/molecules/modals/NotificationModal.tsx`
+  - 변경: `src/utils/dateTime.ts`, `src/lib/utils/trustBadges.ts`, `src/lib/constants/tag-translations.ts`, `src/lib/constants/categories.ts`
+  - 변경: `src/app/[lang]/layout.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`
 
 #### (2025-12-20) [FE] P0-3 모바일 키보드/스크롤(WebView 포함) UX 하드닝 (P0)
 

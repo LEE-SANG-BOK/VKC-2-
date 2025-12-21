@@ -1,9 +1,13 @@
 import dayjs from 'dayjs';
 
 export function getJustNowLabel(locale: string) {
-  if (locale === 'vi') return 'Vừa xong';
-  if (locale === 'en') return 'Just now';
-  return '방금 전';
+  const resolvedLocale = (['ko', 'en', 'vi'] as const).includes(locale as 'ko' | 'en' | 'vi') ? (locale as 'ko' | 'en' | 'vi') : 'ko';
+  const labelByLocale = {
+    ko: '방금 전',
+    en: 'Just now',
+    vi: 'Vừa xong',
+  } as const;
+  return labelByLocale[resolvedLocale] || labelByLocale.ko;
 }
 
 export function formatDateTime(dateString?: string | null, locale?: string): string {
@@ -15,4 +19,3 @@ export function formatDateTime(dateString?: string | null, locale?: string): str
 
   return date.format('YYYY.MM.DD HH:mm');
 }
-

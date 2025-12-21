@@ -86,7 +86,7 @@ export type SupportedLocale = 'ko' | 'en' | 'vi';
 export function localizeCommonTagLabel(tag: string, locale: SupportedLocale): string {
   const key = tag.trim().toLowerCase();
   if (!key) return '';
-  if (locale === 'en') return COMMON_TAG_TRANSLATIONS.en[key as keyof typeof COMMON_TAG_TRANSLATIONS.en] ?? tag;
-  if (locale === 'vi') return COMMON_TAG_TRANSLATIONS.vi[key as keyof typeof COMMON_TAG_TRANSLATIONS.vi] ?? tag;
-  return tag;
+  if (!(locale in COMMON_TAG_TRANSLATIONS)) return tag;
+  const map = (COMMON_TAG_TRANSLATIONS as Record<string, Record<string, string>>)[locale];
+  return map?.[key] ?? tag;
 }
