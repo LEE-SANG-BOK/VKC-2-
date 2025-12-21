@@ -62,6 +62,13 @@ const applyThumbnailSelection = (html: string, selected: string) => {
   });
 };
 
+const fillTemplateVariables = (template: string, variables: Record<string, string | number>) => {
+  return Object.entries(variables).reduce(
+    (value, [key, replacement]) => value.replace(new RegExp(`\\{${key}\\}`, 'g'), String(replacement)),
+    template,
+  );
+};
+
 interface NewPostClientProps {
   translations: Record<string, unknown>;
   lang: Locale;
@@ -253,6 +260,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
         titlePlaceholderQuestion: 'Enter your question',
         titlePlaceholderShare: 'Enter a title',
         titleMinWarning: 'Please write at least {min} characters for the title.',
+        titleMaxWarning: 'Title can be up to {max} characters.',
         content: 'Content',
         contentPlaceholderQuestion: 'Write your question...',
         contentPlaceholderShare: 'Write what you want to share...',
@@ -294,6 +302,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
         titlePlaceholderQuestion: 'Nhập câu hỏi',
         titlePlaceholderShare: 'Nhập tiêu đề',
         titleMinWarning: 'Tiêu đề cần ít nhất {min} ký tự.',
+        titleMaxWarning: 'Tiêu đề tối đa {max} ký tự.',
         content: 'Nội dung',
         contentPlaceholderQuestion: 'Viết nội dung câu hỏi...',
         contentPlaceholderShare: 'Viết nội dung chia sẻ...',
@@ -334,6 +343,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
       titlePlaceholderQuestion: '질문을 입력하세요',
       titlePlaceholderShare: '제목을 입력하세요',
       titleMinWarning: '제목을 최소 {min}자 이상 작성해주세요.',
+      titleMaxWarning: '제목은 최대 {max}자까지 작성할 수 있습니다.',
       content: '내용',
       contentPlaceholderQuestion: '질문 내용을 작성하세요...',
       contentPlaceholderShare: '공유할 내용을 작성하세요...',
@@ -373,6 +383,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const titlePlaceholderQuestionLabel = t.titlePlaceholderQuestion || uiFallbacks.titlePlaceholderQuestion;
   const titlePlaceholderShareLabel = t.titlePlaceholderShare || uiFallbacks.titlePlaceholderShare;
   const titleMinWarningTemplate = t.titleMinWarning || uiFallbacks.titleMinWarning;
+  const titleMaxWarningTemplate = t.titleMaxWarning || uiFallbacks.titleMaxWarning;
   const contentLabel = t.content || uiFallbacks.content;
   const contentPlaceholderQuestionLabel = t.contentPlaceholderQuestion || uiFallbacks.contentPlaceholderQuestion;
   const contentPlaceholderShareLabel = t.contentPlaceholderShare || uiFallbacks.contentPlaceholderShare;
@@ -445,19 +456,35 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
 
     const hasChildren = childCategories.length > 0;
     if (!title.trim() || titleLength < MIN_TITLE) {
-      toast.error(tErrors.POST_TITLE_TOO_SHORT || t.validationError || `제목을 최소 ${MIN_TITLE}자 이상 입력해주세요.`);
+      toast.error(
+        tErrors.POST_TITLE_TOO_SHORT ||
+          t.validationError ||
+          fillTemplateVariables(titleMinWarningTemplate, { min: MIN_TITLE }),
+      );
       return;
     }
     if (titleLength > MAX_TITLE) {
-      toast.error(tErrors.POST_TITLE_TOO_LONG || t.validationError || `제목을 ${MAX_TITLE}자 이하로 작성해주세요.`);
+      toast.error(
+        tErrors.POST_TITLE_TOO_LONG ||
+          t.validationError ||
+          fillTemplateVariables(titleMaxWarningTemplate, { max: MAX_TITLE }),
+      );
       return;
     }
     if (!resolvedContentWithThumbnail.trim() || contentLength < MIN_CONTENT) {
-      toast.error(tErrors.POST_CONTENT_TOO_SHORT || t.validationError || `본문을 최소 ${MIN_CONTENT}자 이상 입력해주세요.`);
+      toast.error(
+        tErrors.POST_CONTENT_TOO_SHORT ||
+          t.validationError ||
+          fillTemplateVariables(contentMinWarningTemplate, { min: MIN_CONTENT }),
+      );
       return;
     }
     if (contentLength > MAX_CONTENT) {
-      toast.error(tErrors.POST_CONTENT_TOO_LONG || t.validationError || `본문을 ${MAX_CONTENT}자 이하로 작성해주세요.`);
+      toast.error(
+        tErrors.POST_CONTENT_TOO_LONG ||
+          t.validationError ||
+          fillTemplateVariables(contentMaxWarningTemplate, { max: MAX_CONTENT }),
+      );
       return;
     }
     if (!parentCategory || (hasChildren && !childCategory)) {
