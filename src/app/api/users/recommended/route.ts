@@ -34,6 +34,9 @@ export async function GET(req: NextRequest) {
     const viewerVisaType = viewer?.visaType || null;
     const viewerKoreanLevel = viewer?.koreanLevel || null;
     const viewerInterests = (viewer?.interests || []).filter((value) => typeof value === 'string' && value.trim().length > 0);
+    const viewerInterestsArray = viewerInterests.length > 0
+      ? sql`ARRAY[${sql.join(viewerInterests.map((value) => sql`${value}`), sql`, `)}]::text[]`
+      : sql`ARRAY[]::text[]`;
 
     // Get users that current user is already following
     const followingUsers = await db
@@ -67,8 +70,8 @@ export async function GET(req: NextRequest) {
       + (CASE WHEN ${viewerVisaType} IS NOT NULL AND ${users.visaType} = ${viewerVisaType} THEN 3 ELSE 0 END)
       + (CASE WHEN ${viewerKoreanLevel} IS NOT NULL AND ${users.koreanLevel} = ${viewerKoreanLevel} THEN 1 ELSE 0 END)
       + (CASE
-          WHEN COALESCE(array_length(${viewerInterests}::text[], 1), 0) > 0
-            AND COALESCE(${users.interests} && ${viewerInterests}::text[], false)
+          WHEN COALESCE(array_length(${viewerInterestsArray}, 1), 0) > 0
+            AND COALESCE(${users.interests} && ${viewerInterestsArray}, false)
           THEN 3
           ELSE 0
         END)
