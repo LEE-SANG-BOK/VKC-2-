@@ -2,7 +2,7 @@
 import { db } from '@/lib/db';
 import { news } from '@/lib/db/schema';
 import { desc, eq, asc, and, or, isNull, lte, gte } from 'drizzle-orm';
-import { successResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPublicSWR, successResponse, serverErrorResponse } from '@/lib/api/response';
 
 export async function GET(request: Request) {
   try {
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     const merged = [...preferred, ...fallbackVi, ...others];
 
     const response = successResponse(merged);
-    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    setPublicSWR(response, 300, 600);
     return response;
   } catch (error) {
     console.error('Failed to fetch news:', error);

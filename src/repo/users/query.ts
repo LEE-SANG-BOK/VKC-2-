@@ -26,6 +26,7 @@ import type {
   UserComment,
   UserBookmark,
   User,
+  RecommendedUser,
   UserScore,
   UserLeaderboardEntry,
   ApiResponse,
@@ -266,7 +267,7 @@ export function useInfiniteUserBookmarks(
 }
 
 export function useRecommendedUsers(
-  options?: Omit<UseQueryOptions<PaginatedResponse<User>>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<PaginatedResponse<RecommendedUser>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: queryKeys.users.recommended({ mode: 'list', limit: 12 }),

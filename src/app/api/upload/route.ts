@@ -20,14 +20,14 @@ export async function POST(request: NextRequest) {
     const postId = formData.get('postId') as string | null;
 
     if (!file) {
-      return errorResponse('파일이 없습니다.');
+      return errorResponse('파일이 없습니다.', 'UPLOAD_FILE_REQUIRED');
     }
 
     // Supabase Storage에 업로드
     const result = await uploadPostImage(file, user.id, postId || undefined);
 
     if (!result.success) {
-      return errorResponse(result.error || '파일 업로드에 실패했습니다.');
+      return errorResponse(result.error || '파일 업로드에 실패했습니다.', 'UPLOAD_FAILED');
     }
 
     return successResponse(

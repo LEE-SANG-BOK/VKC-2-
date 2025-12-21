@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
+import Image from 'next/image';
 import NewsCard from '@/components/molecules/cards/NewsCard';
 import { useNews } from '@/repo/news/query';
 import { NewsItem } from '@/repo/news/types';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface TranslationsType {
-  news?: { title?: string };
+  news?: { title?: string; close?: string; openExternal?: string };
 }
 
 interface NewsSectionProps {
@@ -18,10 +20,9 @@ interface NewsSectionProps {
 export default function NewsSection({ translations, lang }: NewsSectionProps) {
   const locale = lang || 'vi';
   const t = translations?.news || {};
-  const title =
-    t.title || (locale === 'vi' ? 'Nội dung nổi bật' : locale === 'en' ? 'Featured content' : '추천 콘텐츠');
-  const closeLabel = locale === 'vi' ? 'Đóng' : locale === 'en' ? 'Close' : '닫기';
-  const openExternalLabel = locale === 'vi' ? 'Mở liên kết' : locale === 'en' ? 'Open link' : '외부 링크 열기';
+  const title = t.title || '';
+  const closeLabel = t.close || '';
+  const openExternalLabel = t.openExternal || '';
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<NewsItem | null>(null);
@@ -115,7 +116,15 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
           >
             {selected.imageUrl && (
               <div className="relative w-full h-56 bg-gray-100 dark:bg-gray-800">
-                <img src={selected.imageUrl} alt={selected.title} className="w-full h-full object-cover" />
+                <Image
+                  src={selected.imageUrl}
+                  alt={selected.title}
+                  fill
+                  sizes="768px"
+                  className="object-cover"
+                  placeholder="blur"
+                  blurDataURL={DEFAULT_BLUR_DATA_URL}
+                />
               </div>
             )}
             <div className="p-6 space-y-3">

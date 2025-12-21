@@ -22,6 +22,7 @@ interface RecommendedUser {
   image?: string | null;
   isFollowing?: boolean;
   isVerified?: boolean;
+  isExpert?: boolean;
   badgeType?: string | null;
   recommendationMeta?: RecommendationMetaItem[];
   stats?: RecommendedUserStats;
@@ -32,6 +33,7 @@ interface RecommendedUsersSectionProps {
   locale: string;
   users: RecommendedUser[];
   isLoading: boolean;
+  translations?: Record<string, unknown>;
   followerLabel: string;
   postsLabel: string;
   followingLabel: string;
@@ -54,6 +56,7 @@ export default function RecommendedUsersSection({
   locale,
   users,
   isLoading,
+  translations,
   followerLabel,
   postsLabel,
   followingLabel,
@@ -115,9 +118,9 @@ export default function RecommendedUsersSection({
     };
   }, [trustBadgeTranslations, verifiedLabel]);
 
-  const ariaPrev = previousLabel || (locale === 'vi' ? 'Trước' : locale === 'en' ? 'Previous' : '이전');
-  const ariaNext = nextLabel || (locale === 'vi' ? 'Tiếp' : locale === 'en' ? 'Next' : '다음');
-  const fallbackName = anonymousLabel || (locale === 'vi' ? 'Người dùng ẩn danh' : locale === 'en' ? 'Anonymous user' : '익명 사용자');
+  const ariaPrev = previousLabel || '';
+  const ariaNext = nextLabel || '';
+  const fallbackName = anonymousLabel || '';
 
   useEffect(() => {
     if (!hasInteracted || !onLoadMore || !hasNextPage || isFetchingNextPage) return;
@@ -169,6 +172,7 @@ export default function RecommendedUsersSection({
           locale,
           author: {
             isVerified: user.isVerified,
+            isExpert: user.isExpert,
             badgeType: user.badgeType,
           },
           translations: mergedTrustTranslations,
@@ -185,6 +189,7 @@ export default function RecommendedUsersSection({
           metaLabels: mergedMetaLabels,
           badgeLabels,
         });
+        const visibleMetaTexts = metaTexts.slice(0, 2);
         return (
           <div
             key={userId}
@@ -203,6 +208,7 @@ export default function RecommendedUsersSection({
                   userName={displayName}
                   isFollowing={followStates[userId] ?? user.isFollowing ?? false}
                   size={followButtonSize}
+                  translations={translations}
                   onToggle={(next) =>
                     setFollowStates((prev) => ({
                       ...prev,
@@ -229,11 +235,18 @@ export default function RecommendedUsersSection({
                       tooltipPosition="top"
                     />
                   </div>
-                  {metaTexts.length > 0 ? (
-                    <div className={`${cardMetaClass} text-gray-500 dark:text-gray-400 flex flex-wrap gap-1`}>
-                      {metaTexts.map((text, index) => (
-                        <span key={`${userId}-meta-${index}`} className="inline-flex">
-                          # {text}
+                  {visibleMetaTexts.length > 0 ? (
+                    <div className={`${cardMetaClass} text-gray-600 dark:text-gray-300 flex flex-wrap gap-1.5`}>
+                      {visibleMetaTexts.map((text, index) => (
+                        <span
+                          key={`${userId}-meta-${index}`}
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 ${
+                            index === 0
+                              ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200'
+                              : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                          }`}
+                        >
+                          {text}
                         </span>
                       ))}
                     </div>
@@ -259,7 +272,7 @@ export default function RecommendedUsersSection({
           <button
             type="button"
             onClick={() => scrollCarousel(-1)}
-            className="inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 h-8 w-8 text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 h-11 w-11 sm:h-9 sm:w-9 text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             aria-label={ariaPrev}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -267,7 +280,7 @@ export default function RecommendedUsersSection({
           <button
             type="button"
             onClick={() => scrollCarousel(1)}
-            className="inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 h-8 w-8 text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 h-11 w-11 sm:h-9 sm:w-9 text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             aria-label={ariaNext}
           >
             <ChevronRight className="h-4 w-4" />

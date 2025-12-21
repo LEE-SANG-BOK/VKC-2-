@@ -20,7 +20,7 @@ import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 interface FollowingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  translations?: Record<string, string>;
+  translations?: Record<string, unknown>;
 }
 
 type TabType = 'recommend' | 'following' | 'feed';
@@ -52,116 +52,36 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   const locale = params.lang as string || 'ko';
   const { data: session } = useSession();
   const user = session?.user;
-  
-  const t = translations;
-  const tCommon = (translations as any)?.common || {};
-  const tTrust = (translations as any)?.trustBadges || {};
-  const tOnboarding = (translations as any)?.onboarding || {};
-  const modalFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        followers: 'Followers',
-        posts: 'Posts',
-        following: 'Following',
-        adoptionRate: 'Adoption rate',
-        interestMatchRate: 'Interest match rate',
-        verifiedUser: 'Verified',
-        loading: 'Loading...',
-        noRecommendations: 'No recommendations yet.',
-        noFollowing: 'You are not following anyone yet.',
-        noFeed: 'No posts from people you follow yet.',
-        followingTitle: 'Following',
-        recommend: 'Recommended',
-        followingTab: 'Following',
-        feed: 'Feed',
-        expertBadge: 'Expert',
-        communityBadge: 'Community',
-        verifiedBadge: 'Verified',
-        unknownUser: 'Unknown',
-        student: 'Student',
-        worker: 'Worker',
-        resident: 'Resident',
-        business: 'Business Owner',
-        homemaker: 'Homemaker',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        followers: 'Người theo dõi',
-        posts: 'Bài viết',
-        following: 'Đang theo dõi',
-        adoptionRate: 'Tỷ lệ được chấp nhận',
-        interestMatchRate: 'Tỷ lệ khớp sở thích',
-        verifiedUser: 'Đã xác minh',
-        loading: 'Đang tải...',
-        noRecommendations: 'Chưa có gợi ý người dùng.',
-        noFollowing: 'Chưa theo dõi ai.',
-        noFeed: 'Chưa có bài từ người bạn theo dõi.',
-        followingTitle: 'Đang theo dõi',
-        recommend: 'Gợi ý',
-        followingTab: 'Đang theo dõi',
-        feed: 'Bảng tin',
-        expertBadge: 'Chuyên gia',
-        communityBadge: 'Cộng đồng',
-        verifiedBadge: 'Đã xác minh',
-        unknownUser: 'Không rõ',
-        student: 'Sinh viên',
-        worker: 'Người lao động',
-        resident: 'Cư dân',
-        business: 'Chủ doanh nghiệp',
-        homemaker: 'Nội trợ',
-      };
-    }
-    return {
-      followers: '팔로워',
-      posts: '게시글',
-      following: '팔로잉',
-      adoptionRate: '채택률',
-      interestMatchRate: '관심사 일치율',
-      verifiedUser: '인증됨',
-      loading: '로딩 중...',
-      noRecommendations: '추천할 사용자가 없습니다.',
-      noFollowing: '아직 팔로잉하는 사용자가 없습니다.',
-      noFeed: '팔로우한 사용자의 게시글이 없습니다.',
-      followingTitle: '팔로우',
-      recommend: '추천',
-      followingTab: '팔로잉',
-      feed: '피드',
-      expertBadge: '전문가',
-      communityBadge: '커뮤니티',
-      verifiedBadge: '인증됨',
-      unknownUser: '알 수 없음',
-      student: '학생',
-      worker: '근로자',
-      resident: '거주자',
-      business: '사업자',
-      homemaker: '주부',
-    };
-  }, [locale]);
+
+  const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tProfile = (translations?.profile || {}) as Record<string, string>;
+  const tUserMenu = (translations?.userMenu || {}) as Record<string, string>;
+  const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
+  const tOnboarding = (translations?.onboarding || {}) as Record<string, string>;
   const modalLabels = {
-    followers: tCommon.followers || modalFallbacks.followers,
-    posts: tCommon.posts || modalFallbacks.posts,
-    following: tCommon.following || modalFallbacks.following,
-    adoptionRate: tCommon.adoptionRate || modalFallbacks.adoptionRate,
-    interestMatchRate: tCommon.interestMatchRate || modalFallbacks.interestMatchRate,
-    verifiedUser: tCommon.verifiedUser || modalFallbacks.verifiedUser,
-    loading: (t as any).loading || modalFallbacks.loading,
-    noRecommendations: (t as any).noRecommendations || modalFallbacks.noRecommendations,
-    noFollowing: (t as any).noFollowing || modalFallbacks.noFollowing,
-    noFeed: (t as any).noFeed || modalFallbacks.noFeed,
-    followingTitle: (t as any).followingTitle || modalFallbacks.followingTitle,
-    recommend: (t as any).recommend || modalFallbacks.recommend,
-    followingTab: (t as any).following || modalFallbacks.followingTab,
-    feed: (t as any).feed || modalFallbacks.feed,
-    expertBadge: tTrust.expertLabel || modalFallbacks.expertBadge,
-    communityBadge: tTrust.communityLabel || modalFallbacks.communityBadge,
-    verifiedBadge: tTrust.verifiedUserLabel || modalFallbacks.verifiedBadge,
-    unknownUser: tCommon.anonymous || modalFallbacks.unknownUser,
-    student: t.student || modalFallbacks.student,
-    worker: t.worker || modalFallbacks.worker,
-    resident: t.resident || modalFallbacks.resident,
-    business: t.business || modalFallbacks.business,
-    homemaker: t.homemaker || modalFallbacks.homemaker,
+    followers: tProfile.followers || '',
+    posts: tProfile.posts || '',
+    following: tProfile.following || tCommon.following || '',
+    adoptionRate: tCommon.adoptionRate || '',
+    interestMatchRate: tCommon.interestMatchRate || '',
+    verifiedUser: tTrust.verifiedUserLabel || tCommon.verifiedUser || '',
+    loading: tProfile.loading || tCommon.processing || '',
+    noRecommendations: tUserMenu.noRecommendations || '',
+    noFollowing: tUserMenu.noFollowing || tUserMenu.noFollowingTitle || tUserMenu.noFollowingDesc || '',
+    noFeed: tUserMenu.noFeedDesc || tUserMenu.noFeedTitle || tUserMenu.feedComingSoon || '',
+    followingTitle: tUserMenu.followingTitle || '',
+    recommend: tUserMenu.recommend || tUserMenu.recommended || '',
+    followingTab: tUserMenu.following || '',
+    feed: tUserMenu.feed || '',
+    expertBadge: tTrust.expertLabel || '',
+    communityBadge: tTrust.communityLabel || '',
+    verifiedBadge: tTrust.verifiedUserLabel || '',
+    unknownUser: tCommon.anonymous || '',
+    student: tUserMenu.student || tProfile.userTypeStudent || '',
+    worker: tUserMenu.worker || tProfile.userTypeWorker || '',
+    resident: tUserMenu.resident || tProfile.userTypeResident || '',
+    business: tUserMenu.business || tProfile.userTypeBusiness || '',
+    homemaker: tUserMenu.homemaker || tProfile.userTypeHomemaker || '',
   };
   const [activeTab, setActiveTab] = useState<TabType>('recommend');
   const modalBodyRef = useRef<HTMLDivElement>(null);
@@ -434,6 +354,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
               userName={displayName}
               isFollowing={isFollowing}
               size="sm"
+              translations={translations}
               onToggle={(next) =>
                 setFollowStates((prev) => ({
                   ...prev,

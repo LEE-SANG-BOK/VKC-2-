@@ -13,8 +13,6 @@ const bannedPatterns = [
 ];
 
 const spamPatterns = [
-  /https?:\/\//i,
-  /www\./i,
   /\S+@\S+\.\S+/i,
   /\b\d{2,3}-\d{3,4}-\d{4}\b/,
   /\b\d{9,}\b/,

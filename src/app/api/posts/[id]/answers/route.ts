@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { answers, posts, likes, users } from '@/lib/db/schema';
-import { successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, paginatedResponse, rateLimitResponse } from '@/lib/api/response';
+import { setPrivateNoStore, successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, paginatedResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkRateLimit } from '@/lib/api/rateLimit';
 import { checkUserStatus } from '@/lib/user-status';
@@ -11,6 +11,7 @@ import { createAnswerNotification } from '@/lib/notifications/create';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
+import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
 import { isExpertBadgeType } from '@/lib/constants/badges';
 
 const answerRateLimitWindowMs = 60 * 60 * 1000;
@@ -238,7 +239,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     if (!wantsPagination) {
       const response = successResponse(formatted);
-      response.headers.set('Cache-Control', 'private, no-store');
+      setPrivateNoStore(response);
       return response;
     }
 
@@ -247,7 +248,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       hasMore: rawHasMore,
       paginationMode: useCursorPagination ? 'cursor' : 'offset',
     });
-    response.headers.set('Cache-Control', 'private, no-store');
+    setPrivateNoStore(response);
     return response;
   } catch (error) {
     console.error('GET /api/posts/[id]/answers error:', error);
@@ -342,7 +343,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return errorResponse('답변 내용을 입력해주세요.', 'ANSWER_REQUIRED');
     }
 
-    const normalizedContent = content.trim();
+    const normalizedContent = sanitizeUgcHtml(content);
     const validation = validateUgcText(normalizedContent, UGC_LIMITS.answerContent.min, UGC_LIMITS.answerContent.max);
     if (!validation.ok) {
       if (validation.code === 'UGC_TOO_SHORT') {

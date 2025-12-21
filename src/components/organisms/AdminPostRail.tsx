@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { useNews } from '@/repo/news/query';
 import { NewsItem } from '@/repo/news/types';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface AdminPostRailProps {
   translations: Record<string, unknown>;
@@ -73,6 +74,8 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
                         fill
                         sizes="64px"
                         className="object-cover"
+                        placeholder="blur"
+                        blurDataURL={DEFAULT_BLUR_DATA_URL}
                       />
                     ) : null}
                   </div>
@@ -102,7 +105,15 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
           >
             {selected.imageUrl ? (
               <div className="relative w-full h-56 bg-gray-100 dark:bg-gray-800">
-                <Image src={selected.imageUrl} alt={selected.title} fill sizes="768px" className="object-cover" />
+                <Image
+                  src={selected.imageUrl}
+                  alt={selected.title}
+                  fill
+                  sizes="768px"
+                  className="object-cover"
+                  placeholder="blur"
+                  blurDataURL={DEFAULT_BLUR_DATA_URL}
+                />
               </div>
             ) : null}
             <div className="p-6 space-y-3">

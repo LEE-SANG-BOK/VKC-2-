@@ -23,6 +23,7 @@ interface FollowButtonProps {
   size?: 'xs' | 'sm' | 'md';
   className?: string;
   onToggle?: (next: boolean) => void;
+  translations?: Record<string, unknown>;
 }
 
 export default function FollowButton({
@@ -32,12 +33,14 @@ export default function FollowButton({
   size = 'md',
   className = '',
   onToggle,
+  translations,
 }: FollowButtonProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const params = useParams();
   const lang = (params?.lang as string) || 'ko';
   const toggleFollowMutation = useToggleFollow();
+  const tCommon = (translations?.common || {}) as Record<string, string>;
 
   const [following, setFollowing] = useState<boolean>(!!isFollowing);
   const [loading, setLoading] = useState(false);
@@ -51,38 +54,17 @@ export default function FollowButton({
   const isSelf = session?.user?.id === userId;
   if (isSelf) return null;
 
-  const followLabel = lang === 'vi' ? 'Theo dõi' : lang === 'en' ? 'Follow' : '팔로우';
-  const followingLabel = lang === 'vi' ? 'Đang theo dõi' : lang === 'en' ? 'Following' : '팔로잉 중';
-  const processingLabel =
-    lang === 'vi'
-      ? 'Đang xử lý'
-      : lang === 'en'
-        ? 'Processing'
-        : following
-          ? '해제 중'
-          : '팔로우 중';
+  const followLabel = tCommon.follow || '';
+  const unfollowLabel = tCommon.unfollow || '';
+  const followingLabel = tCommon.following || '';
+  const processingLabel = tCommon.processing || '';
 
-  const targetName = userName || (lang === 'vi' ? 'người dùng này' : lang === 'en' ? 'this user' : '해당 사용자');
-  const confirmTitle = lang === 'vi' ? 'Xác nhận' : lang === 'en' ? 'Confirm' : '확인';
-  const confirmDescription = following
-    ? lang === 'vi'
-      ? `Bạn có muốn bỏ theo dõi ${targetName} không?`
-      : lang === 'en'
-        ? `Unfollow ${targetName}?`
-        : `${targetName} 사용자를 팔로우 해제하시겠습니까?`
-    : lang === 'vi'
-      ? `Bạn có muốn theo dõi ${targetName} không?`
-      : lang === 'en'
-        ? `Follow ${targetName}?`
-        : `${targetName} 사용자를 팔로우 하시겠습니까?`;
-  const cancelLabel = lang === 'vi' ? 'Hủy' : lang === 'en' ? 'Cancel' : '취소';
-  const confirmActionLabel = following
-    ? lang === 'vi'
-      ? 'Bỏ theo dõi'
-      : lang === 'en'
-        ? 'Unfollow'
-        : '팔로우 해제'
-    : followLabel;
+  const targetName = userName || tCommon.thisUser || '';
+  const confirmTitle = tCommon.confirm || '';
+  const confirmTemplate = following ? tCommon.unfollowConfirm : tCommon.followConfirm;
+  const confirmDescription = (confirmTemplate || '').replace('{name}', targetName);
+  const cancelLabel = tCommon.cancel || '';
+  const confirmActionLabel = following ? unfollowLabel : followLabel;
 
   const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -116,10 +98,10 @@ export default function FollowButton({
 
   const sizeClasses =
     size === 'xs'
-      ? 'px-2 py-0.5 text-[9px] leading-none min-h-[20px]'
+      ? 'px-3 py-2 text-xs min-h-[44px] sm:px-2 sm:py-0.5 sm:text-[9px] sm:leading-none sm:min-h-[20px]'
       : size === 'sm'
-        ? 'px-3 py-1.5 text-xs min-h-[36px]'
-        : 'px-4 py-2 text-sm min-h-[40px]';
+        ? 'px-3 py-2 text-sm min-h-[44px] sm:px-3 sm:py-1.5 sm:text-xs sm:min-h-[36px]'
+        : 'px-4 py-2 text-sm min-h-[44px] sm:min-h-[40px]';
   const activeClasses = following
     ? 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'
     : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700';

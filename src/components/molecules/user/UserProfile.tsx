@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, createContext, useContext } from 'react';
+import { useState, useRef, useEffect, createContext, useContext } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'nextjs-toploader/app';
@@ -11,11 +11,17 @@ import Avatar from '@/components/atoms/Avatar';
 
 const ModalLoadingContext = createContext<(() => void) | null>(null);
 
+const LOADING_TITLE_BY_LOCALE = {
+  ko: '로딩 중...',
+  en: 'Loading...',
+  vi: 'Đang tải...',
+} as const;
+
 function ModalLoadingFallback({ maxWidth }: { maxWidth: string }) {
   const params = useParams();
   const locale = params.lang as string || 'ko';
   const onClose = useContext(ModalLoadingContext);
-  const title = locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...';
+  const title = LOADING_TITLE_BY_LOCALE[locale as keyof typeof LOADING_TITLE_BY_LOCALE] || LOADING_TITLE_BY_LOCALE.ko;
 
   useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
@@ -92,7 +98,7 @@ interface UserProfileProps {
   isLoggedIn: boolean;
   userId?: string;
   onLogout: () => void;
-  translations?: Record<string, string>;
+  translations?: Record<string, unknown>;
 }
 
 type ModalType = 'profile' | 'myPosts' | 'following' | 'bookmarks' | 'settings' | null;
@@ -106,48 +112,14 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const t = translations;
-  const menuFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        profile: 'Profile',
-        myPosts: 'My Posts',
-        followingFeed: 'Following Feed',
-        bookmarks: 'Bookmarks',
-        settings: 'Settings',
-        askQuestion: 'Ask a question',
-        logout: 'Logout',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        profile: 'Hồ sơ',
-        myPosts: 'Bài viết của tôi',
-        followingFeed: 'Bảng tin đang theo dõi',
-        bookmarks: 'Đánh dấu',
-        settings: 'Cài đặt',
-        askQuestion: 'Đặt câu hỏi',
-        logout: 'Đăng xuất',
-      };
-    }
-    return {
-      profile: '프로필',
-      myPosts: '내 게시글',
-      followingFeed: '팔로잉 피드',
-      bookmarks: '북마크',
-      settings: '설정',
-      askQuestion: '나도 질문하기',
-      logout: '로그아웃',
-    };
-  }, [locale]);
   const menuLabels = {
-    profile: t.profile || menuFallbacks.profile,
-    myPosts: t.myPosts || menuFallbacks.myPosts,
-    followingFeed: t.followingFeed || menuFallbacks.followingFeed,
-    bookmarks: t.bookmarks || menuFallbacks.bookmarks,
-    settings: t.settings || menuFallbacks.settings,
-    askQuestion: t.askQuestion || menuFallbacks.askQuestion,
-    logout: t.logout || menuFallbacks.logout,
+    profile: ((translations?.userMenu as Record<string, string> | undefined)?.profile) || '',
+    myPosts: ((translations?.userMenu as Record<string, string> | undefined)?.myPosts) || '',
+    followingFeed: ((translations?.userMenu as Record<string, string> | undefined)?.followingFeed) || '',
+    bookmarks: ((translations?.userMenu as Record<string, string> | undefined)?.bookmarks) || '',
+    settings: ((translations?.userMenu as Record<string, string> | undefined)?.settings) || '',
+    askQuestion: ((translations?.userMenu as Record<string, string> | undefined)?.askQuestion) || '',
+    logout: ((translations?.userMenu as Record<string, string> | undefined)?.logout) || '',
   };
 
   useEffect(() => {
@@ -212,7 +184,8 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-1.5 p-1.5 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
+        aria-label={name}
+        className="inline-flex h-11 items-center space-x-1.5 px-2 sm:h-9 sm:px-1.5 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
       >
         <Avatar name={name} size="md" imageUrl={avatar} hoverHighlight />
         <span className="text-xs font-medium text-gray-700 dark:text-gray-300 hidden lg:block">
@@ -276,27 +249,27 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
       {/* Modals */}
       {activeModal === 'profile' ? (
         <ModalLoadingContext.Provider value={closeModal}>
-          <ProfileModal isOpen onClose={closeModal} translations={t} />
+          <ProfileModal isOpen onClose={closeModal} translations={translations} />
         </ModalLoadingContext.Provider>
       ) : null}
       {activeModal === 'myPosts' ? (
         <ModalLoadingContext.Provider value={closeModal}>
-          <MyPostsModal isOpen onClose={closeModal} translations={t} />
+          <MyPostsModal isOpen onClose={closeModal} translations={translations} />
         </ModalLoadingContext.Provider>
       ) : null}
       {activeModal === 'following' ? (
         <ModalLoadingContext.Provider value={closeModal}>
-          <FollowingModal isOpen onClose={closeModal} translations={t} />
+          <FollowingModal isOpen onClose={closeModal} translations={translations} />
         </ModalLoadingContext.Provider>
       ) : null}
       {activeModal === 'bookmarks' ? (
         <ModalLoadingContext.Provider value={closeModal}>
-          <BookmarksModal isOpen onClose={closeModal} translations={t} />
+          <BookmarksModal isOpen onClose={closeModal} translations={translations} />
         </ModalLoadingContext.Provider>
       ) : null}
       {activeModal === 'settings' ? (
         <ModalLoadingContext.Provider value={closeModal}>
-          <SettingsModal isOpen onClose={closeModal} translations={t} />
+          <SettingsModal isOpen onClose={closeModal} translations={translations} />
         </ModalLoadingContext.Provider>
       ) : null}
     </div>

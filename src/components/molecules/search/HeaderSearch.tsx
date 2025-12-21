@@ -21,6 +21,18 @@ type CategoryLike = {
   name_vi?: string;
 };
 
+const CATEGORY_NAME_KEY_BY_LOCALE = {
+  ko: 'name',
+  en: 'name_en',
+  vi: 'name_vi',
+} as const satisfies Record<Locale, keyof CategoryLike>;
+
+const GROUP_LABEL_KEY_BY_LOCALE = {
+  ko: 'label',
+  en: 'label_en',
+  vi: 'label_vi',
+} as const;
+
 const MIN_SEARCH_QUERY_LENGTH = 2;
 const isLowQualityExample = (value: string) => {
   const trimmed = value.trim();
@@ -38,36 +50,14 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
   const tSearch = (translations?.search || {}) as Record<string, string>;
   const router = useRouter();
   const searchParams = useSearchParams();
-  const searchFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        categoryLabel: 'Categories',
-        subCategoryLabel: 'Subcategory',
-        searchPlaceholder: 'Search for anything',
-        searchButton: 'Search',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        categoryLabel: 'Danh mục',
-        subCategoryLabel: 'Danh mục con',
-        searchPlaceholder: 'Nhập từ khóa tìm kiếm',
-        searchButton: 'Tìm kiếm',
-      };
-    }
-    return {
-      categoryLabel: '분류',
-      subCategoryLabel: '하위 카테고리',
-      searchPlaceholder: '검색어를 입력하세요',
-      searchButton: '검색',
-    };
-  }, [locale]);
   const searchLabels = {
-    category: tSearch.categoryLabel || searchFallbacks.categoryLabel,
-    subCategory: tSearch.subCategoryLabel || searchFallbacks.subCategoryLabel,
-    placeholder: tSearch.searchPlaceholder || searchFallbacks.searchPlaceholder,
-    button: tSearch.searchButton || searchFallbacks.searchButton,
+    category: tSearch.categoryLabel || '',
+    subCategory: tSearch.subCategoryLabel || '',
+    placeholder: tSearch.searchPlaceholder || '',
+    button: tSearch.searchButton || '',
   };
+  const enterKeywordLabel = tSearch.enterKeyword || '';
+  const minLengthErrorTemplate = tSearch.minLengthError || '';
 
   const [exampleText, setExampleText] = useState('');
   const [searchKeyword, setSearchKeyword] = useState(searchParams.get('q') || searchParams.get('s') || '');
@@ -76,23 +66,19 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
   const { data: exampleData } = useSearchExamples({ limit: 8, period: 'week' });
 
   const getCategoryLabel = (cat?: CategoryLike | null) => {
+    const nameKey = CATEGORY_NAME_KEY_BY_LOCALE[locale];
     const base = LEGACY_CATEGORIES.find((c) => c.slug === cat?.slug);
     if (base) {
-      if (locale === 'vi' && base.name_vi) return base.name_vi;
-      if (locale === 'en' && base.name_en) return base.name_en;
-      return base.name;
+      return (base as unknown as Record<string, string | undefined>)[nameKey] || base.name;
     }
     if (!cat) return '';
-    if (locale === 'vi' && cat.name_vi) return cat.name_vi;
-    if (locale === 'en' && cat.name_en) return cat.name_en;
-    return cat.name || '';
+    return (cat as unknown as Record<string, string | undefined>)[nameKey] || cat.name || '';
   };
 
   const getGroupLabel = useCallback(
     (group: (typeof CATEGORY_GROUPS)[keyof typeof CATEGORY_GROUPS]) => {
-      if (locale === 'vi' && group.label_vi) return group.label_vi;
-      if (locale === 'en' && group.label_en) return group.label_en;
-      return group.label;
+      const labelKey = GROUP_LABEL_KEY_BY_LOCALE[locale] ?? 'label';
+      return (group as unknown as Record<string, string | undefined>)[labelKey] || group.label;
     },
     [locale]
   );
@@ -122,24 +108,12 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
   const executeSearch = useCallback(() => {
     const trimmedQuery = searchKeyword.trim();
     if (trimmedQuery.length === 0) {
-      const fallbackMessage =
-        locale === 'vi'
-          ? 'Vui lòng nhập từ khóa.'
-          : locale === 'en'
-            ? 'Please enter a search keyword.'
-            : '검색어를 입력하세요.';
-      toast.error(tSearch.enterKeyword || fallbackMessage);
+      toast.error(enterKeywordLabel);
       return;
     }
 
     if (trimmedQuery.length < MIN_SEARCH_QUERY_LENGTH) {
-      const fallbackMessage =
-        locale === 'vi'
-          ? `Vui lòng nhập ít nhất ${MIN_SEARCH_QUERY_LENGTH} ký tự.`
-          : locale === 'en'
-            ? `Please enter at least ${MIN_SEARCH_QUERY_LENGTH} characters.`
-            : `검색어를 ${MIN_SEARCH_QUERY_LENGTH}자 이상 입력하세요.`;
-      toast.error(fallbackMessage);
+      toast.error(minLengthErrorTemplate.replace('{min}', String(MIN_SEARCH_QUERY_LENGTH)));
       return;
     }
 
@@ -156,7 +130,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
     }
 
     router.push(`/${locale}/search?${params.toString()}`);
-  }, [childCategory, locale, parentCategory, router, searchKeyword, tSearch.enterKeyword]);
+  }, [childCategory, enterKeywordLabel, locale, minLengthErrorTemplate, parentCategory, router, searchKeyword]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -291,6 +265,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
         <select
           value={parentCategory}
           onChange={(e) => handleParentCategoryChange(e.target.value)}
+          aria-label={searchLabels.category}
           className="w-full truncate appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
         >
           <option value="all">{searchLabels.category}</option>
@@ -311,6 +286,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
             <select
               value={childCategory}
               onChange={(e) => setChildCategory(e.target.value)}
+              aria-label={searchLabels.subCategory}
               className="w-full truncate appearance-none bg-transparent text-sm text-gray-900 dark:text-white font-medium pr-5 pl-0.5 outline-none cursor-pointer"
             >
               <option value="">{searchLabels.subCategory}</option>
@@ -339,6 +315,7 @@ export default function HeaderSearch({ locale, translations }: HeaderSearchProps
           onBlur={handleSearchBlur}
           onClick={handleSearchActivate}
           onMouseDown={handleSearchActivate}
+          aria-label={tSearch.enterKeyword || searchLabels.placeholder}
           placeholder={placeholderText}
           className="flex-1 bg-transparent text-sm outline-none min-w-0 placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white"
         />

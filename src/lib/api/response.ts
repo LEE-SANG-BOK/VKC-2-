@@ -20,6 +20,30 @@ export interface PaginatedResponse<T = any> {
   meta?: Record<string, unknown>;
 }
 
+export const CACHE_CONTROL = {
+  NO_STORE: 'no-store',
+  PRIVATE_NO_STORE: 'private, no-store',
+  publicSWR: (sMaxAgeSeconds: number, staleWhileRevalidateSeconds: number) =>
+    `public, s-maxage=${sMaxAgeSeconds}, stale-while-revalidate=${staleWhileRevalidateSeconds}`,
+} as const;
+
+export const setCacheControl = <T extends NextResponse<any>>(response: T, value: string): T => {
+  response.headers.set('Cache-Control', value);
+  return response;
+};
+
+export const setNoStore = <T extends NextResponse<any>>(response: T): T =>
+  setCacheControl(response, CACHE_CONTROL.NO_STORE);
+
+export const setPrivateNoStore = <T extends NextResponse<any>>(response: T): T =>
+  setCacheControl(response, CACHE_CONTROL.PRIVATE_NO_STORE);
+
+export const setPublicSWR = <T extends NextResponse<any>>(
+  response: T,
+  sMaxAgeSeconds: number,
+  staleWhileRevalidateSeconds: number
+): T => setCacheControl(response, CACHE_CONTROL.publicSWR(sMaxAgeSeconds, staleWhileRevalidateSeconds));
+
 /**
  * 성공 응답
  */
@@ -44,7 +68,7 @@ export function errorResponse(error: string, code?: string, status = 400): NextR
     { status }
   );
 
-  response.headers.set('Cache-Control', 'no-store');
+  setNoStore(response);
   return response;
 }
 
@@ -62,7 +86,7 @@ export function rateLimitResponse(
     { status: 429 }
   );
 
-  response.headers.set('Cache-Control', 'no-store');
+  setNoStore(response);
   if (retryAfterSeconds) {
     response.headers.set('Retry-After', String(retryAfterSeconds));
   }

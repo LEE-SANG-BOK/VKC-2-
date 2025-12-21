@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
+import { setNoStore, setPublicSWR } from '@/lib/api/response';
 import { eq, asc } from 'drizzle-orm';
 import { DEPRECATED_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
 
@@ -52,13 +53,12 @@ export async function GET(request: NextRequest) {
       data: result,
     });
 
-    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    setPublicSWR(response, 300, 600);
     return response;
   } catch (error) {
     console.error('Error fetching categories:', error);
-    return NextResponse.json(
-      { error: '카테고리를 가져오는데 실패했습니다.' },
-      { status: 500 }
-    );
+    const response = NextResponse.json({ error: '카테고리를 가져오는데 실패했습니다.' }, { status: 500 });
+    setNoStore(response);
+    return response;
   }
 }

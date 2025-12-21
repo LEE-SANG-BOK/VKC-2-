@@ -8,14 +8,17 @@ import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { ShieldAlert, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import { useCreatePost } from '@/repo/posts/mutation';
+import { logEvent } from '@/repo/events/mutation';
 import { ApiError, isAccountRestrictedError } from '@/lib/api/errors';
 import SimilarQuestionPrompt from '@/components/organisms/SimilarQuestionPrompt';
 import Modal from '@/components/atoms/Modal';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
+import GuidelinesModal from '@/components/molecules/modals/GuidelinesModal';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
+import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
 import type { Locale } from '@/i18n/config';
-import { UGC_LIMITS, getPlainTextLength, isLowQualityText } from '@/lib/validation/ugc';
+import { UGC_LIMITS, extractPlainText, getPlainTextLength, isLowQualityText } from '@/lib/validation/ugc';
 
 const RichTextEditor = dynamic(() => import('@/components/molecules/editor/RichTextEditor'), {
   ssr: false,
@@ -59,6 +62,13 @@ const applyThumbnailSelection = (html: string, selected: string) => {
   });
 };
 
+const fillTemplateVariables = (template: string, variables: Record<string, string | number>) => {
+  return Object.entries(variables).reduce(
+    (value, [key, replacement]) => value.replace(new RegExp(`\\{${key}\\}`, 'g'), String(replacement)),
+    template,
+  );
+};
+
 interface NewPostClientProps {
   translations: Record<string, unknown>;
   lang: Locale;
@@ -98,6 +108,32 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const [manualTagEdit, setManualTagEdit] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const openLoginPrompt = () => setIsLoginPromptOpen(true);
+  const [isGuidelinesOpen, setIsGuidelinesOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id || isLoginPromptOpen) return;
+    const storageKey = `vk-guidelines-seen-v1:${user.id}`;
+    const seen = window.localStorage.getItem(storageKey);
+    if (seen) return;
+    setIsGuidelinesOpen(true);
+  }, [user?.id, isLoginPromptOpen]);
+
+  const closeGuidelines = useCallback(() => {
+    if (user?.id) {
+      const storageKey = `vk-guidelines-seen-v1:${user.id}`;
+      window.localStorage.setItem(storageKey, new Date().toISOString());
+      logEvent({
+        eventType: 'guideline',
+        entityType: 'user',
+        entityId: user.id,
+        locale: lang,
+        metadata: {
+          surface: 'posts/new',
+        },
+      });
+    }
+    setIsGuidelinesOpen(false);
+  }, [user?.id, lang]);
 
   const scrollComposerIntoView = useCallback((element: HTMLElement) => {
     element.style.scrollMarginBottom = 'calc(var(--vk-bottom-safe-offset, 72px) + env(safe-area-inset-bottom, 0px) + 24px)';
@@ -194,10 +230,10 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const selectChildCategoryLabel = t.selectChildCategory || categoryFallbacks.selectChildCategory;
   const noChildCategoriesLabel = t.noChildCategories || categoryFallbacks.noChildCategories;
   const templateBackgroundPlaceholder = t.templateBackgroundPlaceholder || templateFallbacks.backgroundPlaceholder;
-  const thumbnailLabel = t.thumbnailLabel || (lang === 'vi' ? 'Ảnh đại diện' : lang === 'en' ? 'Cover image' : '대표 이미지');
-  const thumbnailHint = t.thumbnailHint || (lang === 'vi' ? 'Chọn ảnh sẽ hiển thị trên thẻ bài viết.' : lang === 'en' ? 'Choose which image appears on the post card.' : '게시글 카드에 표시할 이미지를 선택하세요.');
-  const thumbnailEmpty = t.thumbnailEmpty || (lang === 'vi' ? 'Không tìm thấy ảnh trong nội dung.' : lang === 'en' ? 'No images found in the content.' : '본문에서 이미지를 찾지 못했습니다.');
-  const thumbnailSelectedLabel = t.thumbnailSelected || (lang === 'vi' ? 'Đã chọn' : lang === 'en' ? 'Selected' : '선택됨');
+  const thumbnailLabel = t.thumbnailLabel || '';
+  const thumbnailHint = t.thumbnailHint || '';
+  const thumbnailEmpty = t.thumbnailEmpty || '';
+  const thumbnailSelectedLabel = t.thumbnailSelected || '';
   const uiFallbacks = useMemo(() => {
     if (lang === 'en') {
       return {
@@ -224,6 +260,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
         titlePlaceholderQuestion: 'Enter your question',
         titlePlaceholderShare: 'Enter a title',
         titleMinWarning: 'Please write at least {min} characters for the title.',
+        titleMaxWarning: 'Title can be up to {max} characters.',
         content: 'Content',
         contentPlaceholderQuestion: 'Write your question...',
         contentPlaceholderShare: 'Write what you want to share...',
@@ -265,6 +302,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
         titlePlaceholderQuestion: 'Nhập câu hỏi',
         titlePlaceholderShare: 'Nhập tiêu đề',
         titleMinWarning: 'Tiêu đề cần ít nhất {min} ký tự.',
+        titleMaxWarning: 'Tiêu đề tối đa {max} ký tự.',
         content: 'Nội dung',
         contentPlaceholderQuestion: 'Viết nội dung câu hỏi...',
         contentPlaceholderShare: 'Viết nội dung chia sẻ...',
@@ -305,6 +343,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
       titlePlaceholderQuestion: '질문을 입력하세요',
       titlePlaceholderShare: '제목을 입력하세요',
       titleMinWarning: '제목을 최소 {min}자 이상 작성해주세요.',
+      titleMaxWarning: '제목은 최대 {max}자까지 작성할 수 있습니다.',
       content: '내용',
       contentPlaceholderQuestion: '질문 내용을 작성하세요...',
       contentPlaceholderShare: '공유할 내용을 작성하세요...',
@@ -344,6 +383,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const titlePlaceholderQuestionLabel = t.titlePlaceholderQuestion || uiFallbacks.titlePlaceholderQuestion;
   const titlePlaceholderShareLabel = t.titlePlaceholderShare || uiFallbacks.titlePlaceholderShare;
   const titleMinWarningTemplate = t.titleMinWarning || uiFallbacks.titleMinWarning;
+  const titleMaxWarningTemplate = t.titleMaxWarning || uiFallbacks.titleMaxWarning;
   const contentLabel = t.content || uiFallbacks.content;
   const contentPlaceholderQuestionLabel = t.contentPlaceholderQuestion || uiFallbacks.contentPlaceholderQuestion;
   const contentPlaceholderShareLabel = t.contentPlaceholderShare || uiFallbacks.contentPlaceholderShare;
@@ -416,19 +456,35 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
 
     const hasChildren = childCategories.length > 0;
     if (!title.trim() || titleLength < MIN_TITLE) {
-      toast.error(tErrors.POST_TITLE_TOO_SHORT || t.validationError || `제목을 최소 ${MIN_TITLE}자 이상 입력해주세요.`);
+      toast.error(
+        tErrors.POST_TITLE_TOO_SHORT ||
+          t.validationError ||
+          fillTemplateVariables(titleMinWarningTemplate, { min: MIN_TITLE }),
+      );
       return;
     }
     if (titleLength > MAX_TITLE) {
-      toast.error(tErrors.POST_TITLE_TOO_LONG || t.validationError || `제목을 ${MAX_TITLE}자 이하로 작성해주세요.`);
+      toast.error(
+        tErrors.POST_TITLE_TOO_LONG ||
+          t.validationError ||
+          fillTemplateVariables(titleMaxWarningTemplate, { max: MAX_TITLE }),
+      );
       return;
     }
     if (!resolvedContentWithThumbnail.trim() || contentLength < MIN_CONTENT) {
-      toast.error(tErrors.POST_CONTENT_TOO_SHORT || t.validationError || `본문을 최소 ${MIN_CONTENT}자 이상 입력해주세요.`);
+      toast.error(
+        tErrors.POST_CONTENT_TOO_SHORT ||
+          t.validationError ||
+          fillTemplateVariables(contentMinWarningTemplate, { min: MIN_CONTENT }),
+      );
       return;
     }
     if (contentLength > MAX_CONTENT) {
-      toast.error(tErrors.POST_CONTENT_TOO_LONG || t.validationError || `본문을 ${MAX_CONTENT}자 이하로 작성해주세요.`);
+      toast.error(
+        tErrors.POST_CONTENT_TOO_LONG ||
+          t.validationError ||
+          fillTemplateVariables(contentMaxWarningTemplate, { max: MAX_CONTENT }),
+      );
       return;
     }
     if (!parentCategory || (hasChildren && !childCategory)) {
@@ -541,58 +597,6 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     }
   }, [parentCategory, parentOptions, childCategory]);
 
-  // 카테고리별 인기 태그 매핑 (id/slug/name 소문자 키 모두 대응 + slug 포함 키워드 매칭)
-  const popularTags: Record<string, string[]> = {
-    'jobs': ['취업', '채용', '지원서'],
-    'employment': ['취업', '지원서', '면접'],
-    'intern': ['인턴', '서류', '면접'],
-    'contest': ['공모전', '포트폴리오', '수상'],
-    'visa': ['비자', '연장', '체류'],
-    'study': ['학업', '장학금', '수업'],
-    'education': ['학업', '수업', '장학금'],
-    'life': ['생활', '주거', '교통'],
-    'daily-life': ['생활', '주거', '생활정보'],
-    'housing': ['주거', '월세', '방구하기'],
-    'finance': ['금융', '계좌개설', '송금'],
-    'healthcare': ['의료', '보험', '병원'],
-    'legal': ['법률', '계약', '신고'],
-    'business': ['비즈니스', '창업', '서류'],
-    'tech': ['IT', '개발', '프로젝트'],
-    'gaming': ['게임', '커뮤니티', '리뷰'],
-    'korean-language': ['한국어', '토픽', '수업'],
-  };
-
-  const keywordTags: Record<string, string[]> = {
-    '비자': ['비자', '연장', '체류'],
-    'visa': ['비자', '연장', '체류'],
-    '채용': ['취업', '채용', '면접'],
-    '취업': ['취업', '채용', '면접'],
-    '면접': ['면접', '자소서', '포트폴리오'],
-    '인턴': ['인턴', '서류', '면접'],
-    '공모전': ['공모전', '포트폴리오', '수상'],
-    '포트폴리오': ['포트폴리오', '공모전', '수상'],
-    '장학': ['장학금', '학업', '수업'],
-    '학업': ['학업', '수업', '장학금'],
-    '주거': ['주거', '월세', '방구하기'],
-    '월세': ['주거', '월세', '방구하기'],
-    '계좌': ['금융', '계좌개설', '송금'],
-    '송금': ['송금', '계좌개설', '금융'],
-    '보험': ['보험', '의료', '병원'],
-    '병원': ['병원', '의료', '보험'],
-    '법률': ['법률', '계약', '신고'],
-    '계약': ['계약', '법률', '신고'],
-    '창업': ['비즈니스', '창업', '서류'],
-    '개발': ['IT', '개발', '프로젝트'],
-    '게임': ['게임', '커뮤니티', '리뷰'],
-    '토픽': ['한국어', '토픽', '수업'],
-  };
-
-  const extractKeywords = (text: string) => {
-    const lower = text.toLowerCase();
-    const tokens = lower.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-    return new Set(tokens);
-  };
-
   const localizeTag = (tag: string) => {
     return localizeCommonTagLabel(tag, lang);
   };
@@ -615,46 +619,21 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     const child = childOptions.find((childOption) => childOption.slug === childCategory);
     const parentLabel = resolveLocalizedLabel(parentCategory) || selectedParent?.label;
     const childLabel = resolveLocalizedLabel(child?.slug) || child?.name;
-    const keys = [
-      child?.id, child?.slug, child?.name,
-      parentCategory, selectedParent?.slug, selectedParent?.label,
-    ].filter(Boolean).map((v) => v!.toLowerCase());
-
-    const collected: string[] = [];
-    keys.forEach((k) => {
-      const arr = popularTags[k];
-      if (arr) {
-        collected.push(...arr);
-        return;
-      }
-      if (k.includes('visa')) collected.push('비자', '연장', '체류');
-      if (k.includes('job') || k.includes('employment')) collected.push('취업', '채용', '면접');
-      if (k.includes('intern')) collected.push('인턴', '서류', '면접');
-      if (k.includes('contest')) collected.push('공모전', '포트폴리오', '수상');
-      if (k.includes('study') || k.includes('edu')) collected.push('학업', '장학금', '수업');
-      if (k.includes('life') || k.includes('daily')) collected.push('생활', '주거', '교통');
-      if (k.includes('finance')) collected.push('금융', '계좌개설', '송금');
-      if (k.includes('health')) collected.push('의료', '보험', '병원');
-      if (k.includes('legal')) collected.push('법률', '계약', '신고');
-      if (k.includes('business')) collected.push('비즈니스', '창업', '서류');
-      if (k.includes('tech')) collected.push('IT', '개발', '프로젝트');
-      if (k.includes('game')) collected.push('게임', '커뮤니티', '리뷰');
-      if (k.includes('korean')) collected.push('한국어', '토픽', '수업');
-    });
-
-    // 제목/본문 키워드 기반 태그 추가
-    const keywordPool = extractKeywords(`${title} ${content}`);
-    Object.entries(keywordTags).forEach(([kw, tags]) => {
-      if (keywordPool.has(kw.toLowerCase())) {
-        collected.push(...tags);
-      }
-    });
+    const keywordCandidates = flattenKeywords(
+      buildKeywords({
+        title,
+        content: extractPlainText(resolvedContentWithThumbnail),
+        category: parentLabel,
+        subcategory: childLabel,
+      }),
+      8
+    );
 
     // 카테고리/세부분류를 우선 포함
     const base = [
       childLabel,
       parentLabel,
-      ...collected,
+      ...keywordCandidates,
       defaultTagLabel,
     ].filter(Boolean) as string[];
     const localized = base.map(localizeTag);
@@ -925,10 +904,11 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                   </div>
                   <div className="grid gap-2">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                      <label htmlFor="templateCondition" className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
                         {templateConditionLabel}
                       </label>
                       <textarea
+                        id="templateCondition"
                         value={templateCondition}
                         onChange={(e) => setTemplateCondition(e.target.value)}
                         rows={2}
@@ -944,10 +924,11 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                      <label htmlFor="templateGoal" className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
                         {templateGoalLabel}
                       </label>
                       <textarea
+                        id="templateGoal"
                         value={templateGoal}
                         onChange={(e) => setTemplateGoal(e.target.value)}
                         rows={2}
@@ -963,10 +944,11 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                      <label htmlFor="templateBackground" className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
                         {templateBackgroundLabel}
                       </label>
                       <textarea
+                        id="templateBackground"
                         value={templateBackground}
                         onChange={(e) => setTemplateBackground(e.target.value)}
                         rows={2}
@@ -1159,6 +1141,13 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
           </div>
         </div>
       </div>
+      <GuidelinesModal
+        isOpen={isGuidelinesOpen}
+        onClose={closeGuidelines}
+        title={rulesTitleLabel}
+        items={[rulesRespectLabel, rulesAdsLabel, rulesDupLabel]}
+        confirmLabel={(((translations as any)?.common || {}) as Record<string, string>).confirm || ''}
+      />
       <Modal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)}>
         <LoginPrompt onClose={() => setIsLoginPromptOpen(false)} variant="modal" translations={translations} />
       </Modal>

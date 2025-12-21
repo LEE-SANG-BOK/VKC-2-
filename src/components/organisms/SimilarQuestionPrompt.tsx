@@ -84,47 +84,33 @@ export default function SimilarQuestionPrompt({ query, translations }: SimilarQu
 
   if (!visible) return null;
 
-  const fallbackTitle = locale === 'vi' ? 'Đã có câu hỏi tương tự' : locale === 'en' ? 'Similar questions found' : '이미 이런 질문이 있어요';
-  const fallbackSeeAll = locale === 'vi' ? 'Xem tất cả' : locale === 'en' ? 'See all' : '모두 보기';
-  const fallbackDesc = locale === 'vi' ? 'Kiểm tra câu trả lời tương tự trước khi đăng.' : locale === 'en' ? 'Check similar answers before posting.' : '질문을 작성하기 전에 비슷한 답변을 확인해보세요.';
-  const fallbackLoading = locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '불러오는 중...';
-  const fallbackNoResults = locale === 'vi' ? 'Không có câu hỏi tương tự.' : locale === 'en' ? 'No similar questions.' : '유사한 질문이 없습니다.';
-  const fallbackTags = locale === 'vi' ? 'Thẻ gợi ý' : locale === 'en' ? 'Suggested tags' : '추천 태그';
-  const defaultFallbackNotice =
-    locale === 'vi'
-      ? 'Không có kết quả phù hợp — hiển thị câu hỏi phổ biến.'
-      : locale === 'en'
-        ? 'Showing popular questions since no close match was found.'
-        : '정확한 결과가 없어 인기 질문을 보여드려요.';
-  const fallbackNoticeText = t.similarFallbackNotice || defaultFallbackNotice;
-  const fallbackReasonText =
-    fallbackMeta?.reason === 'popular'
-      ? t.similarFallbackReasonPopular || (locale === 'vi' ? 'Gợi ý dựa trên câu hỏi được quan tâm.' : locale === 'en' ? 'Suggestions based on crowd favorites.' : '인기글을 기준으로 안내드립니다.')
-      : undefined;
+  const fallbackNoticeText = t.similarFallbackNotice || '';
+  const fallbackReasonText = fallbackMeta?.reason === 'popular' ? (t.similarFallbackReasonPopular || '') : '';
+  const noResultsLabel = t.similarNoResults || '';
 
   return (
     <section className="rounded-2xl border border-gray-200/70 dark:border-gray-800/70 bg-white dark:bg-gray-900 shadow-sm">
       <div className="px-4 py-4 md:px-5 md:py-5 space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">{t.similarTitle || fallbackTitle}</h3>
+          <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">{t.similarTitle || ''}</h3>
           <a
             href={`/${locale}/search?q=${encodeURIComponent(debouncedQuery)}&type=question`}
             className="text-xs font-semibold text-blue-600 hover:underline underline-offset-4"
           >
-            {t.similarSeeAll || fallbackSeeAll}
+            {t.similarSeeAll || ''}
           </a>
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300">{t.similarDesc || fallbackDesc}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300">{t.similarDesc || ''}</p>
         {fallbackMeta?.isFallback && (
           <div className="rounded-lg bg-amber-50/70 dark:bg-amber-900/30 px-3 py-2 text-xs text-amber-900 dark:text-amber-100">
             <p className="font-semibold">{fallbackNoticeText}</p>
-            {fallbackReasonText && <p className="text-[11px] text-amber-900/80">{fallbackReasonText}</p>}
+            {fallbackReasonText ? <p className="text-[11px] text-amber-900/80">{fallbackReasonText}</p> : null}
           </div>
         )}
         {fallbackTokens.length > 0 && (
           <div className="flex flex-wrap items-center gap-1 text-[11px] text-gray-600 dark:text-gray-300">
             <span className="font-semibold">
-              {t.similarFallbackTokensLabel || (locale === 'vi' ? 'Từ khóa tìm kiếm' : locale === 'en' ? 'Search keywords' : '검색 키워드')}:
+              {t.similarFallbackTokensLabel || ''}:
             </span>
             {fallbackTokens.map((token) => (
               <span key={token} className="rounded-full border border-gray-200 bg-gray-100 dark:bg-gray-800 px-2 py-0.5">
@@ -135,7 +121,7 @@ export default function SimilarQuestionPrompt({ query, translations }: SimilarQu
         )}
         <div className="flex flex-col gap-2">
           {loading ? (
-            <div className="text-sm text-gray-500 dark:text-gray-400">{t.loading || fallbackLoading}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">{t.loading || ''}</div>
           ) : list.length > 0 ? (
             list.map((q) => (
               <a
@@ -147,11 +133,11 @@ export default function SimilarQuestionPrompt({ query, translations }: SimilarQu
               </a>
             ))
           ) : (
-            <div className="text-sm text-gray-500 dark:text-gray-400">{t.noResults || fallbackNoResults}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">{noResultsLabel}</div>
           )}
         </div>
         <div className="flex flex-wrap gap-2 pt-1">
-          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-[0.15em]">{t.similarTagsLabel || fallbackTags}</span>
+          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-[0.15em]">{t.similarTagsLabel || ''}</span>
           <div className="flex flex-wrap gap-1">
             {tagSuggestions.map((tag) => (
               <span key={tag} className="rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-[11px] font-semibold px-2 py-1">

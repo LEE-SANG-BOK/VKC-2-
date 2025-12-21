@@ -23,14 +23,14 @@ export async function POST(request: NextRequest) {
     const verificationId = formData.get('verificationId') as string | null;
 
     if (!file) {
-      return errorResponse('파일이 제공되지 않았습니다.');
+      return errorResponse('파일이 제공되지 않았습니다.', 'UPLOAD_FILE_REQUIRED');
     }
 
     // 파일 업로드 (documents 버킷은 Private)
     const result = await uploadDocument(file, user.id);
 
     if (!result.success) {
-      return errorResponse(result.error || '파일 업로드에 실패했습니다.');
+      return errorResponse(result.error || '파일 업로드에 실패했습니다.', 'UPLOAD_FAILED');
     }
 
     const signed = result.path ? await createSignedUrl('documents', result.path, 600) : null;

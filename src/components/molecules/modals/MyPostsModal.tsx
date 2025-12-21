@@ -12,7 +12,7 @@ import useProgressiveList from '@/lib/hooks/useProgressiveList';
 interface MyPostsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  translations?: Record<string, string>;
+  translations?: Record<string, unknown>;
 }
 
 export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyPostsModalProps) {
@@ -24,35 +24,15 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
 
-  const t = translations;
-  const tCommon = (translations as any)?.common || {};
-  const modalFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        myPosts: 'My Posts',
-        noPosts: 'No posts yet',
-        loading: 'Loading...',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        myPosts: 'Bài viết của tôi',
-        noPosts: 'Chưa có bài viết',
-        loading: 'Đang tải...',
-      };
-    }
-    return {
-      myPosts: '내 게시글',
-      noPosts: '게시글이 없습니다',
-      loading: '로딩 중...',
-    };
-  }, [locale]);
+  const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tUserMenu = (translations?.userMenu || {}) as Record<string, string>;
+  const tProfile = (translations?.profile || {}) as Record<string, string>;
   const modalLabels = {
-    myPosts: t.myPosts || modalFallbacks.myPosts,
-    noPosts: t.noPosts || modalFallbacks.noPosts,
-    loading: t.loading || modalFallbacks.loading,
+    myPosts: tUserMenu.myPostsTitle || tUserMenu.myPosts || '',
+    noPosts: tUserMenu.noPostsTitle || tUserMenu.noPostsYet || '',
+    loading: tProfile.loading || '',
   };
-  const anonymousLabel = tCommon.anonymous || (locale === 'vi' ? 'Người dùng ẩn danh' : locale === 'en' ? 'Anonymous user' : '익명 사용자');
+  const anonymousLabel = tCommon.anonymous || '';
 
   const { 
     data,

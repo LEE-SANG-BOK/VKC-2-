@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import { ExternalLink, Megaphone } from 'lucide-react';
+import Image from 'next/image';
 import { useNews } from '@/repo/news/query';
 import type { NewsItem } from '@/repo/news/types';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface NoticeBannerProps {
   translations: Record<string, unknown>;
@@ -28,30 +30,9 @@ export default function NoticeBanner({ translations, lang, limit = 2 }: NoticeBa
       .slice(0, limit);
   }, [limit, newsItems]);
 
-  const labelFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        badge: 'Notice',
-        openExternal: 'Open link',
-        close: 'Close',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        badge: 'Thông báo',
-        openExternal: 'Mở liên kết',
-        close: 'Đóng',
-      };
-    }
-    return {
-      badge: '공지',
-      openExternal: '외부 링크 열기',
-      close: '닫기',
-    };
-  }, [locale]);
-  const badgeLabel = t.badge || labelFallbacks.badge;
-  const openExternalLabel = t.openExternal || labelFallbacks.openExternal;
-  const closeLabel = t.close || labelFallbacks.close;
+  const badgeLabel = t.badge || '';
+  const openExternalLabel = t.openExternal || '';
+  const closeLabel = t.close || '';
 
   if (isLoading) {
     return (
@@ -129,7 +110,15 @@ export default function NoticeBanner({ translations, lang, limit = 2 }: NoticeBa
           >
             {selected.imageUrl ? (
               <div className="relative w-full h-56 bg-gray-100 dark:bg-gray-800">
-                <img src={selected.imageUrl} alt={selected.title} className="w-full h-full object-cover" />
+                <Image
+                  src={selected.imageUrl}
+                  alt={selected.title}
+                  fill
+                  sizes="768px"
+                  className="object-cover"
+                  placeholder="blur"
+                  blurDataURL={DEFAULT_BLUR_DATA_URL}
+                />
               </div>
             ) : null}
             <div className="p-6 space-y-3">

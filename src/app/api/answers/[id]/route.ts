@@ -5,7 +5,10 @@ import { answers } from '@/lib/db/schema';
 import { successResponse, errorResponse, notFoundResponse, forbiddenResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession, isOwner } from '@/lib/api/auth';
 import { eq } from 'drizzle-orm';
+import { hasProhibitedContent } from '@/lib/content-filter';
+import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
+import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -50,11 +53,30 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const { content } = body;
 
-    if (!content || !content.trim()) {
-      return errorResponse('답변 내용을 입력해주세요.');
+    if (!content || typeof content !== 'string') {
+      return errorResponse('답변 내용을 입력해주세요.', 'ANSWER_REQUIRED');
     }
 
-    const normalizedContent = content.trim();
+    const normalizedContent = sanitizeUgcHtml(content);
+    if (!normalizedContent) {
+      return errorResponse('답변 내용을 입력해주세요.', 'ANSWER_REQUIRED');
+    }
+
+    const validation = validateUgcText(normalizedContent, UGC_LIMITS.answerContent.min, UGC_LIMITS.answerContent.max);
+    if (!validation.ok) {
+      if (validation.code === 'UGC_TOO_SHORT') {
+        return errorResponse('답변이 너무 짧습니다.', 'ANSWER_TOO_SHORT');
+      }
+      if (validation.code === 'UGC_TOO_LONG') {
+        return errorResponse('답변이 너무 깁니다.', 'ANSWER_TOO_LONG');
+      }
+      return errorResponse('답변 내용이 올바르지 않습니다.', 'ANSWER_LOW_QUALITY');
+    }
+
+    if (hasProhibitedContent(normalizedContent)) {
+      return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
+    }
+
     const linkValidation = validateUgcExternalLinks(normalizedContent);
     if (!linkValidation.ok) {
       return errorResponse('공식 출처 도메인만 사용할 수 있습니다.', 'UGC_EXTERNAL_LINK_BLOCKED');

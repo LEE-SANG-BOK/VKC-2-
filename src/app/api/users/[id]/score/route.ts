@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { and, eq, or, sql } from 'drizzle-orm';
-import { successResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPublicSWR, successResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         badgeType: user.badgeType ?? null,
       },
     });
-    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    setPublicSWR(response, 300, 600);
     return response;
   } catch (error) {
     console.error('GET /api/users/[id]/score error:', error);

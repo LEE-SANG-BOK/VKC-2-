@@ -17,42 +17,6 @@ interface RecommendationMetaArgs {
 
 type OnboardingLabels = Partial<Record<string, string>>;
 
-const resolveFallbackUserTypeLabel = (locale: string) => {
-  if (locale === 'vi') return 'Sinh viên';
-  if (locale === 'en') return 'Student';
-  return '학생';
-};
-
-const resolveFallbackWorkerLabel = (locale: string) => {
-  if (locale === 'vi') return 'Nhân viên';
-  if (locale === 'en') return 'Worker';
-  return '근로자';
-};
-
-const resolveFallbackResidentLabel = (locale: string) => {
-  if (locale === 'vi') return 'Cư trú';
-  if (locale === 'en') return 'Resident';
-  return '거주자';
-};
-
-const resolveFallbackKoreanBeginner = (locale: string) => {
-  if (locale === 'vi') return 'Sơ cấp';
-  if (locale === 'en') return 'Beginner';
-  return '기초';
-};
-
-const resolveFallbackKoreanIntermediate = (locale: string) => {
-  if (locale === 'vi') return 'Trung cấp';
-  if (locale === 'en') return 'Intermediate';
-  return '중급';
-};
-
-const resolveFallbackKoreanAdvanced = (locale: string) => {
-  if (locale === 'vi') return 'Cao cấp';
-  if (locale === 'en') return 'Advanced';
-  return '고급';
-};
-
 export function localizeRecommendationMetaItems({
   items,
   locale,
@@ -63,17 +27,17 @@ export function localizeRecommendationMetaItems({
   onboardingLabels?: OnboardingLabels;
 }): RecommendationMetaItem[] {
   const userTypeLabels = {
-    student: onboardingLabels.userTypeStudent || resolveFallbackUserTypeLabel(locale),
-    worker: onboardingLabels.userTypeWorker || resolveFallbackWorkerLabel(locale),
-    resident: onboardingLabels.userTypeResident || resolveFallbackResidentLabel(locale),
-    business: onboardingLabels.userTypeBusiness || (locale === 'vi' ? 'Doanh nghiệp' : locale === 'en' ? 'Business' : '사업자'),
-    homemaker: onboardingLabels.userTypeHomemaker || (locale === 'vi' ? 'Nội trợ' : locale === 'en' ? 'Homemaker' : '주부'),
-    other: onboardingLabels.userTypeOther || (locale === 'vi' ? 'Khác' : locale === 'en' ? 'Other' : '기타'),
+    student: onboardingLabels.userTypeStudent || '',
+    worker: onboardingLabels.userTypeWorker || '',
+    resident: onboardingLabels.userTypeResident || '',
+    business: onboardingLabels.userTypeBusiness || '',
+    homemaker: onboardingLabels.userTypeHomemaker || '',
+    other: onboardingLabels.userTypeOther || '',
   };
   const koreanLevelLabels = {
-    beginner: onboardingLabels.koreanLevel_beginner || resolveFallbackKoreanBeginner(locale),
-    intermediate: onboardingLabels.koreanLevel_intermediate || resolveFallbackKoreanIntermediate(locale),
-    advanced: onboardingLabels.koreanLevel_advanced || resolveFallbackKoreanAdvanced(locale),
+    beginner: onboardingLabels.koreanLevel_beginner || '',
+    intermediate: onboardingLabels.koreanLevel_intermediate || '',
+    advanced: onboardingLabels.koreanLevel_advanced || '',
   };
   const resolveInterestLabel = (value: string) => {
     const normalized = normalizeKey(value);

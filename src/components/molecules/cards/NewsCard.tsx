@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import Badge from '@/components/atoms/Badge';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface NewsCardProps {
   id: string;
@@ -28,6 +29,8 @@ export default function NewsCard({ title, category, imageUrl, linkUrl, onSelect 
             sizes="(max-width: 640px) 200px, 172px"
             className="object-cover group-hover:scale-110 transition-transform duration-700"
             loading="lazy"
+            placeholder="blur"
+            blurDataURL={DEFAULT_BLUR_DATA_URL}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">

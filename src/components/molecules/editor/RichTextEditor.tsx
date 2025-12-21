@@ -39,7 +39,7 @@ interface RichTextEditorProps {
 export default function RichTextEditor({
   content,
   onChange,
-  placeholder = '내용을 입력하세요...',
+  placeholder = '',
   translations,
   variant = 'full',
   tooltipPosition = 'below',
@@ -49,50 +49,35 @@ export default function RichTextEditor({
   const t = translations?.tooltips || {};
   const tEditor = translations?.editor || {};
   const tCommon = translations?.common || {};
+  const tErrors = (translations?.errors || {}) as Record<string, string>;
   const editorCopy = useMemo(() => {
-    const isVi = locale === 'vi';
-    const isEn = locale === 'en';
     return {
-      imageTypeError: tEditor.imageTypeError || (isVi ? 'Chỉ cho phép tệp ảnh.' : isEn ? 'Only image files are allowed.' : '이미지 파일만 업로드할 수 있습니다.'),
-      imageSizeError: tEditor.imageSizeError || (isVi ? 'Kích thước ảnh phải ≤ 5MB.' : isEn ? 'Image size must be 5MB or less.' : '이미지 크기는 5MB 이하여야 합니다.'),
-      imageUploadFailed: tEditor.imageUploadFailed || (isVi ? 'Tải ảnh thất bại.' : isEn ? 'Failed to upload image.' : '이미지 업로드에 실패했습니다.'),
-      imageUploadError: tEditor.imageUploadError || (isVi ? 'Đã xảy ra lỗi khi tải ảnh.' : isEn ? 'An error occurred while uploading the image.' : '이미지 업로드 중 오류가 발생했습니다.'),
-      linkTitle: tEditor.linkTitle || (isVi ? 'Thêm liên kết' : isEn ? 'Add link' : '링크 추가'),
+      imageTypeError: tEditor.imageTypeError || '',
+      imageSizeError: tEditor.imageSizeError || '',
+      imageUploadFailed: tErrors.UPLOAD_FAILED || tEditor.imageUploadFailed || '',
+      imageUploadError: tEditor.imageUploadError || '',
+      linkTitle: tEditor.linkTitle || '',
       linkPlaceholder: tEditor.linkPlaceholder || 'https://example.com',
-      linkCancel: tEditor.linkCancel || tCommon.cancel || (isVi ? 'Huỷ' : isEn ? 'Cancel' : '취소'),
-      linkRemove: tEditor.linkRemove || (isVi ? 'Xoá liên kết' : isEn ? 'Remove link' : '링크 제거'),
-      linkUpdate: tEditor.linkUpdate || (isVi ? 'Cập nhật' : isEn ? 'Update' : '수정'),
-      linkAdd: tEditor.linkAdd || (isVi ? 'Thêm' : isEn ? 'Add' : '추가'),
+      linkCancel: tEditor.linkCancel || tCommon.cancel || '',
+      linkRemove: tEditor.linkRemove || '',
+      linkUpdate: tEditor.linkUpdate || '',
+      linkAdd: tEditor.linkAdd || '',
+      uploading: tEditor.uploading || '',
     };
-  }, [locale, tCommon, tEditor]);
-  const fallbackTooltips = {
-    bold: locale === 'vi' ? 'Đậm' : locale === 'en' ? 'Bold' : '굵게',
-    italic: locale === 'vi' ? 'Nghiêng' : locale === 'en' ? 'Italic' : '기울임',
-    heading1: locale === 'vi' ? 'Tiêu đề 1' : locale === 'en' ? 'Heading 1' : '제목1',
-    heading2: locale === 'vi' ? 'Tiêu đề 2' : locale === 'en' ? 'Heading 2' : '제목2',
-    bulletList: locale === 'vi' ? 'Danh sách' : locale === 'en' ? 'Bullet list' : '목록',
-    orderedList: locale === 'vi' ? 'Danh sách số' : locale === 'en' ? 'Numbered list' : '번호 목록',
-    codeBlock: locale === 'vi' ? 'Khối mã' : locale === 'en' ? 'Code block' : '코드 블록',
-    quote: locale === 'vi' ? 'Trích dẫn' : locale === 'en' ? 'Quote' : '인용',
-    addImage: locale === 'vi' ? 'Thêm ảnh' : locale === 'en' ? 'Add image' : '이미지 추가',
-    addLink: locale === 'vi' ? 'Thêm liên kết' : locale === 'en' ? 'Add link' : '링크 추가',
-    uploading: locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Uploading...' : '업로드 중...',
-    undo: locale === 'vi' ? 'Hoàn tác' : locale === 'en' ? 'Undo' : '실행 취소',
-    redo: locale === 'vi' ? 'Làm lại' : locale === 'en' ? 'Redo' : '다시 실행',
-  };
-  const boldLabel = t.bold || fallbackTooltips.bold;
-  const italicLabel = t.italic || fallbackTooltips.italic;
-  const heading1Label = t.heading1 || fallbackTooltips.heading1;
-  const heading2Label = t.heading2 || fallbackTooltips.heading2;
-  const bulletListLabel = t.bulletList || fallbackTooltips.bulletList;
-  const orderedListLabel = t.orderedList || fallbackTooltips.orderedList;
-  const codeBlockLabel = t.codeBlock || fallbackTooltips.codeBlock;
-  const quoteLabel = t.quote || fallbackTooltips.quote;
-  const addImageLabel = t.addImage || fallbackTooltips.addImage;
-  const addLinkLabel = t.addLink || fallbackTooltips.addLink;
-  const uploadingLabel = fallbackTooltips.uploading;
-  const undoLabel = t.undo || fallbackTooltips.undo;
-  const redoLabel = t.redo || fallbackTooltips.redo;
+  }, [tCommon.cancel, tEditor, tErrors.UPLOAD_FAILED]);
+  const boldLabel = t.bold || '';
+  const italicLabel = t.italic || '';
+  const heading1Label = t.heading1 || '';
+  const heading2Label = t.heading2 || '';
+  const bulletListLabel = t.bulletList || '';
+  const orderedListLabel = t.orderedList || '';
+  const codeBlockLabel = t.codeBlock || '';
+  const quoteLabel = t.quote || '';
+  const addImageLabel = t.addImage || '';
+  const addLinkLabel = t.addLink || '';
+  const uploadingLabel = editorCopy.uploading || '';
+  const undoLabel = t.undo || '';
+  const redoLabel = t.redo || '';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -177,7 +162,8 @@ export default function RichTextEditor({
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        toast.error(result.error || editorCopy.imageUploadFailed);
+        const codeMessage = result?.code && tErrors[result.code];
+        toast.error(codeMessage || result.error || editorCopy.imageUploadFailed);
         return;
       }
 
@@ -233,6 +219,8 @@ export default function RichTextEditor({
         <Tooltip content={boldLabel} position={tooltipPosition}>
           <button
             type="button"
+            aria-label={boldLabel}
+            aria-pressed={editor.isActive('bold')}
             onClick={() => editor.chain().focus().toggleBold().run()}
             disabled={!editor.can().chain().focus().toggleBold().run()}
             className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
@@ -247,6 +235,8 @@ export default function RichTextEditor({
           <Tooltip content={italicLabel} position={tooltipPosition}>
             <button
               type="button"
+              aria-label={italicLabel}
+              aria-pressed={editor.isActive('italic')}
               onClick={() => editor.chain().focus().toggleItalic().run()}
               disabled={!editor.can().chain().focus().toggleItalic().run()}
               className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
@@ -263,6 +253,8 @@ export default function RichTextEditor({
             <Tooltip content={heading1Label} position={tooltipPosition}>
               <button
                 type="button"
+                aria-label={heading1Label}
+                aria-pressed={editor.isActive('heading', { level: 1 })}
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                 className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                   editor.isActive('heading', { level: 1 }) ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -275,6 +267,8 @@ export default function RichTextEditor({
             <Tooltip content={heading2Label} position={tooltipPosition}>
               <button
                 type="button"
+                aria-label={heading2Label}
+                aria-pressed={editor.isActive('heading', { level: 2 })}
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                 className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                   editor.isActive('heading', { level: 2 }) ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -289,6 +283,8 @@ export default function RichTextEditor({
         <Tooltip content={bulletListLabel} position={tooltipPosition}>
           <button
             type="button"
+            aria-label={bulletListLabel}
+            aria-pressed={editor.isActive('bulletList')}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
               editor.isActive('bulletList') ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -302,6 +298,8 @@ export default function RichTextEditor({
           <Tooltip content={orderedListLabel} position={tooltipPosition}>
             <button
               type="button"
+              aria-label={orderedListLabel}
+              aria-pressed={editor.isActive('orderedList')}
               onClick={() => editor.chain().focus().toggleOrderedList().run()}
               className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                 editor.isActive('orderedList') ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -316,6 +314,8 @@ export default function RichTextEditor({
           <Tooltip content={codeBlockLabel} position={tooltipPosition}>
             <button
               type="button"
+              aria-label={codeBlockLabel}
+              aria-pressed={editor.isActive('codeBlock')}
               onClick={() => editor.chain().focus().toggleCodeBlock().run()}
               className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                 editor.isActive('codeBlock') ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -330,6 +330,8 @@ export default function RichTextEditor({
           <Tooltip content={quoteLabel} position={tooltipPosition}>
             <button
               type="button"
+              aria-label={quoteLabel}
+              aria-pressed={editor.isActive('blockquote')}
               onClick={() => editor.chain().focus().toggleBlockquote().run()}
               className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                 editor.isActive('blockquote') ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -345,6 +347,7 @@ export default function RichTextEditor({
         <Tooltip content={isUploading ? uploadingLabel : addImageLabel} position={tooltipPosition}>
           <button
             type="button"
+            aria-label={isUploading ? uploadingLabel : addImageLabel}
             onClick={handleImageUpload}
             disabled={isUploading}
             className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
@@ -361,6 +364,8 @@ export default function RichTextEditor({
           <Tooltip content={addLinkLabel} position={tooltipPosition}>
             <button
               type="button"
+              aria-label={addLinkLabel}
+              aria-pressed={editor.isActive('link')}
               onClick={handleLinkButtonClick}
               className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                 editor.isActive('link') ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -378,6 +383,7 @@ export default function RichTextEditor({
             <Tooltip content={undoLabel} position={tooltipPosition}>
               <button
                 type="button"
+                aria-label={undoLabel}
                 onClick={() => editor.chain().focus().undo().run()}
                 disabled={!editor.can().chain().focus().undo().run()}
                 className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -389,6 +395,7 @@ export default function RichTextEditor({
             <Tooltip content={redoLabel} position={tooltipPosition}>
               <button
                 type="button"
+                aria-label={redoLabel}
                 onClick={() => editor.chain().focus().redo().run()}
                 disabled={!editor.can().chain().focus().redo().run()}
                 className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -407,6 +414,7 @@ export default function RichTextEditor({
       <input
         ref={fileInputRef}
         type="file"
+        aria-label={addImageLabel}
         accept="image/*"
         onChange={handleFileChange}
         className="hidden"
@@ -421,6 +429,7 @@ export default function RichTextEditor({
             </h3>
             <input
               type="url"
+              aria-label={editorCopy.linkTitle}
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder={editorCopy.linkPlaceholder}

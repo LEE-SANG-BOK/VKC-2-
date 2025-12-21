@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { X, Bell, MessageCircle, Lightbulb, MessageSquare, Award, Users, Save, Rss } from 'lucide-react';
@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  translations?: Record<string, string>;
+  translations?: Record<string, unknown>;
 }
 
 interface NotificationSettings {
@@ -25,7 +25,9 @@ interface NotificationSettings {
 }
 
 export default function SettingsModal({ isOpen, onClose, translations = {} }: SettingsModalProps) {
-  const t = translations;
+  const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tUserMenu = (translations?.userMenu || {}) as Record<string, string>;
+  const tSubscription = (translations?.subscription || {}) as Record<string, string>;
   const router = useRouter();
   const params = useParams();
   const locale = params.lang as string || 'ko';
@@ -39,99 +41,27 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
     refetchOnReconnect: false,
   });
   const updateProfile = useUpdateMyProfile();
-  const settingsFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        notificationSettings: 'Notification Settings',
-        webNotifications: 'Web notifications',
-        notificationCategories: 'Notifications to receive',
-        selectFew: 'Choose only what you need',
-        save: 'Save',
-        saveSuccess: 'Notification settings saved.',
-        saveError: 'Failed to save notification settings.',
-        newAnswer: 'New answer',
-        newAnswerDesc: 'Get notified when someone answers your question.',
-        questionComment: 'Question comments',
-        questionCommentDesc: 'Quickly check comments on your questions.',
-        answerComment: 'Answer comments',
-        answerCommentDesc: 'Never miss feedback on your answers.',
-        adoption: 'Answer adopted',
-        adoptionDesc: 'Get notified when your answer is adopted.',
-        newFollower: 'New follower',
-        newFollowerDesc: 'Get notified when someone follows you.',
-        subscriptionSettings: 'Subscription settings',
-        subscriptionSettingsDesc: 'Manage category and topic subscriptions plus notification frequency.',
-        manageSubscriptions: 'Manage subscriptions',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        notificationSettings: 'Cài đặt thông báo',
-        webNotifications: 'Thông báo web',
-        notificationCategories: 'Chọn thông báo muốn nhận',
-        selectFew: 'Chỉ chọn mục cần thiết',
-        save: 'Lưu',
-        saveSuccess: 'Đã lưu cài đặt thông báo.',
-        saveError: 'Không thể lưu cài đặt thông báo.',
-        newAnswer: 'Có câu trả lời mới',
-        newAnswerDesc: 'Nhận thông báo khi ai đó trả lời câu hỏi của bạn.',
-        questionComment: 'Bình luận câu hỏi',
-        questionCommentDesc: 'Theo dõi nhanh bình luận trên câu hỏi của bạn.',
-        answerComment: 'Bình luận câu trả lời',
-        answerCommentDesc: 'Không bỏ lỡ phản hồi cho câu trả lời của bạn.',
-        adoption: 'Câu trả lời được chọn',
-        adoptionDesc: 'Nhận thông báo khi câu trả lời của bạn được chọn.',
-        newFollower: 'Người theo dõi mới',
-        newFollowerDesc: 'Nhận thông báo khi có người theo dõi bạn.',
-        subscriptionSettings: 'Cài đặt theo dõi',
-        subscriptionSettingsDesc: 'Quản lý danh mục/chủ đề theo dõi và tần suất nhận thông báo.',
-        manageSubscriptions: 'Quản lý theo dõi',
-      };
-    }
-    return {
-      notificationSettings: '알림 설정',
-      webNotifications: '웹 알림',
-      notificationCategories: '알림 받을 항목',
-      selectFew: '필요한 것만 선택',
-      save: '저장하기',
-      saveSuccess: '알림 설정이 저장되었습니다.',
-      saveError: '알림 설정 저장에 실패했습니다.',
-      newAnswer: '새 답변 등록',
-      newAnswerDesc: '내 질문에 새로운 답변이 달리면 바로 알려드려요.',
-      questionComment: '질문 댓글',
-      questionCommentDesc: '질문에 달린 댓글을 빠르게 확인할 수 있어요.',
-      answerComment: '답변 댓글',
-      answerCommentDesc: '내 답변에 달린 피드백을 놓치지 않게 도와줘요.',
-      adoption: '답변 채택',
-      adoptionDesc: '내 답변이 채택되면 바로 알려드려요.',
-      newFollower: '새 팔로워',
-      newFollowerDesc: '누군가 나를 팔로우하면 알려드려요.',
-      subscriptionSettings: '구독 설정',
-      subscriptionSettingsDesc: '카테고리/토픽 구독과 알림 빈도를 관리할 수 있어요.',
-      manageSubscriptions: '구독 관리',
-    };
-  }, [locale]);
   const settingsLabels = {
-    notificationSettings: t.notificationSettings || settingsFallbacks.notificationSettings,
-    webNotifications: t.webNotifications || settingsFallbacks.webNotifications,
-    notificationCategories: t.notificationCategories || settingsFallbacks.notificationCategories,
-    selectFew: t.selectFew || settingsFallbacks.selectFew,
-    save: t.save || settingsFallbacks.save,
-    saveSuccess: t.saveSuccess || settingsFallbacks.saveSuccess,
-    saveError: t.saveError || settingsFallbacks.saveError,
-    newAnswer: t.newAnswer || settingsFallbacks.newAnswer,
-    newAnswerDesc: t.newAnswerDesc || settingsFallbacks.newAnswerDesc,
-    questionComment: t.questionComment || settingsFallbacks.questionComment,
-    questionCommentDesc: t.questionCommentDesc || settingsFallbacks.questionCommentDesc,
-    answerComment: t.answerComment || settingsFallbacks.answerComment,
-    answerCommentDesc: t.answerCommentDesc || settingsFallbacks.answerCommentDesc,
-    adoption: t.adoption || settingsFallbacks.adoption,
-    adoptionDesc: t.adoptionDesc || settingsFallbacks.adoptionDesc,
-    newFollower: t.newFollower || settingsFallbacks.newFollower,
-    newFollowerDesc: t.newFollowerDesc || settingsFallbacks.newFollowerDesc,
-    subscriptionSettings: t.subscriptionSettings || settingsFallbacks.subscriptionSettings,
-    subscriptionSettingsDesc: t.subscriptionSettingsDesc || settingsFallbacks.subscriptionSettingsDesc,
-    manageSubscriptions: t.manageSubscriptions || settingsFallbacks.manageSubscriptions,
+    notificationSettings: tUserMenu.notificationSettings || '',
+    webNotifications: tUserMenu.webNotifications || '',
+    notificationCategories: tUserMenu.notificationCategories || '',
+    selectFew: tUserMenu.selectFew || '',
+    save: tCommon.save || '',
+    saveSuccess: tUserMenu.saveSuccess || '',
+    saveError: tUserMenu.saveError || '',
+    newAnswer: tUserMenu.newAnswer || '',
+    newAnswerDesc: tUserMenu.newAnswerDesc || '',
+    questionComment: tUserMenu.questionComment || '',
+    questionCommentDesc: tUserMenu.questionCommentDesc || '',
+    answerComment: tUserMenu.answerComment || '',
+    answerCommentDesc: tUserMenu.answerCommentDesc || '',
+    adoption: tUserMenu.adoption || '',
+    adoptionDesc: tUserMenu.adoptionDesc || '',
+    newFollower: tUserMenu.newFollower || '',
+    newFollowerDesc: tUserMenu.newFollowerDesc || '',
+    subscriptionSettings: tUserMenu.subscriptionSettings || tSubscription.title || '',
+    subscriptionSettingsDesc: tUserMenu.subscriptionSettingsDesc || tSubscription.description || '',
+    manageSubscriptions: tUserMenu.manageSubscriptions || '',
   };
 
   const [webNotificationsEnabled, setWebNotificationsEnabled] = useState(true);

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPublicSWR, successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { sql } from 'drizzle-orm';
 
 /**
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       tags,
       total: tags.length,
     });
-    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    setPublicSWR(response, 60, 300);
     return response;
   } catch (error) {
     console.error('GET /api/search/tags error:', error);

@@ -5,6 +5,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import { Bug, MessageSquare, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSubmitFeedback } from '@/repo/feedback/mutation';
+import { ApiError } from '@/lib/api/errors';
 
 interface FeedbackClientProps {
   translations: Record<string, unknown>;
@@ -17,6 +18,7 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
 
   const t = (translations?.feedback || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tErrors = (translations?.errors || {}) as Record<string, string>;
 
   const [type, setType] = useState<'feedback' | 'bug'>('feedback');
   const [rating, setRating] = useState<number | null>(null);
@@ -38,11 +40,6 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
       : isEn
         ? ['Very dissatisfied', 'Dissatisfied', 'Okay', 'Satisfied', 'Very satisfied']
         : ['매우 불만족', '불만족', '보통', '만족', '매우 만족'];
-    const impactLabels = isVi
-      ? ['Thấp', 'Nhẹ', 'Trung bình', 'Cao', 'Nghiêm trọng']
-      : isEn
-        ? ['Low', 'Mild', 'Medium', 'High', 'Critical']
-        : ['낮음', '약함', '보통', '높음', '치명적'];
     return {
       title: t.title || (isVi ? 'Khảo sát phản hồi' : isEn ? 'Feedback Survey' : '피드백 설문'),
       subtitle:
@@ -59,20 +56,11 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
       satisfactionHint:
         t.satisfactionHint ||
         (isVi
-          ? 'Hãy chia sẻ trải nghiệm tổng thể của bạn bên dưới.'
+          ? 'Vui lòng viết trải nghiệm tổng thể của bạn về trang web này.'
           : isEn
-            ? 'Tell us about your overall experience below.'
-            : '전반적인 경험을 간단히 적어주세요.'),
-      impactLabel: t.impactLabel || (isVi ? 'Mức độ ảnh hưởng' : isEn ? 'Impact' : '영향도'),
-      impactHint:
-        t.impactHint ||
-        (isVi
-          ? 'Sự cố ảnh hưởng đến bạn ở mức nào?'
-          : isEn
-            ? 'How much did the issue impact you?'
-            : '문제가 얼마나 영향을 줬나요?'),
+            ? 'Write about your overall experience with this site.'
+            : '본 사이트에 대한 전반적인 경험을 작성해주세요.'),
       ratingLabels,
-      impactLabels,
       improvementLabel:
         t.improvementLabel || (isVi ? 'Điều cần cải thiện' : isEn ? 'What should we improve?' : '개선이 필요한 점'),
       improvementPlaceholder:
@@ -90,11 +78,6 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
           : isEn
             ? 'Describe expected vs actual result.'
             : '기대 결과와 실제 결과를 설명해 주세요.'),
-      stepsLabel: t.stepsLabel || (isVi ? 'Bước tái hiện (tuỳ chọn)' : isEn ? 'Steps (optional)' : '재현 단계 (선택)'),
-      stepsPlaceholder:
-        t.stepsPlaceholder ||
-        (isVi ? '1) ... 2) ...' : isEn ? '1) ... 2) ...' : '1) ... 2) ...'),
-      pageLabel: t.pageLabel || (isVi ? 'URL trang' : isEn ? 'Page URL' : '현재 페이지'),
       submit: t.submit || (isVi ? 'Gửi' : isEn ? 'Submit' : '제출하기'),
       submitting: t.submitting || (isVi ? 'Đang gửi...' : isEn ? 'Submitting...' : '제출 중...'),
       successTitle:
@@ -102,10 +85,10 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
       successDesc:
         t.successDesc ||
         (isVi
-          ? 'Cảm ơn bạn! Chúng tôi sẽ xem xét.'
+          ? 'Cảm ơn bạn. Chúng tôi sẽ phản ánh nội dung bạn gửi và cải thiện trang.'
           : isEn
-            ? 'Thanks! We will review it soon.'
-            : '감사합니다. 빠르게 확인하고 개선하겠습니다.'),
+            ? 'Thanks. We’ll use your submission to improve the site.'
+            : '감사합니다. 제출하신 내용 반영하여 페이지 개선에 힘쓰겠습니다.'),
       submitError:
         t.submitError ||
         (isVi
@@ -164,6 +147,15 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
       });
       setSubmitted(true);
     } catch (error) {
+      if (error instanceof ApiError) {
+        const translated =
+          (error.code && tErrors[error.code]) ||
+          (error.status === 429 && tErrors.RATE_LIMITED) ||
+          '';
+        const suffix = error.retryAfterSeconds ? ` (${error.retryAfterSeconds}s)` : '';
+        toast.error((translated || error.message || copy.submitError) + suffix);
+        return;
+      }
       toast.error(error instanceof Error ? error.message : copy.submitError);
     }
   };

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { posts } from '@/lib/db/schema';
-import { successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { setPublicSWR, successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 
 const PERIOD_DAYS = {
@@ -77,11 +77,10 @@ export async function GET(request: NextRequest) {
     const response = successResponse({
       examples: trimmed,
     });
-    response.headers.set('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
+    setPublicSWR(response, 600, 3600);
     return response;
   } catch (error) {
     console.error('GET /api/search/examples error:', error);
     return serverErrorResponse();
   }
 }
-

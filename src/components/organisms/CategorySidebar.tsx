@@ -6,6 +6,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartHandshake, Bug, Trophy } from 'lucide-react';
 import { LEGACY_CATEGORIES, getCategoryName, CATEGORY_GROUPS } from '@/lib/constants/categories';
 import CategoryItem from '@/components/molecules/categories/CategoryItem';
+import Tooltip from '@/components/atoms/Tooltip';
 import { useSession } from 'next-auth/react';
 import { useCategories, useMySubscriptions } from '@/repo/categories/query';
 import { useToggleSubscription } from '@/repo/categories/mutation';
@@ -48,168 +49,21 @@ export default function CategorySidebar({
   const { openLoginPrompt } = useLoginPrompt();
   const containerRef = useRef<HTMLElement | null>(null);
 
-  const labelFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        menu: 'Menu',
-        popular: 'Popular',
-        latest: 'Latest',
-        following: 'Following',
-        subscribed: 'Subscribed',
-        askQuestion: 'Ask a question',
-        sharePost: 'Share',
-        verificationRequest: 'Verify',
-        subscribe: 'Subscribe',
-        subscribedLabel: 'Subscribed',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        menu: 'Menu',
-        popular: 'Phổ biến',
-        latest: 'Mới nhất',
-        following: 'Đang theo dõi',
-        subscribed: 'Đã theo dõi',
-        askQuestion: 'Đặt câu hỏi',
-        sharePost: 'Chia sẻ',
-        verificationRequest: 'Xác minh',
-        subscribe: 'Theo dõi',
-        subscribedLabel: 'Đang theo dõi',
-      };
-    }
-    return {
-      menu: '메뉴',
-      popular: '인기',
-      latest: '최신',
-      following: '팔로잉',
-      subscribed: '구독',
-      askQuestion: '질문하기',
-      sharePost: '공유하기',
-      verificationRequest: '인증하기',
-      subscribe: '구독',
-      subscribedLabel: '구독 중',
-    };
-  }, [locale]);
-  const menuLabelFallbacks: Record<string, string> = {
-    popular: labelFallbacks.popular,
-    latest: labelFallbacks.latest,
-    following: labelFallbacks.following,
-    subscribed: labelFallbacks.subscribed,
-  };
-  const tooltipFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        popular: 'See the most popular posts right now.',
-        latest: 'Browse the newest posts by time.',
-        following: 'See posts from people you follow.',
-        subscribed: 'See posts from categories you follow.',
-        leaderboard: 'See top contributors based on trust and helpful answers.',
-        feedback: 'Send feedback or report a bug.',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        popular: 'Xem bài viết đang được quan tâm nhất.',
-        latest: 'Xem bài mới nhất theo thời gian.',
-        following: 'Chỉ xem bài từ người bạn đang theo dõi.',
-        subscribed: 'Xem bài theo danh mục bạn đã đăng ký.',
-        leaderboard: 'Xem top người đóng góp dựa trên độ tin cậy và câu trả lời hữu ích.',
-        feedback: 'Gửi phản hồi hoặc báo lỗi cho đội ngũ.',
-      };
-    }
-    return {
-      popular: '지금 가장 많이 보는 글을 모아서 보여줘요.',
-      latest: '최신 글을 시간순으로 보여줘요.',
-      following: '팔로우한 사람들의 글만 모아볼 수 있어요.',
-      subscribed: '구독한 카테고리 글만 모아볼 수 있어요.',
-      leaderboard: '신뢰/도움 점수 기준 상위 기여자를 확인하세요.',
-      feedback: '피드백이나 버그를 제보할 수 있어요.',
-    };
-  }, [locale]);
-  const ctaTooltipFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        askQuestion:
-          'Ask about visa, jobs, or life in Korea\nCommunity & verified users can help\nInclude your situation, visa type, and timeline',
-        sharePost:
-          'Share experience, official links, or notices\nHelp others save time\nAdd source and date for trust',
-        verificationRequest:
-          'Apply to get a verified badge\nBoost trust and visibility\nSubmit a request and wait for review',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        askQuestion:
-          'Đặt câu hỏi về visa/việc làm/cuộc sống\nCộng đồng & người dùng xác minh sẽ hỗ trợ\nGhi rõ tình huống, loại visa, và thời hạn',
-        sharePost:
-          'Chia sẻ kinh nghiệm, link chính thức, hoặc thông báo\nGiúp người khác tiết kiệm thời gian\nNhớ ghi nguồn và ngày đăng',
-        verificationRequest:
-          'Xác minh hồ sơ để hiển thị huy hiệu\nTăng độ tin cậy và ưu tiên hiển thị\nGửi yêu cầu và chờ xét duyệt',
-      };
-    }
-    return {
-      askQuestion: '비자·취업·생활 질문을 올리면\n커뮤니티와 인증 사용자가 함께 도와줘요\n상황/비자타입/기간을 같이 적어주세요',
-      sharePost: '내 경험과 지식을 모두와 함께 공유해봅시다.',
-      verificationRequest: '인증을 받으면 프로필에 인증 마크가 표시돼요\n신뢰도/노출 가중치가 올라갑니다\n신청 후 검토를 기다려주세요',
-    };
-  }, [locale]);
-  const toastFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        subscribed: 'Subscribed.',
-        unsubscribed: 'Unsubscribed.',
-        subscribeError: 'Failed to subscribe.',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        subscribed: 'Đã theo dõi.',
-        unsubscribed: 'Đã hủy theo dõi.',
-        subscribeError: 'Lỗi khi theo dõi.',
-      };
-    }
-    return {
-      subscribed: '구독되었습니다.',
-      unsubscribed: '구독이 해제되었습니다.',
-      subscribeError: '구독 처리 중 오류가 발생했습니다.',
-    };
-  }, [locale]);
-  const sectionFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        categories: 'Categories',
-        mySubscriptions: 'My Subscriptions',
-        noSubscriptions: 'No subscriptions yet.',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        categories: 'Danh mục',
-        mySubscriptions: 'Theo dõi của tôi',
-        noSubscriptions: 'Chưa có danh mục theo dõi.',
-      };
-    }
-    return {
-      categories: '카테고리',
-      mySubscriptions: '내 구독',
-      noSubscriptions: '구독 중인 카테고리가 없습니다.',
-    };
-  }, [locale]);
-  const menuTitleLabel = t.menu || labelFallbacks.menu;
-  const askQuestionLabel = t.askQuestion || labelFallbacks.askQuestion;
-  const sharePostLabel = t.sharePost || labelFallbacks.sharePost;
-  const verificationRequestLabel = t.verificationRequest || labelFallbacks.verificationRequest;
-  const subscribeLabel = t.subscribe || labelFallbacks.subscribe;
-  const subscribedLabel = t.subscribedLabel || t.subscribed || labelFallbacks.subscribedLabel;
-  const categoriesLabel = t.categories || sectionFallbacks.categories;
-  const mySubscriptionsLabel = t.mySubscriptions || sectionFallbacks.mySubscriptions;
-  const noSubscriptionsLabel = t.noSubscriptions || sectionFallbacks.noSubscriptions;
-  const subscribedToastLabel = t.subscribedToast || toastFallbacks.subscribed;
-  const unsubscribedToastLabel = t.unsubscribedToast || toastFallbacks.unsubscribed;
-  const subscribeErrorLabel = t.subscribeError || toastFallbacks.subscribeError;
-  const askQuestionTooltipText = t.askQuestionTooltip || ctaTooltipFallbacks.askQuestion;
-  const sharePostTooltipText = t.sharePostTooltip || ctaTooltipFallbacks.sharePost;
-  const verificationTooltipText = t.verificationRequestTooltip || ctaTooltipFallbacks.verificationRequest;
+  const menuTitleLabel = t.menu || '';
+  const askQuestionLabel = t.askQuestion || '';
+  const sharePostLabel = t.sharePost || '';
+  const verificationRequestLabel = t.verificationRequest || '';
+  const subscribeLabel = t.subscribe || '';
+  const subscribedLabel = t.subscribedLabel || t.subscribed || '';
+  const categoriesLabel = t.categories || '';
+  const mySubscriptionsLabel = t.mySubscriptions || '';
+  const noSubscriptionsLabel = t.noSubscriptions || '';
+  const subscribedToastLabel = t.subscribedToast || '';
+  const unsubscribedToastLabel = t.unsubscribedToast || '';
+  const subscribeErrorLabel = t.subscribeError || '';
+  const askQuestionTooltipText = t.askQuestionTooltip || '';
+  const sharePostTooltipText = t.sharePostTooltip || '';
+  const verificationTooltipText = t.verificationRequestTooltip || '';
 
   useEffect(() => onHomeReset(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -223,22 +77,16 @@ export default function CategorySidebar({
   };
 
   const menuTooltips: Record<string, string | undefined> = {
-    popular: t.popularTooltip || tooltipFallbacks.popular,
-    latest: t.latestTooltip || tooltipFallbacks.latest,
-    following: t.followingTooltip || tooltipFallbacks.following,
-    subscribed: t.subscribedTooltip || tooltipFallbacks.subscribed,
-    leaderboard: t.leaderboardTooltip || tooltipFallbacks.leaderboard,
-    feedback: t.feedbackTooltip || tooltipFallbacks.feedback,
+    popular: t.popularTooltip,
+    latest: t.latestTooltip,
+    following: t.followingTooltip,
+    subscribed: t.subscribedTooltip,
+    leaderboard: t.leaderboardTooltip,
+    feedback: t.feedbackTooltip,
   };
 
-  const leaderboardLabel =
-    t.leaderboard ||
-    (locale === 'vi'
-      ? 'Top người đóng góp'
-      : locale === 'en'
-        ? 'Top Contributors'
-        : '상위 기여자');
-  const feedbackLabel = 'Feedback';
+  const leaderboardLabel = t.leaderboard || '';
+  const feedbackLabel = t.feedback || '';
 
   const menuCategories = [
     { id: 'popular', icon: TrendingUp, count: 0 },
@@ -246,13 +94,6 @@ export default function CategorySidebar({
     { id: 'following', icon: Users, count: 0 },
     { id: 'subscribed', icon: HeartHandshake, count: 0 },
     { id: 'leaderboard', icon: Trophy, count: 0, label: leaderboardLabel },
-    {
-      id: 'feedback',
-      icon: undefined,
-      count: 0,
-      label: feedbackLabel,
-      className: 'mx-4 my-1 justify-center gap-0 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-100 dark:hover:bg-blue-900/40',
-    },
     // { id: 'media', icon: Film, count: 0 }, // 미디어 전용 페이지 (숨김 상태)
   ];
 
@@ -415,12 +256,8 @@ export default function CategorySidebar({
             </h3>
           </div>
           {menuCategories.map((category) => {
-            const isFeedback = category.id === 'feedback';
-            const label = (category as { label?: string }).label || t[category.id] || menuLabelFallbacks[category.id] || category.id;
-            const description = isFeedback ? undefined : showInlineDescriptions ? tooltipSummary(menuTooltips[category.id]) : undefined;
-            const tooltip = isFeedback ? menuTooltips[category.id] : undefined;
-            const ariaLabel = isFeedback ? feedbackLabel : undefined;
-            const labelClassName = isFeedback ? 'text-center w-full' : undefined;
+            const label = (category as { label?: string }).label || t[category.id] || category.id;
+            const description = showInlineDescriptions ? tooltipSummary(menuTooltips[category.id]) : undefined;
             return (
               <CategoryItem
                 key={category.id}
@@ -431,13 +268,22 @@ export default function CategorySidebar({
                 count={category.count}
                 isActive={activeCategory === category.id}
                 onClick={handleCategoryClick}
-                tooltip={tooltip}
-                ariaLabel={ariaLabel}
-                labelClassName={labelClassName}
                 className={(category as { className?: string }).className}
               />
             );
           })}
+          <div className="px-4 pt-2 flex justify-end">
+            <Tooltip content={menuTooltips.feedback} position="left" touchBehavior="longPress">
+              <button
+                type="button"
+                aria-label={feedbackLabel}
+                onClick={() => handleCategoryClick('feedback')}
+                className="flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-gray-200/70 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <span aria-hidden className="text-base leading-none">💬</span>
+              </button>
+            </Tooltip>
+          </div>
         </div>
 
         {/* Divider */}

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { feedbacks } from '@/lib/db/schema';
-import { successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { successResponse, errorResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { validateUgcText } from '@/lib/validation/ugc';
 import { and, eq, gte, sql } from 'drizzle-orm';
@@ -111,7 +111,11 @@ export async function POST(request: NextRequest) {
       .where(and(rateLimitCondition, gte(feedbacks.createdAt, rateLimitStart)));
 
     if ((rateLimitRow?.count || 0) >= feedbackRateLimitMax) {
-      return errorResponse('피드백 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.', 'FEEDBACK_RATE_LIMITED', 429);
+      return rateLimitResponse(
+        '피드백 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+        'FEEDBACK_RATE_LIMITED',
+        Math.max(1, Math.ceil(feedbackRateLimitWindowMs / 1000))
+      );
     }
 
     const [createdFeedback] = await db

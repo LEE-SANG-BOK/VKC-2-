@@ -5,7 +5,7 @@ import type {
   PaginatedResponse,
   ApiResponse,
 } from './types';
-import { ApiError } from '@/lib/api/errors';
+import { ApiError, getRetryAfterSeconds } from '@/lib/api/errors';
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 export async function fetchVerificationHistory(
@@ -60,7 +60,8 @@ export async function createVerificationRequest(
     throw new ApiError(
       error?.error || error?.message || 'Failed to create verification request',
       res.status,
-      error?.code
+      error?.code,
+      getRetryAfterSeconds(res.headers)
     );
   }
 

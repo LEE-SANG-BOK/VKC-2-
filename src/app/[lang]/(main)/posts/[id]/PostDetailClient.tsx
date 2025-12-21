@@ -237,33 +237,25 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
   const tErrors = (translations?.errors || {}) as Record<string, string>;
   const resolvedLocale = (locale === 'en' || locale === 'vi' ? locale : 'ko') as 'ko' | 'en' | 'vi';
-  const likeTooltipLabel = tTooltips.like || (locale === 'vi' ? 'Thích' : locale === 'en' ? 'Like' : '좋아요');
-  const copyLinkLabel = tTooltips.copyLink || (locale === 'vi' ? 'Sao chép liên kết' : locale === 'en' ? 'Copy link' : '링크 복사');
-  const shareLabel = tCommon.share || (locale === 'vi' ? 'Chia sẻ' : locale === 'en' ? 'Share' : '공유');
-  const bookmarkLabel = tTooltips.bookmark || (locale === 'vi' ? 'Lưu' : locale === 'en' ? 'Bookmark' : '북마크');
-  const reportLabel = tCommon.report || (locale === 'vi' ? 'Báo cáo' : locale === 'en' ? 'Report' : '신고');
-  const helpfulLabel = tCommon.helpful || (locale === 'vi' ? 'Hữu ích' : locale === 'en' ? 'Helpful' : '도움됨');
-  const unhideLabel = tCommon.unhide || (locale === 'vi' ? 'Bỏ ẩn' : locale === 'en' ? 'Unhide' : '숨김 해제');
-  const hiddenAnswerLabel = tCommon.hiddenAnswer || (locale === 'vi' ? 'Câu trả lời đã được ẩn.' : locale === 'en' ? 'This answer is hidden.' : '숨긴 답변입니다.');
-  const hiddenCommentLabel = tCommon.hiddenComment || (locale === 'vi' ? 'Bình luận đã được ẩn.' : locale === 'en' ? 'This comment is hidden.' : '숨긴 댓글입니다.');
-  const unhideFailedLabel = tCommon.unhideFailed || (locale === 'vi' ? 'Không thể bỏ ẩn.' : locale === 'en' ? 'Failed to unhide.' : '숨김 해제에 실패했습니다.');
-  const editLabel = tCommon.edit || (locale === 'vi' ? 'Chỉnh sửa' : locale === 'en' ? 'Edit' : '수정');
-  const deleteLabel = tCommon.delete || (locale === 'vi' ? 'Xóa' : locale === 'en' ? 'Delete' : '삭제');
-  const adoptedLabel = tCommon.adopted || (locale === 'vi' ? 'Đã chọn' : locale === 'en' ? 'Adopted' : '채택됨');
-  const savingLabel = tCommon.saving || (locale === 'vi' ? 'Đang lưu...' : locale === 'en' ? 'Saving...' : '저장 중...');
-  const loadingLabel = tPost.loading || (locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...');
-  const uncategorizedLabel = tCommon.uncategorized || (locale === 'vi' ? 'Chưa phân loại' : locale === 'en' ? 'Uncategorized' : '미지정');
-  const anonymousLabel = tCommon.anonymous || (locale === 'vi' ? 'Người dùng ẩn danh' : locale === 'en' ? 'Anonymous user' : '익명 사용자');
-  const shareCtaTitle =
-    tPostDetail.shareCtaTitle ||
-    (locale === 'vi' ? 'Chia sẻ bài viết' : locale === 'en' ? 'Share this post' : '이 글을 공유해 주세요');
-  const shareCtaDescription =
-    tPostDetail.shareCtaDescription ||
-    (locale === 'vi'
-      ? 'Chia sẻ để giúp người khác tìm được thông tin.'
-      : locale === 'en'
-        ? 'Share it with someone who might need this.'
-        : '필요한 사람에게 도움이 되도록 공유해 주세요.');
+  const likeTooltipLabel = tTooltips.like || '';
+  const copyLinkLabel = tTooltips.copyLink || '';
+  const shareLabel = tCommon.share || '';
+  const bookmarkLabel = tTooltips.bookmark || '';
+  const reportLabel = tCommon.report || '';
+  const helpfulLabel = tCommon.helpful || '';
+  const unhideLabel = tCommon.unhide || '';
+  const hiddenAnswerLabel = tCommon.hiddenAnswer || '';
+  const hiddenCommentLabel = tCommon.hiddenComment || '';
+  const unhideFailedLabel = tCommon.unhideFailed || '';
+  const editLabel = tCommon.edit || '';
+  const deleteLabel = tCommon.delete || '';
+  const adoptedLabel = tCommon.adopted || '';
+  const savingLabel = tCommon.saving || '';
+  const loadingLabel = tPost.loading || '';
+  const uncategorizedLabel = tCommon.uncategorized || '';
+  const anonymousLabel = tCommon.anonymous || '';
+  const shareCtaTitle = tPostDetail.shareCtaTitle || '';
+  const shareCtaDescription = tPostDetail.shareCtaDescription || '';
 
   const postDetailFallbacks = resolvedLocale === 'en'
     ? {
@@ -441,8 +433,8 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const reportOtherLabel = tCommon.reportOther || postDetailFallbacks.reportOther;
   const processingLabel = tCommon.processing || postDetailFallbacks.processing;
   const reportSubmitLabel = tCommon.reportSubmit || postDetailFallbacks.reportSubmit;
-  const helpfulPromptLabel = tCommon.helpfulPrompt || (locale === 'vi' ? 'Đã đánh dấu hữu ích.' : locale === 'en' ? 'Marked as helpful.' : '도움됨을 눌렀습니다.');
-  const helpfulCancelLabel = tCommon.helpfulCancel || (locale === 'vi' ? 'Đã hủy đánh dấu hữu ích.' : locale === 'en' ? 'Helpful mark removed.' : '도움됨을 취소했습니다.');
+  const helpfulPromptLabel = tCommon.helpfulPrompt || '';
+  const helpfulCancelLabel = tCommon.helpfulCancel || '';
   const helpfulToggleFailedLabel = tPostDetail.helpfulToggleFailed || postDetailFallbacks.helpfulToggleFailed;
   const reportPlaceholderLabel = tPostDetail.reportPlaceholder || postDetailFallbacks.reportPlaceholder;
   const cancelLabel = tCommon.cancel || postDetailFallbacks.cancel;
@@ -521,13 +513,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const commentPlaceholderLabel = tPostDetail.commentPlaceholder || postDetailUiFallbacks.commentPlaceholder;
   const writeCommentLabel = tPostDetail.writeComment || postDetailUiFallbacks.writeComment;
 
-  const guidelineTooltip =
-    tCommon.guidelineTooltip ||
-    (locale === 'vi'
-      ? 'Không dùng ngôn từ thù ghét/xúc phạm, hạn chế quảng cáo/liên hệ. Vi phạm có thể bị hạn chế đăng hoặc khóa tài khoản.'
-      : locale === 'en'
-        ? 'No hate/abuse, no ads or contact info. Violations may restrict posts or accounts.'
-        : '예의·혐오 표현 금지, 광고/연락처 제한, 위반 시 게시 제한 또는 계정 제재가 있을 수 있습니다.');
+  const guidelineTooltip = tCommon.guidelineTooltip || '';
   const justNowLabel = getJustNowLabel(locale);
   const safeName = (author?: { name?: string }) => safeDisplayName(author?.name, anonymousLabel);
   const safeLabel = (raw?: string) => safeShortLabel(raw);
@@ -730,11 +716,11 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   });
 
   const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
-  const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
-  const relatedTitleLabel = tPostDetail.relatedPostsTitle || (locale === 'vi' ? 'Bài viết liên quan' : locale === 'en' ? 'Related posts' : '관련 글');
-  const categoryPopularTitleLabel = tPostDetail.categoryPopularTitle || (locale === 'vi' ? 'Bài viết phổ biến trong danh mục' : locale === 'en' ? 'Popular in this category' : '같은 카테고리 인기글');
-  const relatedEmptyLabel = tPostDetail.relatedPostsEmpty || (locale === 'vi' ? 'Chưa có bài viết liên quan.' : locale === 'en' ? 'No related posts yet.' : '관련 글이 아직 없습니다.');
-  const categoryPopularEmptyLabel = tPostDetail.categoryPopularEmpty || (locale === 'vi' ? 'Chưa có bài viết phổ biến trong danh mục này.' : locale === 'en' ? 'No popular posts in this category yet.' : '이 카테고리의 인기글이 아직 없습니다.');
+  const learnMoreLabel = tCommon.learnMore || '';
+  const relatedTitleLabel = tPostDetail.relatedPostsTitle || '';
+  const categoryPopularTitleLabel = tPostDetail.categoryPopularTitle || '';
+  const relatedEmptyLabel = tPostDetail.relatedPostsEmpty || '';
+  const categoryPopularEmptyLabel = tPostDetail.categoryPopularEmpty || '';
   const mapPostToCardProps = (item: PostListItem) => ({
     id: item.id,
     author: {
@@ -2017,21 +2003,17 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     sortedAnswers.length,
     answersInfiniteQuery.data?.pages?.[0]?.pagination?.total || 0
   );
-  const answerEmptyLabel = tPostDetail.answerEmpty || (locale === 'vi' ? 'Chưa có câu trả lời.' : locale === 'en' ? 'No answers yet.' : '아직 답변이 없습니다.');
-  const answerCountLabel = tPostDetail.answerCountLabel
-    ? (tPostDetail.answerCountLabel.includes('{count}')
-      ? tPostDetail.answerCountLabel.replace('{count}', String(answerTotalCount))
-      : `${answerTotalCount}${tPostDetail.answerCountLabel}`)
-    : (locale === 'vi'
-      ? `${answerTotalCount} câu trả lời`
-      : locale === 'en'
-        ? `${answerTotalCount} answers`
-        : `${answerTotalCount}개의 답변이 있어요!`);
-  const answerMinHintLabel = locale === 'vi'
-    ? `Vui lòng viết ít nhất ${answerLimits.min} ký tự.`
-    : locale === 'en'
-      ? `Please write at least ${answerLimits.min} characters.`
-      : `${answerLimits.min}자 이상 작성해주세요.`;
+  const answerEmptyLabel = tPostDetail.answerEmpty || '';
+  const answerCountTemplate = tPostDetail.answerCountLabel || '';
+  const answerCountLabel = answerCountTemplate
+    ? (answerCountTemplate.includes('{count}')
+      ? answerCountTemplate.replace('{count}', String(answerTotalCount))
+      : `${answerTotalCount}${answerCountTemplate}`)
+    : '';
+  const answerMinHintTemplate = tPostDetail.answerMinHint || '';
+  const answerMinHintLabel = answerMinHintTemplate
+    ? answerMinHintTemplate.replace('{min}', String(answerLimits.min))
+    : '';
   const answerMinCharsLabel = answerRemaining > 0
     ? (() => {
       const template = tPostDetail.answerCharsLeft;
@@ -2042,19 +2024,15 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
           .replace('{remaining}', String(answerRemaining))
           .replace('{min}', String(answerLimits.min));
       }
-      return locale === 'vi'
-        ? `Cần thêm ${answerRemaining} ký tự (tối thiểu ${answerLimits.min})`
-        : locale === 'en'
-          ? `Need ${answerRemaining} more characters (min ${answerLimits.min})`
-          : `${answerRemaining}자 더 입력해주세요 (최소 ${answerLimits.min}자)`;
+      return template || '';
     })()
     : '';
-  const answerReadyLabel = tPostDetail.answerReady || (locale === 'vi' ? 'Đủ độ dài' : locale === 'en' ? 'Ready to post' : '충분히 작성됨');
+  const answerReadyLabel = tPostDetail.answerReady || '';
   const answersTitle = post?.isQuestion
-    ? (tCommon.answer || (locale === 'vi' ? 'Câu trả lời' : locale === 'en' ? 'Answers' : '답변'))
-    : (tCommon.comment || (locale === 'vi' ? 'Bình luận' : locale === 'en' ? 'Comments' : '댓글'));
-  const writeAnswerLabel = tPostDetail.writeAnswer || (locale === 'vi' ? 'Viết câu trả lời' : locale === 'en' ? 'Write an answer' : '답변 작성');
-  const answerPlaceholderLabel = tPostDetail.answerPlaceholder || (locale === 'vi' ? 'Hãy viết câu trả lời...' : locale === 'en' ? 'Write your answer...' : '답변을 작성해주세요...');
+    ? (tCommon.answer || '')
+    : (tCommon.comment || '');
+  const writeAnswerLabel = tPostDetail.writeAnswer || '';
+  const answerPlaceholderLabel = tPostDetail.answerPlaceholder || '';
 
   const handleShareFacebook = () => {
     if (!shareUrl) return;
@@ -2259,6 +2237,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     size="xs"
                     className="shrink-0"
                     onToggle={handleFollowChange}
+                    translations={translations}
                   />
                 ) : null}
               </div>

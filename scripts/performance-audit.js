@@ -2,52 +2,78 @@
 
 /**
  * 성능 최적화 및 모니터링 스크립트
- * Lighthouse, Web Vitals, Bundle Analyzer 종합 성능 검사
+ * Web Vitals, Bundle Analyzer 종합 성능 검사
  */
 
 let chromium;
-let lighthouse;
 
 try {
   ({ chromium } = require('playwright'));
-  lighthouse = require('lighthouse');
 } catch (error) {
   console.error(
-    '\n⚠️  Playwright/Lighthouse 기반 성능 감사가 비활성화되어 있습니다.\n' +
-      '    성능 검사를 실행하려면 `npm install playwright lighthouse` 후 다시 시도하세요.\n',
+    '\n⚠️  Playwright 기반 성능 감사가 비활성화되어 있습니다.\n' +
+      '    성능 검사를 실행하려면 `npm install playwright` 후 다시 시도하세요.\n',
   );
   process.exit(0);
 }
 const fs = require('fs');
 const path = require('path');
 
-// 성능 검사 대상 페이지
-const PERFORMANCE_PAGES = [
-  {
-    name: 'HomePage',
-    url: 'http://localhost:3000',
-    description: '메인 페이지',
-    critical: true
-  },
-  {
-    name: 'QuestionsPage',
-    url: 'http://localhost:3000/questions',
-    description: '질문 목록 페이지',
-    critical: true
-  },
-  {
-    name: 'QuestionDetailPage',
-    url: 'http://localhost:3000/questions/1',
-    description: '질문 상세 페이지',
-    critical: true
-  },
-  {
-    name: 'ProfilePage',
-    url: 'http://localhost:3000/profile',
-    description: '프로필 페이지',
-    critical: false
+const AUDIT_BASE_URL = process.env.AUDIT_BASE_URL || 'http://localhost:3000';
+const AUDIT_LANG = process.env.AUDIT_LANG || 'ko';
+const AUDIT_POST_ID = process.env.AUDIT_POST_ID || null;
+const AUDIT_USER_ID = process.env.AUDIT_USER_ID || null;
+
+const toUrl = (pathname) => new URL(pathname, AUDIT_BASE_URL).toString();
+
+const buildPerformancePages = ({ lang, postId, userId }) => {
+  const pages = [
+    {
+      name: 'HomePage',
+      url: toUrl(`/${lang}`),
+      description: '홈(피드)',
+      critical: true,
+    },
+    {
+      name: 'SearchPage',
+      url: toUrl(`/${lang}/search`),
+      description: '검색',
+      critical: true,
+    },
+    {
+      name: 'NewPostPage',
+      url: toUrl(`/${lang}/posts/new`),
+      description: '글쓰기',
+      critical: true,
+    },
+    {
+      name: 'LeaderboardPage',
+      url: toUrl(`/${lang}/leaderboard`),
+      description: '커뮤니티 랭킹',
+      critical: false,
+    },
+  ];
+
+  if (postId) {
+    pages.push({
+      name: 'PostDetailPage',
+      url: toUrl(`/${lang}/posts/${postId}`),
+      description: '게시글 상세',
+      critical: true,
+    });
   }
-];
+
+  if (userId) {
+    pages.push({
+      name: 'ProfilePage',
+      url: toUrl(`/${lang}/profile/${userId}`),
+      description: '프로필',
+      critical: false,
+    });
+  }
+
+  return pages;
+};
 
 // 성능 목표 기준 (Week 3 목표)
 const PERFORMANCE_TARGETS = {
@@ -59,7 +85,7 @@ const PERFORMANCE_TARGETS = {
   },
   webVitals: {
     LCP: 2500,           // Largest Contentful Paint (ms)
-    FID: 100,            // First Input Delay (ms)
+    INP: 200,            // Interaction to Next Paint (ms)
     CLS: 0.1,            // Cumulative Layout Shift
     FCP: 1800,           // First Contentful Paint (ms)
     TTI: 3500            // Time to Interactive (ms)
@@ -76,7 +102,7 @@ class PerformanceAuditor {
     this.results = {
       timestamp: new Date().toISOString(),
       summary: {
-        totalPages: PERFORMANCE_PAGES.length,
+        totalPages: 0,
         passedPages: 0,
         failedPages: 0,
         averageLighthouseScore: 0,
@@ -111,7 +137,11 @@ class PerformanceAuditor {
     const browser = await chromium.launch({ headless: true });
 
     try {
-      for (const page of PERFORMANCE_PAGES) {
+      const resolved = await this.resolveTargets(browser);
+      const pages = buildPerformancePages(resolved);
+      this.results.summary.totalPages = pages.length;
+
+      for (const page of pages) {
         console.log(`📊 ${page.name} (${page.description}) 성능 검사 중...`);
 
         const pageResult = await this.auditPage(browser, page);
@@ -134,13 +164,64 @@ class PerformanceAuditor {
     }
   }
 
+  async resolveTargets(browser) {
+    const config = {
+      lang: AUDIT_LANG,
+      postId: AUDIT_POST_ID,
+      userId: AUDIT_USER_ID,
+    };
+
+    if (config.postId && config.userId) {
+      return config;
+    }
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    try {
+      await page.goto(toUrl(`/${config.lang}`), { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+
+      if (!config.postId) {
+        const postHref = await page.evaluate((lang) => {
+          const selector = `a[href^="/${lang}/posts/"]`;
+          return document.querySelector(selector)?.getAttribute('href') || null;
+        }, config.lang);
+
+        if (postHref) {
+          const match = postHref.match(new RegExp(`^/${config.lang}/posts/([^/?#]+)`));
+          if (match) config.postId = match[1];
+        }
+      }
+
+      if (!config.userId) {
+        const userHref = await page.evaluate((lang) => {
+          const selector = `a[href^="/${lang}/profile/"]`;
+          return document.querySelector(selector)?.getAttribute('href') || null;
+        }, config.lang);
+
+        if (userHref) {
+          const match = userHref.match(new RegExp(`^/${config.lang}/profile/([^/?#]+)`));
+          if (match) config.userId = match[1];
+        }
+      }
+    } catch (error) {
+      return config;
+    } finally {
+      await context.close();
+    }
+
+    return config;
+  }
+
   async auditPage(browser, pageInfo) {
     const context = await browser.newContext();
     const page = await context.newPage();
 
     try {
       // Navigation Timing API를 위한 시작 시점 기록
-      await page.goto(pageInfo.url, { waitUntil: 'networkidle' });
+      await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
 
       // 페이지 로딩 성능 측정
       const performanceMetrics = await page.evaluate(() => {
@@ -200,7 +281,7 @@ class PerformanceAuditor {
 
           resolve({
             LCP: paint.find(p => p.name === 'first-contentful-paint')?.startTime || 0,
-            FID: 50, // 시뮬레이션 값
+            INP: 150, // 시뮬레이션 값
             CLS: 0.05, // 시뮬레이션 값
             FCP: paint.find(p => p.name === 'first-contentful-paint')?.startTime || 0,
             TTI: navigation.domContentLoadedEventEnd || 0
@@ -253,7 +334,7 @@ class PerformanceAuditor {
 
     // Web Vitals 확인
     if (pageResult.webVitals.LCP > targets.webVitals.LCP) return false;
-    if (pageResult.webVitals.FID > targets.webVitals.FID) return false;
+    if (pageResult.webVitals.INP > targets.webVitals.INP) return false;
     if (pageResult.webVitals.CLS > targets.webVitals.CLS) return false;
 
     // 페이지 로딩 시간 확인
@@ -474,8 +555,8 @@ class PerformanceAuditor {
                             <div>LCP</div>
                         </div>
                         <div class="score">
-                            <div class="metric-value ${page.webVitals.FID <= 100 ? 'good' : page.webVitals.FID <= 300 ? 'warning' : 'poor'}">${Math.round(page.webVitals.FID || 0)}ms</div>
-                            <div>FID</div>
+                            <div class="metric-value ${page.webVitals.INP <= 200 ? 'good' : page.webVitals.INP <= 500 ? 'warning' : 'poor'}">${Math.round(page.webVitals.INP || 0)}ms</div>
+                            <div>INP</div>
                         </div>
                         <div class="score">
                             <div class="metric-value ${page.webVitals.CLS <= 0.1 ? 'good' : page.webVitals.CLS <= 0.25 ? 'warning' : 'poor'}">${(page.webVitals.CLS || 0).toFixed(2)}</div>

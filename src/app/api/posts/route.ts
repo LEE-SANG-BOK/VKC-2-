@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { posts, users, categorySubscriptions, categories, follows, topicSubscriptions, answers, comments, likes, bookmarks } from '@/lib/db/schema';
-import { successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
+import { setNoStore, setPrivateNoStore, setPublicSWR, successResponse, errorResponse, paginatedResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkRateLimit } from '@/lib/api/rateLimit';
 import { checkUserStatus } from '@/lib/user-status';
@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
+import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
 import { ACTIVE_GROUP_PARENT_SLUGS, DEPRECATED_GROUP_PARENT_SLUGS, getChildrenForParent, isGroupChildSlug, isGroupParentSlug } from '@/lib/constants/category-groups';
 import { isExpertBadgeType } from '@/lib/constants/badges';
 import { getFollowingIdSet } from '@/lib/api/follow';
@@ -507,7 +508,7 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      response.headers.set('Cache-Control', 'no-store');
+      setNoStore(response);
       return response;
     }
 
@@ -582,12 +583,11 @@ export async function GET(request: NextRequest) {
     });
 
     const shouldCachePublic = !user && !filter && !hasSearch;
-    response.headers.set(
-      'Cache-Control',
-      shouldCachePublic
-        ? 'public, s-maxage=60, stale-while-revalidate=300'
-        : 'private, no-store'
-    );
+    if (shouldCachePublic) {
+      setPublicSWR(response, 60, 300);
+    } else {
+      setPrivateNoStore(response);
+    }
 
     return response;
   } catch (error) {
@@ -663,7 +663,7 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedTitle = title.trim();
-    const normalizedContent = content.trim();
+    const normalizedContent = sanitizeUgcHtml(content);
     const normalizedCategory = category.trim();
     const normalizedSubcategory = typeof subcategory === 'string' ? subcategory.trim() : '';
 

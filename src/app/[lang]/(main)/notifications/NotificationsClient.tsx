@@ -5,6 +5,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import Image from 'next/image';
 import { Bell, CheckCircle, MessageCircle, MessageSquare, Award, Settings, UserPlus, CheckCheck, Trash2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 import Header from '@/components/organisms/Header';
 import Button from '@/components/atoms/Button';
 import { useNotifications } from '@/repo/notifications/query';
@@ -33,87 +34,38 @@ interface NotificationsClientProps {
 export default function NotificationsClient({ locale, translations }: NotificationsClientProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const user = session?.user;
 
   const [filter, setFilter] = useState<'all' | 'answer' | 'comment' | 'reply' | 'adoption' | 'follow'>('all');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const t = (translations?.notifications || {}) as Record<string, string>;
   const copy = useMemo(() => {
-    const isVi = locale === 'vi';
-    const isEn = locale === 'en';
-    const fallback = {
-      title: isVi ? 'Thông báo' : isEn ? 'Notifications' : '알림',
-      subtitle: isVi ? 'Kiểm tra cập nhật mới nhất' : isEn ? 'Check your latest updates' : '새로운 소식을 확인하세요',
-      unreadCount: isVi ? '{count} thông báo chưa đọc' : isEn ? '{count} unread notifications' : '{count}개의 읽지 않은 알림',
-      markAllRead: isVi ? 'Đánh dấu đã đọc' : isEn ? 'Mark all read' : '모두 읽음',
-      settings: isVi ? 'Cài đặt' : isEn ? 'Settings' : '설정',
-      noNotifications: isVi ? 'Không có thông báo' : isEn ? 'No notifications' : '알림이 없습니다',
-      noNotificationsDesc: isVi
-        ? 'Thông báo mới sẽ hiển thị ở đây'
-        : isEn
-          ? 'New notifications will appear here'
-          : '새로운 알림이 오면 여기에 표시됩니다',
-      noFilteredNotifications: isVi ? 'Không có thông báo {filter}' : isEn ? 'No {filter} notifications' : '{filter} 알림이 없습니다',
-      viewAll: isVi ? 'Xem tất cả thông báo' : isEn ? 'View All Notifications' : '전체 알림 보기',
-      post: isVi ? 'Bài viết' : isEn ? 'Post' : '게시글',
-      tipTitle: isVi ? 'Mẹo thông báo' : isEn ? 'Notification Tips' : '알림 설정 팁',
-      tip1: isVi
-        ? 'Bạn có thể chọn nhận thông báo trong cài đặt hồ sơ'
-        : isEn
-          ? 'You can selectively receive notifications in profile settings'
-          : '프로필 설정에서 원하는 알림만 선택적으로 받을 수 있습니다',
-      tip2: isVi
-        ? 'Bạn có thể quản lý riêng thông báo trả lời, bình luận, phản hồi và chấp nhận'
-        : isEn
-          ? 'Manage answer, comment, reply, and adoption notifications separately'
-          : '답변, 댓글, 대댓글, 채택 알림을 각각 관리할 수 있습니다',
-      tip3: isVi
-        ? 'Tắt tất cả thông báo sẽ tạm dừng mọi thông báo'
-        : isEn
-          ? 'Turning off all notifications will pause all notifications temporarily'
-          : '전체 알림을 끄면 모든 알림이 일시적으로 중단됩니다',
-      tip4: isVi
-        ? 'Kiểm tra cài đặt thông báo để không bỏ lỡ cập nhật quan trọng'
-        : isEn
-          ? 'Check your notification settings to not miss important updates'
-          : '중요한 알림을 놓치지 않도록 알림 설정을 확인하세요',
-      filters: {
-        all: isVi ? 'Tất cả' : isEn ? 'All' : '전체',
-        answer: isVi ? 'Câu trả lời' : isEn ? 'Answer' : '답변',
-        comment: isVi ? 'Bình luận' : isEn ? 'Comment' : '댓글',
-        reply: isVi ? 'Phản hồi' : isEn ? 'Reply' : '대댓글',
-        adoption: isVi ? 'Chấp nhận' : isEn ? 'Adoption' : '채택',
-        follow: isVi ? 'Theo dõi' : isEn ? 'Follow' : '팔로우',
-      },
-    };
-
     return {
-      title: t.title || fallback.title,
-      subtitle: t.subtitle || fallback.subtitle,
-      unreadCount: t.unreadCount || fallback.unreadCount,
-      markAllRead: t.markAllRead || fallback.markAllRead,
-      settings: t.settings || fallback.settings,
-      noNotifications: t.noNotifications || fallback.noNotifications,
-      noNotificationsDesc: t.noNotificationsDesc || fallback.noNotificationsDesc,
-      noFilteredNotifications: t.noFilteredNotifications || fallback.noFilteredNotifications,
-      viewAll: t.viewAll || fallback.viewAll,
-      post: t.post || fallback.post,
-      tipTitle: t.tipTitle || fallback.tipTitle,
-      tip1: t.tip1 || fallback.tip1,
-      tip2: t.tip2 || fallback.tip2,
-      tip3: t.tip3 || fallback.tip3,
-      tip4: t.tip4 || fallback.tip4,
+      title: t.title || '',
+      subtitle: t.subtitle || '',
+      unreadCount: t.unreadCount || '',
+      markAllRead: t.markAllRead || '',
+      settings: t.settings || '',
+      noNotifications: t.noNotifications || '',
+      noNotificationsDesc: t.noNotificationsDesc || '',
+      noFilteredNotifications: t.noFilteredNotifications || '',
+      viewAll: t.viewAll || '',
+      post: t.post || '',
+      tipTitle: t.tipTitle || '',
+      tip1: t.tip1 || '',
+      tip2: t.tip2 || '',
+      tip3: t.tip3 || '',
+      tip4: t.tip4 || '',
       filters: {
-        all: t.all || fallback.filters.all,
-        answer: t.answer || fallback.filters.answer,
-        comment: t.comment || fallback.filters.comment,
-        reply: t.reply || fallback.filters.reply,
-        adoption: t.adoption || fallback.filters.adoption,
-        follow: t.follow || fallback.filters.follow,
+        all: t.all || '',
+        answer: t.answer || '',
+        comment: t.comment || '',
+        reply: t.reply || '',
+        adoption: t.adoption || '',
+        follow: t.follow || '',
       },
     };
-  }, [locale, t]);
+  }, [t]);
 
   const { data, isLoading, refetch } = useNotifications(
     { limit: 50 },
@@ -310,7 +262,10 @@ export default function NotificationsClient({ locale, translations }: Notificati
                               alt={notification.author.name}
                               width={24}
                               height={24}
+                              sizes="24px"
                               className="w-6 h-6 rounded-full"
+                              placeholder="blur"
+                              blurDataURL={DEFAULT_BLUR_DATA_URL}
                             />
                             <span className="text-sm font-semibold text-gray-900 dark:text-white">
                               {notification.author.name}

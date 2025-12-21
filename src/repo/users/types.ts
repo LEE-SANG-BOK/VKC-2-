@@ -40,6 +40,32 @@ export interface User {
 
 export type UserProfile = User;
 
+export interface RecommendedUserStats {
+  followers: number;
+  following: number;
+  posts: number;
+}
+
+export interface RecommendedUser {
+  id: string;
+  displayName?: string | null;
+  email?: string | null;
+  image?: string | null;
+  avatar?: string | null;
+  bio?: string | null;
+  isFollowing?: boolean;
+  isVerified: boolean;
+  isExpert: boolean;
+  badgeType?: string | null;
+  status?: string | null;
+  userType?: string | null;
+  visaType?: string | null;
+  interests?: string[] | null;
+  koreanLevel?: string | null;
+  recommendationMeta?: User['recommendationMeta'];
+  stats?: RecommendedUserStats;
+}
+
 export interface UpdateProfileRequest {
   name?: string;
   displayName?: string;
@@ -89,11 +115,10 @@ export interface UserLeaderboardEntry {
   isExpert: boolean;
   badgeType?: string | null;
   score: number;
+  temperature: number;
   trustScore: number;
   helpfulAnswers: number;
   adoptionRate: number;
-  level: number;
-  levelProgress: number;
   rank: number;
 }
 

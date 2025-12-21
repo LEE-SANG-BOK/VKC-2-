@@ -2,6 +2,7 @@ import type {
   User,
   UserProfile,
   UpdateProfileRequest,
+  RecommendedUser,
   PaginatedResponse,
   ApiResponse,
   UserFilters,
@@ -320,7 +321,7 @@ export async function checkFollowStatus(
 export async function fetchRecommendedUsers(
   filters: UserFilters = {},
   options?: FetchOptions
-): Promise<PaginatedResponse<User>> {
+): Promise<PaginatedResponse<RecommendedUser>> {
   const params = new URLSearchParams();
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());

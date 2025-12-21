@@ -12,6 +12,7 @@ import { queryKeys } from '@/repo/keys';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
 import MainLayout from '@/components/templates/MainLayout';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 import { DISPLAY_NAME_MAX_LENGTH, DISPLAY_NAME_MIN_LENGTH, generateDisplayNameFromEmail, normalizeDisplayName } from '@/lib/utils/profile';
 
 type AvatarSource = ImageBitmap | HTMLImageElement;
@@ -133,160 +134,65 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
   const avatarBlobUrlRef = useRef<string | null>(null);
 
   const t = (translations?.profileEdit || {}) as Record<string, string>;
-  const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tErrors = (translations?.errors || {}) as Record<string, string>;
   const copy = useMemo(() => {
-    const isVi = lang === 'vi';
-    const isEn = lang === 'en';
-    const selectLabel = t.genderSelect || (isVi ? 'Chọn' : isEn ? 'Select' : '선택');
-
     return {
-      avatarChange: t.avatarChange || (isVi ? 'Thay đổi ảnh đại diện' : isEn ? 'Change profile photo' : '프로필 사진 변경'),
-      avatarTooltip:
-        t.avatarTooltip ||
-        (isVi
-          ? 'Bạn có thể dùng ảnh bất kỳ để dễ nhận diện.'
-          : isEn
-            ? 'Upload any image that helps others recognize you.'
-            : '식별 가능한 이미지를 업로드해 주세요.'),
-      nameTooltip:
-        t.nameTooltip ||
-        (isVi
-          ? 'Tên này sẽ được hiển thị công khai trên hồ sơ và bài viết.'
-          : isEn
-            ? 'This name will be shown publicly on your profile and posts.'
-            : '프로필과 게시글에 공개로 표시되는 이름입니다.'),
-      bioTooltip:
-        t.bioTooltip ||
-        (isVi
-          ? 'Giới thiệu ngắn giúp mọi người hiểu bạn tốt hơn.'
-          : isEn
-            ? 'A short intro helps others understand you.'
-            : '간단한 소개를 적으면 신뢰도와 소통이 좋아져요.'),
-      genderTooltip:
-        t.genderTooltip ||
-        (isVi
-          ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
-          : isEn
-            ? 'Optional. Used to personalize recommendations.'
-            : '선택 사항입니다. 맞춤 추천에 활용됩니다.'),
-      ageGroupTooltip:
-        t.ageGroupTooltip ||
-        (isVi
-          ? 'Không bắt buộc. Dùng để cá nhân hóa gợi ý.'
-          : isEn
-            ? 'Optional. Used to personalize recommendations.'
-            : '선택 사항입니다. 맞춤 추천에 활용됩니다.'),
-      userTypeTooltip:
-        t.userTypeTooltip ||
-        t.statusTooltip ||
-        (isVi
-          ? 'Không bắt buộc. Chọn loại người dùng của bạn.'
-          : isEn
-            ? 'Optional. Choose your user type.'
-            : '선택 사항입니다. 사용자 유형을 선택해 주세요.'),
-      nameValidationError:
-        t.nameValidationError ||
-        (isVi
-          ? `Biệt danh phải từ ${DISPLAY_NAME_MIN_LENGTH}–${DISPLAY_NAME_MAX_LENGTH} ký tự.`
-          : isEn
-            ? `Nickname must be ${DISPLAY_NAME_MIN_LENGTH}–${DISPLAY_NAME_MAX_LENGTH} characters.`
-            : `닉네임은 ${DISPLAY_NAME_MIN_LENGTH}~${DISPLAY_NAME_MAX_LENGTH}자여야 합니다.`),
-      updateSuccess: t.updateSuccess || (isVi ? 'Hồ sơ đã được cập nhật.' : isEn ? 'Profile updated.' : '프로필이 업데이트되었습니다.'),
-      updateFailed: t.updateFailed || (isVi ? 'Không thể cập nhật hồ sơ.' : isEn ? 'Failed to update profile.' : '프로필 업데이트에 실패했습니다.'),
-      avatarOnlyImages: t.avatarOnlyImages || (isVi ? 'Chỉ cho phép tệp ảnh.' : isEn ? 'Only image files are allowed.' : '이미지 파일만 업로드할 수 있습니다.'),
-      avatarTooLarge: t.avatarTooLarge || (isVi ? 'Kích thước ảnh phải ≤ 20MB.' : isEn ? 'Image must be 20MB or less.' : '이미지 크기는 20MB 이하여야 합니다.'),
-      avatarUploadFailed: t.avatarUploadFailed || (isVi ? 'Tải ảnh đại diện thất bại.' : isEn ? 'Failed to upload profile photo.' : '프로필 사진 업로드에 실패했습니다.'),
-      avatarUploadSuccess: t.avatarUploadSuccess || (isVi ? 'Đã cập nhật ảnh đại diện.' : isEn ? 'Profile photo updated.' : '프로필 사진이 업데이트되었습니다.'),
-      avatarDecodeFailed:
-        t.avatarDecodeFailed ||
-        (isVi
-          ? 'Không thể xử lý ảnh. Vui lòng chọn ảnh JPG/PNG.'
-          : isEn
-            ? 'Failed to process image. Please choose a JPG/PNG.'
-            : '이미지를 처리할 수 없습니다. JPG/PNG 이미지를 선택해주세요.'),
-      avatarHeicUnsupported:
-        t.avatarHeicUnsupported ||
-        (isVi
-          ? 'Ảnh HEIC/HEIF chưa được hỗ trợ. Vui lòng chọn JPG/PNG.'
-          : isEn
-            ? 'HEIC/HEIF is not supported. Please choose a JPG/PNG.'
-            : 'HEIC/HEIF 형식은 아직 지원되지 않습니다. JPG/PNG 이미지를 선택해주세요.'),
-      backButton: t.backButton || (isVi ? 'Quay lại' : isEn ? 'Go back' : '뒤로 가기'),
-      pageTitle: t.pageTitle || (isVi ? 'Chỉnh sửa hồ sơ' : isEn ? 'Edit Profile' : '프로필 수정'),
-      profileAlt: t.profileAlt || (isVi ? 'Hồ sơ' : isEn ? 'Profile' : '프로필'),
-      nameLabel: t.nameLabel || (isVi ? 'Tên' : isEn ? 'Name' : '이름'),
-      namePlaceholder: t.namePlaceholder || (isVi ? 'Nhập tên của bạn' : isEn ? 'Enter your name' : '이름을 입력하세요'),
-      bioLabel: t.bioLabel || (isVi ? 'Giới thiệu' : isEn ? 'Bio' : '자기소개'),
-      bioPlaceholder: t.bioPlaceholder || (isVi ? 'Nhập giới thiệu về bản thân' : isEn ? 'Enter your bio' : '자기소개를 입력하세요'),
-      genderLabel: t.genderLabel || (isVi ? 'Giới tính' : isEn ? 'Gender' : '성별'),
-      selectLabel,
-      genderMale: t.genderMale || (isVi ? 'Nam' : isEn ? 'Male' : '남성'),
-      genderFemale: t.genderFemale || (isVi ? 'Nữ' : isEn ? 'Female' : '여성'),
-      genderOther: t.genderOther || (isVi ? 'Khác' : isEn ? 'Other' : '기타'),
-      ageGroupLabel: t.ageGroupLabel || (isVi ? 'Độ tuổi' : isEn ? 'Age Group' : '연령대'),
-      ageGroup10s: t.ageGroup10s || (isVi ? '10-19' : isEn ? '10s' : '10대'),
-      ageGroup20s: t.ageGroup20s || (isVi ? '20-29' : isEn ? '20s' : '20대'),
-      ageGroup30s: t.ageGroup30s || (isVi ? '30-39' : isEn ? '30s' : '30대'),
-      ageGroup40s: t.ageGroup40s || (isVi ? '40-49' : isEn ? '40s' : '40대'),
-      ageGroup50s: t.ageGroup50s || (isVi ? '50-59' : isEn ? '50s' : '50대'),
-      ageGroup60plus: t.ageGroup60plus || (isVi ? '60+' : isEn ? '60+' : '60대+'),
-      userTypeLabel: t.userTypeLabel || t.statusLabel || (isVi ? 'Trạng thái' : isEn ? 'Status' : '사용자 유형'),
-      userTypeStudent: t.userTypeStudent || t.statusStudent || (isVi ? 'Sinh viên' : isEn ? 'Student' : '학생'),
-      userTypeWorker: t.userTypeWorker || t.statusWorker || (isVi ? 'Nhân viên' : isEn ? 'Worker' : '근로자'),
-      userTypeResident: t.userTypeResident || (isVi ? 'Cư dân' : isEn ? 'Resident' : '거주자'),
-      notificationTitle: t.notificationTitle || (isVi ? 'Cài đặt thông báo' : isEn ? 'Notification Settings' : '알림 설정'),
-      notifyAll: t.notifyAll || (isVi ? 'Tất cả thông báo' : isEn ? 'All notifications' : '전체 알림'),
-      notifyAnswers: t.notifyAnswers || (isVi ? 'Thông báo câu trả lời' : isEn ? 'Answer notifications' : '답변 알림'),
-      notifyComments: t.notifyComments || (isVi ? 'Thông báo bình luận' : isEn ? 'Comment notifications' : '댓글 알림'),
-      notifyReplies: t.notifyReplies || (isVi ? 'Thông báo phản hồi' : isEn ? 'Reply notifications' : '대댓글 알림'),
-      notifyAdoptions: t.notifyAdoptions || (isVi ? 'Thông báo chấp nhận' : isEn ? 'Adoption notifications' : '채택 알림'),
-      notifyFollows: t.notifyFollows || (isVi ? 'Thông báo theo dõi' : isEn ? 'Follow notifications' : '팔로우 알림'),
-      notifyAllDesc:
-        t.notifyAllDesc ||
-        (isVi
-          ? 'Bật hoặc tắt tất cả thông báo cùng lúc'
-          : isEn
-            ? 'Turn on or off all notifications at once'
-            : '모든 알림을 한 번에 켜거나 끕니다'),
-      notifyAnswersDesc:
-        t.notifyAnswersDesc ||
-        (isVi
-          ? 'Nhận thông báo khi có người trả lời câu hỏi của bạn'
-          : isEn
-            ? 'Get notified when someone answers your question'
-            : '내 질문에 새 답변이 달릴 때 알림을 받습니다'),
-      notifyCommentsDesc:
-        t.notifyCommentsDesc ||
-        (isVi
-          ? 'Nhận thông báo khi có người bình luận bài viết của bạn'
-          : isEn
-            ? 'Get notified when someone comments on your post'
-            : '내 게시글에 새 댓글이 달릴 때 알림을 받습니다'),
-      notifyRepliesDesc:
-        t.notifyRepliesDesc ||
-        (isVi
-          ? 'Nhận thông báo khi có người phản hồi bình luận của bạn'
-          : isEn
-            ? 'Get notified when someone replies to your comment'
-            : '내 댓글에 답글이 달릴 때 알림을 받습니다'),
-      notifyAdoptionsDesc:
-        t.notifyAdoptionsDesc ||
-        (isVi
-          ? 'Nhận thông báo khi câu trả lời của bạn được chấp nhận'
-          : isEn
-            ? 'Get notified when your answer is adopted'
-            : '내 답변이 채택되었을 때 알림을 받습니다'),
-      notifyFollowsDesc:
-        t.notifyFollowsDesc ||
-        (isVi
-          ? 'Nhận thông báo khi có người theo dõi mới'
-          : isEn
-            ? 'Get notified when you have a new follower'
-            : '새로운 팔로워가 생길 때 알림을 받습니다'),
-      saveButton: t.saveButton || (isVi ? 'Lưu' : isEn ? 'Save' : '저장하기'),
-      cancelButton: t.cancelButton || tCommon.cancel || (isVi ? 'Huỷ' : isEn ? 'Cancel' : '취소'),
+      avatarChange: t.avatarChange || '',
+      avatarTooltip: t.avatarTooltip || '',
+      nameTooltip: t.nameTooltip || '',
+      bioTooltip: t.bioTooltip || '',
+      genderTooltip: t.genderTooltip || '',
+      ageGroupTooltip: t.ageGroupTooltip || '',
+      userTypeTooltip: t.statusTooltip || '',
+      nameValidationError: t.nameValidationError || '',
+      updateSuccess: t.updateSuccess || '',
+      updateFailed: t.updateFailed || '',
+      avatarOnlyImages: t.avatarOnlyImages || '',
+      avatarTooLarge: t.avatarTooLarge || '',
+      avatarUploadFailed: t.avatarUploadFailed || '',
+      avatarUploadSuccess: t.avatarUploadSuccess || '',
+      avatarDecodeFailed: t.avatarDecodeFailed || '',
+      avatarHeicUnsupported: t.avatarHeicUnsupported || '',
+      backButton: t.backButton || '',
+      pageTitle: t.pageTitle || '',
+      profileAlt: t.profileAlt || '',
+      nameLabel: t.nameLabel || '',
+      namePlaceholder: t.namePlaceholder || '',
+      bioLabel: t.bioLabel || '',
+      bioPlaceholder: t.bioPlaceholder || '',
+      genderLabel: t.genderLabel || '',
+      selectLabel: t.genderSelect || '',
+      genderMale: t.genderMale || '',
+      genderFemale: t.genderFemale || '',
+      genderOther: t.genderOther || '',
+      ageGroupLabel: t.ageGroupLabel || '',
+      ageGroup10s: t.ageGroup10s || '',
+      ageGroup20s: t.ageGroup20s || '',
+      ageGroup30s: t.ageGroup30s || '',
+      ageGroup40s: t.ageGroup40s || '',
+      ageGroup50s: t.ageGroup50s || '',
+      ageGroup60plus: t.ageGroup60plus || '',
+      userTypeLabel: t.statusLabel || '',
+      userTypeStudent: t.statusStudent || '',
+      userTypeWorker: t.statusWorker || '',
+      userTypeResident: t.statusResident || '',
+      notificationTitle: t.notificationTitle || '',
+      notifyAll: t.notifyAll || '',
+      notifyAnswers: t.notifyAnswers || '',
+      notifyComments: t.notifyComments || '',
+      notifyReplies: t.notifyReplies || '',
+      notifyAdoptions: t.notifyAdoptions || '',
+      notifyFollows: t.notifyFollows || '',
+      notifyAllDesc: t.notifyAllDesc || '',
+      notifyAnswersDesc: t.notifyAnswersDesc || '',
+      notifyCommentsDesc: t.notifyCommentsDesc || '',
+      notifyRepliesDesc: t.notifyRepliesDesc || '',
+      notifyAdoptionsDesc: t.notifyAdoptionsDesc || '',
+      notifyFollowsDesc: t.notifyFollowsDesc || '',
+      saveButton: t.saveButton || '',
+      cancelButton: t.cancelButton || '',
     };
-  }, [lang, t, tCommon]);
+  }, [t]);
 
   const { data: profile, isLoading: profileLoading } = useMyProfile({
     enabled: !!user?.id,
@@ -515,7 +421,8 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
       const result = await res.json();
 
       if (!res.ok || !result?.success || !result?.data?.url) {
-        throw new Error(result?.error || copy.avatarUploadFailed);
+        const message = (result?.code && tErrors[result.code]) || result?.error || copy.avatarUploadFailed;
+        throw new Error(message);
       }
 
       const uploadedUrl = String(result.data.url);
@@ -559,7 +466,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <button
                 onClick={handleCancel}
-                className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors whitespace-nowrap"
               >
                 <ArrowLeft className="w-5 h-5" />
                 {copy.backButton}
@@ -576,7 +483,10 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
                     width={128}
                     height={128}
                     unoptimized={avatarUnoptimized}
+                    sizes="128px"
                     className="w-32 h-32 rounded-full border-4 border-gray-100 dark:border-gray-700 object-cover"
+                    placeholder="blur"
+                    blurDataURL={DEFAULT_BLUR_DATA_URL}
                   />
                   <input
                     ref={avatarInputRef}

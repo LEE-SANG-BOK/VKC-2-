@@ -1,4 +1,5 @@
 import type { Report, CreateReportData, ApiResponse } from './types';
+import { ApiError, getRetryAfterSeconds } from '@/lib/api/errors';
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 export async function reportPost(
@@ -17,7 +18,12 @@ export async function reportPost(
   const result = await res.json();
   
   if (!res.ok || !result.success) {
-    throw new Error(result.error || result.message || '게시글 신고에 실패했습니다.');
+    throw new ApiError(
+      result.error || result.message || '게시글 신고에 실패했습니다.',
+      res.status,
+      result.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return result;
@@ -39,7 +45,12 @@ export async function reportComment(
   const result = await res.json();
   
   if (!res.ok || !result.success) {
-    throw new Error(result.error || result.message || '댓글 신고에 실패했습니다.');
+    throw new ApiError(
+      result.error || result.message || '댓글 신고에 실패했습니다.',
+      res.status,
+      result.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return result;
@@ -61,7 +72,12 @@ export async function reportAnswer(
   const result = await res.json();
   
   if (!res.ok || !result.success) {
-    throw new Error(result.error || result.message || '답글 신고에 실패했습니다.');
+    throw new ApiError(
+      result.error || result.message || '답글 신고에 실패했습니다.',
+      res.status,
+      result.code,
+      getRetryAfterSeconds(res.headers)
+    );
   }
 
   return result;

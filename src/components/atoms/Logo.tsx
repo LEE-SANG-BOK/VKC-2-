@@ -5,15 +5,22 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { dispatchHomeReset } from '@/utils/homeReset';
 
-export default function Logo() {
+interface LogoProps {
+  translations?: Record<string, unknown>;
+}
+
+export default function Logo({ translations }: LogoProps) {
   const params = useParams();
   const locale = params?.lang as string || 'ko';
+  const labels = (translations?.bottomNav || {}) as Record<string, string>;
+  const homeLabel = labels.home || '';
 
   return (
     <Link
       href={`/${locale}?c=popular`}
       className="flex items-center gap-1 group"
       translate="no"
+      aria-label={homeLabel}
       onClick={() => dispatchHomeReset()}
     >
       <Image

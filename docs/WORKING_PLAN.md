@@ -146,6 +146,7 @@ $gh-address-comments
   - CI는 `npm ci`를 사용(`.github/workflows/ci.yml:1`)하지만, 저장소에는 `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`이 동시에 존재
   - 설치 재현성/취약점 대응/온보딩 비용을 올리는 전형적인 “반복 비용” 요인
 - 방향: CI 기준에 맞춰 단일 매니저/단일 락파일로 규칙화(문서 + 체크로 강제)
+- 연계: `P1-18`
 
 ### 4. Rate limit은 “존재”하지만 “확장 가능한 설계”가 아직 아님
 
@@ -161,6 +162,7 @@ $gh-address-comments
   - API가 `isExpert/badgeType`을 조회하지만 응답에 포함하지 않아 UI에서 상세 배지가 사라짐(`src/app/api/users/recommended/route.ts:54`, `src/app/api/users/recommended/route.ts:111`)
   - 온보딩은 관심사를 category `id(UUID)`로 저장하는데(`src/app/[lang]/(main)/onboarding/OnboardingClient.tsx:321`), 추천 메타는 숫자 포함 값을 제거해 관심사가 누락됨(`src/app/api/users/recommended/route.ts:107`)
 - 방향: 데이터 표현(관심사)과 배지 노출(응답 계약)을 한 번에 정리해 “반복 수정” 비용을 제거
+- 연계: `P1-13`, `P1-14`
 
 ### 6. AI 검색/요약(LLM/SGE) 노출을 위한 “추출 가능한 구조”가 시스템화돼 있지 않음
 
@@ -170,6 +172,62 @@ $gh-address-comments
   - `robots.ts`는 Google/Bing 중심이며, GPTBot/OAI-SearchBot 등 AI 크롤러 허용/차단 정책이 미정(`src/app/robots.ts:4`)
   - 출처/업데이트 표기(신뢰·최신성) 정책이 화면/메타/스키마에 일관되게 반영되지 않으면 E-E-A-T 신호가 약해짐(P1-8 연계)
 - 방향: “AI 검색 대비 SEO 계약(헤딩/즉답 구조/스키마/최신성/크롤링)”을 SoT로 만들고 템플릿화해 반복 비용을 제거
+- 연계: `P1-15`, `P1-8`
+
+### 7. UGC 보안(XSS)–서버 “무해화” 부재 + `dangerouslySetInnerHTML` 렌더
+
+- 현황/리스크
+  - 게시글/답변/댓글은 HTML을 그대로 저장/반환하는 구조이며, 클라이언트에서 `dangerouslySetInnerHTML`로 렌더됨(`src/app/api/posts/route.ts:666`, `src/app/api/posts/route.ts:819`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx:2273`)
+  - 현재 `createSafeUgcMarkup`는 링크에 `rel="ugc"`를 보정하는 수준이며, HTML 태그/속성 allowlist 기반 “무해화(스크립트/이벤트/위험 URL 차단)”를 수행하지 않음(`src/utils/sanitizeUgcContent.ts:17`)
+- 방향
+  - UGC는 “서버 write-time 무해화 + read-time 안전 렌더”를 단일 파이프라인으로 고정(허용 태그/속성/URL 스킴 규칙)
+  - 대표 페이로드 회귀 방지용 테스트/샘플을 최소로라도 갖춰 “다시 열리는” 보안 이슈를 구조적으로 차단
+- 연계: `P0-20`(UGC 무해화 + 링크 정책 단일화)
+
+### 8. UGC 링크 정책이 분산/충돌(공식 출처 allowlist가 사실상 동작하지 않을 수 있음)
+
+- 현황/리스크
+  - 금칙어/스팸 필터가 `https?://` 자체를 스팸 시그널로 취급해 외부 링크를 사실상 차단하는 경향이 있음(`src/lib/content-filter.ts:15`)
+  - 동시에 “공식 출처 도메인 allowlist” 검증 로직이 존재해 정책이 이중화되어 있음(`src/lib/validation/ugc-links.ts:57`)
+- 방향
+  - 링크 허용/차단은 allowlist(공식 출처) 1곳을 SoT로 두고, 스팸/연락처/광고 필터는 별도 신호로만 사용(순서/조건을 문서+코드로 통일)
+  - 외부 링크 rel 정책(`ugc` + 필요 시 `nofollow/sponsored`)은 렌더 단계에서 일괄 적용해 SEO/운영 리스크를 동시에 최소화
+- 연계: `P0-20`
+
+### 9. `next/image` 원격 호스트 전면 허용(`remotePatterns: **` + `http`)은 운영/보안 리스크
+
+- 현황/리스크
+  - `images.remotePatterns`가 모든 호스트(`**`)를 허용하고 `http`까지 허용함(`next.config.ts:22`)
+  - UGC/프로필/썸네일 등에서 외부 이미지 URL이 섞이면 서버가 원격 이미지를 fetch/리사이즈하는 형태가 되어 SSRF/DoS/성능 리스크가 커짐
+- 방향
+  - 프로덕션은 allowlist 기반으로 축소(예: Supabase Storage + 1st-party 도메인)하고, 나머지는 업로드/프록시/`unoptimized` 등 정책을 명확히 분리
+  - 이미지 src는 공용 정규화 유틸로 통일(`src/utils/normalizePostImageSrc.ts:1`)
+- 연계: `P0-21`(이미지 원격 정책 고정)
+
+### 10. PWA 의존성/캐시 경계가 ‘정책’으로 고정돼 있지 않음(중복/오동작 위험)
+
+- 현황/리스크
+  - PWA는 `@ducanh2912/next-pwa` 기반으로 구성되어 있으나(`next.config.ts:3`), 의존성에 `next-pwa`도 함께 존재해 중복/혼선 가능성이 있음(`package.json:28`, `package.json:60`)
+  - `aggressiveFrontEndNavCaching` 등 캐시 옵션이 개인화/동적 페이지에서 stale UI를 만들 가능성이 있음(`next.config.ts:13`)
+- 방향: PWA는 의존성 1개로 통일하고, 캐시 가능한 영역(정적/큐레이션)과 캐시 금지 영역(작성/알림/프로필/세션)을 정책으로 고정
+- 연계: `P1-17`
+
+### 11. SEO/검색 계약(SearchAction/Query Param)이 SoT에 고정돼 있지 않으면 드리프트가 발생
+
+- 현황/리스크
+  - 전역 Structured Data의 `SearchAction`은 `/search?q=` 계약에 의존하며(`src/components/organisms/StructuredData.tsx:21`), 검색 라우트/파라미터가 바뀔 경우 SEO/AI 추출 품질이 즉시 하락할 수 있음
+- 방향: 검색 URL 계약을 “메타/스키마 빌더” 레이어에서 1회 정의하고, StructuredData/페이지/라우트는 결과만 소비하게 한다
+- 연계: `P1-15`
+
+### 12. Cache-Control/개인화 응답 캐싱 경계가 단일 정책으로 고정돼 있지 않음
+
+- 현황/리스크
+  - API 응답에서 `Cache-Control`이 엔드포인트별로 흩어져 있어 “공개 캐시(public)로 내려가도 되는 응답”과 “개인화/세션 기반(private/no-store) 응답”의 경계가 코드 리뷰만으로 유지되기 쉬움
+  - 기본 응답 헬퍼는 `no-store`를 쓰지만(`src/lib/api/response.ts:47`), 개별 라우트에서 직접 헤더를 세팅하는 패턴이 혼재함(예: `src/app/api/categories/route.ts:55`, `src/app/api/users/leaderboard/route.ts:79`)
+- 방향
+  - 캐시 정책을 1곳(헬퍼/유틸)에서만 정의하고, 라우트는 “public/private tier”를 선택만 하게 한다(반복 방지)
+  - public 캐시 적용 라우트는 “viewer-dependent 필드”가 절대 포함되지 않음을 점검하고, 필요한 경우 `Vary`(Authorization/Cookie 등) 정책을 함께 고정
+- 연계: `P1-19`
 
 ## 개선 플랜(리서치 → 의사결정 → 실행 보드로 내리는 방식, 단일 소스 지향)
 
@@ -305,31 +363,35 @@ $gh-address-comments
 | P0-17 | Lead | Design Front | Hot(레이아웃) | 좌측 사이드바 고정 + 독립 스크롤 | 메인 스크롤과 분리 + 사이드바 내부 스크롤만 동작 |
 | P0-18 | Lead | Design Front | Hot(Header) | 헤더 “뒤로가기” 줄바꿈/깨짐 제거 | `Quay lại` 등 다국어에서 줄바꿈 0 + 헤더 높이/정렬 안정 |
 | P0-19 | Web Feature | Design Front, Lead, BE | Shared(랭킹/메뉴) | 커뮤니티 랭킹: 온도-only + Event 자리 | 레벨 UI 제거 + 온도 36.5 기본 + 총멤버 숨김 + 우측 4컬럼/모바일 상단 Event 영역 |
+| P0-20 | BE | Web Feature, Lead | Shared(API/보안) | UGC 무해화 + 링크 정책 단일화 | XSS 0 + allowlist/rel 정책 1규칙 |
+| P0-21 | Lead | Web Feature, Design Front | Shared(next.config) | `next/image` 원격 allowlist | `remotePatterns` 와일드카드 제거 + https-only + 이미지 로딩 정상 |
 
 ## Progress Checklist (집계용)
 
 ### P0
 
-- [ ] P0-0 (LEAD: Hot File 잠금/i18n 담당/게이트 고정)
-- [ ] P0-1 (LEAD/WEB/FE: en UI 숨김 + alternates/sitemap 유지 + ko fallback)
+- [x] P0-0 (LEAD: Hot File 잠금/i18n 담당/게이트 고정)
+- [x] P0-1 (LEAD/WEB/FE: en UI 숨김 + alternates/sitemap 유지 + ko fallback)
 - [ ] P0-2 (FE/WEB: ko/vi 하드코딩 제거 + 클립 0)
 - [ ] P0-3 (FE: 모바일 키보드/스크롤 UX 하드닝)
-- [ ] P0-4 (WEB/FE: 이미지 표준화 + 코드 스플리팅 + Query 튜닝)
-- [ ] P0-5 (FE: A11y 최소 기준)
-- [ ] P0-6 (BE/WEB: rate limit + 429 UX)
-- [ ] P0-7 (LEAD/WEB: Playwright 스모크/게이트)
-- [ ] P0-8 (LEAD/BE/WEB: 이벤트 스키마 + 수집)
+- [x] P0-4 (WEB/FE: 이미지 표준화 + 코드 스플리팅 + Query 튜닝)
+- [x] P0-5 (FE: A11y 최소 기준)
+- [x] P0-6 (BE/WEB: rate limit + 429 UX)
+- [x] P0-7 (LEAD/WEB: Playwright 스모크/게이트)
+- [x] P0-8 (LEAD/BE/WEB: 이벤트 스키마 + 수집)
 - [ ] P0-9 (LEAD/FE: 크로스브라우징 QA)
-- [ ] P0-10 (LEAD/WEB/BE/FE: 가이드라인 v1)
+- [x] P0-10 (LEAD/WEB/BE/FE: 가이드라인 v1)
 - [x] P0-11 (BE/WEB/FE: 숨김/신고 즉시 숨김)
-- [ ] P0-12 (WEB/BE/FE: 메타/키워드 파이프라인 통합)
-- [ ] P0-13 (FE/WEB: 라벨 제거 + 강조 UI)
-- [ ] P0-14 (FE/WEB: 피드백 UX 간소화)
+- [x] P0-12 (WEB/BE/FE: 메타/키워드 파이프라인 통합)
+- [x] P0-13 (FE/WEB: 라벨 제거 + 강조 UI)
+- [x] P0-14 (FE/WEB: 피드백 UX 간소화)
 - [x] P0-15 (FE/WEB: 게시글 상세 액션/추천 정리)
-- [ ] P0-16 (FE/LEAD: 카드 헤더 정렬 + 데스크톱 폭 제한)
-- [ ] P0-17 (LEAD/FE: 좌측 사이드바 고정 + 독립 스크롤)
-- [ ] P0-18 (LEAD/FE: 헤더 뒤로가기 줄바꿈/정렬)
-- [ ] P0-19 (WEB/FE/BE: 랭킹 온도-only + Event 자리)
+- [x] P0-16 (FE/LEAD: 카드 헤더 정렬 + 데스크톱 폭 제한)
+- [x] P0-17 (LEAD/FE: 좌측 사이드바 고정 + 독립 스크롤)
+- [x] P0-18 (LEAD/FE: 헤더 뒤로가기 줄바꿈/정렬)
+- [x] P0-19 (WEB/FE/BE: 랭킹 온도-only + Event 자리)
+- [x] P0-20 (BE/WEB: UGC 무해화 + 링크 정책 단일화)
+- [x] P0-21 (LEAD/WEB: `next/image` 원격 allowlist + https-only)
 
 ### P1
 
@@ -344,11 +406,14 @@ $gh-address-comments
 - [ ] P1-9 (BE: 모더레이션 자동화 고도화)
 - [ ] P1-10 (WEB: 튜토리얼/리마인드)
 - [ ] P1-11 (WEB/FE: 저속·오프라인 UX/PWA 폴백 v1)
-- [ ] P1-12 (LEAD/WEB: 성능·접근성 감사 스크립트 정렬)
-- [ ] P1-13 (WEB/BE/FE: 추천 사용자 개인화/표시 규칙 정리)
+- [x] P1-12 (LEAD/WEB: 성능·접근성 감사 스크립트 정렬)
+- [x] P1-13 (WEB/BE/FE: 추천 사용자 개인화/표시 규칙 정리)
 - [ ] P1-14 (LEAD/BE/WEB: 인증/배지 taxonomy + 운영 workflow 정리)
 - [ ] P1-15 (LEAD/WEB: AI 검색/요약 대비 SEO 구조화)
 - [ ] P1-16 (LEAD: SEO KPI/리뷰 리듬(GSC/GA4))
+- [x] P1-17 (LEAD/WEB: PWA 의존성 단일화 + 캐시 경계 고정)
+- [x] P1-18 (LEAD: 패키지 매니저/락파일 단일화)
+- [x] P1-19 (BE/LEAD: Cache-Control 정책 SoT + 캐시 감사)
 
 ### P2
 
@@ -877,8 +942,8 @@ $gh-address-comments
   - what: 버그 타입에서는 만족도 영역 숨김, 피드백에만 만족도 선택 노출, 텍스트 입력 안내를 상세 입력 하단으로 이동
 - 검증
   - [x] npm run lint
-  - [ ] npm run type-check
-  - [ ] npm run build
+  - [x] npm run type-check
+  - [x] npm run build
 - 변경 파일
   - src/app/[lang]/(main)/feedback/FeedbackClient.tsx
   - docs/WORKING_PLAN.md
@@ -896,21 +961,22 @@ $gh-address-comments
 #### (2025-12-20) [LEAD] P0-0 운영/병렬 규칙 고정 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [LEAD] Hot File 잠금/소유권 요약 1페이지 반영
-  - [ ] [LEAD] i18n 키 담당/요청 프로세스 확정
-  - [ ] [LEAD] 게이트(lint/type-check/build + Playwright) 고정
+  - [x] [LEAD] Hot File 잠금/소유권 요약 1페이지 반영
+  - [x] [LEAD] i18n 키 담당/요청 프로세스 확정
+  - [x] [LEAD] 게이트(lint/type-check/build + Playwright) 고정
 
 - 목표: Hot File 충돌/번역키 충돌/통합 타이밍 문제를 구조적으로 차단
 - 작업
   - Hot File 단일 소유 재확인: Header/MainLayout/PostList/globals.css는 Lead만 머지
-  - i18n 키 추가 담당 1인 지정(Lead 권장): `messages/ko.json`, `messages/vi.json`만 의무
+  - i18n 키 추가 담당(Lead): `messages/ko.json`, `messages/vi.json`만 의무(신규 작업은 `en` 번역 키 추가/검수 없음)
+    - 신규 키는 `ko` 기준으로 추가 → `vi`는 가능한 범위에서 즉시 반영(미반영 시 QA에서 클립/하드코딩 재점검)
   - 통합 윈도우/릴리즈 게이트 고정: lint/type-check/build + Playwright 통과 후만 머지
 - 완료 기준: `docs/EXECUTION_PLAN.md`에 “잠금/소유/게이트”가 1페이지 요약으로 반영
 
 #### (2025-12-20) [LEAD] P0-1 en UI 숨김 + SEO 유지 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [FE] LanguageSwitcher en 숨김(ko/vi만 노출)
+  - [x] [FE] LanguageSwitcher en 숨김(ko/vi만 노출)
   - [x] [WEB] sitemap/alternates en 유지 + locale fallback 병합
   - [ ] [LEAD] QA 기준(ko/vi UI, en SEO 유지) 문서 반영
 
@@ -938,6 +1004,53 @@ $gh-address-comments
   - 신규 작업부터 `en` 키 추가/검수는 하지 않되, `en` 렌더 fallback 병합으로 깨짐 방지
 - 완료 기준: 핵심 플로우(홈/검색/상세/글쓰기/프로필/구독/알림/인증/피드백)에서 `ko/vi` 기준 “텍스트 잘림 0(의도된 truncate 제외)”
 
+- 최근 구현(2025-12-21)
+  - 글쓰기(`/posts/new`) 유효성 토스트의 한국어 하드코딩 fallback 제거 → 다국어 템플릿(`{min}/{max}`) 기반으로 통일
+  - 신고 API(`/api/*/[id]/report`) 에러 응답을 코드 기반으로 통일 + ko/vi `errors` 매핑 추가(한국어 메시지 누수 제거)
+  - 업로드 API(`/api/upload*`) 에러 응답 코드화 + 에디터/프로필/인증 업로드 토스트를 code→`errors`로 매핑(한국어 메시지 누수 제거)
+  - 사이드바(CategorySidebar) 메뉴/툴팁/토스트 문구를 messages 기반으로 단일화하고 컴포넌트 내부 하드코딩 fallback 제거
+  - 하단 내비게이션(BottomNavigation) 라벨/홈 피드 토글 라벨을 messages 기반으로 단일화하고 컴포넌트 내부 하드코딩 fallback 제거
+  - 팔로우 버튼(FollowButton) 및 호출부(추천 사용자/프로필/상세/팔로잉 모달)에서 locale 분기 하드코딩 제거 → `common` 키 기반으로 통일
+  - 공용 `common`에 `previous/next/learnMore`를 추가하고 주요 화면에서 locale 분기 하드코딩 제거(카드/상세/프로필/인증/글쓰기 가이드)
+  - 인증 신청(VerificationRequest) step 라벨/재신청 버튼/유형 선택 에러 + 글쓰기(NewPost) 썸네일 선택 문구를 messages 키로 추가하고 locale 분기 하드코딩 fallback 제거
+  - 검색/구독/게시글 상세(SSR)에서 `question/share/uncategorized/anonymous` locale 분기 fallback 제거 → translations 키 단일화
+  - 헤더/로고(Header/Logo)에서 locale 분기 하드코딩 fallback 제거 + 뒤로가기 라벨을 truncate 처리해 모바일/좁은 폭 줄바꿈 방지
+  - 프로필 수정(ProfileEdit)에서 locale 분기 하드코딩 fallback 제거 + `profileEdit` 누락 키 보강(`statusResident`/업로드 토스트 등) + 뒤로가기 버튼 줄바꿈 방지
+  - 글쓰기 유사질문 프롬프트(SimilarQuestionPrompt)에서 locale 분기 fallback 제거 + `similarNoResults` 키 추가
+  - 로그인 유도 모달(LoginPrompt) 전용 `loginPrompt` 섹션 도입으로 locale 분기 fallback 제거
+  - 사이드바(CategorySidebar) `상위 기여자(Event)` 라벨을 messages로 고정하고 locale 분기 제거
+  - 공지 배너(NoticeBanner)·뉴스 섹션(NewsSection) 라벨을 messages로 이동(공지/외부 링크/닫기)
+  - 커뮤니티 랭킹(LeaderboardClient) 카피를 messages로 이동하고 locale 분기 fallback 제거(랭킹 안내/이벤트 영역 포함)
+  - 에디터(RichTextEditor) 툴바/업로드/링크 UI 문구를 messages로 이동하고 locale 분기 fallback 제거
+  - 홈 피드(PostList)·추천 사용자(RecommendedUsersSection) 라벨을 dictionary 섹션(profile/post/common) 기준으로 재정렬하고 locale 분기 fallback 제거(추천 CTA 키 추가 포함)
+  - 알림 페이지(NotificationsClient)에서 locale 분기 하드코딩 fallback 제거 → `messages.notifications` 기반으로 통일
+  - 홈 피드(PostList) 점수 요약 카드의 레이블/레벨 표기 locale 분기 제거 → `profile.points/title/rank/leaderboard/levelFormat` 키 추가
+  - 프로필(ProfileClient)에서 locale 분기 하드코딩 fallback 제거 → `profile` 라벨/레벨 표기(`levelFormat`)/유저 타입 라벨을 messages 기반으로 통일(`editProfileTooltip/loading/userType*` 키 보강)
+  - 게시글 상세(PostDetailClient)에서 공유/숨김/도움됨/관련 글/답변 작성 영역 locale 분기 fallback 제거 → `common`(save/unhide/helpful*) + `postDetail`(shareCta/related*/answerMinHint 등) 키 보강
+  - 게시글 카드(PostCard)에서 툴팁/공유/숨김/신고 문구 locale 분기 fallback 제거 → `common.hide/hideFailed` + `postDetail.copyFailed` + `tooltips.close` 키 보강
+  - 답변/댓글 카드(AnswerCard/CommentCard)에서 원글/삭제/숨김/도움됨 문구 locale 분기 fallback 제거 → `common.hideFailed` 범용 문구로 조정
+  - 헤더 검색(HeaderSearch)에서 입력/라벨 locale 분기 fallback 제거 + `search.minLengthError` 키 추가
+  - 추천 사용자 메타(RecommendedUsersSection/FollowingModal)용 `localizeRecommendationMetaItems`에서 locale 분기 fallback 제거 → `onboardingLabels` 기반으로 단일화
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
+  - 변경: `src/app/api/posts/[id]/report/route.ts`, `src/app/api/answers/[id]/report/route.ts`, `src/app/api/comments/[id]/report/route.ts`, `messages/ko.json`, `messages/vi.json`
+  - 변경: `src/app/api/upload/route.ts`, `src/app/api/upload/avatar/route.ts`, `src/app/api/upload/document/route.ts`, `src/components/molecules/editor/RichTextEditor.tsx`, `src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`, `src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx`, `messages/ko.json`, `messages/vi.json`
+  - 변경: `src/components/organisms/CategorySidebar.tsx`, `messages/ko.json`, `messages/vi.json`
+  - 변경: `src/components/organisms/BottomNavigation.tsx`
+  - 변경: `src/components/molecules/cards/PostCard.tsx`, `messages/ko.json`, `messages/vi.json`
+  - 변경: `src/components/molecules/cards/AnswerCard.tsx`, `src/components/molecules/cards/CommentCard.tsx`, `messages/ko.json`, `messages/vi.json`
+  - 변경: `src/components/molecules/search/HeaderSearch.tsx`, `messages/ko.json`, `messages/vi.json`
+  - 변경: `src/utils/recommendationMeta.ts`
+  - 변경: `src/components/atoms/FollowButton.tsx`, `src/components/organisms/RecommendedUsersSection.tsx`, `src/components/organisms/PostList.tsx`, `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/components/molecules/modals/FollowingModal.tsx`, `messages/ko.json`, `messages/vi.json`
+  - 변경: `src/components/molecules/cards/PostCard.tsx`, `src/components/molecules/cards/AnswerCard.tsx`, `src/components/molecules/cards/CommentCard.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`, `messages/ko.json`, `messages/vi.json`
+  - 변경: `src/app/[lang]/(main)/notifications/NotificationsClient.tsx`
+  - UserMenu 드롭다운/모달 번역 전달 경로 정합(번역 누락/blank 방지): Header→UserProfile→(Profile/MyPosts/Following/Bookmarks/Settings)에 full dictionary 전달
+  - SettingsModal 저장 토스트/구독 관리 CTA를 i18n 키로 분리: `userMenu.saveSuccess/saveError/manageSubscriptions`(ko/vi)
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/components/organisms/Header.tsx`, `src/components/molecules/user/UserProfile.tsx`
+  - 변경: `src/components/molecules/modals/ProfileModal.tsx`, `src/components/molecules/modals/MyPostsModal.tsx`, `src/components/molecules/modals/FollowingModal.tsx`, `src/components/molecules/modals/BookmarksModal.tsx`, `src/components/molecules/modals/SettingsModal.tsx`
+  - 변경: `messages/ko.json`, `messages/vi.json`
+
 #### (2025-12-20) [FE] P0-3 모바일 키보드/스크롤(WebView 포함) UX 하드닝 (P0)
 
 - 플랜(체크리스트)
@@ -950,10 +1063,15 @@ $gh-address-comments
   - “키보드 올라옴 → 제출 버튼 접근 가능”을 종료 조건으로 맞춤(로그인 모달 포함)
 - 완료 기준: iPhone SE급에서도 입력/제출이 막히지 않음
 
+- 최근 구현(2025-12-21)
+  - 공용 `Modal`의 최대 높이를 `100dvh` 기준으로 조정해 모바일 키보드/뷰포트 변화에서 잘림 가능성 완화
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`
+  - 변경: `src/components/atoms/Modal.tsx`
+
 #### (2025-12-20) [WEB] P0-4 퍼포먼스 1차(저사양/저속) (P0)
 
 - 플랜(체크리스트)
-  - [ ] [FE] 이미지 sizes/lazy/placeholder 통일
+  - [x] [FE] 이미지 sizes/lazy/placeholder 통일
   - [x] [WEB] dynamic import 확대(에디터/모달/관리자)
   - [x] [WEB] Query enabled/staleTime 튜닝
 
@@ -964,11 +1082,18 @@ $gh-address-comments
   - Query 튜닝: 알림/모달/드로어/탭 등 “열렸을 때만” 요청(`enabled`), 불필요 refetch 제거, 적정 `staleTime` 설정
 - 완료 기준: 저속 네트워크에서 첫 인터랙션 체감 개선 + “불필요 백그라운드 요청”이 발생하지 않음
 
+- 최근 구현(2025-12-21)
+  - 좋아요/북마크 토글 이후 `refetchQueries(type='all')` 제거(불필요 네트워크/데이터 사용 감소)
+  - 이미지 표준화: `DEFAULT_BLUR_DATA_URL` 단일화 + 아바타/배너/뉴스 썸네일에 `sizes`/placeholder 적용, `<img>` 기반 모달 프리뷰를 `next/image`로 교체
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/repo/posts/mutation.ts`, `src/repo/answers/mutation.ts`, `src/repo/comments/mutation.ts`
+  - 변경: `src/components/atoms/Avatar.tsx`, `src/components/organisms/NoticeBanner.tsx`, `src/components/organisms/NewsSection.tsx`, `src/components/molecules/cards/NewsCard.tsx`
+
 #### (2025-12-20) [FE] P0-5 A11y 최소 기준(출시 차단만) (P0)
 
 - 플랜(체크리스트)
-  - [ ] [FE] 아이콘-only 버튼 aria-label 전수
-  - [ ] [FE] 터치 타깃 최소 규격 점검
+  - [x] [FE] 아이콘-only 버튼 aria-label 전수
+  - [x] [FE] 터치 타깃 최소 규격 점검
 
 - 목표: 아이콘 버튼/내비/모달 접근성 결함으로 인한 이탈 방지
 - 작업
@@ -976,25 +1101,43 @@ $gh-address-comments
   - 포커스 링/키보드 탭 이동/대비 기본 점검(치명 항목만)
 - 완료 기준: 주요 화면에서 “무라벨 버튼 0”
 
+- 최근 구현(2025-12-21)
+  - 검색 페이지(H1/폼 레이블) 보강: `src/app/[lang]/(main)/search/SearchClient.tsx`
+  - 헤더/검색/카드/사이드바 등 아이콘 버튼 `aria-label` 및 모바일 터치 타깃(≥44px) 정리
+  - 글쓰기 페이지 A11y 보강: RichTextEditor 툴바/입력 aria-label 추가 + 템플릿 입력(조건/목표/배경) label 연결
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`, `node scripts/accessibility-audit.js`(Home/Search/NewPost/Leaderboard 0 violations)
+  - 변경: `src/components/molecules/editor/RichTextEditor.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
+
 #### (2025-12-20) [BE] P0-6 Rate limit 필수 적용(쓰기 API 우선) (P0)
 
 - 플랜(체크리스트)
-  - [ ] [BE] rate limit 유틸 + 정책 정의
-  - [ ] [WEB] 429 UX 처리(토스트/재시도 안내)
-  - [ ] [LEAD] 적용 엔드포인트 목록 확정
+  - [x] [BE] 429 응답 스키마/Retry-After 통일(피드백 포함)
+  - [x] [WEB] 429 UX 처리(ko/vi 에러키 + Retry-After 표시)
+  - [x] [LEAD] 적용 엔드포인트 목록 확정
 
 - 목표: 스팸/남용 방어(출시 직후 가장 흔한 장애 요인)
 - 작업
+  - 현재(베이스라인): `middleware.ts`에 “쓰기 메서드” in-memory 제한이 있고, 429 응답은 공용 스키마(`rateLimitResponse`) + `Retry-After`로 통일됨(프로덕션 멀티 인스턴스 내구성은 제한적)
   - 공용 rate limit 유틸 설계(스토리지 포함): Redis/KV 우선, 로컬/개발 환경은 in-memory fallback(환경변수 on/off)
   - 적용 우선순위(필수): 글/답변/댓글/신고/피드백/인증 요청 + 비용 큰 읽기(검색/키워드 추천 등)
   - 429 응답 규격 통일 + 프론트 UX 처리(토스트/재시도 안내, `Retry-After` 준수)
 - 완료 기준: 지정된 엔드포인트에서 임계치 초과 시 429 + 클라이언트 UX 처리 완료
 
+- 최근 구현(2025-12-21)
+  - 429 응답 표준화
+    - `POST /api/feedback`: rateLimitResponse + Retry-After 적용
+    - `middleware.ts`: write-method 429 응답 스키마 통일(이전 작업)
+  - 429 UX 처리(클라)
+    - ApiError에 `retryAfterSeconds` 추가 + fetch 레이어에서 `Retry-After` 전달
+    - ko/vi errors에 `*_RATE_LIMITED` 키 추가 후 토스트에 반영
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/api/feedback/route.ts`, `src/lib/api/errors.ts`, `src/repo/**/fetch.ts`, `src/app/[lang]/(main)/feedback/FeedbackClient.tsx`, `src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx`, `messages/ko.json`, `messages/vi.json`
+
 #### (2025-12-20) [LEAD] P0-7 Playwright 필수 도입(릴리즈 게이트) (P0)
 
 - 플랜(체크리스트)
-  - [ ] [WEB] Playwright 스모크 시나리오 작성
-  - [ ] [LEAD] 릴리즈 게이트/CI 연결 문서화
+  - [x] [WEB] Playwright 스모크 시나리오 작성
+  - [x] [LEAD] 릴리즈 게이트/CI 연결 문서화
 
 - 목표: 최소 자동화로 “깨짐”을 배포 전에 잡는다
 - 작업
@@ -1005,32 +1148,53 @@ $gh-address-comments
     - 검색 페이지/상세 진입
     - 글쓰기 시도 → 로그인 모달/게이팅 동작 확인
     - Rate limit 429 동작(테스트 가능한 조건/엔드포인트 포함)
+- 구현(코드 변경)
+  - Playwright 도입
+    - `package.json`에 `test:e2e` 추가
+    - `playwright.config.ts` 추가(로컬은 `dev`, CI는 `start` 기반)
+    - `e2e/smoke.spec.ts` 스모크 3종(정적 페이지, 언어 스위치, rate limit 429)
+  - Rate limit 스모크용 probe 엔드포인트
+    - `src/app/api/probe/rate-limit/route.ts` (env `ENABLE_PROBE_ENDPOINTS=true`일 때만 활성)
+  - CI 게이트 연결
+    - `.github/workflows/ci.yml`에 Playwright 브라우저 설치 + `npm run test:e2e` 추가
 - 릴리즈 게이트 설계(필수, C)
-  - CI(PR): 정적 게이트만 유지(항상 필수)
-    - `npm run lint` → `npm run type-check` → `SKIP_SITEMAP_DB=true npm run build` (`.github/workflows/ci.yml:1`)
-  - Release(Staging): E2E 게이트(항상 필수)
-    - Playwright 스모크(Chromium + WebKit + Mobile viewport 1종)
-    - Rate limit 스모크(429): 미인증/무DB로도 검증 가능한 방식 우선(예: `POST /api/__probe__` 반복 호출로 middleware 429 확인, `middleware.ts:1`)
-    - 성공/실패 기준을 “배포 전 체크리스트”에 고정(실패 시 배포 중단)
+  - CI(PR): “정적 + E2E” 게이트(항상 필수)
+    - `npm run lint` → `npm run type-check` → `SKIP_SITEMAP_DB=true npm run build` → `npm run test:e2e` (`.github/workflows/ci.yml:1`)
+    - E2E에는 429 스모크(`GET /api/probe/rate-limit`) 포함
+  - Release(Staging): 동일 스모크를 스테이징 URL로 재실행(필요 시 `E2E_BASE_URL` 사용)
   - Local(개발자): 빠른 게이트 + 필요 시 E2E
     - 빠른 게이트는 항상 수행, E2E는 “스테이징 URL 또는 로컬 데이터 환경”이 준비된 경우에만 수행
-  - 스크립트 정렬(필요)
-    - 기존 감사/스모크 스크립트는 현재 라우트(`/[lang]`) 기준으로 재정렬 필요(`scripts/performance-audit.js:1`, `scripts/accessibility-audit.js:1`, `scripts/verify-api.sh:1`)
+  - 스크립트 정렬
+    - 감사 스크립트는 현재 라우트(`/[lang]`) 기준으로 정렬 완료(`P1-12`, `scripts/performance-audit.js:1`, `scripts/accessibility-audit.js:1`)
+    - API 스모크 스크립트는 현재 API 기준으로 정렬(`scripts/verify-api.sh:1`)
 - 완료 기준: “릴리즈 전 필수로 돌리는 Playwright 스모크”가 문서/CI에 고정되고, 실패 시 배포 중단
 
 #### (2025-12-20) [LEAD] P0-8 핵심 지표 이벤트 정의 + 수집 v1 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [LEAD] 이벤트 목록/스키마 정의
-  - [ ] [BE] `/api/events` 저장/검증
-  - [ ] [WEB] 핵심 트리거 연결
+  - [x] [LEAD] 이벤트 목록/스키마 정의
+  - [x] [BE] `/api/events` 저장/검증
+  - [x] [WEB] 핵심 트리거 연결
 
 - 목표: 출시 후 의사결정/운영이 가능한 최소 계측
 - 작업
+  - 이벤트 스키마(SoT)
+    - API: `POST /api/events` (`src/app/api/events/route.ts`)
+    - eventType: `view|search|post|answer|comment|like|bookmark|follow|report|share`
+    - entityType: `post|answer|comment|user|search`
+    - 저장 필드(요약): `eventType`, `entityType`, `entityId`, `userId?`, `sessionId?`, `ipHash?`, `locale?`, `referrer?`, `metadata?`
+    - 개인정보 최소화: IP는 해시로만 저장(`LOG_HASH_SALT` 기반), PII(이메일/전화번호/원문 텍스트) 적재 금지
   - 이벤트 목록/필드/트리거 정의(DAU, 질문/답변/댓글, 채택/해결, 신고, 인증 신청, 구독/알림 등)
   - `/api/events` 수집 + 저장(크기 제한/개인정보 최소화/검증)
   - 클라이언트는 핵심 트리거에만 연결(실패해도 UX 영향 0)
 - 완료 기준: 이벤트가 실제 적재되고(샘플 확인), “볼 지표”가 합의됨
+
+- 최근 구현(2025-12-21)
+  - 게시글 작성 이벤트 추가: `eventType='post'`로 글 작성 시점 계측
+  - 트리거 연결(예시)
+    - 글 작성: `src/repo/posts/mutation.ts`
+    - 답변/댓글/좋아요/북마크/팔로우/신고/공유/검색/조회: `src/repo/**/mutation.ts`, `src/app/[lang]/(main)/search/SearchClient.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/components/molecules/cards/PostCard.tsx`
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
 
 #### (2025-12-20) [LEAD] P0-9 크로스브라우징/반응형 QA 라운드 (P0)
 
@@ -1045,10 +1209,10 @@ $gh-address-comments
 #### (2025-12-20) [LEAD] P0-10 신규 사용자 가이드라인 안내/유도 v1 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [LEAD] 가이드라인 정책/문구 확정(비차단)
-  - [ ] [WEB] 1회 노출/상태 저장 UX 구현
-  - [ ] [BE] 저장 필드/버전 관리
-  - [ ] [FE] 모달/배너 UI 정리
+  - [x] [LEAD] 가이드라인 정책/문구 확정(비차단)
+  - [x] [WEB] 1회 노출/상태 저장 UX 구현(localStorage)
+  - [x] [BE] `/api/events`에 `guideline` 이벤트 타입 추가
+  - [x] [FE] 글쓰기 화면에서 1회 모달로 가이드라인 리마인드
 
 - 목표: “신뢰 기반 커뮤니티” 규칙을 신규 유저에게 확실히 안내하되, 게시글 작성(작성/제출) 플로우에는 영향을 주지 않는다
 - 반영 범위(권장 v1)
@@ -1062,6 +1226,12 @@ $gh-address-comments
 - 완료 기준
   - 신규 유저가 1회 노출/확인 후 반복 노출이 과하지 않음(1회 또는 낮은 빈도)
   - 작성/제출 플로우에 영향 0(가이드라인 확인 여부로 작성이 막히지 않음)
+
+- 최근 구현(2025-12-21)
+  - 글쓰기(`posts/new`)에서 가이드라인을 1회 모달로 노출하고, 닫으면 `localStorage(vk-guidelines-seen-v1:{userId})`로 저장
+  - 닫기 시 `/api/events`에 `eventType='guideline'` 로깅(비차단)
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`, `src/components/molecules/modals/GuidelinesModal.tsx`, `src/app/api/events/route.ts`, `src/repo/events/types.ts`
 
 #### (2025-12-20) [BE] P0-11 맞춤 숨김(안보기) v1 + 신고 즉시 숨김 (P0)
 
@@ -1091,8 +1261,8 @@ $gh-address-comments
 
 - 플랜(체크리스트)
   - [x] [WEB] 메타 빌더/키워드 빌더 도입
-  - [ ] [BE] 키워드 API/연동 정리
-  - [ ] [FE] UI 해시태그/추천 표시 연동
+  - [x] [BE] (P0 범위) 기존 `/api/search/keywords` 유지(DB 집계 기반), 메타/해시태그 SoT는 `keywords.ts`로 고정
+  - [x] [FE] 글쓰기 자동 해시태그를 공용 키워드 빌더(`buildKeywords`)로 통일(중복 로직 제거)
 
 - 목표: SEO 메타(title/description/OG/Twitter) 생성과 “자동 키워드(해시태그/추천 키워드)”를 같은 소스에서 만들고, 중복 로직을 제거한다
 - 핵심 원칙(효율/반복 최소화)
@@ -1111,12 +1281,20 @@ $gh-address-comments
 - 완료 기준
   - `generateMetadata`(OG/Twitter 포함)와 “자동 키워드(해시태그)”가 동일 파이프라인을 사용
   - 키워드 로직이 1곳에만 존재하고(중복 제거), UI/SEO/API 모두 결과만 소비
+  - 글쓰기 기본 태그 생성은 `src/lib/seo/keywords.ts`를 SoT로 사용(컴포넌트 내부 키워드 매핑/토큰 로직 없음)
+
+- 최근 구현(2025-12-21)
+  - 글쓰기 자동 태그(`posts/new`)를 `buildKeywords/flattenKeywords` 기반으로 통일
+  - 키워드 추천 API(`/api/search/keywords`) date filter param 직렬화 오류 수정
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
+  - 변경: `src/app/api/search/keywords/route.ts`
 
 #### (2025-12-20) [FE] P0-13 카드/템플릿 “강조 표시” 정리(라벨 제거) (P0)
 
 - 플랜(체크리스트)
-  - [ ] [FE] 라벨 숨김 + 강조 UI 적용
-  - [ ] [WEB] 템플릿 출력 규칙 정리
+  - [x] [FE] 라벨 숨김 + 강조 UI 적용
+  - [x] [WEB] 템플릿 출력 규칙 정리
 
 - 목표: “조건/유형/배경”은 분류/표시 기준으로만 쓰고, 카드/UI에는 라벨을 노출하지 않는다(예: “유형 학생”이 아니라 “학생”만)
 - 작업(권장)
@@ -1130,10 +1308,16 @@ $gh-address-comments
   - 카드/리스트에서 “조건/유형/배경” 같은 라벨 텍스트가 보이지 않음
   - 상단 강조는 단순 배열이 아니라 “강조 UI”로 통일됨(정보 과밀 방지)
 
+- 최근 구현(2025-12-21)
+  - 프로필 상단 정보에서 라벨 텍스트를 숨기고 값만 pill로 강조(라벨은 `sr-only`로 접근성 유지)
+  - 글쓰기 템플릿(조건/목표/배경) 출력은 라벨 없이 “값만 강조”로 상단 삽입(강조 HTML 생성)
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
+
 #### (2025-12-20) [FE] P0-14 피드백 UX 간소화 + 사이드바 피드백 아이콘화 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [FE] 피드백 UI 간소화
+  - [x] [FE] 피드백 UI 간소화
   - [x] [WEB] 피드백 폼 필드 최소화 + 제출 UX
 
 - 목표: 피드백 제출 허들을 낮추고, 사이드바 피드백 진입을 “작고 명확한 이모지 + 툴팁”으로 정리한다
@@ -1144,7 +1328,7 @@ $gh-address-comments
     - 제출 후: 감사 메시지로 마무리(예: “감사합니다. 제출하신 내용 반영하여 페이지 개선에 힘쓰겠습니다.”)
     - “현재 페이지(URL)” 입력 UI는 노출하지 않고 자동 수집만 유지(표시는 제거)
   - 사이드바 피드백
-    - 메뉴 리스트의 “아이콘 슬롯(메뉴 텍스트 왼쪽)”에 피드백을 “아이콘(이모지)만”으로 배치(라벨 텍스트는 숨김)
+    - “상위 기여자(Event)” 아래 우측에 “이모지 버튼(💬)만” 배치(라벨 텍스트 미노출)
     - 설명은 Tooltip로 대체(접근성 `aria-label` 포함), 클릭 시 `/${lang}/feedback`로 이동
 - 완료 기준
   - 버그 폼에서 영향도/재현 단계가 사라지고, 제출 후 감사 UX가 일관됨
@@ -1177,8 +1361,8 @@ $gh-address-comments
 #### (2025-12-20) [FE] P0-16 피드 카드 헤더 정렬 + 데스크톱 카드 폭 제한 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [FE] 카드 헤더 레이아웃 정렬(닉네임 기준으로 제목/본문 시작점 통일)
-  - [ ] [LEAD] 데스크톱 카드 최대 폭 제한 + 그리드 폭 재정렬(Hot File)
+  - [x] [FE] 카드 헤더 레이아웃 정렬(닉네임 기준으로 제목/본문 시작점 통일)
+  - [x] [LEAD] 데스크톱 카드 최대 폭 제한 + 그리드 폭 재정렬(Hot File)
 
 - 목표: 데스크톱에서 카드 폭 과확장을 줄이고, 프로필 사진 아래로 텍스트가 밀리지 않도록 “닉네임 시작점 정렬”로 정돈한다
 - 현황(스크린샷 기준)
@@ -1195,11 +1379,15 @@ $gh-address-comments
   - 제목/본문이 닉네임 기준으로 시작하고 아바타 아래로 내려가지 않음
   - 데스크톱에서 카드 폭이 과도하게 늘어나지 않음(가독성 개선)
 
+- 최근 구현(2025-12-21)
+  - 카드 본문/태그/좌측 액션의 시작점을 닉네임 시작점으로 통일: `src/components/molecules/cards/PostCard.tsx`
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+
 #### (2025-12-20) [LEAD] P0-17 좌측 사이드바 고정 + 독립 스크롤 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [LEAD] 좌측 컬럼 고정(스크롤 분리) 레이아웃 설계/반영(Hot File)
-  - [ ] [FE] 좌측 사이드바 내부 스크롤/높이 동작 정리
+  - [x] [LEAD] 좌측 컬럼 sticky 고정 + 높이 고정(Hot File)
+  - [x] [FE] 좌측 사이드바 내부 스크롤 분리(overflow-y-auto)
 
 - 목표: 메인 스크롤을 내릴 때 좌측 사이드바는 화면에 고정되고, 필요한 경우 내부 스크롤만 동작하도록 한다
 - 현황(스크린샷 기준)
@@ -1211,6 +1399,13 @@ $gh-address-comments
   - 사이드바 내부 스크롤 분리
     - 최대 높이를 `calc(100vh - header - spacing)`로 제한
     - 내용이 길 때만 내부 스크롤 동작
+- 구현(코드 변경)
+  - 좌측 레일 sticky + 고정 높이: `src/components/templates/MainLayout.tsx`
+  - 사이드바 내부 스크롤: `src/components/organisms/CategorySidebar.tsx`
+- 검증(로컬)
+  - `npm run lint`
+  - `npm run type-check`
+  - `SKIP_SITEMAP_DB=true npm run build`
 - 완료 기준
   - 메인 스크롤과 무관하게 좌측 사이드바가 고정되어 유지됨
   - 좌측 사이드바는 자체 스크롤만 동작하고, 하단으로 더 내려가지 않음
@@ -1226,6 +1421,15 @@ $gh-address-comments
     - (우선순위 1) 뒤로 버튼은 icon-only(+Tooltip) 또는 `whitespace-nowrap` + 텍스트 축약(예: `sm:inline` 이상에서만 텍스트)
     - (우선순위 2) `showBackButton`에서는 브랜드 소개 문구를 숨기거나(또는 더 짧게) 좌측 공간을 “뒤로 버튼”에 양보
     - (우선순위 3) 필요한 경우에만 좌측 고정 폭을 조건부로 확장(예: 320→360)하되, 전체 그리드 정렬이 깨지지 않게 제한
+- 구현(코드 변경)
+  - 뒤로 버튼: 모바일은 icon-only, `sm+`에서만 텍스트 노출 + `whitespace-nowrap`로 다국어 줄바꿈 방지
+  - `showBackButton`일 때 브랜드 소개(서브 텍스트)는 모바일에서 숨김 처리(폭 확보)
+  - `src/components/organisms/Header.tsx`
+- 검증(로컬)
+  - `npm run lint`
+  - `npm run type-check`
+  - `SKIP_SITEMAP_DB=true npm run build`
+  - `npm run test:e2e`
 - 완료 기준
   - 데스크톱/모바일에서 `Quay lại` 포함 모든 로케일의 “뒤로가기”가 줄바꿈되지 않음(또는 의도적으로 icon-only)
   - 헤더 높이/정렬이 안정(줄바꿈으로 인한 CLS/라인깨짐 0)
@@ -1253,11 +1457,83 @@ $gh-address-comments
     - 웹(lg+): 12컬럼 기준 “랭킹 콘텐츠 8 + 우측 4 비워두기(또는 Event placeholder)”로 고정
     - 모바일: 상단 안내 영역을 유지하고, 해당 영역을 “Event(추후)”로 전환 가능한 컴포넌트 슬롯으로 확보
     - 메뉴 라벨: `상위 기여자(Event)`로 임시 표기(사이드바/툴팁/페이지 타이틀과 일관성 유지)
+- 구현(코드 변경)
+  - API: 점수(정렬)는 유지하되, UI 표시용 `temperature`를 추가(기본 36.5, 소수 1자리, `36.5 + log10(score+1)*2`)
+    - `src/app/api/users/leaderboard/route.ts`
+  - 타입: `UserLeaderboardEntry`에 `temperature` 추가 + 레벨 관련 필드 제거
+    - `src/repo/users/types.ts`
+  - UI: 레벨/진행바/총 멤버 수/계산식 노출 제거 → 온도-only + “랭킹이 오르는 행동” 안내로 교체 + 모바일 Event placeholder 추가
+    - `src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx`
+  - 레이아웃: 웹에서 우측 4 영역 확보를 위해 `rightRail`에 Event placeholder 추가
+    - `src/app/[lang]/(main)/leaderboard/page.tsx`
+  - 메뉴: `상위 기여자(Event)` 라벨 적용(vi/en도 Event 표기)
+    - `src/components/organisms/CategorySidebar.tsx`
+- 검증(로컬)
+  - `npm run lint`
+  - `npm run type-check`
+  - `SKIP_SITEMAP_DB=true npm run build`
+  - `npm run test:e2e`
 - 완료 기준
   - 랭킹 페이지에서 `Level` 관련 UI가 보이지 않음(진행바/라벨 포함)
   - 온도는 기본 36.5 기반으로 표시되며, 높은 온도에서만 “더 뜨거운” 표현이 적용됨
   - 상단 안내에 계산식이 아닌 “랭킹 상승 행동”만 안내되고, 전체 멤버 수는 노출되지 않음
   - 웹은 우측 여백/컬럼이 확보되고, 모바일 상단은 Event로 확장 가능한 영역으로 남아 있음
+
+#### (2025-12-20) [BE/WEB] P0-20 UGC 무해화 + 링크 정책 단일화 (P0)
+
+- 목표: UGC(질문/답변/댓글)의 XSS/피싱 리스크를 “서버 write-time 무해화 + 단일 링크 정책”으로 구조적으로 차단한다
+- 현황(코드 근거)
+  - UGC는 HTML 그대로 저장/반환되고 클라이언트에서 `dangerouslySetInnerHTML`로 렌더됨(`src/app/api/posts/route.ts:666`, `src/app/api/posts/route.ts:819`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx:2273`)
+  - `createSafeUgcMarkup`는 링크 `rel="ugc"` 보정 수준이며, 태그/속성 allowlist 기반 무해화를 하지 않음(`src/utils/sanitizeUgcContent.ts:17`)
+  - 링크 정책이 스팸 필터와 allowlist 검증으로 분산되어 충돌 가능(`src/lib/content-filter.ts:15`, `src/lib/validation/ugc-links.ts:57`)
+- 작업(권장, 효율 우선)
+  - 무해화 파이프라인 고정(SoT)
+    - 서버에서 저장 직전에 HTML sanitize(허용 태그/속성/URL 스킴/이미지 src 규칙) → 저장/반환은 “이미 안전한 HTML”만
+    - 렌더 단계에서는 “링크 rel 정책(ugc + 필요 시 nofollow/sponsored)”만 보정하고, sanitize는 중복하지 않음(성능/일관성)
+  - 링크 정책 단일화(SoT)
+    - allowlist(공식 출처)에서 허용/차단을 결정하고, 스팸/연락처/광고 필터는 “추가 신호”로만 사용(우선순위/조건을 문서+코드로 통일)
+    - 허용되지 않은 외부 링크는 (1) 링크 제거(텍스트화) 또는 (2) 클릭 전 경고 화면 등 중 택1로 단순화(운영 효율 우선)
+  - 회귀 방지 최소 세트
+    - 대표 XSS 페이로드(스크립트/이벤트 핸들러/javascript: URL) 샘플을 문서/테스트로 고정해 재발 방지
+- 구현(코드 변경)
+  - 서버 write-time sanitize 도입: `src/lib/validation/ugc-sanitize.ts` (허용 태그/속성 allowlist, `data-thumbnail` 보존)
+  - 링크 allowlist 검증 보강: protocol-relative(`//...`) 우회 차단(`src/lib/validation/ugc-links.ts`)
+  - URL 스팸 차단 중복 제거: `src/lib/content-filter.ts`에서 URL 패턴 제거 → allowlist 검증이 SoT
+  - 적용 라우트(저장 직전 sanitize)
+    - `src/app/api/posts/route.ts`
+    - `src/app/api/posts/[id]/route.ts`
+    - `src/app/api/posts/[id]/answers/route.ts`
+    - `src/app/api/posts/[id]/comments/route.ts`
+    - `src/app/api/answers/[id]/route.ts`
+    - `src/app/api/answers/[id]/comments/route.ts`
+    - `src/app/api/comments/[id]/route.ts`
+- 검증(로컬)
+  - `npm run lint`
+  - `npm run type-check`
+  - `SKIP_SITEMAP_DB=true npm run build`
+- 완료 기준
+  - 대표 XSS 페이로드가 저장/렌더에서 실행되지 않음
+  - 외부 링크 허용/차단/rel 정책이 단일 규칙으로 수렴하고(중복 로직 제거) 운영자가 예외를 1곳에서만 관리
+
+#### (2025-12-20) [LEAD/WEB] P0-21 `next/image` 원격 allowlist + https-only (P0)
+
+- 목표: `next/image` 원격 이미지 최적화가 “모든 호스트/HTTP”를 허용하는 상태를 해소해 SSRF/DoS/성능 리스크를 줄인다
+- 현황(코드 근거)
+  - `images.remotePatterns`가 모든 호스트(`**`)와 `http`까지 허용(`next.config.ts:22`)
+- 작업(권장, 효율 우선)
+  - 프로덕션 allowlist 고정
+    - Supabase Storage: `NEXT_PUBLIC_SUPABASE_URL`의 hostname 1개만 허용 + pathname은 `/storage/v1/object/**`로 제한
+    - Auth 아바타(현재 Google): `lh3.googleusercontent.com`(+필요 시 `lh4.googleusercontent.com`)만 허용
+    - Seed/공지/미디어 썸네일(임시): `images.unsplash.com` 허용(필요 시 Supabase로 이관 후 제거)
+    - (선택) 사이트 절대 URL이 이미지에 쓰이는 경우만 `NEXT_PUBLIC_SITE_URL|NEXT_PUBLIC_APP_URL|NEXTAUTH_URL` hostname을 허용(불필요하면 제외)
+    - `http`는 금지하고 `https`만 허용(혼합 콘텐츠/보안 리스크 제거)
+  - 실패 전략(깨짐 방지)
+    - allowlist 밖 URL은 “이미지 없음” 처리(썸네일 placeholder) 또는 `unoptimized` 정책을 명확히 결정(성능/보안 기준으로)
+  - 공용 이미지 래퍼에 규칙 고정
+    - sizes/lazy/placeholder 뿐 아니라 “허용 src 정규화/검증”까지 공용 유틸/컴포넌트로 통일(페이지별 임의 처리 금지)
+- 완료 기준
+  - `remotePatterns` 와일드카드/`http` 허용이 제거되고, 필수 이미지(아바타/썸네일)가 정상 로딩
+  - 외부 이미지가 섞여도 서버가 임의 호스트를 fetch/리사이즈하지 않음(정책 준수)
 
 ### P0 Exit criteria
 
@@ -1268,6 +1544,8 @@ $gh-address-comments
 - `ko/vi` 기준 텍스트 클립/하드코딩이 핵심 화면에서 0(의도된 `truncate` 제외)
 - 가이드라인 안내가 1회 동작하고(노출/확인 기록), 작성/제출 플로우에 영향 0
 - 신고 즉시 숨김 및 “안보기” 맞춤 숨김이 동작하고(승인 전 포함), 피드/검색에서 재노출되지 않음
+- UGC는 서버 write-time 무해화가 적용되어 XSS 페이로드가 실행되지 않고, 외부 링크 정책(allowlist + `rel="ugc"` + 필요 시 `nofollow`)이 단일 규칙으로 수렴
+- `next/image` 원격 정책이 allowlist + https-only로 고정되어 `remotePatterns: **`/`http` 허용이 제거됨(이미지 로딩 정상)
 - SEO 메타/키워드 파이프라인이 통합되고(중복 로직 제거), 카드/피드백 UX가 요구사항대로 정리됨
 - 데스크톱 카드 폭/정렬이 개선되고 좌측 사이드바 고정/독립 스크롤이 정상 동작
 - 헤더 뒤로가기(`Quay lại` 등) 줄바꿈/정렬 문제가 재현되지 않음
@@ -1382,23 +1660,30 @@ $gh-address-comments
 - 판정 기준(고정): `LCP ≤ 2.5s`, `INP ≤ 200ms`, `CLS ≤ 0.1`(모바일 우선). 기준 확인: `https://wallaroomedia.com/blog/what-are-core-web-vitals/`
 - 현황(코드 근거)
   - 감사 스크립트의 테스트 URL이 구 라우트(`/questions` 등)를 기준으로 되어 있음(`scripts/performance-audit.js:1`, `scripts/accessibility-audit.js:1`)
-- 작업(권장)
-  - 타깃 URL을 현재 구조로 교체(예: `/{lang}` 홈, `/{lang}/search`, `/{lang}/posts/{id}` 등)
-  - 네트워크 프로파일을 포함한 실행 규칙 정의(예: 모바일 viewport + 3G throttle 1회는 “정기 점검”)
-  - 결과의 pass/fail은 위 CWV 판정 기준으로 통일하고, 실패 시 이슈/백로그로 즉시 기록(릴리즈 차단은 아님)
-  - 운영 방식 결정
-    - 릴리즈 차단 게이트에 넣지 않고, “주간/야간 점검”으로 고정(실패 시 이슈 트래킹)
-- 완료 기준
-  - 스크립트가 현재 라우트에서 실행 가능하고, “언제/어디서/무엇을 본다”가 문서로 고정됨
+- 변경(반영)
+  - 타깃 URL을 현재 구조로 교체(`/{lang}` 홈, `/{lang}/search`, `/{lang}/leaderboard`, 선택: `/{lang}/posts/{id}`, `/{lang}/profile/{id}`)
+  - 실행 파라미터를 환경변수로 고정
+    - `AUDIT_BASE_URL`(기본: `http://localhost:3000`)
+    - `AUDIT_LANG`(기본: `ko`)
+    - `AUDIT_POST_ID`/`AUDIT_USER_ID`(선택, 미지정 시 홈에서 1회 추출 시도)
+  - 접근성 감사는 `@axe-core/playwright`가 없으면 lite(기본 규칙)로 자동 폴백
+  - 리포트 출력 위치 고정: `reports/performance-audit.{json,html}`, `reports/accessibility-audit.{json,html}`
+- 실행(예시)
+  - 로컬: `AUDIT_LANG=ko npm run audit:performance`
+  - 로컬: `AUDIT_LANG=vi npm run audit:accessibility`
+  - 스테이징/프리뷰: `AUDIT_BASE_URL=https://<host> AUDIT_LANG=vi npm run audit:full`
+- 운영 방식(권장)
+  - 릴리즈 차단 게이트에 넣지 않고, “주간/야간 점검”으로 고정(실패 시 이슈/백로그로 기록)
 
 #### (2025-12-20) [WEB/BE/FE] P1-13 추천 사용자(Recommended Users) 개인화/표시 규칙 정리 (P1)
 
 - 목표: 추천 사용자 섹션을 온보딩 기반으로 개인화하고, 배지/메타 노출을 “강조 1~2개” 원칙으로 통일한다
 - 현황(코드 근거)
-  - 추천 API는 `isVerified desc` + 팔로워 수 desc 정렬로만 추천되고, viewer 기반 매칭이 없음(`src/app/api/users/recommended/route.ts:87`)
-  - API가 `isExpert/badgeType`을 조회하지만 응답에 포함하지 않아 UI에서 상세 배지가 사라짐(`src/app/api/users/recommended/route.ts:54`, `src/app/api/users/recommended/route.ts:111`)
-  - 온보딩은 관심사를 category `id(UUID)`로 저장하고(`src/app/[lang]/(main)/onboarding/OnboardingClient.tsx:321`), 추천 메타는 숫자 포함 값을 제거해 관심사가 누락됨(`src/app/api/users/recommended/route.ts:107`)
-  - 추천 카드 메타가 `# {text}` 나열로 표시되어 강조 규칙과 충돌(`src/components/organisms/RecommendedUsersSection.tsx:232`)
+  - 추천 API는 viewer 기반 `matchScore(userType/visaType/koreanLevel/interests)`로 우선 정렬하고, 활동/팔로워로 tie-break(`src/app/api/users/recommended/route.ts:87`)
+  - 응답에 `isExpert/badgeType/(선택)badgeExpiresAt`을 포함하여 UI에서 상세 배지가 유지됨(`src/app/api/users/recommended/route.ts:54`, `src/app/api/users/recommended/route.ts:111`)
+  - interests(UUID)는 카테고리 `slug`로 매핑되어 노출되며, 추천 메타는 2개까지로 제한(`src/app/api/users/recommended/route.ts:121`)
+  - 추천 카드 메타는 `# 나열` 대신 chip 형태로 1~2개만 강조(`src/components/organisms/RecommendedUsersSection.tsx:235`)
+  - PostList에서 추천 유저를 follower 기준으로 재정렬하지 않고 API 정렬을 그대로 사용(`src/components/organisms/PostList.tsx:223`)
 - 작업(권장)
   - 데이터/표시 계약 정리
     - `/api/users/recommended` 응답에 `badgeType`, `isExpert` 포함(필요 시 `badgeExpiresAt`도 포함)
@@ -1477,6 +1762,65 @@ $gh-address-comments
     - “법/비자/제도” 성격 페이지는 업데이트 날짜를 표준 위치에 표기하고(템플릿), 반기 단위 갱신 목록을 유지
 - 완료 기준
   - KPI/리뷰 루틴이 문서로 고정되고, 리포트가 자동/반자동으로 재현 가능(사람이 매번 수작업으로 모으지 않음)
+
+#### (2025-12-20) [LEAD/WEB] P1-17 PWA 의존성 단일화 + 캐시 경계 고정 (P1)
+
+- 목표: PWA가 “설치/오프라인 UX 개선”에만 기여하고, 개인화/동적 화면에서 stale UI를 만들지 않도록 정책을 고정한다
+- 현황(코드 근거)
+  - PWA는 `@ducanh2912/next-pwa` 기반이나(`next.config.ts:3`), 의존성에 `next-pwa`도 함께 존재해 중복/혼선 가능성이 있음(`package.json:28`, `package.json:60`)
+  - `aggressiveFrontEndNavCaching` 등 캐시 옵션이 동적/개인화 화면에서 stale UI를 만들 가능성이 있음(`next.config.ts:13`)
+- 작업(권장)
+  - 의존성 단일화
+    - PWA 패키지는 1개만 유지(중복 제거)하고, 활성화 조건(`ENABLE_PWA`)을 운영 정책으로 확정
+  - 캐시 경계(SoT) 확정
+    - 캐시 허용: 정적 자산 + 운영자 큐레이션 콘텐츠(가이드/공지/뉴스)
+    - 캐시 금지: 작성/알림/프로필/세션/팔로우/좋아요 등 개인화·상태성 API 및 화면
+    - 오프라인 폴백은 “읽기 UX”만 보장(작성/상태 변경은 온라인 필요)
+  - 검증 루틴(운영 효율)
+    - 오프라인/저속에서 홈/상세는 안내+캐시로 복구 가능, 개인화 화면은 “정상 안내”로 실패(무한 로딩 금지)
+- 변경(반영)
+  - 중복 의존성 제거: `next-pwa` 제거 → `@ducanh2912/next-pwa`만 유지(`package.json:1`)
+  - 캐시 옵션 보수화: `cacheOnFrontEndNav=false`, `aggressiveFrontEndNavCaching=false`로 고정(`next.config.ts:1`)
+- 완료 기준
+  - PWA 패키지/설정이 1개로 수렴하고, 캐시 범위가 문서/코드에서 일치
+  - PWA로 인해 개인화 화면에서 stale UI/오작동이 발생하지 않음(최소 시나리오 검증)
+
+#### (2025-12-20) [LEAD] P1-18 패키지 매니저/락파일 단일화 (P1)
+
+- 목표: 설치 재현성을 높여 온보딩/CI/보안 대응의 “반복 비용”을 제거한다
+- 현황(코드 근거)
+  - CI는 `npm ci`를 사용(`.github/workflows/ci.yml:1`)하지만, `package-lock.json`/`pnpm-lock.yaml`/`yarn.lock`이 동시에 존재(혼선/재현성 저하)
+- 작업(권장)
+  - 단일 매니저 확정: CI 기준으로 `npm` 고정(예: `package-lock.json`만 유지)
+  - 다른 락파일 제거 + 재생성/검증 절차를 문서에 고정
+  - CI/훅(선택): “다른 락파일이 생기면 실패” 체크 추가(반복 방지)
+- 변경(반영)
+  - `pnpm-lock.yaml`, `yarn.lock`, `.yarnrc.yml` 제거 → `package-lock.json`만 유지
+  - CI에 락파일 가드 추가: `package-lock.json` 존재 + 다른 락파일이 있으면 실패(`.github/workflows/ci.yml:1`)
+- 완료 기준
+  - 저장소에 락파일이 1개만 존재하고, 로컬/CI 설치가 같은 결과를 재현
+
+#### (2025-12-20) [BE/LEAD] P1-19 Cache-Control 정책 SoT + 캐시 감사 (P1)
+
+- 목표: “공개 캐시 가능 응답”과 “개인화/세션 응답”의 경계를 단일 정책으로 고정해 데이터 노출/성능 이슈를 구조적으로 줄인다
+- 현황(코드 근거)
+  - 여러 API 라우트에서 `Cache-Control`을 개별 설정하고 있어 정책 드리프트 위험이 있음(예: `src/app/api/categories/route.ts:1`, `src/app/api/users/leaderboard/route.ts:1`)
+  - 기본 응답 헬퍼는 `no-store`지만(`src/lib/api/response.ts:1`), 라우트에서 직접 세팅하는 패턴이 혼재
+- 작업(권장, 효율 우선)
+  - 캐시 tier 정의(SoT)
+    - `public`: 익명 기준 동일 응답만(절대 viewer-dependent 필드 포함 금지)
+    - `private`: 로그인/개인화 응답은 `private, no-store` 고정
+    - `hybrid`: 필요한 경우에만 `Vary`를 명시하고, 공개 캐시를 쓰지 않도록 보수적으로 설계
+  - 라우트 감사(소규모부터)
+    - `public` 캐시를 사용하는 엔드포인트 목록화 → 응답 스키마에 개인화 필드가 없는지 점검
+    - 위험 엔드포인트는 `private, no-store`로 내리고, 클라 캐시(TanStack Query)로 체감 성능 보완
+- 변경(반영)
+  - 캐시 정책 SoT 추가: `CACHE_CONTROL`, `setPublicSWR`, `setPrivateNoStore`, `setNoStore` (`src/lib/api/response.ts:1`)
+  - API 라우트에서 문자열 직접 세팅 제거 → 유틸로 통일(드리프트 방지)
+  - public 캐시는 “비로그인 + viewer-independent” 조건에서만 설정(`/api/posts`, `/api/posts/trending`, `/api/search*`, `/api/categories`, `/api/news`, `/api/users/leaderboard` 등)
+- 완료 기준
+  - 캐시 정책이 유틸/헬퍼로 단일화되고, 공개 캐시 적용 엔드포인트가 “안전 목록”으로 관리됨
+  - 개인화 응답이 public 캐시로 내려가는 케이스가 0
 
 ---
 

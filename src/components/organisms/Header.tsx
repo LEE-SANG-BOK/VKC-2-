@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
@@ -55,50 +55,13 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
   const unreadCount = unreadCountData?.data?.count ?? 0;
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [shouldRenderSearch, setShouldRenderSearch] = useState(false);
-  const brandIntroFallback = useMemo(() => {
-    if (locale === 'en') return 'Ask about Korea, get trustworthy answers.';
-    if (locale === 'vi') return 'Hỏi về Hàn Quốc, trả lời đáng tin.';
-    return '한국을 묻고, 믿을 수 있게 답하다.';
-  }, [locale]);
-  const labelFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        goBack: 'Go back',
-        sidebarToggle: 'Toggle sidebar',
-        notifications: 'Notifications',
-        login: 'Log in',
-        signup: 'Sign up',
-        userName: 'User',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        goBack: 'Quay lại',
-        sidebarToggle: 'Mở thanh bên',
-        notifications: 'Thông báo',
-        login: 'Đăng nhập',
-        signup: 'Đăng ký',
-        userName: 'Người dùng',
-      };
-    }
-    return {
-      goBack: '뒤로',
-      sidebarToggle: '사이드바 열기',
-      notifications: '알림',
-      login: '로그인',
-      signup: '회원가입',
-      userName: '사용자',
-    };
-  }, [locale]);
-  const goBackLabel = tSearch.goBack || labelFallbacks.goBack;
-  const sidebarToggleLabel = tTooltip.sidebarToggle || labelFallbacks.sidebarToggle;
-  const notificationsLabel = tTooltip.notifications || labelFallbacks.notifications;
-  const loginLabel = t.login || labelFallbacks.login;
-  const signupFallback = locale === 'en' ? 'Get started' : locale === 'vi' ? 'Bắt đầu' : '바로 시작';
-  const rawSignupLabel = (t.signup || labelFallbacks.signup || '').trim();
-  const shouldOverrideSignup = !rawSignupLabel || ['Sign up', 'Sign Up', 'Đăng ký', '회원가입'].includes(rawSignupLabel);
-  const signupLabel = shouldOverrideSignup ? signupFallback : rawSignupLabel;
-  const userNameFallback = labelFallbacks.userName;
+  const brandIntroLabel = tTooltip.brandIntro || '';
+  const goBackLabel = tSearch.goBack || '';
+  const sidebarToggleLabel = tTooltip.sidebarToggle || '';
+  const notificationsLabel = tTooltip.notifications || '';
+  const loginLabel = t.login || '';
+  const signupLabel = (t.signup || '').trim();
+  const userNameFallback = t.user || '';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -133,16 +96,17 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
           {showBackButton && (
             <button
               onClick={() => router.back()}
-              className="p-1.5 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-300 text-gray-600 dark:text-gray-400"
+              className="shrink-0 inline-flex h-11 items-center gap-1.5 px-2.5 sm:h-9 sm:px-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-300 text-gray-600 dark:text-gray-400 whitespace-nowrap"
               aria-label={goBackLabel}
             >
-              <span className="text-lg sm:text-base">←</span> {goBackLabel}
+              <span aria-hidden className="text-lg sm:text-base">←</span>
+              <span className="hidden sm:inline min-w-0 max-w-[88px] truncate text-sm font-medium">{goBackLabel}</span>
             </button>
           )}
           {!showBackButton && (
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-1.5 sm:p-1.5 rounded-xl border-2 border-blue-300/90 dark:border-blue-900/60 bg-white/70 dark:bg-gray-900/40 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 group"
+              className="lg:hidden inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-xl border-2 border-blue-300/90 dark:border-blue-900/60 bg-white/70 dark:bg-gray-900/40 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 group"
               aria-label={sidebarToggleLabel}
             >
               {isMobileMenuOpen ? (
@@ -154,12 +118,14 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
           )}
           <div className="flex items-center gap-2 min-w-0">
             <div className="scale-90 sm:scale-100 origin-left">
-              <div aria-label={tTooltip.brandIntro || brandIntroFallback}>
-                <Logo />
+              <div aria-label={brandIntroLabel}>
+                <Logo translations={translations} />
               </div>
             </div>
-            <span className="inline-block max-w-[96px] sm:max-w-[160px] text-[9px] sm:text-[11px] text-gray-500 dark:text-gray-400 leading-tight line-clamp-2">
-              {tTooltip.brandIntro || brandIntroFallback}
+            <span
+              className={`inline-block max-w-[96px] sm:max-w-[160px] text-[9px] sm:text-[11px] text-gray-500 dark:text-gray-400 leading-tight line-clamp-2 ${showBackButton ? 'hidden sm:inline-block' : ''}`}
+            >
+              {brandIntroLabel}
             </span>
           </div>
         </div>
@@ -183,7 +149,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
                 <div className="relative">
                   <button
                     onClick={() => setIsNotificationModalOpen(!isNotificationModalOpen)}
-                    className="relative p-1 sm:p-1 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
+                    className="relative inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 rounded-lg transition-all duration-300 group"
                     aria-label={notificationsLabel}
                   >
                     <Bell className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-amber-400 transition-colors" />
@@ -215,7 +181,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
                     isLoggedIn={true}
                     userId={user.id}
                     onLogout={logout}
-                    translations={translations?.userMenu as Record<string, string>}
+                    translations={translations}
                   />
                 </div>
               ) : (

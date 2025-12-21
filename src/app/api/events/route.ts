@@ -5,7 +5,7 @@ import { eventLogs } from '@/lib/db/schema';
 import { getSession } from '@/lib/api/auth';
 import { successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 
-const allowedEventTypes = new Set(['view', 'search', 'like', 'answer', 'comment', 'bookmark', 'follow', 'report', 'share']);
+const allowedEventTypes = new Set(['view', 'search', 'post', 'like', 'answer', 'comment', 'bookmark', 'follow', 'report', 'share', 'guideline']);
 const allowedEntityTypes = new Set(['post', 'answer', 'comment', 'user', 'search']);
 const allowedLocales = new Set(['ko', 'en', 'vi']);
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

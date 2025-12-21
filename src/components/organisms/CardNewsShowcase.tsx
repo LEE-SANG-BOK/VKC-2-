@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useNews } from '@/repo/news/query';
 import type { NewsItem } from '@/repo/news/types';
+import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 export default function CardNewsShowcase() {
   const params = useParams();
@@ -112,7 +113,15 @@ export default function CardNewsShowcase() {
               </div>
               <div className="relative w-full h-28 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
                 {card.imageUrl ? (
-                  <Image src={card.imageUrl} alt={card.title} fill sizes="320px" className="object-cover" />
+                  <Image
+                    src={card.imageUrl}
+                    alt={card.title}
+                    fill
+                    sizes="320px"
+                    className="object-cover"
+                    placeholder="blur"
+                    blurDataURL={DEFAULT_BLUR_DATA_URL}
+                  />
                 ) : null}
               </div>
               <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2">
@@ -157,7 +166,15 @@ export default function CardNewsShowcase() {
           >
             {selected.imageUrl ? (
               <div className="relative w-full h-56 bg-gray-100 dark:bg-gray-800">
-                <Image src={selected.imageUrl} alt={selected.title} fill sizes="768px" className="object-cover" />
+                <Image
+                  src={selected.imageUrl}
+                  alt={selected.title}
+                  fill
+                  sizes="768px"
+                  className="object-cover"
+                  placeholder="blur"
+                  blurDataURL={DEFAULT_BLUR_DATA_URL}
+                />
               </div>
             ) : null}
             <div className="p-6 space-y-3">

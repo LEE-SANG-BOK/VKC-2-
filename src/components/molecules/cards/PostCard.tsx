@@ -83,29 +83,29 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const tPost = (translations?.post || {}) as Record<string, string>;
   const tPostDetail = (translations?.postDetail || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
-  const likeLabel = t.like || (locale === 'vi' ? 'Thích' : locale === 'en' ? 'Like' : '좋아요');
-  const shareLabel = t.share || (locale === 'vi' ? 'Chia sẻ' : locale === 'en' ? 'Share' : '공유');
-  const bookmarkLabel = t.bookmark || (locale === 'vi' ? 'Lưu' : locale === 'en' ? 'Bookmark' : '북마크');
-  const copyLinkLabel = t.copyLink || (locale === 'vi' ? 'Sao chép liên kết' : locale === 'en' ? 'Copy link' : '링크 복사');
-  const closeLabel = t.close || (locale === 'vi' ? 'Đóng' : locale === 'en' ? 'Close' : '닫기');
-  const linkCopiedLabel = t.linkCopied || (locale === 'vi' ? 'Đã sao chép liên kết!' : locale === 'en' ? 'Link copied!' : '링크가 복사되었습니다!');
-  const copyFailedLabel = t.copyFailed || (locale === 'vi' ? 'Không thể sao chép liên kết.' : locale === 'en' ? 'Failed to copy link.' : '복사에 실패했습니다.');
-  const sourcePrefix = tCommon.source || (locale === 'vi' ? 'Nguồn' : locale === 'en' ? 'Source' : '출처');
-  const hideLabel = tCommon.hide || (locale === 'vi' ? 'Ẩn' : locale === 'en' ? 'Hide' : '숨김');
-  const reportLabel = tCommon.report || (locale === 'vi' ? 'Báo cáo' : locale === 'en' ? 'Report' : '신고');
-  const reportSubmittedLabel = tPostDetail.reportSubmitted || (locale === 'vi' ? 'Đã gửi báo cáo.' : locale === 'en' ? 'Report submitted.' : '신고가 접수되었습니다.');
-  const reportFailedLabel = tPostDetail.reportFailed || (locale === 'vi' ? 'Không thể gửi báo cáo.' : locale === 'en' ? 'Failed to submit report.' : '신고 처리 중 오류가 발생했습니다.');
-  const reportReasonRequiredLabel = tPostDetail.reportReasonRequired || (locale === 'vi' ? 'Vui lòng nhập ít nhất 10 ký tự cho lý do báo cáo.' : locale === 'en' ? 'Please enter at least 10 characters for the report reason.' : '신고 사유를 10자 이상 입력해주세요.');
-  const reportSpamLabel = tPostDetail.reportSpam || (locale === 'vi' ? 'Spam hoặc quảng cáo' : locale === 'en' ? 'Spam or advertising' : '스팸 또는 광고');
-  const reportHarassmentLabel = tPostDetail.reportHarassment || (locale === 'vi' ? 'Quấy rối hoặc ngôn từ thù ghét' : locale === 'en' ? 'Harassment or hate speech' : '괴롭힘 또는 혐오 발언');
-  const reportMisinformationLabel = tPostDetail.reportMisinformation || (locale === 'vi' ? 'Thông tin sai lệch' : locale === 'en' ? 'Misinformation' : '허위 정보');
-  const reportInappropriateLabel = tPostDetail.reportInappropriate || (locale === 'vi' ? 'Nội dung không phù hợp' : locale === 'en' ? 'Inappropriate content' : '부적절한 콘텐츠');
-  const reportOtherLabel = tPostDetail.reportOther || (locale === 'vi' ? 'Khác' : locale === 'en' ? 'Other' : '기타');
-  const reportPlaceholderLabel = tPostDetail.reportPlaceholder || (locale === 'vi' ? 'Vui lòng nhập lý do báo cáo.' : locale === 'en' ? 'Please describe the reason.' : '신고 사유를 입력해주세요');
-  const reportSubmitLabel = tCommon.reportSubmit || (locale === 'vi' ? 'Báo cáo' : locale === 'en' ? 'Report' : '신고하기');
-  const processingLabel = tCommon.processing || (locale === 'vi' ? 'Đang xử lý...' : locale === 'en' ? 'Processing...' : '처리중...');
-  const cancelLabel = tCommon.cancel || (locale === 'vi' ? 'Hủy' : locale === 'en' ? 'Cancel' : '취소');
-  const hideFailedLabel = tCommon.hideFailed || (locale === 'vi' ? 'Không thể ẩn bài viết.' : locale === 'en' ? 'Failed to hide the post.' : '게시글을 숨길 수 없습니다.');
+  const likeLabel = t.like || '';
+  const shareLabel = t.share || '';
+  const bookmarkLabel = t.bookmark || '';
+  const copyLinkLabel = t.copyLink || '';
+  const closeLabel = t.close || '';
+  const linkCopiedLabel = tPostDetail.linkCopied || '';
+  const copyFailedLabel = tPostDetail.copyFailed || '';
+  const sourcePrefix = tCommon.source || '';
+  const hideLabel = tCommon.hide || '';
+  const reportLabel = tCommon.report || '';
+  const reportSubmittedLabel = tPostDetail.reportSubmitted || '';
+  const reportFailedLabel = tPostDetail.reportFailed || '';
+  const reportReasonRequiredLabel = tPostDetail.reportReasonRequired || '';
+  const reportSpamLabel = tPostDetail.reportSpam || '';
+  const reportHarassmentLabel = tPostDetail.reportHarassment || '';
+  const reportMisinformationLabel = tPostDetail.reportMisinformation || '';
+  const reportInappropriateLabel = tPostDetail.reportInappropriate || '';
+  const reportOtherLabel = tPostDetail.reportOther || '';
+  const reportPlaceholderLabel = tPostDetail.reportPlaceholder || '';
+  const reportSubmitLabel = tCommon.reportSubmit || '';
+  const processingLabel = tCommon.processing || '';
+  const cancelLabel = tCommon.cancel || '';
+  const hideFailedLabel = tCommon.hideFailed || '';
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -119,55 +119,33 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   });
 
   const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
-  const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
+  const learnMoreLabel = tCommon.learnMore || '';
+  const questionPostLabel = tPost.question || '';
+  const solvedPostLabel = tPost.solved || '';
+  const unsolvedPostLabel = tPost.unsolved || '';
 
   const responseCount = Math.max(0, Number(stats.comments ?? 0));
   const responseLabel = isQuestion
-    ? (tCommon.answer || (locale === 'vi' ? 'Trả lời' : locale === 'en' ? 'Answer' : '답변'))
-    : (tCommon.comment || (locale === 'vi' ? 'Bình luận' : locale === 'en' ? 'Comment' : '댓글'));
-  const answerLabel = locale === 'en'
-    ? `${responseCount} ${responseCount === 1 ? responseLabel : `${responseLabel}s`}`
-    : locale === 'vi'
-      ? `${responseCount} ${responseLabel}`
-      : `${responseLabel} ${responseCount}개`;
+    ? (tCommon.answer || '')
+    : (tCommon.comment || '');
+  const answerLabel = responseLabel ? `${responseLabel} ${responseCount}` : String(responseCount);
 
   const certifiedCount = Math.max(0, certifiedResponderCount ?? 0);
   const otherCount = Math.max(0, otherResponderCount ?? 0);
-  const responseNoun = isQuestion
-    ? (locale === 'en' ? 'answers' : tCommon.answer || (locale === 'vi' ? 'Trả lời' : '답변'))
-    : (locale === 'en' ? 'comments' : tCommon.comment || (locale === 'vi' ? 'Bình luận' : '댓글'));
-  const certifiedSummaryLabel = certifiedCount > 0
-    ? (otherCount > 0
-      ? (tPost.certifiedResponderSummary
-        ? tPost.certifiedResponderSummary
-            .replace('{certified}', String(certifiedCount))
-            .replace('{others}', String(otherCount))
-            .replace('{noun}', responseNoun)
-        : locale === 'vi'
-          ? `Có ${responseNoun.toLowerCase()} từ ${certifiedCount} người dùng đã xác minh và ${otherCount} người khác`
-          : locale === 'en'
-            ? `${certifiedCount} certified users + ${otherCount} others left ${responseNoun}`
-            : `인증 사용자 ${certifiedCount}명 외 ${otherCount}명의 ${responseNoun}이 있습니다`)
-      : (tPost.certifiedResponderSummaryOnly
-        ? tPost.certifiedResponderSummaryOnly
-            .replace('{certified}', String(certifiedCount))
-            .replace('{noun}', responseNoun)
-        : locale === 'vi'
-          ? `Có ${responseNoun.toLowerCase()} từ ${certifiedCount} người dùng đã xác minh`
-          : locale === 'en'
-            ? `${certifiedCount} certified users left ${responseNoun}`
-            : `인증 사용자 ${certifiedCount}명의 ${responseNoun}이 있습니다`))
+  const responseNoun = responseLabel;
+  const certifiedSummaryTemplate = otherCount > 0 ? tPost.certifiedResponderSummary : tPost.certifiedResponderSummaryOnly;
+  const certifiedSummaryLabel = certifiedCount > 0 && certifiedSummaryTemplate
+    ? certifiedSummaryTemplate
+        .replace('{certified}', String(certifiedCount))
+        .replace('{others}', String(otherCount))
+        .replace('{noun}', responseNoun.toLowerCase())
     : '';
-  const verifiedSummaryTooltip = tTrust.verifiedUserTooltip || tTrust.verifiedTooltip || (locale === 'vi'
-    ? 'Câu trả lời từ người dùng đã xác minh danh tính.'
-    : locale === 'en'
-      ? 'Answers from users whose identity has been verified.'
-      : '신분이 확인된 사용자의 답변입니다.');
+  const verifiedSummaryTooltip = tTrust.verifiedUserTooltip || tTrust.verifiedTooltip || '';
   const certifiedTooltipContent = certifiedSummaryLabel
     ? `${certifiedSummaryLabel} - ${verifiedSummaryTooltip}`
     : verifiedSummaryTooltip;
 
-  const anonymousFallback = tCommon.anonymous || (locale === 'vi' ? 'Người dùng' : locale === 'en' ? 'User' : '사용자');
+  const anonymousFallback = tCommon.anonymous || '';
   const safeName = (raw?: string) => safeDisplayName(raw, anonymousFallback);
   const safeLabel = (raw?: string) => safeShortLabel(raw);
 
@@ -335,8 +313,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     setLocalIsFollowing(!!author.isFollowing);
   }, [author.isFollowing]);
 
-  const followLabel = tCommon.follow || (locale === 'vi' ? 'Theo dõi' : locale === 'en' ? 'Follow' : '팔로우');
-  const followingLabel = tCommon.following || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로잉');
+  const followLabel = tCommon.follow || '';
+  const followingLabel = tCommon.following || '';
   const followText = localIsFollowing ? followingLabel : followLabel;
   const followTextClassName = localIsFollowing
     ? 'text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400'
@@ -504,9 +482,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
   const shareLabels = {
     title: shareLabel,
-    facebook: t.shareFacebook || 'Facebook',
-    x: t.shareX || 'X (Twitter)',
-    telegram: t.shareTelegram || 'Telegram',
+    facebook: t.shareFacebook || '',
+    x: t.shareX || '',
+    telegram: t.shareTelegram || '',
     copy: copyLinkLabel,
   };
 
@@ -600,7 +578,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             type="button"
             onClick={handleHideMenuToggle}
             aria-label={hideLabel}
-            className="inline-flex h-8 min-w-[32px] items-center justify-center px-1 text-sm font-semibold text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
+            className="inline-flex h-11 min-w-[44px] sm:h-8 sm:min-w-[32px] items-center justify-center px-1 text-sm font-semibold text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
           >
             {hideEmoji}
           </button>
@@ -681,7 +659,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
             </div>
           </div>
 
-          <div className="lg:pl-12">
+          <div className="pl-12">
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
                 {title}
@@ -728,7 +706,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2 lg:pl-12">
+        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2 pl-12">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -753,7 +731,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
       <div className="question-card-actions">
         <div className="question-card-footer-fixed !flex-nowrap !gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1 flex-nowrap lg:pl-12">
+          <div className="flex items-center gap-2 min-w-0 flex-1 flex-nowrap pl-12">
             <button
               type="button"
               onClick={handleAnswerCountClick}
@@ -855,53 +833,40 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               <button
                 type="button"
                 onClick={handleBookmarkClick}
-                className={`inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                aria-label={bookmarkLabel}
+                className={`inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
               >
                 <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
               </button>
             </Tooltip>
-            {isQuestion ? (
-              <>
-                <Tooltip
-                  content={t.questionPost || (locale === 'vi' ? 'Bài hỏi đáp' : locale === 'en' ? 'Question post' : '질문글')}
-                  position="top"
-                >
-                  <button
-                    type="button"
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={t.questionPost || (locale === 'vi' ? 'Bài hỏi đáp' : locale === 'en' ? 'Question post' : '질문글')}
-                    className="inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 shrink-0"
-                  >
-                    <CircleHelp className="w-4 h-4" />
-                  </button>
-                </Tooltip>
-                <Tooltip
-                  content={
-                    isAdopted
-                      ? t.resolvedPost || (locale === 'vi' ? 'Đã giải quyết' : locale === 'en' ? 'Resolved' : '해결됨')
-                      : t.unresolvedPost || (locale === 'vi' ? 'Chưa giải quyết' : locale === 'en' ? 'Unresolved' : '미해결')
-                  }
-                  position="top"
-                >
-                  <button
-                    type="button"
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={
-                      isAdopted
-                        ? t.resolvedPost || (locale === 'vi' ? 'Đã giải quyết' : locale === 'en' ? 'Resolved' : '해결됨')
-                        : t.unresolvedPost || (locale === 'vi' ? 'Chưa giải quyết' : locale === 'en' ? 'Unresolved' : '미해결')
-                    }
-                    className={`inline-flex items-center justify-center rounded-full p-1.5 min-h-[30px] min-w-[30px] ${
-                      isAdopted
-                        ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
-                        : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'
-                    } shrink-0`}
-                  >
-                    {isAdopted ? <CircleCheck className="w-4 h-4" /> : <CircleDashed className="w-4 h-4" />}
-                  </button>
-                </Tooltip>
-              </>
-            ) : null}
+	            {isQuestion ? (
+	              <>
+	                <Tooltip content={questionPostLabel} position="top">
+	                  <button
+	                    type="button"
+	                    onClick={(e) => e.stopPropagation()}
+	                    aria-label={questionPostLabel}
+	                    className="inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 shrink-0"
+	                  >
+	                    <CircleHelp className="w-4 h-4" />
+	                  </button>
+	                </Tooltip>
+	                <Tooltip content={isAdopted ? solvedPostLabel : unsolvedPostLabel} position="top">
+	                  <button
+	                    type="button"
+	                    onClick={(e) => e.stopPropagation()}
+	                    aria-label={isAdopted ? solvedPostLabel : unsolvedPostLabel}
+	                    className={`inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] ${
+	                      isAdopted
+	                        ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
+	                        : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'
+	                    } shrink-0`}
+	                  >
+	                    {isAdopted ? <CircleCheck className="w-4 h-4" /> : <CircleDashed className="w-4 h-4" />}
+	                  </button>
+	                </Tooltip>
+	              </>
+	            ) : null}
           </div>
         </div>
         </div>

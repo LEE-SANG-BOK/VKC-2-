@@ -33,13 +33,13 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
 
   const popularLabel = useMemo(() => {
     const labels = (translations?.sidebar || {}) as Record<string, string>;
-    return labels.popular || (lang === 'vi' ? 'Phổ biến' : lang === 'en' ? 'Popular' : '인기');
-  }, [lang, translations]);
+    return labels.popular || '';
+  }, [translations]);
 
   const latestLabel = useMemo(() => {
     const labels = (translations?.sidebar || {}) as Record<string, string>;
-    return labels.latest || (lang === 'vi' ? 'Mới nhất' : lang === 'en' ? 'Latest' : '최신');
-  }, [lang, translations]);
+    return labels.latest || '';
+  }, [translations]);
 
   const handleHomeFeedToggle = (next: 'popular' | 'latest') => {
     dispatchHomeReset();
@@ -80,11 +80,11 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
 
   const navItems = useMemo(() => {
     const labels = (translations?.bottomNav || {}) as Record<string, string>;
-    const labelHome = labels.home || (lang === 'vi' ? 'Trang chủ' : lang === 'en' ? 'Home' : '홈');
-    const labelSearch = labels.search || (lang === 'vi' ? 'Tìm kiếm' : lang === 'en' ? 'Search' : '검색');
-    const labelWrite = labels.write || (lang === 'vi' ? 'Viết bài' : lang === 'en' ? 'Write' : '글쓰기');
-    const labelVerification = labels.verification || (lang === 'vi' ? 'Xác minh' : lang === 'en' ? 'Verify' : '인증하기');
-    const labelProfile = labels.profile || (lang === 'vi' ? 'Hồ sơ' : lang === 'en' ? 'Profile' : '프로필');
+    const labelHome = labels.home || '';
+    const labelSearch = labels.search || '';
+    const labelWrite = labels.write || '';
+    const labelVerification = labels.verification || '';
+    const labelProfile = labels.profile || '';
     return [
       {
         key: 'write',

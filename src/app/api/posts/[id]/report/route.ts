@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { posts, reports, contentReports } from '@/lib/db/schema';
-import { successResponse, unauthorizedResponse, notFoundResponse, errorResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
+import { successResponse, unauthorizedResponse, errorResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkRateLimit } from '@/lib/api/rateLimit';
 import { eq } from 'drizzle-orm';
@@ -47,16 +47,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // 검증
     if (!type) {
-      return errorResponse('신고 유형을 선택해주세요.');
+      return errorResponse('신고 유형을 선택해주세요.', 'REPORT_TYPE_REQUIRED');
     }
 
     const validTypes = ['spam', 'harassment', 'inappropriate', 'misinformation', 'other'];
     if (!validTypes.includes(type)) {
-      return errorResponse('올바르지 않은 신고 유형입니다.');
+      return errorResponse('올바르지 않은 신고 유형입니다.', 'REPORT_INVALID_TYPE');
     }
 
     if (type === 'other' && (!reason || reason.length < 10)) {
-      return errorResponse('기타 신고 시 사유를 10자 이상 입력해주세요.');
+      return errorResponse('기타 신고 시 사유를 10자 이상 입력해주세요.', 'REPORT_REASON_TOO_SHORT');
     }
 
     const finalReason = type === 'other' ? reason : type;
@@ -67,12 +67,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
 
     if (!post) {
-      return notFoundResponse('게시글을 찾을 수 없습니다.');
+      return errorResponse('대상을 찾을 수 없습니다.', 'REPORT_TARGET_NOT_FOUND', 404);
     }
 
     // 본인 게시글 신고 불가
     if (post.authorId === user.id) {
-      return errorResponse('본인의 게시글은 신고할 수 없습니다.');
+      return errorResponse('본인의 콘텐츠는 신고할 수 없습니다.', 'REPORT_SELF_FORBIDDEN', 403);
     }
 
     // 중복 신고 확인 (같은 사용자가 같은 게시글을 이미 신고했는지)
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
 
     if (existingReport) {
-      return errorResponse('이미 신고한 게시글입니다.');
+      return errorResponse('이미 신고한 항목입니다.', 'REPORT_DUPLICATE', 409);
     }
 
     // 신고 생성

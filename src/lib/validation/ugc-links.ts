@@ -60,6 +60,17 @@ export const validateUgcExternalLinks = (content: string) => {
   for (const url of urls) {
     const trimmed = url.trim();
     if (!trimmed) continue;
+    if (trimmed.startsWith('//')) {
+      try {
+        const parsed = new URL(`https:${trimmed}`);
+        if (!isAllowedHost(parsed.hostname)) {
+          return { ok: false, domain: parsed.hostname } as const;
+        }
+      } catch {
+        return { ok: false, domain: trimmed } as const;
+      }
+      continue;
+    }
     if (trimmed.startsWith('/') || trimmed.startsWith('#') || trimmed.startsWith('?')) continue;
     if (trimmed.startsWith('mailto:') || trimmed.startsWith('tel:')) continue;
     const parsed = new URL(trimmed, baseUrl);
