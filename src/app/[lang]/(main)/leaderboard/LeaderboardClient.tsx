@@ -53,100 +53,32 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
 
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
+  const t = (translations?.leaderboard || {}) as Record<string, any>;
 
   const copy = useMemo(() => {
-    const fallback =
-      lang === 'en'
-        ? {
-            title: 'Community Leaderboard',
-            subtitle: 'Discover the most trusted and helpful members in the community.',
-            topTitle: 'Top Rankers',
-            listTitle: 'All Rankers',
-            trustLabel: 'Trust',
-            temperatureLabel: 'Temperature',
-            helpfulLabel: 'Helpful',
-            adoptionRateLabel: 'Adoption rate',
-            pageInfo: 'Page {current} / {total}',
-            previous: 'Previous',
-            next: 'Next',
-            empty: 'No rankings available yet.',
-            loading: 'Loading...',
-            rankLabel: 'Rank',
-            guideLabel: 'How trust badges work',
-            rankGuideTitle: 'How to climb the ranking',
-            rankGuideItems: [
-              'Write helpful answers',
-              'Get answers accepted',
-              'Keep a healthy history (no reports)',
-              'Verify your profile for trust',
-            ],
-            eventTitle: 'Event',
-            eventDescription: 'Coming soon',
-            unknownUser: 'Unknown',
-          }
-        : lang === 'vi'
-          ? {
-              title: 'Bảng xếp hạng cộng đồng',
-              subtitle: 'Khám phá những thành viên đáng tin và hữu ích nhất trong cộng đồng.',
-              topTitle: 'Top xếp hạng',
-              listTitle: 'Tất cả thành viên',
-              trustLabel: 'Độ tin cậy',
-              temperatureLabel: 'Nhiệt',
-              helpfulLabel: 'Hữu ích',
-              adoptionRateLabel: 'Tỷ lệ được chấp nhận',
-              pageInfo: 'Trang {current} / {total}',
-              previous: 'Trước',
-              next: 'Tiếp theo',
-              empty: 'Chưa có bảng xếp hạng.',
-              loading: 'Đang tải...',
-              rankLabel: 'Hạng',
-              guideLabel: 'Cách hoạt động của huy hiệu tin cậy',
-              rankGuideTitle: 'Cách tăng thứ hạng',
-              rankGuideItems: [
-                'Viết câu trả lời hữu ích',
-                'Nhận câu trả lời được chấp nhận',
-                'Giữ lịch sử hoạt động lành mạnh',
-                'Xác minh hồ sơ để tăng độ tin cậy',
-              ],
-              eventTitle: 'Event',
-              eventDescription: 'Sắp ra mắt',
-              unknownUser: 'Không rõ',
-            }
-          : {
-              title: '커뮤니티 랭킹',
-              subtitle: '신뢰 답변과 기여도가 높은 멤버를 확인하세요.',
-              topTitle: 'TOP 랭커',
-              listTitle: '전체 랭킹',
-              trustLabel: '신뢰',
-              temperatureLabel: '온도',
-              helpfulLabel: '도움',
-              adoptionRateLabel: '채택률',
-              pageInfo: '{current} / {total} 페이지',
-              previous: '이전',
-              next: '다음',
-              empty: '아직 랭킹 데이터가 없습니다.',
-              loading: '로딩 중...',
-              rankLabel: '순위',
-              guideLabel: '신뢰 배지 안내',
-              rankGuideTitle: '랭킹이 오르는 행동',
-              rankGuideItems: [
-                '도움이 되는 답변 작성',
-                '채택된 답변 늘리기',
-                '신고 없는 건강한 활동 유지',
-                '프로필 인증/전문가 뱃지 받기',
-              ],
-              eventTitle: 'Event',
-              eventDescription: '준비중',
-              unknownUser: '알 수 없음',
-            };
-
+    const rankGuideItems = Array.isArray(t.rankGuideItems) ? t.rankGuideItems : [];
     return {
-      ...fallback,
-      helpfulLabel: tCommon.helpful || fallback.helpfulLabel,
-      adoptionRateLabel: tCommon.adoptionRate || fallback.adoptionRateLabel,
-      unknownUser: tCommon.anonymous || fallback.unknownUser,
+      title: t.title || '',
+      subtitle: t.subtitle || '',
+      listTitle: t.listTitle || '',
+      trustLabel: t.trustLabel || '',
+      temperatureLabel: t.temperatureLabel || '',
+      helpfulLabel: tCommon.helpful || t.helpfulLabel || '',
+      adoptionRateLabel: tCommon.adoptionRate || t.adoptionRateLabel || '',
+      pageInfo: t.pageInfo || '',
+      previous: tCommon.previous || t.previous || '',
+      next: tCommon.next || t.next || '',
+      empty: t.empty || '',
+      loading: t.loading || '',
+      rankLabel: t.rankLabel || '',
+      guideLabel: t.guideLabel || '',
+      rankGuideTitle: t.rankGuideTitle || '',
+      rankGuideItems,
+      eventTitle: t.eventTitle || '',
+      eventDescription: t.eventDescription || '',
+      unknownUser: tCommon.anonymous || t.unknownUser || '',
     };
-  }, [lang, tCommon]);
+  }, [t, tCommon]);
 
   const numberFormatter = useMemo(() => new Intl.NumberFormat(lang), [lang]);
   const temperatureFormatter = useMemo(

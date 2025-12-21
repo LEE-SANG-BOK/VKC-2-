@@ -248,6 +248,27 @@
     "openExternal": "Mở liên kết",
     "close": "Đóng"
   },
+  "leaderboard": {
+    "title": "Bảng xếp hạng cộng đồng",
+    "subtitle": "Khám phá những thành viên đáng tin và hữu ích nhất trong cộng đồng.",
+    "listTitle": "Tất cả thành viên",
+    "trustLabel": "Độ tin cậy",
+    "temperatureLabel": "Nhiệt",
+    "pageInfo": "Trang {current} / {total}",
+    "empty": "Chưa có bảng xếp hạng.",
+    "loading": "Đang tải...",
+    "rankLabel": "Hạng",
+    "guideLabel": "Cách hoạt động của huy hiệu tin cậy",
+    "rankGuideTitle": "Cách tăng thứ hạng",
+    "rankGuideItems": [
+      "Viết câu trả lời hữu ích",
+      "Nhận câu trả lời được chấp nhận",
+      "Giữ lịch sử hoạt động lành mạnh",
+      "Xác minh hồ sơ để tăng độ tin cậy"
+    ],
+    "eventTitle": "Event",
+    "eventDescription": "Sắp ra mắt"
+  },
   "media": {
     "title": "Media",
     "description": "Xem bài nổi bật, card news và shorts ở một nơi."

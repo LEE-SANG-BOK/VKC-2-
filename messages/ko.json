@@ -248,6 +248,27 @@
     "openExternal": "외부 링크 열기",
     "close": "닫기"
   },
+  "leaderboard": {
+    "title": "커뮤니티 랭킹",
+    "subtitle": "신뢰 답변과 기여도가 높은 멤버를 확인하세요.",
+    "listTitle": "전체 랭킹",
+    "trustLabel": "신뢰",
+    "temperatureLabel": "온도",
+    "pageInfo": "{current} / {total} 페이지",
+    "empty": "아직 랭킹 데이터가 없습니다.",
+    "loading": "로딩 중...",
+    "rankLabel": "순위",
+    "guideLabel": "신뢰 배지 안내",
+    "rankGuideTitle": "랭킹이 오르는 행동",
+    "rankGuideItems": [
+      "도움이 되는 답변 작성",
+      "채택된 답변 늘리기",
+      "신고 없는 건강한 활동 유지",
+      "프로필 인증/전문가 뱃지 받기"
+    ],
+    "eventTitle": "Event",
+    "eventDescription": "준비중"
+  },
   "media": {
     "title": "미디어",
     "description": "추천 콘텐츠, 카드뉴스, 숏폼을 한 곳에서 확인하세요."
