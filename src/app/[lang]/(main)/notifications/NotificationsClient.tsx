@@ -145,7 +145,7 @@ export default function NotificationsClient({ locale, translations }: Notificati
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen min-h-[100dvh] bg-gray-50 dark:bg-gray-900">
       <Header
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}

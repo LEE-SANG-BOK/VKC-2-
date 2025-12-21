@@ -2089,7 +2089,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen min-h-[100dvh] bg-gray-50 dark:bg-gray-900">
       {/* Unified Header */}
       <Header
         isMobileMenuOpen={isMobileMenuOpen}
@@ -2683,7 +2683,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                 onInput={handleTextareaInput}
                                 onFocus={handleTextareaFocus}
                                 placeholder={replyPlaceholderLabel}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                                 rows={2}
                                 autoFocus
                               />
@@ -2830,7 +2830,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                             onChange={(e) => setEditContent(e.target.value)}
                                             onInput={handleTextareaInput}
                                             onFocus={handleTextareaFocus}
-                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                                             rows={2}
                                             autoFocus
                                           />
@@ -3014,7 +3014,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                 onChange={(e) => setEditContent(e.target.value)}
                                 onInput={handleTextareaInput}
                                 onFocus={handleTextareaFocus}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                                 rows={3}
                                 autoFocus
                               />
@@ -3083,7 +3083,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                   onInput={handleTextareaInput}
                                   onFocus={handleTextareaFocus}
                                   placeholder={replyPlaceholderLabel}
-                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                                   rows={2}
                                   autoFocus
                                 />
@@ -3218,7 +3218,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                           onChange={(e) => setEditContent(e.target.value)}
                                           onInput={handleTextareaInput}
                                           onFocus={handleTextareaFocus}
-                                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
+                                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                                           rows={2}
                                           autoFocus
                                         />
@@ -3309,7 +3309,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                   onClick={() => {
                     if (!user) openLoginPrompt();
                   }}
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden ${!user ? 'opacity-70 cursor-pointer' : ''}`}
                   rows={3}
                 />
                   {showCommentValidationError && (
@@ -3453,7 +3453,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     onInput={handleTextareaInput}
                     onFocus={handleTextareaFocus}
                     placeholder={reportPlaceholderLabel}
-                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
+                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 text-base focus:outline-none focus:ring-2 focus:ring-red-500 resize-none overflow-hidden"
                     rows={3}
                     autoFocus
                   />
