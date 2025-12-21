@@ -230,10 +230,10 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const selectChildCategoryLabel = t.selectChildCategory || categoryFallbacks.selectChildCategory;
   const noChildCategoriesLabel = t.noChildCategories || categoryFallbacks.noChildCategories;
   const templateBackgroundPlaceholder = t.templateBackgroundPlaceholder || templateFallbacks.backgroundPlaceholder;
-  const thumbnailLabel = t.thumbnailLabel || (lang === 'vi' ? 'Ảnh đại diện' : lang === 'en' ? 'Cover image' : '대표 이미지');
-  const thumbnailHint = t.thumbnailHint || (lang === 'vi' ? 'Chọn ảnh sẽ hiển thị trên thẻ bài viết.' : lang === 'en' ? 'Choose which image appears on the post card.' : '게시글 카드에 표시할 이미지를 선택하세요.');
-  const thumbnailEmpty = t.thumbnailEmpty || (lang === 'vi' ? 'Không tìm thấy ảnh trong nội dung.' : lang === 'en' ? 'No images found in the content.' : '본문에서 이미지를 찾지 못했습니다.');
-  const thumbnailSelectedLabel = t.thumbnailSelected || (lang === 'vi' ? 'Đã chọn' : lang === 'en' ? 'Selected' : '선택됨');
+  const thumbnailLabel = t.thumbnailLabel || '';
+  const thumbnailHint = t.thumbnailHint || '';
+  const thumbnailEmpty = t.thumbnailEmpty || '';
+  const thumbnailSelectedLabel = t.thumbnailSelected || '';
   const uiFallbacks = useMemo(() => {
     if (lang === 'en') {
       return {

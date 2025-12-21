@@ -310,24 +310,19 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
   const documentNotOwnedErrorLabel = t.documentNotOwnedError || fallback.documentNotOwnedError;
 
   const stepInfoLabel =
-    t.stepInfo || (lang === 'vi' ? 'Thông tin' : lang === 'en' ? 'Details' : '정보 입력');
+    t.stepInfo || '';
   const stepDocumentsLabel =
-    t.stepDocuments || (lang === 'vi' ? 'Tài liệu' : lang === 'en' ? 'Documents' : '서류 업로드');
+    t.stepDocuments || '';
   const stepStatusLabel =
-    t.stepStatus || (lang === 'vi' ? 'Trạng thái' : lang === 'en' ? 'Status' : '상태 확인');
+    t.stepStatus || '';
   const nextLabel = tCommon.next || '';
   const previousLabel = tCommon.previous || '';
   const typeStepValidation =
-    t.typeValidationError ||
-    (lang === 'vi'
-      ? 'Vui lòng chọn loại xác minh.'
-      : lang === 'en'
-        ? 'Select a verification type.'
-        : '인증 유형을 선택해주세요.');
+    t.typeValidationError || '';
   const newRequestLabel =
-    t.newRequest || (lang === 'vi' ? 'Yêu cầu mới' : lang === 'en' ? 'New request' : '새 인증 신청');
+    t.newRequest || '';
   const reapplyLabel =
-    t.reapplyButton || (lang === 'vi' ? 'Sửa và gửi lại' : lang === 'en' ? 'Edit & reapply' : '수정해서 다시 신청');
+    t.reapplyButton || '';
   const steps = [
     { id: 1, label: stepInfoLabel },
     { id: 2, label: stepDocumentsLabel },
@@ -1056,15 +1051,10 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                            {t.profilePreviewTitle || (lang === 'vi' ? 'Xem trước hồ sơ' : lang === 'en' ? 'Profile preview' : '프로필 표시 미리보기')}
+                            {t.profilePreviewTitle || ''}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {t.profilePreviewDescription ||
-                              (lang === 'vi'
-                                ? 'Thông tin dưới đây có thể được hiển thị trên hồ sơ sau khi được duyệt.'
-                                : lang === 'en'
-                                  ? 'This information may appear on your profile after approval.'
-                                  : '승인 후 아래 정보가 프로필에 표시될 수 있어요.')}
+                            {t.profilePreviewDescription || ''}
                           </p>
                         </div>
                         <Tooltip
