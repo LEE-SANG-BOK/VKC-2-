@@ -380,7 +380,7 @@ $gh-address-comments
 - [x] P0-7 (LEAD/WEB: Playwright 스모크/게이트)
 - [x] P0-8 (LEAD/BE/WEB: 이벤트 스키마 + 수집)
 - [ ] P0-9 (LEAD/FE: 크로스브라우징 QA)
-- [ ] P0-10 (LEAD/WEB/BE/FE: 가이드라인 v1)
+- [x] P0-10 (LEAD/WEB/BE/FE: 가이드라인 v1)
 - [x] P0-11 (BE/WEB/FE: 숨김/신고 즉시 숨김)
 - [x] P0-12 (WEB/BE/FE: 메타/키워드 파이프라인 통합)
 - [ ] P0-13 (FE/WEB: 라벨 제거 + 강조 UI)
@@ -1155,10 +1155,10 @@ $gh-address-comments
 #### (2025-12-20) [LEAD] P0-10 신규 사용자 가이드라인 안내/유도 v1 (P0)
 
 - 플랜(체크리스트)
-  - [ ] [LEAD] 가이드라인 정책/문구 확정(비차단)
-  - [ ] [WEB] 1회 노출/상태 저장 UX 구현
-  - [ ] [BE] 저장 필드/버전 관리
-  - [ ] [FE] 모달/배너 UI 정리
+  - [x] [LEAD] 가이드라인 정책/문구 확정(비차단)
+  - [x] [WEB] 1회 노출/상태 저장 UX 구현(localStorage)
+  - [x] [BE] `/api/events`에 `guideline` 이벤트 타입 추가
+  - [x] [FE] 글쓰기 화면에서 1회 모달로 가이드라인 리마인드
 
 - 목표: “신뢰 기반 커뮤니티” 규칙을 신규 유저에게 확실히 안내하되, 게시글 작성(작성/제출) 플로우에는 영향을 주지 않는다
 - 반영 범위(권장 v1)
@@ -1172,6 +1172,12 @@ $gh-address-comments
 - 완료 기준
   - 신규 유저가 1회 노출/확인 후 반복 노출이 과하지 않음(1회 또는 낮은 빈도)
   - 작성/제출 플로우에 영향 0(가이드라인 확인 여부로 작성이 막히지 않음)
+
+- 최근 구현(2025-12-21)
+  - 글쓰기(`posts/new`)에서 가이드라인을 1회 모달로 노출하고, 닫으면 `localStorage(vk-guidelines-seen-v1:{userId})`로 저장
+  - 닫기 시 `/api/events`에 `eventType='guideline'` 로깅(비차단)
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`, `src/components/molecules/modals/GuidelinesModal.tsx`, `src/app/api/events/route.ts`, `src/repo/events/types.ts`
 
 #### (2025-12-20) [BE] P0-11 맞춤 숨김(안보기) v1 + 신고 즉시 숨김 (P0)
 
