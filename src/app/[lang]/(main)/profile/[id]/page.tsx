@@ -171,6 +171,9 @@ export default async function ProfilePage({ params }: PageProps) {
     notFound();
   }
 
+  const dict = await getDictionary(lang);
+  const tProfileEdit = (dict?.profileEdit || {}) as Record<string, string>;
+
   const legacyStatus = profile.status;
   const effectiveUserType =
     profile.userType ||
@@ -180,16 +183,16 @@ export default async function ProfilePage({ params }: PageProps) {
     ? (() => {
         const normalized = String(effectiveUserType).toLowerCase();
         if (normalized === 'student' || effectiveUserType === '학생') {
-          return lang === 'vi' ? 'Sinh viên' : lang === 'en' ? 'Student' : '학생';
+          return tProfileEdit.statusStudent || String(effectiveUserType);
         }
         if (normalized === 'worker' || effectiveUserType === '직장인' || effectiveUserType === '근로자') {
-          return lang === 'vi' ? 'Người lao động' : lang === 'en' ? 'Worker' : '근로자';
+          return tProfileEdit.statusWorker || String(effectiveUserType);
         }
         if (normalized === 'resident' || effectiveUserType === '거주자') {
-          return lang === 'vi' ? 'Cư dân' : lang === 'en' ? 'Resident' : '거주자';
+          return tProfileEdit.statusResident || String(effectiveUserType);
         }
         if (normalized === 'other' || effectiveUserType === '기타') {
-          return lang === 'vi' ? 'Khác' : lang === 'en' ? 'Other' : '기타';
+          return tProfileEdit.statusOther || String(effectiveUserType);
         }
         return String(effectiveUserType);
       })()

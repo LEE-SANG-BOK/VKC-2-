@@ -18,28 +18,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang } = await params;
   const dict = await getDictionary(lang);
   const t = (dict?.metadata?.notifications || {}) as Record<string, string>;
-  const fallback = (() => {
-    if (lang === 'en') {
-      return {
-        title: 'Notifications - viet kconnect',
-        description: 'Check your latest notifications.',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        title: 'Thông báo - viet kconnect',
-        description: 'Xem các thông báo mới nhất của bạn.',
-      };
-    }
-    return {
-      title: '알림 - viet kconnect',
-      description: '새로운 알림을 확인하세요.',
-    };
-  })();
 
   const meta = (dict?.metadata as Record<string, unknown>) || {};
-  const title = t.title || fallback.title;
-  const description = t.description || fallback.description;
+  const title = t.title || '';
+  const description = t.description || '';
   const keywords = flattenKeywords(buildKeywords({ title, content: description }));
 
   return buildPageMetadata({

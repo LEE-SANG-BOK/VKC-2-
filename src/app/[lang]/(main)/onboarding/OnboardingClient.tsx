@@ -13,11 +13,7 @@ import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/const
 import Tooltip from '@/components/atoms/Tooltip';
 
 const VISA_TYPES = ['D-2', 'D-10', 'E-7-1', 'E-7-2', 'E-7-3', 'F-2-7', 'F-6'];
-const KOREAN_LEVELS = [
-  { value: 'beginner', label: { ko: '기초', vi: 'Sơ cấp', en: 'Beginner' } },
-  { value: 'intermediate', label: { ko: '중급', vi: 'Trung cấp', en: 'Intermediate' } },
-  { value: 'advanced', label: { ko: '고급', vi: 'Cao cấp', en: 'Advanced' } },
-];
+const KOREAN_LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
 
 interface OnboardingClientProps {
   lang: string;
@@ -30,237 +26,76 @@ export default function OnboardingClient({ lang, translations }: OnboardingClien
   const { status } = useSession();
   const { data: categories } = useCategories();
   const t = translations?.onboarding || {};
-  const uiCopy = useMemo(() => {
-    if (lang === 'en') {
-      return {
-        title: 'We\'ll tailor your feed',
-        description: 'Choose profile info to surface the categories and content you care about first.',
-        userTypeLabel: 'User type',
-        userTypeStudent: 'Student',
-        userTypeStudentDesc: 'International or exchange student',
-        userTypeWorker: 'Worker',
-        userTypeWorkerDesc: 'Employment, job change prep',
-        userTypeResident: 'Resident',
-        userTypeResidentDesc: 'Long-term stay, family',
-        koreanLevelLabel: 'Korean level',
-        visaLabel: 'Visa type',
-        interestsLabel: 'Interest categories',
-        interestsHint: 'Select up to 5.',
-        submitting: 'Saving...',
-        submit: 'Done',
-        skip: 'Skip',
-        saveSuccess: 'Personalization saved.',
-        saveError: 'Failed to save profile.',
-        defaultError: 'Failed to save.',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        title: 'Chuẩn bị bảng tin cho bạn',
-        description: 'Chọn thông tin hồ sơ để ưu tiên danh mục và nội dung bạn quan tâm.',
-        userTypeLabel: 'Loại người dùng',
-        userTypeStudent: 'Sinh viên',
-        userTypeStudentDesc: 'Du học sinh, sinh viên trao đổi',
-        userTypeWorker: 'Người đi làm',
-        userTypeWorkerDesc: 'Việc làm, chuyển việc',
-        userTypeResident: 'Cư dân',
-        userTypeResidentDesc: 'Cư trú dài hạn, gia đình',
-        koreanLevelLabel: 'Trình độ tiếng Hàn',
-        visaLabel: 'Loại visa',
-        interestsLabel: 'Danh mục quan tâm',
-        interestsHint: 'Chọn tối đa 5 mục.',
-        submitting: 'Đang lưu...',
-        submit: 'Hoàn tất',
-        skip: 'Bỏ qua',
-        saveSuccess: 'Đã lưu tuỳ chỉnh cá nhân.',
-        saveError: 'Không thể lưu hồ sơ.',
-        defaultError: 'Lỗi khi lưu.',
-      };
-    }
-    return {
-      title: '맞춤 피드를 준비할게요',
-      description: '프로필 정보를 선택하면 관심사에 맞춘 카테고리와 콘텐츠를 먼저 보여드려요.',
-      userTypeLabel: '사용자 유형',
-      userTypeStudent: '학생',
-      userTypeStudentDesc: '유학생, 교환학생',
-      userTypeWorker: '근로자',
-      userTypeWorkerDesc: '취업/근로/이직 준비',
-      userTypeResident: '거주자',
-      userTypeResidentDesc: '장기 거주, 가족 동반',
-      koreanLevelLabel: '한국어 수준',
-      visaLabel: '비자 유형',
-      interestsLabel: '관심 카테고리',
-      interestsHint: '최대 5개까지 선택하세요.',
-      submitting: '저장 중...',
-      submit: '완료',
-      skip: '건너뛰기',
-      saveSuccess: '맞춤 설정이 저장되었습니다.',
-      saveError: '프로필 저장에 실패했습니다.',
-      defaultError: '저장 중 오류가 발생했습니다.',
-    };
-  }, [lang]);
-  const pageTitle = t.title || uiCopy.title;
-  const pageDescription = t.description || uiCopy.description;
-  const userTypeLabel = t.userTypeLabel || uiCopy.userTypeLabel;
-  const interestsLabel = t.interestsLabel || uiCopy.interestsLabel;
-  const interestsHint = t.interestsHint || uiCopy.interestsHint;
-  const koreanLevelLabel = t.koreanLevelLabel || uiCopy.koreanLevelLabel;
-  const visaLabel = t.visaLabel || uiCopy.visaLabel;
-  const submittingLabel = t.submitting || uiCopy.submitting;
-  const submitLabel = t.submit || uiCopy.submit;
-  const saveSuccessLabel = t.successMessage || uiCopy.saveSuccess;
-  const saveErrorLabel = t.saveError || t.errorMessage || uiCopy.saveError;
-  const defaultErrorLabel = t.errorMessage || uiCopy.defaultError;
-  const userTypeOptions = useMemo(() => (
-    [
+  const tProfileEdit = translations?.profileEdit || {};
+  const tStaticFaq = translations?.staticPages?.faq || {};
+  const pageTitle = t.title || '';
+  const pageDescription = t.description || '';
+  const userTypeLabel = t.userTypeLabel || '';
+  const interestsLabel = t.interestsLabel || '';
+  const interestsHint = t.interestsHint || '';
+  const koreanLevelLabel = t.koreanLevelLabel || '';
+  const visaLabel = t.visaLabel || '';
+  const submittingLabel = t.submitting || '';
+  const submitLabel = t.submit || '';
+  const saveSuccessLabel = tProfileEdit.updateSuccess || '';
+  const saveErrorLabel = tProfileEdit.updateFailed || '';
+  const defaultErrorLabel = tProfileEdit.updateFailed || '';
+  const userTypeOptions = useMemo(
+    () => [
       {
         value: 'student',
-        label: t.userTypeStudent || uiCopy.userTypeStudent,
-        description: t.userTypeStudentDesc || uiCopy.userTypeStudentDesc,
+        label: t.userTypeStudent || '',
+        description: t.userTypeStudentDesc || '',
       },
       {
         value: 'worker',
-        label: t.userTypeWorker || uiCopy.userTypeWorker,
-        description: t.userTypeWorkerDesc || uiCopy.userTypeWorkerDesc,
+        label: t.userTypeWorker || '',
+        description: t.userTypeWorkerDesc || '',
       },
       {
         value: 'resident',
-        label: t.userTypeResident || uiCopy.userTypeResident,
-        description: t.userTypeResidentDesc || uiCopy.userTypeResidentDesc,
+        label: t.userTypeResident || '',
+        description: t.userTypeResidentDesc || '',
       },
-    ]
-  ), [t, uiCopy]);
+    ],
+    [t]
+  );
   const wizardCopy = useMemo(() => {
-    if (lang === 'en') {
-      return {
-        stepLabel: 'Step',
-        next: 'Next',
-        back: 'Back',
-        skip: 'Skip for now',
-        step1: 'About you',
-        step2: 'Choose interests',
-        step3: 'Optional details',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        stepLabel: 'Bước',
-        next: 'Tiếp tục',
-        back: 'Quay lại',
-        skip: 'Bỏ qua',
-        step1: 'Thông tin cơ bản',
-        step2: 'Chọn chủ đề',
-        step3: 'Thông tin thêm',
-      };
-    }
     return {
-      stepLabel: '단계',
-      next: '다음',
-      back: '이전',
-      skip: '건너뛰기',
-      step1: '기본 정보',
-      step2: '관심 주제 선택',
-      step3: '추가 정보',
+      stepLabel: t.stepLabel || '',
+      next: t.next || '',
+      back: t.back || '',
+      skip: t.skip || '',
+      step1: t.step1 || '',
+      step2: t.step2 || '',
+      step3: t.step3 || '',
     };
-  }, [lang]);
+  }, [t]);
   const guideCopy = useMemo(() => {
-    const guideFallbacks = {
-      en: {
-        title: 'Quick start guide',
-        subtitle: 'Get started with your first question, answer, and category.',
-        askTitle: 'Ask your first question',
-        askDesc: 'Share your situation to get focused answers.',
-        askAction: 'Ask a question',
-        askTooltip: 'Include your visa type and goal for faster help.',
-        answerTitle: 'Leave your first answer',
-        answerDesc: 'Support others and build trust.',
-        answerAction: 'Browse popular questions',
-        answerTooltip: 'Helpful answers raise your trust score.',
-        exploreTitle: 'Explore categories',
-        exploreDesc: 'Find the topics you care about most.',
-        exploreAction: 'Explore now',
-        exploreTooltip: 'Subscribe to categories to personalize your feed.',
-        faqTitle: 'FAQ',
-        faq1Q: 'How can I get verified answers?',
-        faq1A: 'Check for Verified/Expert badges on posts and profiles.',
-        faq2Q: 'Where can I manage subscriptions?',
-        faq2A: 'Open profile settings to manage category subscriptions.',
-        faq3Q: 'How do I report incorrect info?',
-        faq3A: 'Use the report button on each post or answer.',
-      },
-      vi: {
-        title: 'Hướng dẫn nhanh',
-        subtitle: 'Bắt đầu với câu hỏi, câu trả lời và danh mục đầu tiên.',
-        askTitle: 'Đặt câu hỏi đầu tiên',
-        askDesc: 'Chia sẻ hoàn cảnh để nhận câu trả lời phù hợp.',
-        askAction: 'Đặt câu hỏi',
-        askTooltip: 'Thêm loại visa và mục tiêu để được hỗ trợ nhanh hơn.',
-        answerTitle: 'Trả lời câu hỏi đầu tiên',
-        answerDesc: 'Giúp cộng đồng và tăng độ tin cậy.',
-        answerAction: 'Xem câu hỏi nổi bật',
-        answerTooltip: 'Câu trả lời hữu ích giúp tăng điểm tin cậy.',
-        exploreTitle: 'Khám phá danh mục',
-        exploreDesc: 'Tìm chủ đề bạn quan tâm nhất.',
-        exploreAction: 'Khám phá ngay',
-        exploreTooltip: 'Theo dõi danh mục để cá nhân hóa bảng tin.',
-        faqTitle: 'FAQ',
-        faq1Q: 'Làm sao nhận câu trả lời xác minh?',
-        faq1A: 'Xem huy hiệu Đã xác minh/Chuyên gia ở bài viết và hồ sơ.',
-        faq2Q: 'Quản lý theo dõi ở đâu?',
-        faq2A: 'Mở cài đặt hồ sơ để quản lý theo dõi danh mục.',
-        faq3Q: 'Báo cáo thông tin sai thế nào?',
-        faq3A: 'Dùng nút báo cáo ở mỗi bài viết hoặc câu trả lời.',
-      },
-      ko: {
-        title: '빠른 시작 가이드',
-        subtitle: '첫 질문, 첫 답변, 카테고리 탐색을 바로 시작해보세요.',
-        askTitle: '첫 질문 등록',
-        askDesc: '상황을 공유하면 정확한 답변을 받을 수 있어요.',
-        askAction: '질문하기',
-        askTooltip: '비자 타입과 목표를 적으면 더 빠르게 도움을 받아요.',
-        answerTitle: '첫 답변 남기기',
-        answerDesc: '도움을 주고 신뢰 점수를 올려보세요.',
-        answerAction: '인기 질문 보기',
-        answerTooltip: '도움이 된 답변이 신뢰 점수에 반영됩니다.',
-        exploreTitle: '카테고리 탐색',
-        exploreDesc: '관심 있는 주제를 찾아 구독해보세요.',
-        exploreAction: '탐색하기',
-        exploreTooltip: '카테고리를 구독하면 피드가 맞춤화돼요.',
-        faqTitle: '자주 묻는 질문',
-        faq1Q: '검증된 답변은 어떻게 확인하나요?',
-        faq1A: '게시글/프로필의 인증·전문가 배지를 확인하세요.',
-        faq2Q: '구독 관리는 어디서 하나요?',
-        faq2A: '프로필 설정에서 카테고리 구독을 관리할 수 있어요.',
-        faq3Q: '잘못된 정보는 어떻게 신고하나요?',
-        faq3A: '게시글/답변의 신고 버튼을 눌러 주세요.',
-      },
-    };
-    const fallback = guideFallbacks[lang as keyof typeof guideFallbacks] ?? guideFallbacks.ko;
-
     return {
-      title: t.guideTitle || fallback.title,
-      subtitle: t.guideSubtitle || fallback.subtitle,
-      askTitle: t.guideAskTitle || fallback.askTitle,
-      askDesc: t.guideAskDesc || fallback.askDesc,
-      askAction: t.guideAskAction || fallback.askAction,
-      askTooltip: t.guideAskTooltip || fallback.askTooltip,
-      answerTitle: t.guideAnswerTitle || fallback.answerTitle,
-      answerDesc: t.guideAnswerDesc || fallback.answerDesc,
-      answerAction: t.guideAnswerAction || fallback.answerAction,
-      answerTooltip: t.guideAnswerTooltip || fallback.answerTooltip,
-      exploreTitle: t.guideExploreTitle || fallback.exploreTitle,
-      exploreDesc: t.guideExploreDesc || fallback.exploreDesc,
-      exploreAction: t.guideExploreAction || fallback.exploreAction,
-      exploreTooltip: t.guideExploreTooltip || fallback.exploreTooltip,
-      faqTitle: t.guideFaqTitle || fallback.faqTitle,
-      faq1Q: t.guideFaq1Q || fallback.faq1Q,
-      faq1A: t.guideFaq1A || fallback.faq1A,
-      faq2Q: t.guideFaq2Q || fallback.faq2Q,
-      faq2A: t.guideFaq2A || fallback.faq2A,
-      faq3Q: t.guideFaq3Q || fallback.faq3Q,
-      faq3A: t.guideFaq3A || fallback.faq3A,
+      title: t.guideTitle || '',
+      subtitle: t.guideSubtitle || '',
+      askTitle: t.guideAskTitle || '',
+      askDesc: t.guideAskDesc || '',
+      askAction: t.guideAskAction || '',
+      askTooltip: t.guideAskTooltip || '',
+      answerTitle: t.guideAnswerTitle || '',
+      answerDesc: t.guideAnswerDesc || '',
+      answerAction: t.guideAnswerAction || '',
+      answerTooltip: t.guideAnswerTooltip || '',
+      exploreTitle: t.guideExploreTitle || '',
+      exploreDesc: t.guideExploreDesc || '',
+      exploreAction: t.guideExploreAction || '',
+      exploreTooltip: t.guideExploreTooltip || '',
+      faqTitle: tStaticFaq.heading || '',
+      faq1Q: tStaticFaq.q1 || '',
+      faq1A: tStaticFaq.a1 || '',
+      faq2Q: tStaticFaq.q2 || '',
+      faq2A: tStaticFaq.a2 || '',
+      faq3Q: tStaticFaq.q3 || '',
+      faq3A: tStaticFaq.a3 || '',
     };
-  }, [lang, t]);
+  }, [t, tStaticFaq]);
 
   const [userType, setUserType] = useState('');
   const [visaType, setVisaType] = useState('');
@@ -585,20 +420,20 @@ export default function OnboardingClient({ lang, translations }: OnboardingClien
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {KOREAN_LEVELS.map((level) => (
                       <button
-                        key={level.value}
+                        key={level}
                         type="button"
-                        onClick={() => setKoreanLevel(level.value)}
+                        onClick={() => setKoreanLevel(level)}
                         className={`rounded-lg border px-4 py-3 text-left transition-all ${
-                          koreanLevel === level.value
+                          koreanLevel === level
                             ? 'border-red-500 bg-red-50 text-red-700 dark:border-red-500 dark:bg-red-900/30 dark:text-red-100'
                             : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-red-300'
                         }`}
                       >
                         <p className="font-semibold">
-                          {t[`koreanLevel_${level.value}`] || level.label[lang as 'ko' | 'vi' | 'en'] || level.label.ko}
+                          {t[`koreanLevel_${level}`] || ''}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {t[`koreanLevel_${level.value}_desc`] || ''}
+                          {t[`koreanLevel_${level}_desc`] || ''}
                         </p>
                       </button>
                     ))}
@@ -628,7 +463,7 @@ export default function OnboardingClient({ lang, translations }: OnboardingClien
                       type="text"
                       value={visaType}
                       onChange={(e) => setVisaType(e.target.value)}
-                      placeholder={t.visaOtherPlaceholder || (lang === 'vi' ? 'Nhập visa khác' : lang === 'en' ? 'Other visa' : '기타 직접 입력')}
+                      placeholder={t.visaOtherPlaceholder || ''}
                       className="col-span-2 sm:col-span-4 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                     />
                   </div>
@@ -665,13 +500,13 @@ export default function OnboardingClient({ lang, translations }: OnboardingClien
                   {saving ? submittingLabel : submitLabel}
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => router.push(`/${lang}`)}
-                className="px-6 py-3 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-              >
-                {t.skip || wizardCopy.skip}
-              </button>
+	              <button
+	                type="button"
+	                onClick={() => router.push(`/${lang}`)}
+	                className="px-6 py-3 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+	              >
+	                {wizardCopy.skip}
+	              </button>
             </div>
           </form>
         </div>

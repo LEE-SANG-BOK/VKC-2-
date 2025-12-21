@@ -146,258 +146,63 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     scrollComposerIntoView(event.currentTarget);
   }, [scrollComposerIntoView]);
 
-  const templateFallbacks = useMemo(() => {
-    if (lang === 'en') {
-      return {
-        title: 'Question template',
-        description: 'Summarize context, goal, and constraints for better answers.',
-        note: 'Your input will be added to the top of the post.',
-        condition: 'Constraints',
-        goal: 'Goal',
-        background: 'Background',
-        conditionPlaceholder: 'e.g., visa type, timeline, budget',
-        goalPlaceholder: 'e.g., what outcome you want',
-        backgroundPlaceholder: 'e.g., your current situation and context',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        title: 'Mẫu câu hỏi',
-        description: 'Ghi nhanh bối cảnh, mục tiêu và điều kiện để nhận câu trả lời chính xác hơn.',
-        note: 'Nội dung bạn nhập sẽ được thêm vào đầu bài viết.',
-        condition: 'Điều kiện',
-        goal: 'Mục tiêu',
-        background: 'Bối cảnh',
-        conditionPlaceholder: 'VD: loại visa, thời gian, ngân sách',
-        goalPlaceholder: 'VD: kết quả bạn muốn đạt được',
-        backgroundPlaceholder: 'VD: tình huống hiện tại, mô tả bối cảnh',
-      };
-    }
-    return {
-      title: '질문 템플릿',
-      description: '배경/목표/조건을 정리하면 더 정확한 답을 받을 수 있어요.',
-      note: '입력한 내용은 본문 상단에 자동으로 추가됩니다.',
-      condition: '조건',
-      goal: '목표',
-      background: '배경',
-      conditionPlaceholder: '예: 비자 유형, 기간, 예산 등',
-      goalPlaceholder: '예: 원하는 결과를 적어주세요',
-      backgroundPlaceholder: '예: 현재 상황, 배경 설명',
-    };
-  }, [lang]);
-  const templateTitleLabel = t.templateTitle || templateFallbacks.title;
-  const templateDescLabel = t.templateDesc || templateFallbacks.description;
-  const templateNoteLabel = t.templateNote || templateFallbacks.note;
-  const templateConditionLabel = t.templateCondition || templateFallbacks.condition;
-  const templateGoalLabel = t.templateGoal || templateFallbacks.goal;
-  const templateBackgroundLabel = t.templateBackground || templateFallbacks.background;
-  const templateConditionPlaceholder = t.templateConditionPlaceholder || templateFallbacks.conditionPlaceholder;
-  const templateGoalPlaceholder = t.templateGoalPlaceholder || templateFallbacks.goalPlaceholder;
-  const categoryFallbacks = useMemo(() => {
-    if (lang === 'en') {
-      return {
-        parentCategory: 'Category',
-        selectParentCategory: 'Select category',
-        noCategories: 'No categories available',
-        childCategory: 'Subcategory',
-        selectChildCategory: 'Select subcategory',
-        noChildCategories: 'No subcategories available for this category.',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        parentCategory: 'Danh mục',
-        selectParentCategory: 'Chọn danh mục',
-        noCategories: 'Không có danh mục.',
-        childCategory: 'Danh mục con',
-        selectChildCategory: 'Chọn danh mục con',
-        noChildCategories: 'Danh mục này không có danh mục con.',
-      };
-    }
-    return {
-      parentCategory: '대분류',
-      selectParentCategory: '대분류 선택',
-      noCategories: '카테고리가 없습니다',
-      childCategory: '세부분류',
-      selectChildCategory: '세부분류 선택',
-      noChildCategories: '이 카테고리에는 세부분류가 없습니다.',
-    };
-  }, [lang]);
-  const parentCategoryLabel = t.parentCategory || categoryFallbacks.parentCategory;
-  const selectParentCategoryLabel = t.selectParentCategory || categoryFallbacks.selectParentCategory;
-  const noCategoriesLabel = t.noCategories || categoryFallbacks.noCategories;
-  const childCategoryLabel = t.childCategory || categoryFallbacks.childCategory;
-  const selectChildCategoryLabel = t.selectChildCategory || categoryFallbacks.selectChildCategory;
-  const noChildCategoriesLabel = t.noChildCategories || categoryFallbacks.noChildCategories;
-  const templateBackgroundPlaceholder = t.templateBackgroundPlaceholder || templateFallbacks.backgroundPlaceholder;
+  const templateTitleLabel = t.templateTitle || '';
+  const templateDescLabel = t.templateDesc || '';
+  const templateNoteLabel = t.templateNote || '';
+  const templateConditionLabel = t.templateCondition || '';
+  const templateGoalLabel = t.templateGoal || '';
+  const templateBackgroundLabel = t.templateBackground || '';
+  const templateConditionPlaceholder = t.templateConditionPlaceholder || '';
+  const templateGoalPlaceholder = t.templateGoalPlaceholder || '';
+  const templateBackgroundPlaceholder = t.templateBackgroundPlaceholder || '';
+  const parentCategoryLabel = t.parentCategory || '';
+  const selectParentCategoryLabel = t.selectParentCategory || '';
+  const noCategoriesLabel = t.noCategories || '';
+  const childCategoryLabel = t.childCategory || '';
+  const selectChildCategoryLabel = t.selectChildCategory || '';
+  const noChildCategoriesLabel = t.noChildCategories || '';
   const thumbnailLabel = t.thumbnailLabel || '';
   const thumbnailHint = t.thumbnailHint || '';
   const thumbnailEmpty = t.thumbnailEmpty || '';
   const thumbnailSelectedLabel = t.thumbnailSelected || '';
-  const uiFallbacks = useMemo(() => {
-    if (lang === 'en') {
-      return {
-        categoryRequiredError: 'Please select a category.',
-        titleLowQualityError: 'The title is too simple or repetitive. Please revise.',
-        contentLowQualityError: 'The content is too simple or repetitive. Please revise.',
-        bannedWarning: 'Inappropriate words detected. Please revise your text.',
-        spamWarning: 'External links or contact info detected. Only informational posts are allowed.',
-        categoryResetError: 'Please reselect the category.',
-        childCategoryResetError: 'Please reselect the subcategory.',
-        submitSuccess: 'Your post has been published.',
-        submitError: 'Failed to create the post.',
-        cancelConfirm: 'You have unsaved changes. Are you sure you want to cancel?',
-        goBack: 'Go back',
-        askQuestion: 'Ask a question',
-        share: 'Share',
-        rulesTitle: 'Community guidelines',
-        rulesRespect: 'Be respectful. No abusive or hateful language.',
-        rulesAds: 'Posts with ads/contact/external links may be limited or require approval.',
-        rulesDup: 'Search for similar questions before posting and avoid duplicates.',
-        typeSelection: 'Select type',
-        question: 'Question',
-        title: 'Title',
-        titlePlaceholderQuestion: 'Enter your question',
-        titlePlaceholderShare: 'Enter a title',
-        titleMinWarning: 'Please write at least {min} characters for the title.',
-        titleMaxWarning: 'Title can be up to {max} characters.',
-        content: 'Content',
-        contentPlaceholderQuestion: 'Write your question...',
-        contentPlaceholderShare: 'Write what you want to share...',
-        contentMinWarning: 'Please write at least {min} characters in the content.',
-        contentMaxWarning: 'Content can be up to {max} characters.',
-        tags: 'Tags',
-        tagsMax: 'Max 5',
-        defaultTag: 'Recommend',
-        tagPlaceholder: 'Type a tag and click add',
-        add: 'Add',
-        submitting: 'Submitting...',
-        submitQuestion: 'Post question',
-        submitShare: 'Share post',
-        cancel: 'Cancel',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        categoryRequiredError: 'Vui lòng chọn danh mục.',
-        titleLowQualityError: 'Tiêu đề quá đơn giản hoặc lặp lại. Vui lòng chỉnh sửa.',
-        contentLowQualityError: 'Nội dung quá đơn giản hoặc lặp lại. Vui lòng chỉnh sửa.',
-        bannedWarning: 'Có từ ngữ không phù hợp. Vui lòng chỉnh sửa.',
-        spamWarning: 'Phát hiện liên kết ngoài/thông tin liên hệ. Chỉ cho phép bài viết mang tính thông tin.',
-        categoryResetError: 'Vui lòng chọn lại danh mục.',
-        childCategoryResetError: 'Vui lòng chọn lại danh mục con.',
-        submitSuccess: 'Bài viết đã được đăng.',
-        submitError: 'Không thể đăng bài.',
-        cancelConfirm: 'Bạn có nội dung chưa lưu. Bạn có chắc muốn hủy?',
-        goBack: 'Quay lại',
-        askQuestion: 'Đặt câu hỏi',
-        share: 'Chia sẻ',
-        rulesTitle: 'Hướng dẫn cộng đồng',
-        rulesRespect: 'Giữ lịch sự, không dùng ngôn từ xúc phạm/kỳ thị.',
-        rulesAds: 'Bài có quảng cáo/thông tin liên hệ/liên kết ngoài có thể bị hạn chế hoặc cần phê duyệt.',
-        rulesDup: 'Tìm câu hỏi tương tự trước khi đăng, tránh trùng lặp.',
-        typeSelection: 'Chọn loại',
-        question: 'Câu hỏi',
-        title: 'Tiêu đề',
-        titlePlaceholderQuestion: 'Nhập câu hỏi',
-        titlePlaceholderShare: 'Nhập tiêu đề',
-        titleMinWarning: 'Tiêu đề cần ít nhất {min} ký tự.',
-        titleMaxWarning: 'Tiêu đề tối đa {max} ký tự.',
-        content: 'Nội dung',
-        contentPlaceholderQuestion: 'Viết nội dung câu hỏi...',
-        contentPlaceholderShare: 'Viết nội dung chia sẻ...',
-        contentMinWarning: 'Nội dung cần ít nhất {min} ký tự.',
-        contentMaxWarning: 'Nội dung tối đa {max} ký tự.',
-        tags: 'Thẻ',
-        tagsMax: 'Tối đa 5',
-        defaultTag: 'Gợi ý',
-        tagPlaceholder: 'Nhập thẻ rồi bấm thêm',
-        add: 'Thêm',
-        submitting: 'Đang đăng...',
-        submitQuestion: 'Đăng câu hỏi',
-        submitShare: 'Đăng chia sẻ',
-        cancel: 'Hủy',
-      };
-    }
-    return {
-      categoryRequiredError: '카테고리를 선택해주세요.',
-      titleLowQualityError: '제목이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.',
-      contentLowQualityError: '내용이 너무 단순하거나 반복됩니다. 내용을 수정해주세요.',
-      bannedWarning: '금칙어가 포함되어 있습니다. 내용을 순화해주세요.',
-      spamWarning: '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.',
-      categoryResetError: '카테고리를 다시 선택해주세요.',
-      childCategoryResetError: '세부분류를 다시 선택해주세요.',
-      submitSuccess: '게시글이 등록되었습니다.',
-      submitError: '게시글 작성에 실패했습니다.',
-      cancelConfirm: '작성 중인 내용이 있습니다. 정말 취소하시겠습니까?',
-      goBack: '뒤로 가기',
-      askQuestion: '질문하기',
-      share: '공유하기',
-      rulesTitle: '커뮤니티 가이드',
-      rulesRespect: '예의 준수, 욕설·혐오 표현 금지',
-      rulesAds: '광고/연락처/외부 링크 포함 글은 제한 또는 승인 필요',
-      rulesDup: '게시 전 유사 질문 검색, 중복 게시 자제',
-      typeSelection: '타입 선택',
-      question: '질문',
-      title: '제목',
-      titlePlaceholderQuestion: '질문을 입력하세요',
-      titlePlaceholderShare: '제목을 입력하세요',
-      titleMinWarning: '제목을 최소 {min}자 이상 작성해주세요.',
-      titleMaxWarning: '제목은 최대 {max}자까지 작성할 수 있습니다.',
-      content: '내용',
-      contentPlaceholderQuestion: '질문 내용을 작성하세요...',
-      contentPlaceholderShare: '공유할 내용을 작성하세요...',
-      contentMinWarning: '본문을 최소 {min}자 이상 작성해주세요.',
-      contentMaxWarning: '본문은 최대 {max}자까지 작성할 수 있습니다.',
-      tags: '태그',
-      tagsMax: '최대 5개',
-      defaultTag: '추천',
-      tagPlaceholder: '태그 입력 후 추가 버튼 클릭',
-      add: '추가',
-      submitting: '등록 중...',
-      submitQuestion: '질문 등록',
-      submitShare: '공유 등록',
-      cancel: '취소',
-    };
-  }, [lang]);
-  const categoryRequiredError = t.validationError || uiFallbacks.categoryRequiredError;
-  const titleLowQualityError = tErrors.POST_TITLE_LOW_QUALITY || t.validationError || uiFallbacks.titleLowQualityError;
-  const contentLowQualityError = tErrors.POST_CONTENT_LOW_QUALITY || t.validationError || uiFallbacks.contentLowQualityError;
-  const bannedWarningLabel = t.bannedWarning || uiFallbacks.bannedWarning;
-  const spamWarningLabel = t.spamWarning || uiFallbacks.spamWarning;
-  const categoryResetError = t.validationError || uiFallbacks.categoryResetError;
-  const childCategoryResetError = t.validationError || uiFallbacks.childCategoryResetError;
-  const submitSuccessLabel = t.submitSuccess || uiFallbacks.submitSuccess;
-  const submitErrorLabel = t.submitError || uiFallbacks.submitError;
-  const cancelConfirmLabel = t.cancelConfirm || uiFallbacks.cancelConfirm;
-  const goBackLabel = t.goBack || uiFallbacks.goBack;
-  const askQuestionLabel = t.askQuestion || uiFallbacks.askQuestion;
-  const shareLabel = t.share || uiFallbacks.share;
-  const rulesTitleLabel = t.rulesTitle || uiFallbacks.rulesTitle;
-  const rulesRespectLabel = t.rulesRespect || uiFallbacks.rulesRespect;
-  const rulesAdsLabel = t.rulesAds || uiFallbacks.rulesAds;
-  const rulesDupLabel = t.rulesDup || uiFallbacks.rulesDup;
-  const typeSelectionLabel = t.typeSelection || uiFallbacks.typeSelection;
-  const questionLabel = t.question || uiFallbacks.question;
-  const titleLabel = t.title || uiFallbacks.title;
-  const titlePlaceholderQuestionLabel = t.titlePlaceholderQuestion || uiFallbacks.titlePlaceholderQuestion;
-  const titlePlaceholderShareLabel = t.titlePlaceholderShare || uiFallbacks.titlePlaceholderShare;
-  const titleMinWarningTemplate = t.titleMinWarning || uiFallbacks.titleMinWarning;
-  const titleMaxWarningTemplate = t.titleMaxWarning || uiFallbacks.titleMaxWarning;
-  const contentLabel = t.content || uiFallbacks.content;
-  const contentPlaceholderQuestionLabel = t.contentPlaceholderQuestion || uiFallbacks.contentPlaceholderQuestion;
-  const contentPlaceholderShareLabel = t.contentPlaceholderShare || uiFallbacks.contentPlaceholderShare;
-  const contentMinWarningTemplate = t.contentMinWarning || uiFallbacks.contentMinWarning;
-  const contentMaxWarningTemplate = t.contentMaxWarning || uiFallbacks.contentMaxWarning;
-  const tagsLabel = t.tags || uiFallbacks.tags;
-  const tagsMaxLabel = t.tagsMax || uiFallbacks.tagsMax;
-  const defaultTagLabel = t.defaultTag || uiFallbacks.defaultTag;
-  const tagPlaceholderLabel = t.tagPlaceholder || uiFallbacks.tagPlaceholder;
-  const addLabel = t.add || uiFallbacks.add;
-  const submittingLabel = t.submitting || uiFallbacks.submitting;
-  const submitQuestionLabel = t.submitQuestion || uiFallbacks.submitQuestion;
-  const submitShareLabel = t.submitShare || uiFallbacks.submitShare;
-  const cancelLabel = t.cancel || uiFallbacks.cancel;
+  const categoryRequiredError = tErrors.POST_INVALID_CATEGORY || t.validationError || '';
+  const titleLowQualityError = tErrors.POST_TITLE_LOW_QUALITY || t.validationError || '';
+  const contentLowQualityError = tErrors.POST_CONTENT_LOW_QUALITY || t.validationError || '';
+  const bannedWarningLabel = t.bannedWarning || '';
+  const spamWarningLabel = t.spamWarning || '';
+  const categoryResetError = tErrors.POST_INVALID_CATEGORY || t.validationError || '';
+  const childCategoryResetError = tErrors.POST_INVALID_SUBCATEGORY || t.validationError || '';
+  const submitSuccessLabel = t.submitSuccess || '';
+  const submitErrorLabel = t.submitError || '';
+  const cancelConfirmLabel = t.cancelConfirm || '';
+  const goBackLabel = t.goBack || '';
+  const askQuestionLabel = t.askQuestion || '';
+  const shareLabel = t.share || '';
+  const rulesTitleLabel = t.rulesTitle || '';
+  const rulesRespectLabel = t.rulesRespect || '';
+  const rulesAdsLabel = t.rulesAds || '';
+  const rulesDupLabel = t.rulesDup || '';
+  const typeSelectionLabel = t.typeSelection || '';
+  const questionLabel = t.question || '';
+  const titleLabel = t.title || '';
+  const titlePlaceholderQuestionLabel = t.titlePlaceholderQuestion || '';
+  const titlePlaceholderShareLabel = t.titlePlaceholderShare || '';
+  const titleMinWarningTemplate = t.titleMinWarning || '';
+  const titleMaxWarningTemplate = t.titleMaxWarning || '';
+  const contentLabel = t.content || '';
+  const contentPlaceholderQuestionLabel = t.contentPlaceholderQuestion || '';
+  const contentPlaceholderShareLabel = t.contentPlaceholderShare || '';
+  const contentMinWarningTemplate = t.contentMinWarning || '';
+  const contentMaxWarningTemplate = t.contentMaxWarning || '';
+  const tagsLabel = t.tags || '';
+  const tagsMaxLabel = t.tagsMax || '';
+  const defaultTagLabel = t.defaultTag || '';
+  const tagPlaceholderLabel = t.tagPlaceholder || '';
+  const addLabel = t.add || '';
+  const submittingLabel = t.submitting || '';
+  const submitQuestionLabel = t.submitQuestion || '';
+  const submitShareLabel = t.submitShare || '';
+  const cancelLabel = t.cancel || '';
 
   const templateSections = useMemo(() => {
     const sections = [templateCondition, templateGoal, templateBackground]

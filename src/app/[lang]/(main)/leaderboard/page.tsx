@@ -31,26 +31,10 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const parsedLimit = parseInt(limit || String(defaultLimit), 10) || defaultLimit;
   const currentLimit = Math.min(20, Math.max(1, parsedLimit));
 
-  const fallback =
-    lang === 'en'
-      ? {
-          title: 'Community Leaderboard - viet kconnect',
-          description: 'Discover the most trusted and helpful community members.',
-        }
-      : lang === 'vi'
-        ? {
-            title: 'Bảng xếp hạng cộng đồng - viet kconnect',
-            description: 'Khám phá những thành viên đáng tin và hữu ích nhất trong cộng đồng.',
-          }
-        : {
-            title: '커뮤니티 랭킹 - viet kconnect',
-            description: '신뢰도와 기여도가 높은 커뮤니티 멤버를 확인하세요.',
-          };
-
   const meta = (dict?.metadata || {}) as Record<string, unknown>;
   const t = (meta.leaderboard || {}) as Record<string, string>;
-  const title = t.title || fallback.title;
-  const description = t.description || fallback.description;
+  const title = t.title || (meta?.home as Record<string, string>)?.title || '';
+  const description = t.description || (meta?.home as Record<string, string>)?.description || '';
 
   const search = new URLSearchParams();
   if (currentPage > 1) {
@@ -70,7 +54,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
     path: currentPath,
     title,
     description,
-    siteName: (meta?.home as Record<string, string>)?.siteName || 'viet kconnect',
+    siteName: (meta?.home as Record<string, string>)?.siteName,
     keywords,
     twitterCard: 'summary',
     robots: {
@@ -105,12 +89,11 @@ export default async function LeaderboardPage({ params, searchParams }: PageProp
   } catch {
   }
 
-  const eventCopy =
-    lang === 'en'
-      ? { title: 'Event', description: 'Coming soon' }
-      : lang === 'vi'
-        ? { title: 'Event', description: 'Sắp ra mắt' }
-        : { title: 'Event', description: '준비중' };
+  const tLeaderboard = (dict?.leaderboard || {}) as Record<string, string>;
+  const eventCopy = {
+    title: tLeaderboard.eventTitle || '',
+    description: tLeaderboard.eventDescription || '',
+  };
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

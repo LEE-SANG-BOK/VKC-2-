@@ -37,123 +37,29 @@ export default function SearchClient({
   const t = (translations?.search || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTooltips = (translations?.tooltips || {}) as Record<string, string>;
-  const searchFallbacks = useMemo(() => {
-    if (lang === 'en') {
-      return {
-        searchPlaceholder: 'Search for anything.',
-        searchPlaceholderShort: 'Search...',
-        searchButton: 'Search',
-        allCategories: 'All Categories',
-        subCategories: 'Subcategories',
-        categoryLabel: 'Category',
-        subCategoryLabel: 'Sub',
-        enterKeyword: 'Enter search keyword',
-        enterKeywordMin: `Please enter at least ${MIN_SEARCH_QUERY_LENGTH} characters.`,
-        enterKeywordMinSearch: `Please enter at least ${MIN_SEARCH_QUERY_LENGTH} characters to search.`,
-        searchError: 'Something went wrong while searching. Please try again shortly.',
-        popularKeywordsTitle: 'Popular searches',
-        fallbackFiltersLabel: 'Applied filters',
-        fallbackTokensLabel: 'Search keywords',
-        fallbackReasonPopular: 'No close matches, so we\'re surfacing popular questions.',
-        fallbackNotice: 'No close matches — showing popular questions instead.',
-        noResults: 'No results found for "{query}"',
-        previous: 'Previous',
-        next: 'Next',
-        pageInfo: '{current} / {total} pages',
-        unknownAuthor: 'Unknown',
-        photo: '(Photo)',
-        suggestionTitle: 'Autocomplete',
-        suggestionTag: 'Tag',
-        suggestionCategory: 'Category',
-        suggestionSubcategory: 'Subcategory',
-        suggestionEmpty: 'No suggestions yet.',
-        suggestionLoading: 'Loading...',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        searchPlaceholder: 'Tìm kiếm bất cứ điều gì.',
-        searchPlaceholderShort: 'Tìm kiếm...',
-        searchButton: 'Tìm kiếm',
-        allCategories: 'Tất cả danh mục',
-        subCategories: 'Danh mục phụ',
-        categoryLabel: 'Danh mục',
-        subCategoryLabel: 'Danh mục con',
-        enterKeyword: 'Nhập từ khóa tìm kiếm',
-        enterKeywordMin: `Vui lòng nhập ít nhất ${MIN_SEARCH_QUERY_LENGTH} ký tự.`,
-        enterKeywordMinSearch: `Vui lòng nhập ít nhất ${MIN_SEARCH_QUERY_LENGTH} ký tự để tìm kiếm.`,
-        searchError: 'Đã xảy ra lỗi khi tìm kiếm. Vui lòng thử lại sau.',
-        popularKeywordsTitle: 'Tìm kiếm phổ biến',
-        fallbackFiltersLabel: 'Bộ lọc áp dụng',
-        fallbackTokensLabel: 'Từ khóa tìm kiếm',
-        fallbackReasonPopular: 'Không có kết quả tương đồng nên đang hiển thị câu hỏi phổ biến.',
-        fallbackNotice: 'Không có kết quả phù hợp — hiển thị câu hỏi phổ biến.',
-        noResults: 'Không tìm thấy kết quả cho "{query}"',
-        previous: 'Trước',
-        next: 'Tiếp',
-        pageInfo: '{current} / {total} trang',
-        unknownAuthor: 'Không xác định',
-        photo: '(Ảnh)',
-        suggestionTitle: 'Gợi ý',
-        suggestionTag: 'Thẻ',
-        suggestionCategory: 'Danh mục',
-        suggestionSubcategory: 'Danh mục con',
-        suggestionEmpty: 'Chưa có gợi ý.',
-        suggestionLoading: 'Đang tải...',
-      };
-    }
-    return {
-      searchPlaceholder: '궁금한 내용을 검색해보세요.',
-      searchPlaceholderShort: '검색...',
-      searchButton: '검색',
-      allCategories: '전체 분류',
-      subCategories: '세부 분류',
-      categoryLabel: '분류',
-      subCategoryLabel: '세부',
-      enterKeyword: '검색어를 입력하세요',
-      enterKeywordMin: `검색어를 ${MIN_SEARCH_QUERY_LENGTH}자 이상 입력하세요.`,
-      enterKeywordMinSearch: `검색어를 ${MIN_SEARCH_QUERY_LENGTH}자 이상 입력해주세요.`,
-      searchError: '검색 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
-      popularKeywordsTitle: '인기 검색어',
-      fallbackFiltersLabel: '적용된 필터',
-      fallbackTokensLabel: '검색 키워드',
-      fallbackReasonPopular: '검색어와 딱 맞는 결과가 없으므로 인기 질문을 보여드려요.',
-      fallbackNotice: '정확히 일치하는 결과가 없어 인기 질문을 보여드려요.',
-      noResults: '"{query}"에 대한 검색 결과가 없습니다',
-      previous: '이전',
-      next: '다음',
-      pageInfo: '{current} / {total} 페이지',
-      unknownAuthor: '알 수 없음',
-      photo: '(사진)',
-      suggestionTitle: '자동완성',
-      suggestionTag: '태그',
-      suggestionCategory: '카테고리',
-      suggestionSubcategory: '세부',
-      suggestionEmpty: '추천 결과가 없습니다.',
-      suggestionLoading: '로딩 중...',
-    };
-  }, [lang]);
-  const searchPlaceholderLabel = t.searchPlaceholder || searchFallbacks.searchPlaceholder;
-  const searchButtonLabel = t.searchButton || searchFallbacks.searchButton;
-  const allCategoriesLabel = t.allCategories || searchFallbacks.allCategories;
-  const subCategoriesLabel = t.subCategories || searchFallbacks.subCategories;
-  const categoryLabel = t.categoryLabel || searchFallbacks.categoryLabel;
-  const subCategoryLabel = t.subCategoryLabel || searchFallbacks.subCategoryLabel;
-  const enterKeywordLabel = t.enterKeyword || searchFallbacks.enterKeyword;
-  const enterKeywordMinLabel = searchFallbacks.enterKeywordMin;
-  const enterKeywordMinSearchLabel = searchFallbacks.enterKeywordMinSearch;
-  const searchErrorLabel = t.searchError || searchFallbacks.searchError;
-  const popularKeywordsTitle = t.popularKeywordsTitle || searchFallbacks.popularKeywordsTitle;
-  const fallbackFiltersLabel = t.fallbackFiltersLabel || searchFallbacks.fallbackFiltersLabel;
-  const fallbackTokensLabel = t.fallbackTokensLabel || searchFallbacks.fallbackTokensLabel;
-  const fallbackNoticeLabel = t.fallbackNotice || searchFallbacks.fallbackNotice;
-  const fallbackReasonPopularLabel = t.fallbackReasonPopular || searchFallbacks.fallbackReasonPopular;
-  const noResultsLabel = t.noResults || searchFallbacks.noResults;
-  const previousLabel = t.previous || searchFallbacks.previous;
-  const nextLabel = t.next || searchFallbacks.next;
-  const pageInfoLabel = t.pageInfo || searchFallbacks.pageInfo;
-  const unknownAuthorLabel = t.unknownAuthor || searchFallbacks.unknownAuthor;
-  const photoLabel = t.photo || searchFallbacks.photo;
+  const searchPlaceholderLabel = t.searchPlaceholder || '';
+  const searchButtonLabel = t.searchButton || '';
+  const allCategoriesLabel = t.allCategories || '';
+  const subCategoriesLabel = t.subCategories || '';
+  const categoryLabel = t.categoryLabel || '';
+  const subCategoryLabel = t.subCategoryLabel || '';
+  const enterKeywordLabel = t.enterKeyword || '';
+  const minLengthErrorLabel = (t.minLengthError || '')
+    .replace('{min}', String(MIN_SEARCH_QUERY_LENGTH));
+  const minLengthErrorSearchLabel = (t.minLengthErrorSearch || t.minLengthError || '')
+    .replace('{min}', String(MIN_SEARCH_QUERY_LENGTH));
+  const searchErrorLabel = t.searchError || '';
+  const popularKeywordsTitle = t.popularKeywordsTitle || '';
+  const fallbackFiltersLabel = t.fallbackFiltersLabel || '';
+  const fallbackTokensLabel = t.fallbackTokensLabel || '';
+  const fallbackNoticeLabel = t.fallbackNotice || '';
+  const fallbackReasonPopularLabel = t.fallbackReasonPopular || '';
+  const noResultsLabel = t.noResults || '';
+  const previousLabel = t.previous || tCommon.previous || '';
+  const nextLabel = t.next || tCommon.next || '';
+  const pageInfoLabel = t.pageInfo || '';
+  const unknownAuthorLabel = t.unknownAuthor || '';
+  const photoLabel = t.photo || '';
 
   const getGroupLabel = useCallback((group: (typeof CATEGORY_GROUPS)[keyof typeof CATEGORY_GROUPS]) => {
     if (lang === 'vi' && group.label_vi) return group.label_vi;
@@ -302,12 +208,12 @@ export default function SearchClient({
   const { data: keywordRecommendationsData } = useSearchKeywords({ limit: 10 });
 
   const suggestionLabels = {
-    title: t.suggestionTitle || searchFallbacks.suggestionTitle,
-    tag: t.suggestionTag || searchFallbacks.suggestionTag,
-    category: t.suggestionCategory || searchFallbacks.suggestionCategory,
-    subcategory: t.suggestionSubcategory || searchFallbacks.suggestionSubcategory,
-    empty: t.suggestionEmpty || searchFallbacks.suggestionEmpty,
-    loading: t.suggestionLoading || searchFallbacks.suggestionLoading,
+    title: t.suggestionTitle || '',
+    tag: t.suggestionTag || '',
+    category: t.suggestionCategory || '',
+    subcategory: t.suggestionSubcategory || '',
+    empty: t.suggestionEmpty || '',
+    loading: t.suggestionLoading || '',
   };
   useEffect(() => {
     if (isError) {
@@ -430,7 +336,7 @@ export default function SearchClient({
   const handleSearch = () => {
     const trimmedQuery = query.trim();
     if (trimmedQuery.length < MIN_SEARCH_QUERY_LENGTH) {
-      toast.error(t.enterKeyword || enterKeywordMinLabel);
+      toast.error(minLengthErrorLabel || enterKeywordLabel);
       return;
     }
     const params = new URLSearchParams();
@@ -689,7 +595,7 @@ export default function SearchClient({
           !isActiveQueryValid ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">
-                {enterKeywordMinSearchLabel}
+                {minLengthErrorSearchLabel}
               </p>
             </div>
           ) : (

@@ -32,33 +32,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const t = (dict?.metadata?.post || {}) as Record<string, string>;
   const response = await fetchPost(id);
   const post = response?.data;
-  const notFoundFallbacks =
-    lang === 'en'
-      ? {
-          title: 'Post not found',
-          description: 'The requested post could not be found.',
-        }
-      : lang === 'vi'
-        ? {
-            title: 'Không tìm thấy bài viết',
-            description: 'Không thể tìm thấy bài viết bạn yêu cầu.',
-          }
-        : {
-            title: '게시글을 찾을 수 없습니다',
-            description: '요청하신 게시글을 찾을 수 없습니다',
-          };
 
   if (!post) {
     return {
-      title: t.notFoundTitle || notFoundFallbacks.title,
-      description: t.notFoundDescription || notFoundFallbacks.description,
+      title: t.notFoundTitle || dict?.metadata?.home?.title || '',
+      description: t.notFoundDescription || dict?.metadata?.home?.description || '',
     };
   }
 
   const baseUrl = SITE_URL;
   const contentText = stripHtml(post.content || '');
   const description = contentText.substring(0, 160);
-  const titleSuffix = t.titleSuffix || 'viet kconnect';
+  const titleSuffix = t.titleSuffix || t.siteName || dict?.metadata?.home?.siteName || '';
   const title = `${post.title} | ${titleSuffix}`;
   const ogImageSrc = normalizePostImageSrc(post.thumbnail) || normalizePostImageSrc(post.thumbnails?.[0]) || '/brand-logo.png';
   const ogImage = ogImageSrc.startsWith('/') ? `${baseUrl}${ogImageSrc}` : ogImageSrc;
@@ -77,7 +62,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     path: `/posts/${id}`,
     title,
     description,
-    siteName: t.siteName || 'viet kconnect',
+    siteName: t.siteName || dict?.metadata?.home?.siteName,
     images: ogImage ? [ogImage] : [],
     type: 'article',
     keywords,
