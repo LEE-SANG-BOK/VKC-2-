@@ -1044,6 +1044,12 @@ $gh-address-comments
   - 변경: `src/components/atoms/FollowButton.tsx`, `src/components/organisms/RecommendedUsersSection.tsx`, `src/components/organisms/PostList.tsx`, `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/components/molecules/modals/FollowingModal.tsx`, `messages/ko.json`, `messages/vi.json`
   - 변경: `src/components/molecules/cards/PostCard.tsx`, `src/components/molecules/cards/AnswerCard.tsx`, `src/components/molecules/cards/CommentCard.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`, `messages/ko.json`, `messages/vi.json`
   - 변경: `src/app/[lang]/(main)/notifications/NotificationsClient.tsx`
+  - UserMenu 드롭다운/모달 번역 전달 경로 정합(번역 누락/blank 방지): Header→UserProfile→(Profile/MyPosts/Following/Bookmarks/Settings)에 full dictionary 전달
+  - SettingsModal 저장 토스트/구독 관리 CTA를 i18n 키로 분리: `userMenu.saveSuccess/saveError/manageSubscriptions`(ko/vi)
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/components/organisms/Header.tsx`, `src/components/molecules/user/UserProfile.tsx`
+  - 변경: `src/components/molecules/modals/ProfileModal.tsx`, `src/components/molecules/modals/MyPostsModal.tsx`, `src/components/molecules/modals/FollowingModal.tsx`, `src/components/molecules/modals/BookmarksModal.tsx`, `src/components/molecules/modals/SettingsModal.tsx`
+  - 변경: `messages/ko.json`, `messages/vi.json`
 
 #### (2025-12-20) [FE] P0-3 모바일 키보드/스크롤(WebView 포함) UX 하드닝 (P0)
 
