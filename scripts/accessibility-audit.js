@@ -46,6 +46,11 @@ const buildPagesToTest = ({ lang, postId, userId }) => {
       description: '검색',
     },
     {
+      name: 'NewPostPage',
+      url: toUrl(`/${lang}/posts/new`),
+      description: '글쓰기',
+    },
+    {
       name: 'LeaderboardPage',
       url: toUrl(`/${lang}/leaderboard`),
       description: '커뮤니티 랭킹',

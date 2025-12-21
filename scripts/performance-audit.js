@@ -41,6 +41,12 @@ const buildPerformancePages = ({ lang, postId, userId }) => {
       critical: true,
     },
     {
+      name: 'NewPostPage',
+      url: toUrl(`/${lang}/posts/new`),
+      description: '글쓰기',
+      critical: true,
+    },
+    {
       name: 'LeaderboardPage',
       url: toUrl(`/${lang}/leaderboard`),
       description: '커뮤니티 랭킹',
