@@ -1058,6 +1058,12 @@ $gh-address-comments
   - 변경: `src/components/molecules/actions/ShareButton.tsx`, `src/components/organisms/CardNewsShowcase.tsx`, `src/components/organisms/ShortFormPlaylist.tsx`, `src/components/molecules/modals/NotificationModal.tsx`
   - 변경: `src/utils/dateTime.ts`, `src/lib/utils/trustBadges.ts`, `src/lib/constants/tag-translations.ts`, `src/lib/constants/categories.ts`
   - 변경: `src/app/[lang]/layout.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`
+  - 추가 i18n 스윕(2025-12-21): 온보딩/검색/글쓰기/인증/피드백/리더보드/게시글 상세 메타의 locale 분기 fallback 제거 → messages 기반으로 단일화(ko/vi 우선, en은 SEO 렌더 안정성만 보장)
+  - 메타 보강: `metadata.feedback`, `metadata.leaderboard` 추가 + PostDetail notFound 메타 하드코딩 제거
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/[lang]/(main)/onboarding/OnboardingClient.tsx`, `src/app/[lang]/(main)/search/SearchClient.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
+  - 변경: `src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx`, `src/app/[lang]/(main)/verification/history/VerificationHistoryClient.tsx`, `src/app/[lang]/(main)/feedback/FeedbackClient.tsx`
+  - 변경: `src/app/[lang]/(main)/leaderboard/page.tsx`, `src/app/[lang]/(main)/posts/[id]/page.tsx`, `messages/ko.json`, `messages/vi.json`, `messages/en.json`
 
 #### (2025-12-20) [FE] P0-3 모바일 키보드/스크롤(WebView 포함) UX 하드닝 (P0)
 
