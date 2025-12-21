@@ -450,6 +450,7 @@
   },
   "search": {
     "enterKeyword": "Nhập từ khóa tìm kiếm",
+    "minLengthError": "Vui lòng nhập ít nhất {min} ký tự.",
     "searchPlaceholder": "Tìm kiếm bất cứ điều gì.",
     "searchPlaceholderShort": "Tìm kiếm...",
     "popularKeywordsTitle": "Tìm kiếm phổ biến",

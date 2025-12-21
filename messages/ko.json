@@ -450,6 +450,7 @@
   },
   "search": {
     "enterKeyword": "검색어를 입력하세요",
+    "minLengthError": "검색어를 {min}자 이상 입력하세요.",
     "searchPlaceholder": "궁금한 내용을 검색해보세요.",
     "searchPlaceholderShort": "검색...",
     "popularKeywordsTitle": "인기 검색어",
