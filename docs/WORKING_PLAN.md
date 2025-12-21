@@ -1029,6 +1029,7 @@ $gh-address-comments
   - 게시글 상세(PostDetailClient)에서 공유/숨김/도움됨/관련 글/답변 작성 영역 locale 분기 fallback 제거 → `common`(save/unhide/helpful*) + `postDetail`(shareCta/related*/answerMinHint 등) 키 보강
   - 게시글 카드(PostCard)에서 툴팁/공유/숨김/신고 문구 locale 분기 fallback 제거 → `common.hide/hideFailed` + `postDetail.copyFailed` + `tooltips.close` 키 보강
   - 답변/댓글 카드(AnswerCard/CommentCard)에서 원글/삭제/숨김/도움됨 문구 locale 분기 fallback 제거 → `common.hideFailed` 범용 문구로 조정
+  - 헤더 검색(HeaderSearch)에서 입력/라벨 locale 분기 fallback 제거 + `search.minLengthError` 키 추가
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
   - 변경: `src/app/api/posts/[id]/report/route.ts`, `src/app/api/answers/[id]/report/route.ts`, `src/app/api/comments/[id]/report/route.ts`, `messages/ko.json`, `messages/vi.json`
@@ -1037,6 +1038,7 @@ $gh-address-comments
   - 변경: `src/components/organisms/BottomNavigation.tsx`
   - 변경: `src/components/molecules/cards/PostCard.tsx`, `messages/ko.json`, `messages/vi.json`
   - 변경: `src/components/molecules/cards/AnswerCard.tsx`, `src/components/molecules/cards/CommentCard.tsx`, `messages/ko.json`, `messages/vi.json`
+  - 변경: `src/components/molecules/search/HeaderSearch.tsx`, `messages/ko.json`, `messages/vi.json`
   - 변경: `src/components/atoms/FollowButton.tsx`, `src/components/organisms/RecommendedUsersSection.tsx`, `src/components/organisms/PostList.tsx`, `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/components/molecules/modals/FollowingModal.tsx`, `messages/ko.json`, `messages/vi.json`
   - 변경: `src/components/molecules/cards/PostCard.tsx`, `src/components/molecules/cards/AnswerCard.tsx`, `src/components/molecules/cards/CommentCard.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`, `messages/ko.json`, `messages/vi.json`
   - 변경: `src/app/[lang]/(main)/notifications/NotificationsClient.tsx`
