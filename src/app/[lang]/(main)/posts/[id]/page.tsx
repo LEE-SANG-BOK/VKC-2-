@@ -109,7 +109,7 @@ export default async function PostDetailPage({ params }: PageProps) {
   const { lang, id } = await params;
   const translations = await getDictionary(lang as Locale);
   const tCommon = (translations?.common || {}) as Record<string, string>;
-  const anonymousLabel = tCommon.anonymous || (lang === 'vi' ? 'Người dùng ẩn danh' : lang === 'en' ? 'Anonymous user' : '익명 사용자');
+  const anonymousLabel = tCommon.anonymous || '';
   const queryClient = new QueryClient();
   try {
     await queryClient.prefetchQuery({

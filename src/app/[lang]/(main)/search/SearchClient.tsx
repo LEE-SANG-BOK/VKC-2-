@@ -359,8 +359,8 @@ export default function SearchClient({
       .filter((token): token is string => Boolean(token))
       .slice(0, 6);
   }, [fallbackMeta?.tokens]);
-  const questionLabel = tCommon.question || (lang === 'vi' ? 'Câu hỏi' : lang === 'en' ? 'Question' : '질문');
-  const shareLabel = tTooltips.share || (lang === 'vi' ? 'Chia sẻ' : lang === 'en' ? 'Share' : '공유');
+  const questionLabel = tCommon.question || '';
+  const shareLabel = tTooltips.share || '';
   const filterLabels = useMemo(() => {
     const filters = fallbackMeta?.fallbackFilters;
     if (!filters) return [];
