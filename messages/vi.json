@@ -342,6 +342,19 @@
     "sidebarToggle": "Mở thanh điều hướng",
     "brandIntro": "Hỏi về Hàn Quốc, trả lời đáng tin."
   },
+  "editor": {
+    "imageTypeError": "Chỉ cho phép tệp ảnh.",
+    "imageSizeError": "Kích thước ảnh phải ≤ 5MB.",
+    "imageUploadFailed": "Tải ảnh thất bại.",
+    "imageUploadError": "Đã xảy ra lỗi khi tải ảnh.",
+    "linkTitle": "Thêm liên kết",
+    "linkPlaceholder": "https://example.com",
+    "linkCancel": "Hủy",
+    "linkRemove": "Xóa liên kết",
+    "linkUpdate": "Cập nhật",
+    "linkAdd": "Thêm",
+    "uploading": "Đang tải..."
+  },
   "profile": {
     "editProfile": "Chỉnh sửa hồ sơ",
     "logout": "Đăng xuất",

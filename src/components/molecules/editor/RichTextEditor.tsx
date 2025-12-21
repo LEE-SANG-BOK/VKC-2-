@@ -39,7 +39,7 @@ interface RichTextEditorProps {
 export default function RichTextEditor({
   content,
   onChange,
-  placeholder = '내용을 입력하세요...',
+  placeholder = '',
   translations,
   variant = 'full',
   tooltipPosition = 'below',
@@ -51,49 +51,33 @@ export default function RichTextEditor({
   const tCommon = translations?.common || {};
   const tErrors = (translations?.errors || {}) as Record<string, string>;
   const editorCopy = useMemo(() => {
-    const isVi = locale === 'vi';
-    const isEn = locale === 'en';
     return {
-      imageTypeError: tEditor.imageTypeError || (isVi ? 'Chỉ cho phép tệp ảnh.' : isEn ? 'Only image files are allowed.' : '이미지 파일만 업로드할 수 있습니다.'),
-      imageSizeError: tEditor.imageSizeError || (isVi ? 'Kích thước ảnh phải ≤ 5MB.' : isEn ? 'Image size must be 5MB or less.' : '이미지 크기는 5MB 이하여야 합니다.'),
-      imageUploadFailed: tEditor.imageUploadFailed || (isVi ? 'Tải ảnh thất bại.' : isEn ? 'Failed to upload image.' : '이미지 업로드에 실패했습니다.'),
-      imageUploadError: tEditor.imageUploadError || (isVi ? 'Đã xảy ra lỗi khi tải ảnh.' : isEn ? 'An error occurred while uploading the image.' : '이미지 업로드 중 오류가 발생했습니다.'),
-      linkTitle: tEditor.linkTitle || (isVi ? 'Thêm liên kết' : isEn ? 'Add link' : '링크 추가'),
+      imageTypeError: tEditor.imageTypeError || '',
+      imageSizeError: tEditor.imageSizeError || '',
+      imageUploadFailed: tErrors.UPLOAD_FAILED || tEditor.imageUploadFailed || '',
+      imageUploadError: tEditor.imageUploadError || '',
+      linkTitle: tEditor.linkTitle || '',
       linkPlaceholder: tEditor.linkPlaceholder || 'https://example.com',
-      linkCancel: tEditor.linkCancel || tCommon.cancel || (isVi ? 'Huỷ' : isEn ? 'Cancel' : '취소'),
-      linkRemove: tEditor.linkRemove || (isVi ? 'Xoá liên kết' : isEn ? 'Remove link' : '링크 제거'),
-      linkUpdate: tEditor.linkUpdate || (isVi ? 'Cập nhật' : isEn ? 'Update' : '수정'),
-      linkAdd: tEditor.linkAdd || (isVi ? 'Thêm' : isEn ? 'Add' : '추가'),
+      linkCancel: tEditor.linkCancel || tCommon.cancel || '',
+      linkRemove: tEditor.linkRemove || '',
+      linkUpdate: tEditor.linkUpdate || '',
+      linkAdd: tEditor.linkAdd || '',
+      uploading: tEditor.uploading || '',
     };
-  }, [locale, tCommon, tEditor]);
-  const fallbackTooltips = {
-    bold: locale === 'vi' ? 'Đậm' : locale === 'en' ? 'Bold' : '굵게',
-    italic: locale === 'vi' ? 'Nghiêng' : locale === 'en' ? 'Italic' : '기울임',
-    heading1: locale === 'vi' ? 'Tiêu đề 1' : locale === 'en' ? 'Heading 1' : '제목1',
-    heading2: locale === 'vi' ? 'Tiêu đề 2' : locale === 'en' ? 'Heading 2' : '제목2',
-    bulletList: locale === 'vi' ? 'Danh sách' : locale === 'en' ? 'Bullet list' : '목록',
-    orderedList: locale === 'vi' ? 'Danh sách số' : locale === 'en' ? 'Numbered list' : '번호 목록',
-    codeBlock: locale === 'vi' ? 'Khối mã' : locale === 'en' ? 'Code block' : '코드 블록',
-    quote: locale === 'vi' ? 'Trích dẫn' : locale === 'en' ? 'Quote' : '인용',
-    addImage: locale === 'vi' ? 'Thêm ảnh' : locale === 'en' ? 'Add image' : '이미지 추가',
-    addLink: locale === 'vi' ? 'Thêm liên kết' : locale === 'en' ? 'Add link' : '링크 추가',
-    uploading: locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Uploading...' : '업로드 중...',
-    undo: locale === 'vi' ? 'Hoàn tác' : locale === 'en' ? 'Undo' : '실행 취소',
-    redo: locale === 'vi' ? 'Làm lại' : locale === 'en' ? 'Redo' : '다시 실행',
-  };
-  const boldLabel = t.bold || fallbackTooltips.bold;
-  const italicLabel = t.italic || fallbackTooltips.italic;
-  const heading1Label = t.heading1 || fallbackTooltips.heading1;
-  const heading2Label = t.heading2 || fallbackTooltips.heading2;
-  const bulletListLabel = t.bulletList || fallbackTooltips.bulletList;
-  const orderedListLabel = t.orderedList || fallbackTooltips.orderedList;
-  const codeBlockLabel = t.codeBlock || fallbackTooltips.codeBlock;
-  const quoteLabel = t.quote || fallbackTooltips.quote;
-  const addImageLabel = t.addImage || fallbackTooltips.addImage;
-  const addLinkLabel = t.addLink || fallbackTooltips.addLink;
-  const uploadingLabel = fallbackTooltips.uploading;
-  const undoLabel = t.undo || fallbackTooltips.undo;
-  const redoLabel = t.redo || fallbackTooltips.redo;
+  }, [tCommon.cancel, tEditor, tErrors.UPLOAD_FAILED]);
+  const boldLabel = t.bold || '';
+  const italicLabel = t.italic || '';
+  const heading1Label = t.heading1 || '';
+  const heading2Label = t.heading2 || '';
+  const bulletListLabel = t.bulletList || '';
+  const orderedListLabel = t.orderedList || '';
+  const codeBlockLabel = t.codeBlock || '';
+  const quoteLabel = t.quote || '';
+  const addImageLabel = t.addImage || '';
+  const addLinkLabel = t.addLink || '';
+  const uploadingLabel = editorCopy.uploading || '';
+  const undoLabel = t.undo || '';
+  const redoLabel = t.redo || '';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
