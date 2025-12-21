@@ -21,20 +21,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const dict = await getDictionary(locale);
   const meta = (dict?.metadata as Record<string, any>) || {};
 
-  const title =
-    meta?.trustBadges?.title ||
-    (locale === 'en'
-      ? 'Trust Badges - viet kconnect'
-      : locale === 'vi'
-        ? 'Huy hiệu tin cậy - viet kconnect'
-        : '신뢰 배지 안내 - viet kconnect');
-  const description =
-    meta?.trustBadges?.description ||
-    (locale === 'en'
-      ? 'Learn what each trust badge means and how it is assigned.'
-      : locale === 'vi'
-        ? 'Tìm hiểu ý nghĩa của từng huy hiệu tin cậy và cách được gán.'
-        : '각 신뢰 배지의 의미와 부여 기준을 확인하세요.');
+  const fallbackMetaByLocale = {
+    ko: {
+      title: '신뢰 배지 안내 - viet kconnect',
+      description: '각 신뢰 배지의 의미와 부여 기준을 확인하세요.',
+    },
+    en: {
+      title: 'Trust Badges - viet kconnect',
+      description: 'Learn what each trust badge means and how it is assigned.',
+    },
+    vi: {
+      title: 'Huy hiệu tin cậy - viet kconnect',
+      description: 'Tìm hiểu ý nghĩa của từng huy hiệu tin cậy và cách được gán.',
+    },
+  } as const;
+  const fallbackMeta = fallbackMetaByLocale[locale] || fallbackMetaByLocale.ko;
+
+  const title = meta?.trustBadges?.title || fallbackMeta.title;
+  const description = meta?.trustBadges?.description || fallbackMeta.description;
 
   const keywords = flattenKeywords(buildKeywords({ title, content: description }));
 
@@ -58,83 +62,85 @@ export default async function TrustBadgesGuidePage({ params }: PageProps) {
   const locale = lang as Locale;
   const dict = await getDictionary(locale);
   const tTrust = (dict?.trustBadges || {}) as Record<string, string>;
+  const tBottomNav = (dict?.bottomNav || {}) as Record<string, string>;
+  const tSidebar = (dict?.sidebar || {}) as Record<string, string>;
 
-  const heading =
-    locale === 'en'
-      ? 'Trust Badges'
-      : locale === 'vi'
-        ? 'Huy hiệu tin cậy'
-        : '신뢰 배지 안내';
-  const subheading =
-    locale === 'en'
-      ? 'Badges help you quickly judge how trustworthy information is.'
-      : locale === 'vi'
-        ? 'Huy hiệu giúp bạn nhanh chóng đánh giá mức độ tin cậy của thông tin.'
-        : '배지는 정보의 신뢰도를 빠르게 판단하는 데 도움을 줍니다.';
+  const headingByLocale = {
+    ko: '신뢰 배지 안내',
+    en: 'Trust Badges',
+    vi: 'Huy hiệu tin cậy',
+  } as const;
+  const subheadingByLocale = {
+    ko: '배지는 정보의 신뢰도를 빠르게 판단하는 데 도움을 줍니다.',
+    en: 'Badges help you quickly judge how trustworthy information is.',
+    vi: 'Huy hiệu giúp bạn nhanh chóng đánh giá mức độ tin cậy của thông tin.',
+  } as const;
+  const heading = headingByLocale[locale] || headingByLocale.ko;
+  const subheading = subheadingByLocale[locale] || subheadingByLocale.ko;
 
-  const homeLabel = locale === 'vi' ? 'Trang chủ' : locale === 'en' ? 'Home' : '홈으로';
-  const verifyLabel = locale === 'vi' ? 'Yêu cầu xác minh' : locale === 'en' ? 'Request verification' : '인증 신청';
+  const homeLabel = tBottomNav.home || '';
+  const verifyLabel = tSidebar.verificationRequest || '';
 
-  const badges: Array<{ id: string; level: TrustLevel; label: string; tooltip: string }>= [
+  const badges: Array<{ id: string; level: TrustLevel; label: string; tooltip: string }> = [
     {
       id: 'verified-user',
       level: 'verified',
-      label: tTrust.verifiedUserLabel || (locale === 'vi' ? 'Người dùng đã xác minh' : locale === 'en' ? 'Verified User' : '인증 사용자'),
-      tooltip: tTrust.verifiedUserTooltip || (locale === 'vi' ? 'Đã xác minh danh tính' : locale === 'en' ? 'Identity verified' : '신분 서류가 확인된 사용자'),
+      label: tTrust.verifiedUserLabel || '',
+      tooltip: tTrust.verifiedUserTooltip || '',
     },
     {
       id: 'verified-student',
       level: 'verified',
-      label: tTrust.verifiedStudentLabel || (locale === 'vi' ? 'Sinh viên đã xác minh' : locale === 'en' ? 'Verified Student' : '학생 인증'),
-      tooltip: tTrust.verifiedStudentTooltip || (locale === 'vi' ? 'Đã xác minh tình trạng sinh viên' : locale === 'en' ? 'Student status verified' : '학생 신분이 확인된 사용자'),
+      label: tTrust.verifiedStudentLabel || '',
+      tooltip: tTrust.verifiedStudentTooltip || '',
     },
     {
       id: 'verified-worker',
       level: 'verified',
-      label: tTrust.verifiedWorkerLabel || (locale === 'vi' ? 'Người đi làm đã xác minh' : locale === 'en' ? 'Verified Worker' : '직장/재직 인증'),
-      tooltip: tTrust.verifiedWorkerTooltip || (locale === 'vi' ? 'Đã xác minh tình trạng việc làm' : locale === 'en' ? 'Employment status verified' : '재직/직장인 증빙이 확인된 사용자'),
+      label: tTrust.verifiedWorkerLabel || '',
+      tooltip: tTrust.verifiedWorkerTooltip || '',
     },
     {
       id: 'trusted-answerer',
       level: 'community',
-      label: tTrust.trustedAnswererLabel || (locale === 'vi' ? 'Người trả lời đáng tin' : locale === 'en' ? 'Trusted Answerer' : '신뢰 답변자'),
-      tooltip: tTrust.trustedAnswererTooltip || (locale === 'vi' ? 'Được cộng đồng đánh giá tin cậy dựa trên đóng góp' : locale === 'en' ? 'Trusted by community based on contributions' : '커뮤니티 활동 기반 신뢰 답변자'),
+      label: tTrust.trustedAnswererLabel || '',
+      tooltip: tTrust.trustedAnswererTooltip || '',
     },
     {
       id: 'community',
       level: 'community',
-      label: tTrust.communityLabel || (locale === 'vi' ? 'Cộng đồng' : locale === 'en' ? 'Community' : '커뮤니티'),
-      tooltip: tTrust.communityTooltip || (locale === 'vi' ? 'Được cộng đồng tin cậy' : locale === 'en' ? 'Trusted by community' : '커뮤니티 신뢰 정보'),
+      label: tTrust.communityLabel || '',
+      tooltip: tTrust.communityTooltip || '',
     },
     {
       id: 'expert-visa',
       level: 'expert',
-      label: tTrust.expertVisaLabel || (locale === 'vi' ? 'Chuyên gia visa' : locale === 'en' ? 'Visa Expert' : '비자 전문가'),
-      tooltip: tTrust.expertVisaTooltip || (locale === 'vi' ? 'Chuyên gia visa/xuất nhập cảnh (đã xác minh)' : locale === 'en' ? 'Verified visa/immigration professional' : '비자/출입국 관련 전문 자격 또는 경력 확인'),
+      label: tTrust.expertVisaLabel || '',
+      tooltip: tTrust.expertVisaTooltip || '',
     },
     {
       id: 'expert-employment',
       level: 'expert',
-      label: tTrust.expertEmploymentLabel || (locale === 'vi' ? 'Chuyên gia việc làm' : locale === 'en' ? 'Employment Expert' : '취업 전문가'),
-      tooltip: tTrust.expertEmploymentTooltip || (locale === 'vi' ? 'Chuyên gia tuyển dụng/career (đã xác minh)' : locale === 'en' ? 'Verified employment/career professional' : '취업/채용 관련 전문 경력 확인'),
+      label: tTrust.expertEmploymentLabel || '',
+      tooltip: tTrust.expertEmploymentTooltip || '',
     },
     {
       id: 'expert',
       level: 'expert',
-      label: tTrust.expertLabel || (locale === 'vi' ? 'Chuyên gia' : locale === 'en' ? 'Expert' : '전문가'),
-      tooltip: tTrust.expertTooltip || (locale === 'vi' ? 'Được chuyên gia xem xét' : locale === 'en' ? 'Reviewed by an expert' : '전문가/공식 답변자'),
+      label: tTrust.expertLabel || '',
+      tooltip: tTrust.expertTooltip || '',
     },
     {
       id: 'verified',
       level: 'verified',
-      label: tTrust.verifiedLabel || (locale === 'vi' ? 'Đã xác minh' : locale === 'en' ? 'Verified' : '검증됨'),
-      tooltip: tTrust.verifiedTooltip || (locale === 'vi' ? 'Thông tin từ người dùng đã xác minh' : locale === 'en' ? 'From a verified user' : '인증된 사용자 기반 정보'),
+      label: tTrust.verifiedLabel || '',
+      tooltip: tTrust.verifiedTooltip || '',
     },
     {
       id: 'outdated',
       level: 'outdated',
-      label: tTrust.outdatedLabel || (locale === 'vi' ? 'Hết hạn' : locale === 'en' ? 'Outdated' : '오래된 정보'),
-      tooltip: tTrust.outdatedTooltip || (locale === 'vi' ? 'Thông tin hơn 12 tháng trước' : locale === 'en' ? 'More than 12 months old' : '12개월 이상 지난 정보'),
+      label: tTrust.outdatedLabel || '',
+      tooltip: tTrust.outdatedTooltip || '',
     },
   ];
 
