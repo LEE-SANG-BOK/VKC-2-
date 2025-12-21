@@ -383,7 +383,7 @@ $gh-address-comments
 - [x] P0-10 (LEAD/WEB/BE/FE: 가이드라인 v1)
 - [x] P0-11 (BE/WEB/FE: 숨김/신고 즉시 숨김)
 - [x] P0-12 (WEB/BE/FE: 메타/키워드 파이프라인 통합)
-- [ ] P0-13 (FE/WEB: 라벨 제거 + 강조 UI)
+- [x] P0-13 (FE/WEB: 라벨 제거 + 강조 UI)
 - [x] P0-14 (FE/WEB: 피드백 UX 간소화)
 - [x] P0-15 (FE/WEB: 게시글 상세 액션/추천 정리)
 - [x] P0-16 (FE/LEAD: 카드 헤더 정렬 + 데스크톱 폭 제한)
@@ -1243,7 +1243,7 @@ $gh-address-comments
 
 - 플랜(체크리스트)
   - [x] [FE] 라벨 숨김 + 강조 UI 적용
-  - [ ] [WEB] 템플릿 출력 규칙 정리
+  - [x] [WEB] 템플릿 출력 규칙 정리
 
 - 목표: “조건/유형/배경”은 분류/표시 기준으로만 쓰고, 카드/UI에는 라벨을 노출하지 않는다(예: “유형 학생”이 아니라 “학생”만)
 - 작업(권장)
@@ -1259,8 +1259,9 @@ $gh-address-comments
 
 - 최근 구현(2025-12-21)
   - 프로필 상단 정보에서 라벨 텍스트를 숨기고 값만 pill로 강조(라벨은 `sr-only`로 접근성 유지)
+  - 글쓰기 템플릿(조건/목표/배경) 출력은 라벨 없이 “값만 강조”로 상단 삽입(강조 HTML 생성)
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
-  - 변경: `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`
+  - 변경: `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
 
 #### (2025-12-20) [FE] P0-14 피드백 UX 간소화 + 사이드바 피드백 아이콘화 (P0)
 
