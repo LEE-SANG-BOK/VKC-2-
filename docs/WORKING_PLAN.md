@@ -1010,12 +1010,14 @@ $gh-address-comments
   - 업로드 API(`/api/upload*`) 에러 응답 코드화 + 에디터/프로필/인증 업로드 토스트를 code→`errors`로 매핑(한국어 메시지 누수 제거)
   - 사이드바(CategorySidebar) 메뉴/툴팁/토스트 문구를 messages 기반으로 단일화하고 컴포넌트 내부 하드코딩 fallback 제거
   - 하단 내비게이션(BottomNavigation) 라벨/홈 피드 토글 라벨을 messages 기반으로 단일화하고 컴포넌트 내부 하드코딩 fallback 제거
+  - 팔로우 버튼(FollowButton) 및 호출부(추천 사용자/프로필/상세/팔로잉 모달)에서 locale 분기 하드코딩 제거 → `common` 키 기반으로 통일
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
   - 변경: `src/app/api/posts/[id]/report/route.ts`, `src/app/api/answers/[id]/report/route.ts`, `src/app/api/comments/[id]/report/route.ts`, `messages/ko.json`, `messages/vi.json`
   - 변경: `src/app/api/upload/route.ts`, `src/app/api/upload/avatar/route.ts`, `src/app/api/upload/document/route.ts`, `src/components/molecules/editor/RichTextEditor.tsx`, `src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`, `src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx`, `messages/ko.json`, `messages/vi.json`
   - 변경: `src/components/organisms/CategorySidebar.tsx`, `messages/ko.json`, `messages/vi.json`
   - 변경: `src/components/organisms/BottomNavigation.tsx`
+  - 변경: `src/components/atoms/FollowButton.tsx`, `src/components/organisms/RecommendedUsersSection.tsx`, `src/components/organisms/PostList.tsx`, `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/components/molecules/modals/FollowingModal.tsx`, `messages/ko.json`, `messages/vi.json`
 
 #### (2025-12-20) [FE] P0-3 모바일 키보드/스크롤(WebView 포함) UX 하드닝 (P0)
 
