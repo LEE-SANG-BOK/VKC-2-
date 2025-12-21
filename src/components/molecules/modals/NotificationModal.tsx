@@ -34,14 +34,29 @@ export default function NotificationModal({ isOpen, onClose, translations = {} }
   const router = useRouter();
   const params = useParams();
   const locale = params.lang as string || 'ko';
+  const resolvedLocale = (['ko', 'en', 'vi'] as const).includes(locale as 'ko' | 'en' | 'vi') ? (locale as 'ko' | 'en' | 'vi') : 'ko';
   const modalRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
   const user = session?.user;
 
   const t = translations;
   const modalFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
+    const fallbackByLocale = {
+      ko: {
+        title: '알림',
+        settings: '알림 설정',
+        viewAll: '전체 알림 보기',
+        loginRequired: '로그인이 필요합니다.',
+        login: '로그인',
+        loadError: '알림을 불러오는 데 실패했습니다.',
+        retry: '다시 시도',
+        noNotifications: '알림이 없습니다',
+        justNow: '방금 전',
+        minutesAgo: '분 전',
+        hoursAgo: '시간 전',
+        daysAgo: '일 전',
+      },
+      en: {
         title: 'Notifications',
         settings: 'Notification settings',
         viewAll: 'View All Notifications',
@@ -54,10 +69,8 @@ export default function NotificationModal({ isOpen, onClose, translations = {} }
         minutesAgo: ' minutes ago',
         hoursAgo: ' hours ago',
         daysAgo: ' days ago',
-      };
-    }
-    if (locale === 'vi') {
-      return {
+      },
+      vi: {
         title: 'Thông báo',
         settings: 'Cài đặt thông báo',
         viewAll: 'Xem tất cả thông báo',
@@ -70,23 +83,11 @@ export default function NotificationModal({ isOpen, onClose, translations = {} }
         minutesAgo: ' phút trước',
         hoursAgo: ' giờ trước',
         daysAgo: ' ngày trước',
-      };
-    }
-    return {
-      title: '알림',
-      settings: '알림 설정',
-      viewAll: '전체 알림 보기',
-      loginRequired: '로그인이 필요합니다.',
-      login: '로그인',
-      loadError: '알림을 불러오는 데 실패했습니다.',
-      retry: '다시 시도',
-      noNotifications: '알림이 없습니다',
-      justNow: '방금 전',
-      minutesAgo: '분 전',
-      hoursAgo: '시간 전',
-      daysAgo: '일 전',
-    };
-  }, [locale]);
+      },
+    } as const;
+
+    return fallbackByLocale[resolvedLocale] || fallbackByLocale.ko;
+  }, [resolvedLocale]);
   const modalLabels = {
     title: t.title || modalFallbacks.title,
     settings: t.settings || modalFallbacks.settings,

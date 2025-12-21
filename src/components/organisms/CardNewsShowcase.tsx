@@ -12,26 +12,60 @@ import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 export default function CardNewsShowcase() {
   const params = useParams();
   const locale = (params?.lang as string) || 'vi';
+  const resolvedLocale = (['ko', 'en', 'vi'] as const).includes(locale as 'ko' | 'en' | 'vi') ? (locale as 'ko' | 'en' | 'vi') : 'vi';
 
   const { data: newsItems, isLoading } = useNews(locale);
   const cards = (newsItems || []).filter((item) => item.type === 'cardnews').slice(0, 6);
 
   const [selected, setSelected] = useState<NewsItem | null>(null);
 
-  const sectionTitle = locale === 'vi' ? 'Card news Visa/Việc làm' : locale === 'en' ? 'Visa/Jobs card news' : '비자·취업 카드뉴스 모음';
-  const moreLabel = locale === 'vi' ? 'Xem tất cả' : locale === 'en' ? 'View all' : '모두 보기';
-  const viewSlide = locale === 'vi' ? 'Xem' : locale === 'en' ? 'View' : '보기';
-  const saveLabel = locale === 'vi' ? 'Lưu' : locale === 'en' ? 'Save' : '저장';
-  const shareLabel = locale === 'vi' ? 'Chia sẻ' : locale === 'en' ? 'Share' : '공유';
-  const moreMobile = locale === 'vi' ? 'Xem thêm card news' : locale === 'en' ? 'More card news' : '카드뉴스 더 보기';
-  const closeLabel = locale === 'vi' ? 'Đóng' : locale === 'en' ? 'Close' : '닫기';
-  const openExternalLabel = locale === 'vi' ? 'Mở liên kết' : locale === 'en' ? 'Open link' : '외부 링크 열기';
-  const emptyLabel =
-    locale === 'vi'
-      ? 'Chưa có card news.'
-      : locale === 'en'
-        ? 'No card news yet.'
-        : '아직 카드뉴스가 없습니다.';
+  const labelsByLocale = {
+    ko: {
+      sectionTitle: '비자·취업 카드뉴스 모음',
+      moreLabel: '모두 보기',
+      viewSlide: '보기',
+      saveLabel: '저장',
+      shareLabel: '공유',
+      moreMobile: '카드뉴스 더 보기',
+      closeLabel: '닫기',
+      openExternalLabel: '외부 링크 열기',
+      emptyLabel: '아직 카드뉴스가 없습니다.',
+    },
+    en: {
+      sectionTitle: 'Visa/Jobs card news',
+      moreLabel: 'View all',
+      viewSlide: 'View',
+      saveLabel: 'Save',
+      shareLabel: 'Share',
+      moreMobile: 'More card news',
+      closeLabel: 'Close',
+      openExternalLabel: 'Open link',
+      emptyLabel: 'No card news yet.',
+    },
+    vi: {
+      sectionTitle: 'Card news Visa/Việc làm',
+      moreLabel: 'Xem tất cả',
+      viewSlide: 'Xem',
+      saveLabel: 'Lưu',
+      shareLabel: 'Chia sẻ',
+      moreMobile: 'Xem thêm card news',
+      closeLabel: 'Đóng',
+      openExternalLabel: 'Mở liên kết',
+      emptyLabel: 'Chưa có card news.',
+    },
+  } as const;
+  const resolvedLabels = labelsByLocale[resolvedLocale] || labelsByLocale.vi;
+  const {
+    sectionTitle,
+    moreLabel,
+    viewSlide,
+    saveLabel,
+    shareLabel,
+    moreMobile,
+    closeLabel,
+    openExternalLabel,
+    emptyLabel,
+  } = resolvedLabels;
 
   const handleViewAll = () => {
     const target = `/${locale}/media`;

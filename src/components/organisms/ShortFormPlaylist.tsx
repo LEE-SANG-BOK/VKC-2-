@@ -10,13 +10,23 @@ import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 export default function ShortFormPlaylist() {
   const params = useParams();
   const locale = (params?.lang as string) || 'vi';
+  const resolvedLocale = (['ko', 'en', 'vi'] as const).includes(locale as 'ko' | 'en' | 'vi') ? (locale as 'ko' | 'en' | 'vi') : 'vi';
 
   const { data: newsItems, isLoading } = useNews(locale);
   const clips = (newsItems || []).filter((item) => item.type === 'shorts').slice(0, 8);
 
   const labels = useMemo(() => {
-    if (locale === 'en') {
-      return {
+    const labelsByLocale = {
+      ko: {
+        title: '숏폼 플레이리스트',
+        autoplay: '자동 재생',
+        more: '더 보기',
+        watch: '보기',
+        save: '저장',
+        share: '공유',
+        empty: '아직 숏폼이 없습니다.',
+      },
+      en: {
         title: 'Shorts playlist',
         autoplay: 'Autoplay',
         more: 'More',
@@ -24,10 +34,8 @@ export default function ShortFormPlaylist() {
         save: 'Save',
         share: 'Share',
         empty: 'No shorts yet.',
-      };
-    }
-    if (locale === 'vi') {
-      return {
+      },
+      vi: {
         title: 'Danh sách Shorts',
         autoplay: 'Tự phát',
         more: 'Xem thêm',
@@ -35,18 +43,10 @@ export default function ShortFormPlaylist() {
         save: 'Lưu',
         share: 'Chia sẻ',
         empty: 'Chưa có shorts.',
-      };
-    }
-    return {
-      title: '숏폼 플레이리스트',
-      autoplay: '자동 재생',
-      more: '더 보기',
-      watch: '보기',
-      save: '저장',
-      share: '공유',
-      empty: '아직 숏폼이 없습니다.',
-    };
-  }, [locale]);
+      },
+    } as const;
+    return labelsByLocale[resolvedLocale] || labelsByLocale.vi;
+  }, [resolvedLocale]);
   const { title, autoplay, more, watch, save, share, empty: emptyLabel } = labels;
 
   const handleViewAll = () => {

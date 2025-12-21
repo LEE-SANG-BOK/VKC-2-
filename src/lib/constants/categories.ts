@@ -374,9 +374,13 @@ export const CATEGORY_GROUPS = {
 
 // Helper function to get translated category name
 export function getCategoryName(category: LegacyCategory, locale: string = 'ko'): string {
-    if (locale === 'vi' && category.name_vi) return category.name_vi;
-    if (locale === 'en' && category.name_en) return category.name_en;
-    return category.name;
+    const nameKeyByLocale = {
+        en: 'name_en',
+        vi: 'name_vi',
+    } as const;
+    const nameKey = nameKeyByLocale[locale as keyof typeof nameKeyByLocale];
+    const localizedName = nameKey ? category[nameKey] : undefined;
+    return localizedName || category.name;
 }
 
 export const ALLOWED_CATEGORY_SLUGS = new Set<string>([

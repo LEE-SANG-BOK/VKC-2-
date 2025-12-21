@@ -236,7 +236,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const tPostDetail = (translations?.postDetail || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
   const tErrors = (translations?.errors || {}) as Record<string, string>;
-  const resolvedLocale = (locale === 'en' || locale === 'vi' ? locale : 'ko') as 'ko' | 'en' | 'vi';
+  const resolvedLocale = (['ko', 'en', 'vi'] as const).includes(locale as 'ko' | 'en' | 'vi') ? (locale as 'ko' | 'en' | 'vi') : 'ko';
   const likeTooltipLabel = tTooltips.like || '';
   const copyLinkLabel = tTooltips.copyLink || '';
   const shareLabel = tCommon.share || '';
