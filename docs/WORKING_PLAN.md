@@ -1016,6 +1016,8 @@ $gh-address-comments
   - 검색/구독/게시글 상세(SSR)에서 `question/share/uncategorized/anonymous` locale 분기 fallback 제거 → translations 키 단일화
   - 헤더/로고(Header/Logo)에서 locale 분기 하드코딩 fallback 제거 + 뒤로가기 라벨을 truncate 처리해 모바일/좁은 폭 줄바꿈 방지
   - 프로필 수정(ProfileEdit)에서 locale 분기 하드코딩 fallback 제거 + `profileEdit` 누락 키 보강(`statusResident`/업로드 토스트 등) + 뒤로가기 버튼 줄바꿈 방지
+  - 글쓰기 유사질문 프롬프트(SimilarQuestionPrompt)에서 locale 분기 fallback 제거 + `similarNoResults` 키 추가
+  - 로그인 유도 모달(LoginPrompt) 전용 `loginPrompt` 섹션 도입으로 locale 분기 fallback 제거
   - 홈 피드(PostList)·추천 사용자(RecommendedUsersSection) 라벨을 dictionary 섹션(profile/post/common) 기준으로 재정렬하고 locale 분기 fallback 제거(추천 CTA 키 추가 포함)
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
