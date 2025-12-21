@@ -118,9 +118,9 @@ export default function RecommendedUsersSection({
     };
   }, [trustBadgeTranslations, verifiedLabel]);
 
-  const ariaPrev = previousLabel || (locale === 'vi' ? 'Trước' : locale === 'en' ? 'Previous' : '이전');
-  const ariaNext = nextLabel || (locale === 'vi' ? 'Tiếp' : locale === 'en' ? 'Next' : '다음');
-  const fallbackName = anonymousLabel || (locale === 'vi' ? 'Người dùng ẩn danh' : locale === 'en' ? 'Anonymous user' : '익명 사용자');
+  const ariaPrev = previousLabel || '';
+  const ariaNext = nextLabel || '';
+  const fallbackName = anonymousLabel || '';
 
   useEffect(() => {
     if (!hasInteracted || !onLoadMore || !hasNextPage || isFetchingNextPage) return;

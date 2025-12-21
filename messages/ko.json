@@ -254,6 +254,7 @@
     "allPostsLoaded": "모든 게시글을 불러왔습니다",
     "noFollowingPosts": "팔로우한 사용자의 게시글이 없습니다",
     "recommendedUsersTitle": "추천 사용자",
+    "recommendedUsersCta": "추천 사용자 보기",
     "question": "질문",
     "solved": "해결",
     "unsolved": "미해결",

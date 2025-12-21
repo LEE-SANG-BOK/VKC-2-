@@ -282,10 +282,10 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const currentPage = pagination?.page ?? 1;
   const totalPages = pagination?.totalPages ?? 1;
 
-  const previousLabel = t.previous || (locale === 'vi' ? 'Trước' : locale === 'en' ? 'Previous' : '이전');
-  const nextLabel = t.next || (locale === 'vi' ? 'Tiếp' : locale === 'en' ? 'Next' : '다음');
-  const pageInfoLabel = t.pageInfo || (locale === 'vi' ? '{current} / {total} trang' : locale === 'en' ? 'Page {current} / {total}' : '{current} / {total} 페이지');
-  const paginationAriaLabel = t.paginationAriaLabel || (locale === 'vi' ? 'Phân trang' : locale === 'en' ? 'Pagination' : '페이지네이션');
+  const previousLabel = t.previous || tCommon.previous || '';
+  const nextLabel = t.next || tCommon.next || '';
+  const pageInfoLabel = t.pageInfo || '';
+  const paginationAriaLabel = t.paginationAriaLabel || '';
 
   const buildPageUrl = (page: number) => {
     const nextParams = new URLSearchParams(searchParams?.toString());
@@ -298,14 +298,14 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     return qs ? `/${locale}?${qs}` : `/${locale}`;
   };
 
-  const followerLabel = tCommon.followers || (locale === 'vi' ? 'Người theo dõi' : locale === 'en' ? 'Followers' : '팔로워');
-  const postsLabel = tCommon.posts || (locale === 'vi' ? 'Bài viết' : locale === 'en' ? 'Posts' : '게시글');
-  const followingLabel = tCommon.following || (locale === 'vi' ? 'Đang theo dõi' : locale === 'en' ? 'Following' : '팔로잉');
-  const verifiedLabel = tCommon.verifiedUser || (locale === 'vi' ? 'Đã xác minh' : locale === 'en' ? 'Verified' : '인증됨');
-  const anonymousLabel = tCommon.anonymous || (locale === 'vi' ? 'Người dùng ẩn danh' : locale === 'en' ? 'Anonymous user' : '익명 사용자');
+  const followerLabel = tProfile.followers || '';
+  const postsLabel = tProfile.posts || '';
+  const followingLabel = tProfile.following || '';
+  const verifiedLabel = tCommon.verifiedUser || '';
+  const anonymousLabel = tCommon.anonymous || '';
   const badgeLabels = {
-    expert: tTrust.expertLabel || (locale === 'vi' ? 'Chuyên gia' : locale === 'en' ? 'Expert' : '전문가'),
-    community: tTrust.communityLabel || (locale === 'vi' ? 'Cộng đồng' : locale === 'en' ? 'Community' : '커뮤니티'),
+    expert: tTrust.expertLabel || '',
+    community: tTrust.communityLabel || '',
     verified: tTrust.verifiedUserLabel || verifiedLabel,
   };
   const metaLabels = {
@@ -314,18 +314,14 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     following: followingLabel,
     badge: verifiedLabel,
   };
-  const recommendedUsersLabel = t.recommendedUsersTitle || t.recommendedUsers || (locale === 'vi' ? 'Người dùng đề xuất' : locale === 'en' ? 'Recommended users' : '추천 사용자');
-  const recommendedCtaLabel = t.recommendedUsersCta || (locale === 'vi' ? 'Xem người dùng đề xuất' : locale === 'en' ? 'View recommended users' : '추천 사용자 보기');
-  const allSubscriptionsLabel = t.allSubscriptions || (locale === 'vi' ? 'Tất cả' : locale === 'en' ? 'All' : '전체');
-  const noFollowingPostsLabel = t.noFollowingPosts || (locale === 'vi' ? 'Chưa có bài từ người bạn theo dõi.' : locale === 'en' ? 'No posts from people you follow yet.' : '팔로우한 사용자의 게시글이 없습니다');
-  const noPostsLabel = t.noPosts || (locale === 'vi' ? 'Chưa có bài viết.' : locale === 'en' ? 'No posts yet.' : '게시글이 없습니다');
-  const noSearchResultsLabel = t.noSearchResults || (locale === 'vi'
-    ? `Không có kết quả cho "${searchQuery}".`
-    : locale === 'en'
-      ? `No results for "${searchQuery}".`
-      : `"${searchQuery}"에 대한 검색 결과가 없습니다`);
-  const loadingLabel = t.loading || (locale === 'vi' ? 'Đang tải...' : locale === 'en' ? 'Loading...' : '로딩 중...');
-  const allLoadedLabel = t.allPostsLoaded || (locale === 'vi' ? 'Đã tải tất cả bài viết' : locale === 'en' ? 'All posts loaded' : '모든 게시글을 불러왔습니다');
+  const recommendedUsersLabel = t.recommendedUsersTitle || t.recommendedUsers || '';
+  const recommendedCtaLabel = t.recommendedUsersCta || '';
+  const allSubscriptionsLabel = t.allSubscriptions || t.allSubcategories || '';
+  const noFollowingPostsLabel = t.noFollowingPosts || '';
+  const noPostsLabel = t.noPosts || '';
+  const noSearchResultsLabel = (t.noSearchResults || '').replace('{query}', searchQuery);
+  const loadingLabel = t.loading || '';
+  const allLoadedLabel = t.allPostsLoaded || '';
 
   useEffect(() => {
     if (selectedCategory !== 'subscribed') return;
