@@ -904,10 +904,11 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                   </div>
                   <div className="grid gap-2">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                      <label htmlFor="templateCondition" className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
                         {templateConditionLabel}
                       </label>
                       <textarea
+                        id="templateCondition"
                         value={templateCondition}
                         onChange={(e) => setTemplateCondition(e.target.value)}
                         rows={2}
@@ -923,10 +924,11 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                      <label htmlFor="templateGoal" className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
                         {templateGoalLabel}
                       </label>
                       <textarea
+                        id="templateGoal"
                         value={templateGoal}
                         onChange={(e) => setTemplateGoal(e.target.value)}
                         rows={2}
@@ -942,10 +944,11 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                      <label htmlFor="templateBackground" className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
                         {templateBackgroundLabel}
                       </label>
                       <textarea
+                        id="templateBackground"
                         value={templateBackground}
                         onChange={(e) => setTemplateBackground(e.target.value)}
                         rows={2}
