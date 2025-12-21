@@ -1012,6 +1012,7 @@ $gh-address-comments
   - 하단 내비게이션(BottomNavigation) 라벨/홈 피드 토글 라벨을 messages 기반으로 단일화하고 컴포넌트 내부 하드코딩 fallback 제거
   - 팔로우 버튼(FollowButton) 및 호출부(추천 사용자/프로필/상세/팔로잉 모달)에서 locale 분기 하드코딩 제거 → `common` 키 기반으로 통일
   - 공용 `common`에 `previous/next/learnMore`를 추가하고 주요 화면에서 locale 분기 하드코딩 제거(카드/상세/프로필/인증/글쓰기 가이드)
+  - 인증 신청(VerificationRequest) step 라벨/재신청 버튼/유형 선택 에러 + 글쓰기(NewPost) 썸네일 선택 문구를 messages 키로 추가하고 locale 분기 하드코딩 fallback 제거
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
   - 변경: `src/app/api/posts/[id]/report/route.ts`, `src/app/api/answers/[id]/report/route.ts`, `src/app/api/comments/[id]/report/route.ts`, `messages/ko.json`, `messages/vi.json`
