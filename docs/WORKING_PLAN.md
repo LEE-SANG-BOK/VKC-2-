@@ -1023,6 +1023,7 @@ $gh-address-comments
   - 커뮤니티 랭킹(LeaderboardClient) 카피를 messages로 이동하고 locale 분기 fallback 제거(랭킹 안내/이벤트 영역 포함)
   - 에디터(RichTextEditor) 툴바/업로드/링크 UI 문구를 messages로 이동하고 locale 분기 fallback 제거
   - 홈 피드(PostList)·추천 사용자(RecommendedUsersSection) 라벨을 dictionary 섹션(profile/post/common) 기준으로 재정렬하고 locale 분기 fallback 제거(추천 CTA 키 추가 포함)
+  - 알림 페이지(NotificationsClient)에서 locale 분기 하드코딩 fallback 제거 → `messages.notifications` 기반으로 통일
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
   - 변경: `src/app/api/posts/[id]/report/route.ts`, `src/app/api/answers/[id]/report/route.ts`, `src/app/api/comments/[id]/report/route.ts`, `messages/ko.json`, `messages/vi.json`
@@ -1031,6 +1032,7 @@ $gh-address-comments
   - 변경: `src/components/organisms/BottomNavigation.tsx`
   - 변경: `src/components/atoms/FollowButton.tsx`, `src/components/organisms/RecommendedUsersSection.tsx`, `src/components/organisms/PostList.tsx`, `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/components/molecules/modals/FollowingModal.tsx`, `messages/ko.json`, `messages/vi.json`
   - 변경: `src/components/molecules/cards/PostCard.tsx`, `src/components/molecules/cards/AnswerCard.tsx`, `src/components/molecules/cards/CommentCard.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`, `src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`, `messages/ko.json`, `messages/vi.json`
+  - 변경: `src/app/[lang]/(main)/notifications/NotificationsClient.tsx`
 
 #### (2025-12-20) [FE] P0-3 모바일 키보드/스크롤(WebView 포함) UX 하드닝 (P0)
 
