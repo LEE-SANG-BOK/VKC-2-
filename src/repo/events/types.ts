@@ -1,4 +1,4 @@
-export type EventType = 'view' | 'search' | 'post' | 'like' | 'answer' | 'comment' | 'bookmark' | 'follow' | 'report' | 'share';
+export type EventType = 'view' | 'search' | 'post' | 'like' | 'answer' | 'comment' | 'bookmark' | 'follow' | 'report' | 'share' | 'guideline';
 
 export type EventEntityType = 'post' | 'answer' | 'comment' | 'user' | 'search';
 
