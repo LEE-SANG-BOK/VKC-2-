@@ -2040,6 +2040,7 @@ $gh-address-comments
 
 #### (2025-12-22) [LEAD] P0-9 QA 매트릭스 (1라운드)
 
+- 대상 브랜치: `codex-integration` (QA 통과 후 `main` 머지)
 - 기기/브라우저 매트릭스(필수)
   - iOS Safari: iPhone SE(또는 동급 소형), iPhone 14/15(일반), iPad(태블릿)
   - Android Chrome: 1종(중저가) + 1종(대화면)
