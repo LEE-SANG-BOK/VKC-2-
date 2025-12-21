@@ -3422,7 +3422,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               </button>
             </div>
 
-            <div className="p-4 sm:p-5 space-y-2 max-h-[60vh] overflow-y-auto">
+            <div className="p-4 sm:p-5 space-y-2 max-h-[60dvh] overflow-y-auto">
               {[
                 { type: 'spam' as ReportType, label: reportSpamLabel, featured: true },
                 { type: 'harassment' as ReportType, label: reportHarassmentLabel },
@@ -3461,7 +3461,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
               )}
             </div>
 
-            <div className="p-4 sm:p-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+            <div className="p-4 sm:p-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
               <button
                 onClick={() => {
                   setShowReportDialog(false);
