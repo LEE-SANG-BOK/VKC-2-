@@ -261,6 +261,7 @@
   },
   "news": {
     "title": "Nội dung nổi bật",
+    "empty": "Chưa có nội dung.",
     "openExternal": "Mở liên kết",
     "close": "Đóng"
   },
@@ -292,7 +293,29 @@
   },
   "media": {
     "title": "Media",
-    "description": "Xem bài nổi bật, card news và shorts ở một nơi."
+    "description": "Xem bài nổi bật, card news và shorts ở một nơi.",
+    "cardNewsTab": "Card news",
+    "shortsTab": "Shorts"
+  },
+  "cardNews": {
+    "label": "Card News",
+    "sectionTitle": "Card news Visa/Việc làm",
+    "moreLabel": "Xem tất cả",
+    "viewSlide": "Xem",
+    "saveLabel": "Lưu",
+    "shareLabel": "Chia sẻ",
+    "moreMobile": "Xem thêm card news",
+    "emptyLabel": "Chưa có card news."
+  },
+  "shorts": {
+    "label": "Shorts",
+    "title": "Danh sách Shorts",
+    "autoplay": "Tự phát",
+    "more": "Xem thêm",
+    "watch": "Xem",
+    "save": "Lưu",
+    "share": "Chia sẻ",
+    "empty": "Chưa có shorts."
   },
   "post": {
     "readTime": "{minutes} phút",

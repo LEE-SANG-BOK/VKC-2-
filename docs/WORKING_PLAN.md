@@ -1924,6 +1924,28 @@ $gh-address-comments
   - messages/vi.json
   - messages/en.json
 
+#### (2025-12-21) [WEB] Media 섹션 i18n 단일 소스화 (P0-2)
+
+- 플랜(체크리스트)
+  - [x] `/media` 페이지/모달/섹션의 `lang ===` 하드코딩 제거 → `messages/*.json` 기반
+  - [x] 카드뉴스/숏폼 섹션 라벨을 `translations` 주입 방식으로 통일
+- 변경 내용(why/what)
+  - why: Media 관련 텍스트가 코드/언어 분기 형태로 흩어져 있어 유지보수 비용이 커짐
+  - what: `news.empty`, `media.cardNewsTab/shortsTab`, `cardNews.*`, `shorts.*` 키 추가 후 모든 라벨을 딕셔너리에서만 읽도록 전환
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [ ] SKIP_SITEMAP_DB=true npm run build
+  - [ ] npm run test:e2e
+- 변경 파일
+  - src/app/[lang]/(main)/media/page.tsx
+  - src/app/[lang]/(main)/media/MediaClient.tsx
+  - src/components/organisms/CardNewsShowcase.tsx
+  - src/components/organisms/ShortFormPlaylist.tsx
+  - messages/ko.json
+  - messages/vi.json
+  - messages/en.json
+
 ---
 
 ## Testing and validation (게이트)

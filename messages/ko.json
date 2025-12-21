@@ -261,6 +261,7 @@
   },
   "news": {
     "title": "추천 콘텐츠",
+    "empty": "아직 콘텐츠가 없습니다.",
     "openExternal": "외부 링크 열기",
     "close": "닫기"
   },
@@ -292,7 +293,29 @@
   },
   "media": {
     "title": "미디어",
-    "description": "추천 콘텐츠, 카드뉴스, 숏폼을 한 곳에서 확인하세요."
+    "description": "추천 콘텐츠, 카드뉴스, 숏폼을 한 곳에서 확인하세요.",
+    "cardNewsTab": "카드뉴스",
+    "shortsTab": "숏폼"
+  },
+  "cardNews": {
+    "label": "Card News",
+    "sectionTitle": "비자·취업 카드뉴스 모음",
+    "moreLabel": "모두 보기",
+    "viewSlide": "보기",
+    "saveLabel": "저장",
+    "shareLabel": "공유",
+    "moreMobile": "카드뉴스 더 보기",
+    "emptyLabel": "아직 카드뉴스가 없습니다."
+  },
+  "shorts": {
+    "label": "Shorts",
+    "title": "숏폼 플레이리스트",
+    "autoplay": "자동 재생",
+    "more": "더 보기",
+    "watch": "보기",
+    "save": "저장",
+    "share": "공유",
+    "empty": "아직 숏폼이 없습니다."
   },
   "post": {
     "readTime": "{minutes}분",

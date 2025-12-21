@@ -13,12 +13,11 @@ interface MediaClientProps {
 }
 
 export default function MediaClient({ translations, lang }: MediaClientProps) {
-  const tNews = (translations?.news || {}) as { title?: string };
-  const title =
-    tNews.title || (lang === 'vi' ? 'Nội dung nổi bật' : lang === 'en' ? 'Featured content' : '추천 콘텐츠');
-  const emptyLabel = lang === 'vi' ? 'Chưa có nội dung.' : lang === 'en' ? 'No content yet.' : '아직 콘텐츠가 없습니다.';
-  const closeLabel = lang === 'vi' ? 'Đóng' : lang === 'en' ? 'Close' : '닫기';
-  const openExternalLabel = lang === 'vi' ? 'Mở liên kết' : lang === 'en' ? 'Open link' : '외부 링크 열기';
+  const tNews = (translations?.news || {}) as Record<string, string>;
+  const title = tNews.title || '';
+  const emptyLabel = tNews.empty || '';
+  const closeLabel = tNews.close || '';
+  const openExternalLabel = tNews.openExternal || '';
 
   const [selected, setSelected] = useState<NewsItem | null>(null);
   const { data: newsItems, isLoading } = useNews(lang);
