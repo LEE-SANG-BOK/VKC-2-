@@ -233,6 +233,8 @@ export default function RichTextEditor({
         <Tooltip content={boldLabel} position={tooltipPosition}>
           <button
             type="button"
+            aria-label={boldLabel}
+            aria-pressed={editor.isActive('bold')}
             onClick={() => editor.chain().focus().toggleBold().run()}
             disabled={!editor.can().chain().focus().toggleBold().run()}
             className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
@@ -247,6 +249,8 @@ export default function RichTextEditor({
           <Tooltip content={italicLabel} position={tooltipPosition}>
             <button
               type="button"
+              aria-label={italicLabel}
+              aria-pressed={editor.isActive('italic')}
               onClick={() => editor.chain().focus().toggleItalic().run()}
               disabled={!editor.can().chain().focus().toggleItalic().run()}
               className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
@@ -263,6 +267,8 @@ export default function RichTextEditor({
             <Tooltip content={heading1Label} position={tooltipPosition}>
               <button
                 type="button"
+                aria-label={heading1Label}
+                aria-pressed={editor.isActive('heading', { level: 1 })}
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                 className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                   editor.isActive('heading', { level: 1 }) ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -275,6 +281,8 @@ export default function RichTextEditor({
             <Tooltip content={heading2Label} position={tooltipPosition}>
               <button
                 type="button"
+                aria-label={heading2Label}
+                aria-pressed={editor.isActive('heading', { level: 2 })}
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                 className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                   editor.isActive('heading', { level: 2 }) ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -289,6 +297,8 @@ export default function RichTextEditor({
         <Tooltip content={bulletListLabel} position={tooltipPosition}>
           <button
             type="button"
+            aria-label={bulletListLabel}
+            aria-pressed={editor.isActive('bulletList')}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
               editor.isActive('bulletList') ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -302,6 +312,8 @@ export default function RichTextEditor({
           <Tooltip content={orderedListLabel} position={tooltipPosition}>
             <button
               type="button"
+              aria-label={orderedListLabel}
+              aria-pressed={editor.isActive('orderedList')}
               onClick={() => editor.chain().focus().toggleOrderedList().run()}
               className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                 editor.isActive('orderedList') ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -316,6 +328,8 @@ export default function RichTextEditor({
           <Tooltip content={codeBlockLabel} position={tooltipPosition}>
             <button
               type="button"
+              aria-label={codeBlockLabel}
+              aria-pressed={editor.isActive('codeBlock')}
               onClick={() => editor.chain().focus().toggleCodeBlock().run()}
               className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                 editor.isActive('codeBlock') ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -330,6 +344,8 @@ export default function RichTextEditor({
           <Tooltip content={quoteLabel} position={tooltipPosition}>
             <button
               type="button"
+              aria-label={quoteLabel}
+              aria-pressed={editor.isActive('blockquote')}
               onClick={() => editor.chain().focus().toggleBlockquote().run()}
               className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                 editor.isActive('blockquote') ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -345,6 +361,7 @@ export default function RichTextEditor({
         <Tooltip content={isUploading ? uploadingLabel : addImageLabel} position={tooltipPosition}>
           <button
             type="button"
+            aria-label={isUploading ? uploadingLabel : addImageLabel}
             onClick={handleImageUpload}
             disabled={isUploading}
             className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
@@ -361,6 +378,8 @@ export default function RichTextEditor({
           <Tooltip content={addLinkLabel} position={tooltipPosition}>
             <button
               type="button"
+              aria-label={addLinkLabel}
+              aria-pressed={editor.isActive('link')}
               onClick={handleLinkButtonClick}
               className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
                 editor.isActive('link') ? 'bg-gray-300 dark:bg-gray-600' : ''
@@ -378,6 +397,7 @@ export default function RichTextEditor({
             <Tooltip content={undoLabel} position={tooltipPosition}>
               <button
                 type="button"
+                aria-label={undoLabel}
                 onClick={() => editor.chain().focus().undo().run()}
                 disabled={!editor.can().chain().focus().undo().run()}
                 className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -389,6 +409,7 @@ export default function RichTextEditor({
             <Tooltip content={redoLabel} position={tooltipPosition}>
               <button
                 type="button"
+                aria-label={redoLabel}
                 onClick={() => editor.chain().focus().redo().run()}
                 disabled={!editor.can().chain().focus().redo().run()}
                 className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -407,6 +428,7 @@ export default function RichTextEditor({
       <input
         ref={fileInputRef}
         type="file"
+        aria-label={addImageLabel}
         accept="image/*"
         onChange={handleFileChange}
         className="hidden"
@@ -421,6 +443,7 @@ export default function RichTextEditor({
             </h3>
             <input
               type="url"
+              aria-label={editorCopy.linkTitle}
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder={editorCopy.linkPlaceholder}
