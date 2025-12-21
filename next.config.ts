@@ -69,6 +69,11 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https' as const,
+        hostname: 'ui-avatars.com',
+        pathname: '/api/**',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
   },

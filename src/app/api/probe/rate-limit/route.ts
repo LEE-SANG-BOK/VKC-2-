@@ -15,7 +15,7 @@ const getClientKey = (request: NextRequest, key?: string | null) => {
 };
 
 export async function GET(request: NextRequest) {
-  if (process.env.ENABLE_PROBE_ENDPOINTS !== 'true') {
+  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_PROBE_ENDPOINTS !== 'true') {
     return notFoundResponse();
   }
 
@@ -44,4 +44,3 @@ export async function GET(request: NextRequest) {
   buckets.set(bucketKey, { windowStart, count: count + 1 });
   return successResponse({ ok: true, remaining: Math.max(0, maxRequests - (count + 1)) });
 }
-
