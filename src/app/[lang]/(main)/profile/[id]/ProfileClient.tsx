@@ -387,7 +387,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen min-h-[100dvh] bg-gray-50 dark:bg-gray-900">
       <Header
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}

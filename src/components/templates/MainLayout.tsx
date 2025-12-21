@@ -37,7 +37,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
   }), []);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 relative transition-colors duration-300">
+    <div className="min-h-screen min-h-[100dvh] bg-gray-100 dark:bg-gray-950 relative transition-colors duration-300">
       {/* Account Status Banner */}
       <AccountStatusBanner />
 
@@ -55,7 +55,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
         <div className={`relative z-10 mx-auto max-w-[1680px] grid grid-cols-1 items-start ${gridColumns} gap-4 lg:gap-6`}>
           {hasLeftRail ? (
             <>
-              <aside className="hidden lg:block lg:justify-self-start sticky top-[var(--vk-header-height)] h-[calc(100vh-var(--vk-header-height))]">
+              <aside className="hidden lg:block lg:justify-self-start sticky top-[var(--vk-header-height)] h-[calc(100vh-var(--vk-header-height))] h-[calc(100dvh-var(--vk-header-height))]">
                 <CategorySidebar
                   variant="desktop"
                   setIsMobileMenuOpen={setIsMobileMenuOpen}
