@@ -1004,6 +1004,11 @@ $gh-address-comments
   - 신규 작업부터 `en` 키 추가/검수는 하지 않되, `en` 렌더 fallback 병합으로 깨짐 방지
 - 완료 기준: 핵심 플로우(홈/검색/상세/글쓰기/프로필/구독/알림/인증/피드백)에서 `ko/vi` 기준 “텍스트 잘림 0(의도된 truncate 제외)”
 
+- 최근 구현(2025-12-21)
+  - 글쓰기(`/posts/new`) 유효성 토스트의 한국어 하드코딩 fallback 제거 → 다국어 템플릿(`{min}/{max}`) 기반으로 통일
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`
+  - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
+
 #### (2025-12-20) [FE] P0-3 모바일 키보드/스크롤(WebView 포함) UX 하드닝 (P0)
 
 - 플랜(체크리스트)
