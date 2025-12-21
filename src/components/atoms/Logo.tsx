@@ -5,10 +5,15 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { dispatchHomeReset } from '@/utils/homeReset';
 
-export default function Logo() {
+interface LogoProps {
+  translations?: Record<string, unknown>;
+}
+
+export default function Logo({ translations }: LogoProps) {
   const params = useParams();
   const locale = params?.lang as string || 'ko';
-  const homeLabel = locale === 'vi' ? 'Trang chủ' : locale === 'en' ? 'Home' : '홈';
+  const labels = (translations?.bottomNav || {}) as Record<string, string>;
+  const homeLabel = labels.home || '';
 
   return (
     <Link
