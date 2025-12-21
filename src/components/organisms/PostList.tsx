@@ -8,7 +8,7 @@ import dayjs from 'dayjs';
 import { Sparkles } from 'lucide-react';
 import PostCard from '@/components/molecules/cards/PostCard';
 import { useInfinitePosts, useMyPostInteractions } from '@/repo/posts/query';
-import { useInfiniteRecommendedUsers, useUserScore } from '@/repo/users/query';
+import { useInfiniteRecommendedUsers } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
 import RecommendedUsersSection from '@/components/organisms/RecommendedUsersSection';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
@@ -220,24 +220,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     return deduped;
   }, [recommendedUsers]);
 
-  const scoreLabels = {
-    points: tProfile.points || '',
-    title: tProfile.title || '',
-    rank: tProfile.rank || '',
-    leaderboard: tProfile.leaderboard || '',
-  };
-
-  const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
-  const scoreUserId = session?.user?.id ? String(session.user.id) : '';
-  const { data: scoreData } = useUserScore(scoreUserId, { enabled: !!scoreUserId });
-  const scoreSummary = scoreData?.data;
-  const rankValue = scoreSummary?.rank ?? null;
-  const progressPercent = scoreSummary ? Math.round(scoreSummary.levelProgress * 100) : 0;
-  const levelFormat = tProfile.levelFormat || '';
-  const titleValue = scoreSummary
-    ? levelFormat.replace('{level}', String(scoreSummary.level))
-    : '';
-
   const shouldFetchInteractions = Boolean(session?.user) && !filterForQueryResolved && allPosts.length > 0;
   const interactionPostIds = useMemo(() => allPosts.map((post) => post.id), [allPosts]);
   const { data: interactionsData } = useMyPostInteractions(interactionPostIds, {
@@ -332,7 +314,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     <div className="pt-0 pb-4">
       {selectedCategory === 'subscribed' && topicSubscriptions.length > 0 ? (
         <div className="mb-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5 pr-3 scroll-px-3">
             <button
               type="button"
               onClick={() => handleSubscribedCategoryChange('all')}
@@ -397,42 +379,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
           <Sparkles className="h-4 w-4" />
           {recommendedCtaLabel}
         </button>
-      ) : null}
-
-      {scoreSummary ? (
-        <div className="mb-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-col min-w-[90px]">
-              <span className="text-xs text-gray-500 dark:text-gray-400">{scoreLabels.points}</span>
-              <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {numberFormatter.format(scoreSummary.score)}
-              </span>
-            </div>
-            <div className="flex flex-col min-w-[90px]">
-              <span className="text-xs text-gray-500 dark:text-gray-400">{scoreLabels.title}</span>
-              <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{titleValue}</span>
-            </div>
-            <div className="flex flex-col min-w-[90px]">
-              <span className="text-xs text-gray-500 dark:text-gray-400">{scoreLabels.rank}</span>
-              <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {rankValue ? `#${numberFormatter.format(rankValue)}` : '-'}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => router.push(`/${locale}/leaderboard`)}
-              className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              {scoreLabels.leaderboard}
-            </button>
-          </div>
-          <div className="mt-3 h-2 rounded-full bg-gray-200 dark:bg-gray-800">
-            <div
-              className="h-2 rounded-full bg-blue-600 dark:bg-blue-400"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
       ) : null}
 
       {/* 로딩 상태 */}
