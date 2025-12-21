@@ -8,10 +8,12 @@ import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { ShieldAlert, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import { useCreatePost } from '@/repo/posts/mutation';
+import { logEvent } from '@/repo/events/mutation';
 import { ApiError, isAccountRestrictedError } from '@/lib/api/errors';
 import SimilarQuestionPrompt from '@/components/organisms/SimilarQuestionPrompt';
 import Modal from '@/components/atoms/Modal';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
+import GuidelinesModal from '@/components/molecules/modals/GuidelinesModal';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
 import { buildKeywords, flattenKeywords } from '@/lib/seo/keywords';
@@ -99,6 +101,32 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const [manualTagEdit, setManualTagEdit] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const openLoginPrompt = () => setIsLoginPromptOpen(true);
+  const [isGuidelinesOpen, setIsGuidelinesOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id || isLoginPromptOpen) return;
+    const storageKey = `vk-guidelines-seen-v1:${user.id}`;
+    const seen = window.localStorage.getItem(storageKey);
+    if (seen) return;
+    setIsGuidelinesOpen(true);
+  }, [user?.id, isLoginPromptOpen]);
+
+  const closeGuidelines = useCallback(() => {
+    if (user?.id) {
+      const storageKey = `vk-guidelines-seen-v1:${user.id}`;
+      window.localStorage.setItem(storageKey, new Date().toISOString());
+      logEvent({
+        eventType: 'guideline',
+        entityType: 'user',
+        entityId: user.id,
+        locale: lang,
+        metadata: {
+          surface: 'posts/new',
+        },
+      });
+    }
+    setIsGuidelinesOpen(false);
+  }, [user?.id, lang]);
 
   const scrollComposerIntoView = useCallback((element: HTMLElement) => {
     element.style.scrollMarginBottom = 'calc(var(--vk-bottom-safe-offset, 72px) + env(safe-area-inset-bottom, 0px) + 24px)';
@@ -1083,6 +1111,13 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
           </div>
         </div>
       </div>
+      <GuidelinesModal
+        isOpen={isGuidelinesOpen}
+        onClose={closeGuidelines}
+        title={rulesTitleLabel}
+        items={[rulesRespectLabel, rulesAdsLabel, rulesDupLabel]}
+        confirmLabel={lang === 'vi' ? 'Đã hiểu' : lang === 'en' ? 'Got it' : '확인'}
+      />
       <Modal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)}>
         <LoginPrompt onClose={() => setIsLoginPromptOpen(false)} variant="modal" translations={translations} />
       </Modal>
