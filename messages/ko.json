@@ -727,6 +727,13 @@
     "googleLogin": "Google로 로그인",
     "demoMode": "데모 모드: 버튼을 클릭하면 자동으로 로그인됩니다"
   },
+  "loginPrompt": {
+    "title": "로그인이 필요합니다",
+    "desc": "로그인 후 사용가능한 서비스입니다.",
+    "login": "로그인",
+    "signup": "시작하기",
+    "cancel": "취소"
+  },
   "profileEdit": {
     "pageTitle": "프로필 수정",
     "backButton": "뒤로 가기",

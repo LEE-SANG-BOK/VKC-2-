@@ -727,6 +727,13 @@
     "googleLogin": "Đăng nhập với Google",
     "demoMode": "Chế độ demo: Nhấp vào nút để đăng nhập tự động"
   },
+  "loginPrompt": {
+    "title": "Cần đăng nhập",
+    "desc": "Vui lòng đăng nhập để dùng tính năng này.",
+    "login": "Đăng nhập",
+    "signup": "Bắt đầu",
+    "cancel": "Hủy"
+  },
   "profileEdit": {
     "pageTitle": "Chỉnh sửa hồ sơ",
     "backButton": "Quay lại",
