@@ -798,6 +798,8 @@
     "COMMENT_PARENT_NOT_FOUND": "Không tìm thấy bình luận gốc.",
     "COMMENT_PARENT_MISMATCH": "Yêu cầu không hợp lệ.",
     "CONTENT_PROHIBITED": "Phát hiện từ ngữ cấm, quảng cáo hoặc thông tin liên hệ. Vui lòng chỉnh sửa.",
+    "UPLOAD_FILE_REQUIRED": "Vui lòng đính kèm tệp.",
+    "UPLOAD_FAILED": "Tải tệp thất bại.",
     "RATE_LIMITED": "Bạn gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
     "POST_RATE_LIMITED": "Bạn đăng bài quá nhiều lần. Vui lòng thử lại sau.",
     "ANSWER_RATE_LIMITED": "Bạn gửi câu trả lời quá nhiều lần. Vui lòng thử lại sau.",

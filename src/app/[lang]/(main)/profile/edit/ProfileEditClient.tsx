@@ -135,6 +135,7 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
 
   const t = (translations?.profileEdit || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
+  const tErrors = (translations?.errors || {}) as Record<string, string>;
   const copy = useMemo(() => {
     const isVi = lang === 'vi';
     const isEn = lang === 'en';
@@ -516,7 +517,8 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
       const result = await res.json();
 
       if (!res.ok || !result?.success || !result?.data?.url) {
-        throw new Error(result?.error || copy.avatarUploadFailed);
+        const message = (result?.code && tErrors[result.code]) || result?.error || copy.avatarUploadFailed;
+        throw new Error(message);
       }
 
       const uploadedUrl = String(result.data.url);

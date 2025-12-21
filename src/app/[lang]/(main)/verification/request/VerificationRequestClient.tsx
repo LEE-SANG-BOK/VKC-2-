@@ -436,12 +436,15 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
           method: 'POST',
           body: uploadFormData,
         });
-
-        if (!uploadRes.ok) {
-          throw new Error(uploadError);
+        const uploadData = await uploadRes.json().catch(() => null);
+        if (!uploadRes.ok || !uploadData?.success) {
+          const message =
+            (uploadData?.code && tErrors[uploadData.code]) ||
+            uploadData?.error ||
+            uploadError;
+          throw new Error(message);
         }
 
-        const uploadData = await uploadRes.json();
         const documentPath = uploadData.data?.path;
 
         if (!documentPath) {

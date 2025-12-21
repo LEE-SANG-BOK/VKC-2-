@@ -22,14 +22,14 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
 
     if (!file) {
-      return errorResponse('파일이 없습니다.');
+      return errorResponse('파일이 없습니다.', 'UPLOAD_FILE_REQUIRED');
     }
 
     // Supabase Storage에 업로드
     const result = await uploadAvatar(file, user.id);
 
     if (!result.success) {
-      return errorResponse(result.error || '아바타 업로드에 실패했습니다.');
+      return errorResponse(result.error || '아바타 업로드에 실패했습니다.', 'UPLOAD_FAILED');
     }
 
     // 사용자 프로필 업데이트

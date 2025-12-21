@@ -49,6 +49,7 @@ export default function RichTextEditor({
   const t = translations?.tooltips || {};
   const tEditor = translations?.editor || {};
   const tCommon = translations?.common || {};
+  const tErrors = (translations?.errors || {}) as Record<string, string>;
   const editorCopy = useMemo(() => {
     const isVi = locale === 'vi';
     const isEn = locale === 'en';
@@ -177,7 +178,8 @@ export default function RichTextEditor({
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        toast.error(result.error || editorCopy.imageUploadFailed);
+        const codeMessage = result?.code && tErrors[result.code];
+        toast.error(codeMessage || result.error || editorCopy.imageUploadFailed);
         return;
       }
 
