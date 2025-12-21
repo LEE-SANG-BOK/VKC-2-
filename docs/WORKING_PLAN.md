@@ -1062,7 +1062,9 @@ $gh-address-comments
 - 최근 구현(2025-12-21)
   - 검색 페이지(H1/폼 레이블) 보강: `src/app/[lang]/(main)/search/SearchClient.tsx`
   - 헤더/검색/카드/사이드바 등 아이콘 버튼 `aria-label` 및 모바일 터치 타깃(≥44px) 정리
-  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`, `node scripts/accessibility-audit.js`(Home/Search/Leaderboard 0 violations)
+  - 글쓰기 페이지 A11y 보강: RichTextEditor 툴바/입력 aria-label 추가 + 템플릿 입력(조건/목표/배경) label 연결
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`, `node scripts/accessibility-audit.js`(Home/Search/NewPost/Leaderboard 0 violations)
+  - 변경: `src/components/molecules/editor/RichTextEditor.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
 
 #### (2025-12-20) [BE] P0-6 Rate limit 필수 적용(쓰기 API 우선) (P0)
 
@@ -1241,8 +1243,10 @@ $gh-address-comments
 
 - 최근 구현(2025-12-21)
   - 글쓰기 자동 태그(`posts/new`)를 `buildKeywords/flattenKeywords` 기반으로 통일
+  - 키워드 추천 API(`/api/search/keywords`) date filter param 직렬화 오류 수정
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
+  - 변경: `src/app/api/search/keywords/route.ts`
 
 #### (2025-12-20) [FE] P0-13 카드/템플릿 “강조 표시” 정리(라벨 제거) (P0)
 
