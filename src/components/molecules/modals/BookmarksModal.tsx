@@ -12,7 +12,7 @@ import useProgressiveList from '@/lib/hooks/useProgressiveList';
 interface BookmarksModalProps {
   isOpen: boolean;
   onClose: () => void;
-  translations?: Record<string, string>;
+  translations?: Record<string, unknown>;
 }
 
 type FilterType = 'all' | 'question' | 'answer' | 'post';
@@ -23,56 +23,18 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
   const params = useParams();
   const locale = params.lang as string || 'ko';
 
-  const t = translations;
-  const modalFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        bookmarks: 'Bookmarks',
-        bookmarksDesc: 'Manage your saved questions and posts in one place.',
-        all: 'All',
-        question: 'Questions',
-        answer: 'Answers',
-        post: 'Posts',
-        noBookmarksTitle: 'No bookmarks for this type',
-        noBookmarksDesc: 'Save questions or posts to revisit them anytime.',
-        loading: 'Loading...',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        bookmarks: 'Đánh dấu',
-        bookmarksDesc: 'Quản lý câu hỏi và bài viết đã lưu tại đây.',
-        all: 'Tất cả',
-        question: 'Câu hỏi',
-        answer: 'Câu trả lời',
-        post: 'Bài viết',
-        noBookmarksTitle: 'Không có đánh dấu cho loại đã chọn',
-        noBookmarksDesc: 'Lưu câu hỏi hoặc bài viết để xem lại bất cứ lúc nào.',
-        loading: 'Đang tải...',
-      };
-    }
-    return {
-      bookmarks: '북마크',
-      bookmarksDesc: '저장한 질문과 게시글을 한 번에 관리하세요.',
-      all: '전체',
-      question: '질문',
-      answer: '답변',
-      post: '게시글',
-      noBookmarksTitle: '선택한 유형의 북마크가 없습니다',
-      noBookmarksDesc: '관심 있는 질문이나 게시글을 저장해 두면 언제든지 다시 확인할 수 있어요.',
-      loading: '로딩 중...',
-    };
-  }, [locale]);
+  const tUserMenu = (translations?.userMenu || {}) as Record<string, string>;
+  const tProfile = (translations?.profile || {}) as Record<string, string>;
   const modalLabels = {
-    bookmarks: t.bookmarks || modalFallbacks.bookmarks,
-    bookmarksDesc: t.bookmarksDesc || modalFallbacks.bookmarksDesc,
-    all: t.all || modalFallbacks.all,
-    question: t.question || modalFallbacks.question,
-    answer: t.answer || modalFallbacks.answer,
-    post: t.post || modalFallbacks.post,
-    noBookmarksTitle: t.noBookmarksTitle || modalFallbacks.noBookmarksTitle,
-    noBookmarksDesc: t.noBookmarksDesc || modalFallbacks.noBookmarksDesc,
-    loading: t.loading || modalFallbacks.loading,
+    bookmarks: tUserMenu.bookmarks || '',
+    bookmarksDesc: tUserMenu.bookmarksDesc || '',
+    all: tUserMenu.all || '',
+    question: tUserMenu.question || '',
+    answer: tUserMenu.answer || '',
+    post: tUserMenu.post || '',
+    noBookmarksTitle: tUserMenu.noBookmarksTitle || '',
+    noBookmarksDesc: tUserMenu.noBookmarksDesc || '',
+    loading: tProfile.loading || '',
   };
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const modalBodyRef = useRef<HTMLDivElement>(null);
@@ -180,8 +142,9 @@ export default function BookmarksModal({ isOpen, onClose, translations = {} }: B
     if (!dateString || justNowValues.has(dateString)) return dateString;
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
-    const dateLocale = locale === 'vi' ? 'vi-VN' : locale === 'en' ? 'en-US' : 'ko-KR';
-    return new Intl.DateTimeFormat(dateLocale, {
+    const resolvedLocale = (['ko', 'en', 'vi'] as const).includes(locale as 'ko' | 'en' | 'vi') ? (locale as 'ko' | 'en' | 'vi') : 'ko';
+    const dateLocale = { ko: 'ko-KR', en: 'en-US', vi: 'vi-VN' } as const;
+    return new Intl.DateTimeFormat(dateLocale[resolvedLocale], {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

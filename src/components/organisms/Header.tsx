@@ -181,7 +181,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
                     isLoggedIn={true}
                     userId={user.id}
                     onLogout={logout}
-                    translations={translations?.userMenu as Record<string, string>}
+                    translations={translations}
                   />
                 </div>
               ) : (

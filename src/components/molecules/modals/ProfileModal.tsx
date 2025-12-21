@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
@@ -15,11 +14,8 @@ import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  translations?: Record<string, string>;
+  translations?: Record<string, unknown>;
 }
-
-
-
 export default function ProfileModal({ isOpen, onClose, translations = {} }: ProfileModalProps) {
   const router = useRouter();
   const params = useParams();
@@ -27,144 +23,41 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
   const { data: session } = useSession();
   const user = session?.user;
 
-  const t = translations;
-  const modalFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        myProfile: 'My Profile',
-        editProfile: 'Edit Profile',
-        editProfileTooltip: 'Edit your profile.',
-        communityMember: 'Community Member',
-        joinDate: 'Joined',
-        answers: 'Answers',
-        adopted: 'Adopted',
-        helpful: 'Helpful',
-        questions: 'Questions',
-        requestVerification: 'Request verification',
-        profileLoadError: 'Unable to load profile. Please try again.',
-        retry: 'Retry',
-        loginRequired: 'Login required.',
-        login: 'Log in',
-        profileNotFound: 'Profile not found.',
-        male: 'Male',
-        female: 'Female',
-        other: 'Other',
-        age10s: 'Teens',
-        age20s: '20s',
-        age30s: '30s',
-        age40s: '40s',
-        age50s: '50s',
-        age60plus: '60+',
-        korean: 'Living in Korea',
-        vietnamese: 'Living in Vietnam',
-        student: 'Student',
-        worker: 'Worker',
-        resident: 'Resident',
-        business: 'Business Owner',
-        homemaker: 'Homemaker',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        myProfile: 'Hồ sơ của tôi',
-        editProfile: 'Chỉnh sửa hồ sơ',
-        editProfileTooltip: 'Chỉnh sửa hồ sơ của bạn.',
-        communityMember: 'Thành viên cộng đồng',
-        joinDate: 'Ngày tham gia',
-        answers: 'Câu trả lời',
-        adopted: 'Được chọn',
-        helpful: 'Hữu ích',
-        questions: 'Câu hỏi',
-        requestVerification: 'Yêu cầu xác minh',
-        profileLoadError: 'Không thể tải hồ sơ. Vui lòng thử lại.',
-        retry: 'Thử lại',
-        loginRequired: 'Vui lòng đăng nhập.',
-        login: 'Đăng nhập',
-        profileNotFound: 'Không thể tải hồ sơ.',
-        male: 'Nam',
-        female: 'Nữ',
-        other: 'Khác',
-        age10s: '10-19 tuổi',
-        age20s: '20-29 tuổi',
-        age30s: '30-39 tuổi',
-        age40s: '40-49 tuổi',
-        age50s: '50-59 tuổi',
-        age60plus: '60+ tuổi',
-        korean: 'Sống tại Hàn Quốc',
-        vietnamese: 'Sống tại Việt Nam',
-        student: 'Sinh viên',
-        worker: 'Người lao động',
-        resident: 'Cư dân',
-        business: 'Chủ doanh nghiệp',
-        homemaker: 'Nội trợ',
-      };
-    }
-    return {
-      myProfile: '내 프로필',
-      editProfile: '프로필 편집하기',
-      editProfileTooltip: '프로필을 수정할 수 있어요.',
-      communityMember: '커뮤니티 멤버',
-      joinDate: '가입일',
-      answers: '답변',
-      adopted: '채택',
-      helpful: '도움됨',
-      questions: '질문',
-      requestVerification: '사용자 정보 인증 신청하기',
-      profileLoadError: '프로필을 불러오지 못했습니다. 다시 시도해주세요.',
-      retry: '다시 시도',
-      loginRequired: '로그인이 필요합니다.',
-      login: '로그인',
-      profileNotFound: '프로필을 불러올 수 없습니다.',
-      male: '남성',
-      female: '여성',
-      other: '기타',
-      age10s: '10대',
-      age20s: '20대',
-      age30s: '30대',
-      age40s: '40대',
-      age50s: '50대',
-      age60plus: '60대+',
-      korean: '한국 거주',
-      vietnamese: '베트남 거주',
-      student: '학생',
-      worker: '근로자',
-      resident: '거주자',
-      business: '사업자',
-      homemaker: '주부',
-    };
-  }, [locale]);
+  const tUserMenu = (translations?.userMenu || {}) as Record<string, string>;
+  const tProfile = (translations?.profile || {}) as Record<string, string>;
+  const tLoginPrompt = (translations?.loginPrompt || {}) as Record<string, string>;
   const modalLabels = {
-    myProfile: t.myProfile || modalFallbacks.myProfile,
-    editProfile: t.editProfile || modalFallbacks.editProfile,
-    editProfileTooltip: t.editProfileTooltip || modalFallbacks.editProfileTooltip,
-    communityMember: t.communityMember || modalFallbacks.communityMember,
-    joinDate: t.joinDate || modalFallbacks.joinDate,
-    answers: t.answers || modalFallbacks.answers,
-    adopted: t.adopted || modalFallbacks.adopted,
-    helpful: t.helpful || modalFallbacks.helpful,
-    questions: t.questions || modalFallbacks.questions,
-    requestVerification: t.requestVerification || modalFallbacks.requestVerification,
-    profileLoadError: t.profileLoadError || modalFallbacks.profileLoadError,
-    retry: t.retry || modalFallbacks.retry,
-    loginRequired: t.loginRequired || modalFallbacks.loginRequired,
-    login: t.login || modalFallbacks.login,
-    profileNotFound: t.profileNotFound || modalFallbacks.profileNotFound,
-    male: t.male || modalFallbacks.male,
-    female: t.female || modalFallbacks.female,
-    other: t.other || modalFallbacks.other,
-    age10s: t.age10s || modalFallbacks.age10s,
-    age20s: t.age20s || modalFallbacks.age20s,
-    age30s: t.age30s || modalFallbacks.age30s,
-    age40s: t.age40s || modalFallbacks.age40s,
-    age50s: t.age50s || modalFallbacks.age50s,
-    age60plus: t.age60plus || modalFallbacks.age60plus,
-    korean: t.korean || modalFallbacks.korean,
-    vietnamese: t.vietnamese || modalFallbacks.vietnamese,
-    student: t.student || modalFallbacks.student,
-    worker: t.worker || modalFallbacks.worker,
-    resident: t.resident || modalFallbacks.resident,
-    business: t.business || modalFallbacks.business,
-    homemaker: t.homemaker || modalFallbacks.homemaker,
+    myProfile: tUserMenu.myProfile || '',
+    editProfile: tUserMenu.editProfile || '',
+    editProfileTooltip: tUserMenu.editProfileTooltip || tProfile.editProfileTooltip || '',
+    communityMember: tUserMenu.communityMember || '',
+    joinDate: tUserMenu.joinDate || '',
+    answers: tUserMenu.answers || '',
+    adopted: tUserMenu.adopted || '',
+    helpful: tUserMenu.helpful || '',
+    questions: tUserMenu.questions || '',
+    requestVerification: tUserMenu.requestVerification || '',
+    profileLoadError: tUserMenu.profileLoadError || tUserMenu.profileNotFound || '',
+    retry: tUserMenu.retry || tUserMenu.refresh || '',
+    loginRequired: tUserMenu.loginRequired || tLoginPrompt.title || '',
+    login: tUserMenu.login || tLoginPrompt.login || '',
+    profileNotFound: tUserMenu.profileNotFound || '',
+    male: tUserMenu.male || '',
+    female: tUserMenu.female || '',
+    other: tUserMenu.other || '',
+    age10s: tUserMenu.age10s || '',
+    age20s: tUserMenu.age20s || '',
+    age30s: tUserMenu.age30s || '',
+    age40s: tUserMenu.age40s || '',
+    age50s: tUserMenu.age50s || '',
+    age60plus: tUserMenu.age60plus || '',
+    korean: tUserMenu.korean || '',
+    vietnamese: tUserMenu.vietnamese || '',
+    student: tUserMenu.student || tProfile.userTypeStudent || '',
+    worker: tUserMenu.worker || tProfile.userTypeWorker || '',
+    resident: tUserMenu.resident || tProfile.userTypeResident || '',
+    business: tUserMenu.business || tProfile.userTypeBusiness || '',
+    homemaker: tUserMenu.homemaker || tProfile.userTypeHomemaker || '',
   };
 
   const { data: profile, isLoading, isError, refetch, error } = useUserProfile(user?.id || '', {
@@ -190,28 +83,14 @@ export default function ProfileModal({ isOpen, onClose, translations = {} }: Pro
   const formatJoinDate = (value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
-
-    if (locale === 'vi') {
-      return new Intl.DateTimeFormat('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      }).format(date);
-    }
-
-    if (locale === 'en') {
-      return new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: '2-digit',
-        year: 'numeric',
-      }).format(date);
-    }
-
-    return new Intl.DateTimeFormat('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }).format(date);
+    const resolvedLocale = (['ko', 'en', 'vi'] as const).includes(locale as 'ko' | 'en' | 'vi') ? (locale as 'ko' | 'en' | 'vi') : 'ko';
+    const dateLocale = { ko: 'ko-KR', en: 'en-US', vi: 'vi-VN' } as const;
+    const dateOptions = {
+      ko: { year: 'numeric', month: 'long', day: 'numeric' },
+      en: { month: 'short', day: '2-digit', year: 'numeric' },
+      vi: { day: '2-digit', month: '2-digit', year: 'numeric' },
+    } as const;
+    return new Intl.DateTimeFormat(dateLocale[resolvedLocale], dateOptions[resolvedLocale]).format(date);
   };
 
   const getGenderLabel = (gender: string) => {
