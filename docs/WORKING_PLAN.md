@@ -1016,6 +1016,11 @@ $gh-address-comments
   - “키보드 올라옴 → 제출 버튼 접근 가능”을 종료 조건으로 맞춤(로그인 모달 포함)
 - 완료 기준: iPhone SE급에서도 입력/제출이 막히지 않음
 
+- 최근 구현(2025-12-21)
+  - 공용 `Modal`의 최대 높이를 `100dvh` 기준으로 조정해 모바일 키보드/뷰포트 변화에서 잘림 가능성 완화
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`
+  - 변경: `src/components/atoms/Modal.tsx`
+
 #### (2025-12-20) [WEB] P0-4 퍼포먼스 1차(저사양/저속) (P0)
 
 - 플랜(체크리스트)
