@@ -755,6 +755,7 @@
     "statusLabel": "상태",
     "statusStudent": "학생",
     "statusWorker": "직장인",
+    "statusResident": "거주자",
     "statusOther": "기타",
     "statusTooltip": "선택 사항입니다. 현재 상태를 선택해 주세요.",
     "notificationTitle": "알림 설정",
@@ -772,6 +773,14 @@
     "notifyFollowsDesc": "새로운 팔로워가 생길 때 알림을 받습니다",
     "saveButton": "저장하기",
     "cancelButton": "취소",
+    "updateSuccess": "프로필이 업데이트되었습니다.",
+    "profileAlt": "프로필",
+    "avatarOnlyImages": "이미지 파일만 업로드할 수 있습니다.",
+    "avatarTooLarge": "이미지 크기는 20MB 이하여야 합니다.",
+    "avatarUploadFailed": "프로필 사진 업로드에 실패했습니다.",
+    "avatarUploadSuccess": "프로필 사진이 업데이트되었습니다.",
+    "avatarDecodeFailed": "이미지를 처리할 수 없습니다. JPG/PNG 이미지를 선택해주세요.",
+    "avatarHeicUnsupported": "HEIC/HEIF 형식은 아직 지원되지 않습니다. JPG/PNG 이미지를 선택해주세요.",
     "updateFailed": "프로필 업데이트에 실패했습니다."
   },
   "trustBadges": {

@@ -755,6 +755,7 @@
     "statusLabel": "Trạng thái",
     "statusStudent": "Sinh viên",
     "statusWorker": "Nhân viên",
+    "statusResident": "Cư dân",
     "statusOther": "Khác",
     "statusTooltip": "Không bắt buộc. Chọn trạng thái hiện tại của bạn.",
     "notificationTitle": "Cài đặt thông báo",
@@ -772,6 +773,14 @@
     "notifyFollowsDesc": "Nhận thông báo khi có người theo dõi mới",
     "saveButton": "Lưu",
     "cancelButton": "Hủy",
+    "updateSuccess": "Hồ sơ đã được cập nhật.",
+    "profileAlt": "Hồ sơ",
+    "avatarOnlyImages": "Chỉ cho phép tệp ảnh.",
+    "avatarTooLarge": "Kích thước ảnh phải ≤ 20MB.",
+    "avatarUploadFailed": "Tải ảnh đại diện thất bại.",
+    "avatarUploadSuccess": "Đã cập nhật ảnh đại diện.",
+    "avatarDecodeFailed": "Không thể xử lý ảnh. Vui lòng chọn ảnh JPG/PNG.",
+    "avatarHeicUnsupported": "Ảnh HEIC/HEIF chưa được hỗ trợ. Vui lòng chọn JPG/PNG.",
     "updateFailed": "Không thể cập nhật hồ sơ."
   },
   "trustBadges": {
