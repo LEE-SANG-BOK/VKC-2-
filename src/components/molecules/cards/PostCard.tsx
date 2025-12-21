@@ -140,6 +140,14 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         .replace('{others}', String(otherCount))
         .replace('{noun}', responseNoun.toLowerCase())
     : '';
+  const certifiedCompactTemplate = tPost.certifiedResponderCompact || '';
+  const certifiedCompactLabel = certifiedCount > 0 && certifiedCompactTemplate
+    ? certifiedCompactTemplate
+        .replace('{certified}', String(certifiedCount))
+        .replace('{noun}', responseNoun.toLowerCase())
+    : '';
+  const certifiedDisplayLabel = certifiedSummaryLabel || certifiedCompactLabel;
+  const certifiedDisplayLabelMobile = certifiedCompactLabel || certifiedSummaryLabel;
   const verifiedSummaryTooltip = tTrust.verifiedUserTooltip || tTrust.verifiedTooltip || '';
   const certifiedTooltipContent = certifiedSummaryLabel
     ? `${certifiedSummaryLabel} - ${verifiedSummaryTooltip}`
@@ -573,34 +581,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         className={`question-card group ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
           }`}
       >
-        <div ref={hideMenuRef} className="absolute right-3 top-3 z-10">
-          <button
-            type="button"
-            onClick={handleHideMenuToggle}
-            aria-label={hideLabel}
-            className="inline-flex h-11 min-w-[44px] sm:h-8 sm:min-w-[32px] items-center justify-center px-1 text-sm font-semibold text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            {hideEmoji}
-          </button>
-          {showHideMenu ? (
-            <div className="mt-1 w-24 overflow-hidden rounded-lg border border-gray-200 bg-white text-sm shadow-lg dark:border-gray-700 dark:bg-gray-900">
-              <button
-                type="button"
-                onClick={handleHideFromMenu}
-                className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-                {hideLabel}
-              </button>
-              <button
-                type="button"
-                onClick={handleReportFromMenu}
-                className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-                {reportLabel}
-              </button>
-            </div>
-          ) : null}
-        </div>
         <div className="question-card-main">
           <div className="question-card-body">
           {/* Author Info & Badges */}
@@ -657,6 +637,34 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 </div>
               </div>
             </div>
+            <div ref={hideMenuRef} className="relative shrink-0 ml-auto -mt-1 z-10">
+              <button
+                type="button"
+                onClick={handleHideMenuToggle}
+                aria-label={hideLabel}
+                className="inline-flex h-11 min-w-[44px] sm:h-8 sm:min-w-[32px] items-center justify-center rounded-full px-1 text-sm font-semibold text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              >
+                {hideEmoji}
+              </button>
+              {showHideMenu ? (
+                <div className="absolute right-0 top-full mt-1 w-24 overflow-hidden rounded-lg border border-gray-200 bg-white text-sm shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                  <button
+                    type="button"
+                    onClick={handleHideFromMenu}
+                    className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    {hideLabel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReportFromMenu}
+                    className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    {reportLabel}
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="pl-12">
@@ -706,7 +714,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-2 pl-12">
+        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-3 pl-12 scroll-px-3">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -730,8 +738,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       ) : null}
 
       <div className="question-card-actions">
-        <div className="question-card-footer-fixed !flex-nowrap !gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1 flex-nowrap pl-12">
+        <div className="question-card-footer-fixed">
+          <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1 pl-12">
             <button
               type="button"
               onClick={handleAnswerCountClick}
@@ -741,22 +749,23 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span className="truncate tabular-nums">{responseCount}</span>
             </button>
-            {certifiedSummaryLabel ? (
+            {certifiedDisplayLabel ? (
               <Tooltip content={certifiedTooltipContent} position="top">
                 <button
                   type="button"
                   onClick={handleAnswerCountClick}
-                  aria-label={certifiedTooltipContent}
-                  title={certifiedSummaryLabel}
+                  aria-label={certifiedTooltipContent || certifiedDisplayLabel}
+                  title={certifiedSummaryLabel || certifiedDisplayLabel}
                   className="group inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/70 px-2 py-1 text-[11px] font-semibold text-blue-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-100/80 hover:text-blue-800 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-blue-900/60 dark:bg-blue-900/30 dark:text-blue-200 dark:hover:border-blue-700 dark:hover:bg-blue-900/50 dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[220px] sm:max-w-none"
                 >
                   <CircleCheck className="h-3 w-3 shrink-0 transition-transform duration-200 group-hover:scale-110 group-hover:animate-pulse" />
-                  <span className="truncate">{certifiedSummaryLabel}</span>
+                  <span className="truncate sm:hidden">{certifiedDisplayLabelMobile}</span>
+                  <span className="truncate hidden sm:inline">{certifiedSummaryLabel || certifiedDisplayLabelMobile}</span>
                 </button>
               </Tooltip>
             ) : null}
           </div>
-          <div className="question-card-actions-row shrink-0 !w-auto !ml-auto !flex-nowrap !gap-2">
+          <div className="question-card-actions-row shrink-0">
             <Tooltip content={likeLabel} position="top">
               <ActionIconButton
                 icon={<ThumbsUp className={`w-4 h-4 ${localIsLiked ? 'fill-current' : ''}`} />}

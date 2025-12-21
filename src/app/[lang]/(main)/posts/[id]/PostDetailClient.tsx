@@ -2257,7 +2257,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             )}
 
             {!isEditingPost && displayChips.length > 0 ? (
-              <div className="mt-3 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+              <div className="mt-3 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-3 scroll-px-3">
                 {displayChips.map((tag) => (
                   <span
                     key={tag}
