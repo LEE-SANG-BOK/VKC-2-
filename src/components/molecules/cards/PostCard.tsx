@@ -848,34 +848,34 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
               </button>
             </Tooltip>
-	            {isQuestion ? (
-	              <>
-	                <Tooltip content={questionPostLabel} position="top">
-	                  <button
-	                    type="button"
-	                    onClick={(e) => e.stopPropagation()}
-	                    aria-label={questionPostLabel}
-	                    className="inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 shrink-0"
-	                  >
-	                    <CircleHelp className="w-4 h-4" />
-	                  </button>
-	                </Tooltip>
-	                <Tooltip content={isAdopted ? solvedPostLabel : unsolvedPostLabel} position="top">
-	                  <button
-	                    type="button"
-	                    onClick={(e) => e.stopPropagation()}
-	                    aria-label={isAdopted ? solvedPostLabel : unsolvedPostLabel}
-	                    className={`inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] ${
-	                      isAdopted
-	                        ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
-	                        : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'
-	                    } shrink-0`}
-	                  >
-	                    {isAdopted ? <CircleCheck className="w-4 h-4" /> : <CircleDashed className="w-4 h-4" />}
-	                  </button>
-	                </Tooltip>
-	              </>
-	            ) : null}
+		            {isQuestion ? (
+		              <>
+		                <Tooltip content={questionPostLabel} position="top">
+		                  <button
+		                    type="button"
+		                    onClick={(e) => e.stopPropagation()}
+		                    aria-label={questionPostLabel}
+		                    className="inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 shrink-0"
+		                  >
+		                    <CircleHelp className="w-4 h-4" />
+		                  </button>
+		                </Tooltip>
+		                <Tooltip content={isAdopted ? solvedPostLabel : unsolvedPostLabel} position="top">
+		                  <button
+		                    type="button"
+		                    onClick={(e) => e.stopPropagation()}
+		                    aria-label={isAdopted ? solvedPostLabel : unsolvedPostLabel}
+		                    className={`hidden sm:inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] ${
+		                      isAdopted
+		                        ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
+		                        : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'
+		                    } shrink-0`}
+		                  >
+		                    {isAdopted ? <CircleCheck className="w-4 h-4" /> : <CircleDashed className="w-4 h-4" />}
+		                  </button>
+		                </Tooltip>
+		              </>
+		            ) : null}
           </div>
         </div>
         </div>
