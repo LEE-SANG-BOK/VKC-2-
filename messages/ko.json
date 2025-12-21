@@ -600,6 +600,7 @@
     "similarFallbackNotice": "비슷한 질문이 아직 없어서 인기 질문을 보여드려요.",
     "similarFallbackReasonPopular": "최근 많은 조회를 받은 질문을 먼저 확인해보세요.",
     "similarFallbackTokensLabel": "검색 키워드",
+    "similarNoResults": "유사한 질문이 없습니다.",
     "rulesTitle": "커뮤니티 가이드",
     "rulesRespect": "예의 준수, 욕설·혐오 표현 금지",
     "rulesAds": "광고/연락처 포함 글은 제한 또는 승인 필요",
