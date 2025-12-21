@@ -2259,6 +2259,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                     size="xs"
                     className="shrink-0"
                     onToggle={handleFollowChange}
+                    translations={translations}
                   />
                 ) : null}
               </div>

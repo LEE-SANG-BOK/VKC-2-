@@ -33,6 +33,7 @@ interface RecommendedUsersSectionProps {
   locale: string;
   users: RecommendedUser[];
   isLoading: boolean;
+  translations?: Record<string, unknown>;
   followerLabel: string;
   postsLabel: string;
   followingLabel: string;
@@ -55,6 +56,7 @@ export default function RecommendedUsersSection({
   locale,
   users,
   isLoading,
+  translations,
   followerLabel,
   postsLabel,
   followingLabel,
@@ -206,6 +208,7 @@ export default function RecommendedUsersSection({
                   userName={displayName}
                   isFollowing={followStates[userId] ?? user.isFollowing ?? false}
                   size={followButtonSize}
+                  translations={translations}
                   onToggle={(next) =>
                     setFollowStates((prev) => ({
                       ...prev,

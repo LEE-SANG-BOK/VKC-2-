@@ -434,6 +434,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
               userName={displayName}
               isFollowing={isFollowing}
               size="sm"
+              translations={translations}
               onToggle={(next) =>
                 setFollowStates((prev) => ({
                   ...prev,

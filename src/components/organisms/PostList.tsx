@@ -530,6 +530,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                       locale={locale}
                       users={sortedRecommendations}
                       isLoading={recommendedLoading}
+                      translations={translations}
                       hasNextPage={hasNextRecommendedPage}
                       isFetchingNextPage={isFetchingNextRecommendedPage}
                       onLoadMore={() => {
@@ -573,6 +574,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                 locale={locale}
                 users={sortedRecommendations}
                 isLoading={recommendedLoading}
+                translations={translations}
                 hasNextPage={hasNextRecommendedPage}
                 isFetchingNextPage={isFetchingNextRecommendedPage}
                 onLoadMore={() => {
