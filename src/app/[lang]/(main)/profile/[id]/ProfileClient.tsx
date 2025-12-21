@@ -120,174 +120,58 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
 
   const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
   const learnMoreLabel = tCommon.learnMore || '';
-  const profileFallbacks = useMemo(() => {
-    if (locale === 'en') {
-      return {
-        userName: 'User',
-        verifiedInfoTitle: 'Verified info',
-        editProfile: 'Edit Profile',
-        editProfileTooltip: 'Edit your profile.',
-        logout: 'Logout',
-        joinedAt: 'Joined',
-        gender: 'Gender',
-        ageGroup: 'Age',
-        status: 'Status',
-        followers: 'Followers',
-        following: 'Following',
-        posts: 'Posts',
-        accepted: 'Accepted',
-        comments: 'Comments',
-        myPosts: 'My Posts',
-        acceptedAnswers: 'Accepted Answers',
-        myComments: 'My Comments',
-        bookmarks: 'Bookmarks',
-        points: 'Points',
-        title: 'Title',
-        level: 'Level',
-        rank: 'Rank',
-        leaderboard: 'Leaderboard',
-        noPosts: 'No posts yet',
-        noAccepted: 'No accepted answers yet',
-        noComments: 'No comments yet',
-        noBookmarks: 'No bookmarks yet',
-        loading: 'Loading...',
-        male: 'Male',
-        female: 'Female',
-        other: 'Other',
-        teens: 'Teens',
-        twenties: '20s',
-        thirties: '30s',
-        forties: '40s',
-        fifties: '50s',
-        sixtyPlus: '60+',
-      };
-    }
-    if (locale === 'vi') {
-      return {
-        userName: 'Người dùng',
-        verifiedInfoTitle: 'Thông tin xác minh',
-        editProfile: 'Chỉnh sửa hồ sơ',
-        editProfileTooltip: 'Chỉnh sửa hồ sơ của bạn.',
-        logout: 'Đăng xuất',
-        joinedAt: 'Tham gia',
-        gender: 'Giới tính',
-        ageGroup: 'Độ tuổi',
-        status: 'Trạng thái',
-        followers: 'Người theo dõi',
-        following: 'Đang theo dõi',
-        posts: 'Bài viết',
-        accepted: 'Được chấp nhận',
-        comments: 'Bình luận',
-        myPosts: 'Bài viết của tôi',
-        acceptedAnswers: 'Câu trả lời được chấp nhận',
-        myComments: 'Bình luận của tôi',
-        bookmarks: 'Đánh dấu',
-        points: 'Điểm',
-        title: 'Danh hiệu',
-        level: 'Cấp độ',
-        rank: 'Xếp hạng',
-        leaderboard: 'Bảng xếp hạng',
-        noPosts: 'Chưa có bài viết',
-        noAccepted: 'Chưa có câu trả lời được chấp nhận',
-        noComments: 'Chưa có bình luận',
-        noBookmarks: 'Chưa có đánh dấu',
-        loading: 'Đang tải...',
-        male: 'Nam',
-        female: 'Nữ',
-        other: 'Khác',
-        teens: '10-19',
-        twenties: '20-29',
-        thirties: '30-39',
-        forties: '40-49',
-        fifties: '50-59',
-        sixtyPlus: '60+',
-      };
-    }
-    return {
-      userName: '사용자',
-      verifiedInfoTitle: '인증 정보',
-      editProfile: '프로필 수정',
-      editProfileTooltip: '프로필을 수정할 수 있어요.',
-      logout: '로그아웃',
-      joinedAt: '가입일',
-      gender: '성별',
-      ageGroup: '연령대',
-      status: '상태',
-      followers: '팔로워',
-      following: '팔로잉',
-      posts: '게시글',
-      accepted: '채택',
-      comments: '댓글',
-      myPosts: '내 게시글',
-      acceptedAnswers: '채택된 답변',
-      myComments: '내 댓글',
-      bookmarks: '북마크',
-      points: '포인트',
-      title: '칭호',
-      level: '레벨',
-      rank: '랭킹',
-      leaderboard: '리더보드',
-      noPosts: '게시글이 없습니다',
-      noAccepted: '채택된 답변이 없습니다',
-      noComments: '댓글이 없습니다',
-      noBookmarks: '북마크한 게시글이 없습니다',
-      loading: '로딩 중...',
-      male: '남성',
-      female: '여성',
-      other: '기타',
-      teens: '10대',
-      twenties: '20대',
-      thirties: '30대',
-      forties: '40대',
-      fifties: '50대',
-      sixtyPlus: '60대 이상',
-    };
-  }, [locale]);
 
-  const profileLabels = {
-    verifiedInfoTitle: t.verifiedInfoTitle || profileFallbacks.verifiedInfoTitle,
-    editProfile: t.editProfile || profileFallbacks.editProfile,
-    editProfileTooltip: t.editProfileTooltip || profileFallbacks.editProfileTooltip,
-    logout: t.logout || profileFallbacks.logout,
-    joinedAt: t.joinedAt || profileFallbacks.joinedAt,
-    gender: t.gender || profileFallbacks.gender,
-    ageGroup: t.ageGroup || profileFallbacks.ageGroup,
-    status: t.status || profileFallbacks.status,
-    followers: t.followers || profileFallbacks.followers,
-    following: t.following || profileFallbacks.following,
-    posts: t.posts || profileFallbacks.posts,
-    accepted: t.accepted || profileFallbacks.accepted,
-    comments: t.comments || profileFallbacks.comments,
-    myPosts: t.myPosts || profileFallbacks.myPosts,
-    acceptedAnswers: t.acceptedAnswers || profileFallbacks.acceptedAnswers,
-    myComments: t.myComments || profileFallbacks.myComments,
-    bookmarks: t.bookmarks || profileFallbacks.bookmarks,
-    points: t.points || profileFallbacks.points,
-    title: t.title || profileFallbacks.title,
-    level: t.level || profileFallbacks.level,
-    rank: t.rank || profileFallbacks.rank,
-    leaderboard: t.leaderboard || profileFallbacks.leaderboard,
-    noPosts: t.noPosts || profileFallbacks.noPosts,
-    noAccepted: t.noAccepted || profileFallbacks.noAccepted,
-    noComments: t.noComments || profileFallbacks.noComments,
-    noBookmarks: t.noBookmarks || profileFallbacks.noBookmarks,
-    loading: t.loading || profileFallbacks.loading,
-  };
-  const genderLabels = {
-    male: t.male || profileFallbacks.male,
-    female: t.female || profileFallbacks.female,
-    other: t.other || profileFallbacks.other,
-  };
-  const ageGroupLabels = {
-    teens: t.teens || profileFallbacks.teens,
-    twenties: t.twenties || profileFallbacks.twenties,
-    thirties: t.thirties || profileFallbacks.thirties,
-    forties: t.forties || profileFallbacks.forties,
-    fifties: t.fifties || profileFallbacks.fifties,
-    sixtyPlus: t.sixtyPlus || profileFallbacks.sixtyPlus,
-  };
+  const profileLabels = useMemo(() => {
+    return {
+      verifiedInfoTitle: t.verifiedInfoTitle || '',
+      editProfile: t.editProfile || '',
+      editProfileTooltip: t.editProfileTooltip || '',
+      logout: t.logout || '',
+      joinedAt: t.joinedAt || '',
+      gender: t.gender || '',
+      ageGroup: t.ageGroup || '',
+      status: t.status || '',
+      followers: t.followers || '',
+      following: t.following || '',
+      posts: t.posts || '',
+      accepted: t.accepted || '',
+      comments: t.comments || '',
+      myPosts: t.myPosts || '',
+      acceptedAnswers: t.acceptedAnswers || '',
+      myComments: t.myComments || '',
+      bookmarks: t.bookmarks || '',
+      points: t.points || '',
+      title: t.title || '',
+      rank: t.rank || '',
+      leaderboard: t.leaderboard || '',
+      noPosts: t.noPosts || '',
+      noAccepted: t.noAccepted || '',
+      noComments: t.noComments || '',
+      noBookmarks: t.noBookmarks || '',
+      loading: t.loading || '',
+    };
+  }, [t]);
+
+  const genderLabels = useMemo(() => {
+    return {
+      male: t.male || '',
+      female: t.female || '',
+      other: t.other || '',
+    };
+  }, [t]);
+
+  const ageGroupLabels = useMemo(() => {
+    return {
+      teens: t.teens || '',
+      twenties: t.twenties || '',
+      thirties: t.thirties || '',
+      forties: t.forties || '',
+      fifties: t.fifties || '',
+      sixtyPlus: t.sixtyPlus || '',
+    };
+  }, [t]);
   const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
-  const displayName = initialProfile.displayName || initialProfile.username || profileFallbacks.userName;
+  const displayName = initialProfile.displayName || initialProfile.username || tCommon.anonymous || '';
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
@@ -313,12 +197,9 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
   const scoreSummary = scoreData?.data;
   const rankValue = scoreSummary?.rank ?? null;
   const progressPercent = scoreSummary ? Math.round(scoreSummary.levelProgress * 100) : 0;
+  const levelFormat = t.levelFormat || '';
   const titleValue = scoreSummary
-    ? locale === 'vi'
-      ? `Cấp ${scoreSummary.level}`
-      : locale === 'en'
-        ? `Level ${scoreSummary.level}`
-        : `Lv. ${scoreSummary.level}`
+    ? levelFormat.replace('{level}', String(scoreSummary.level))
     : '';
   
   const [isFollowing, setIsFollowing] = useState(initialProfile.isFollowing ?? false);
@@ -487,12 +368,16 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
     }
   };
 
-  const userTypeLabels = {
-    student: locale === 'vi' ? 'Sinh viên' : locale === 'en' ? 'Student' : '학생',
-    worker: locale === 'vi' ? 'Người lao động' : locale === 'en' ? 'Worker' : '근로자',
-    resident: locale === 'vi' ? 'Cư dân' : locale === 'en' ? 'Resident' : '거주자',
-    other: locale === 'vi' ? 'Khác' : locale === 'en' ? 'Other' : '기타',
-  };
+  const userTypeLabels = useMemo(() => {
+    return {
+      student: t.userTypeStudent || '',
+      worker: t.userTypeWorker || '',
+      resident: t.userTypeResident || '',
+      business: t.userTypeBusiness || '',
+      homemaker: t.userTypeHomemaker || '',
+      other: t.userTypeOther || '',
+    };
+  }, [t]);
 
   const formatDate = (dateString: string) => {
     if (!dateString || dateString === '방금 전') return dateString;
