@@ -85,12 +85,7 @@ export default function CategorySidebar({
     feedback: t.feedbackTooltip,
   };
 
-  const leaderboardBaseLabel = t.leaderboard || '';
-  const leaderboardLabel = leaderboardBaseLabel.includes('Event')
-    ? leaderboardBaseLabel
-    : locale === 'vi' || locale === 'en'
-      ? `${leaderboardBaseLabel} (Event)`
-      : `${leaderboardBaseLabel}(Event)`;
+  const leaderboardLabel = t.leaderboard || '';
   const feedbackLabel = t.feedback || '';
 
   const menuCategories = [
