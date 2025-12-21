@@ -1902,6 +1902,28 @@ $gh-address-comments
 - 완료 기준
   - 외부 배포 대상/권한/노출 정책이 문서로 고정되고, 운영자 개입 없이도 일정 수준의 자동 배포가 가능
 
+#### (2025-12-21) [WEB] Auth 페이지 i18n 공용화 + noindex 메타 (P0-2)
+
+- 플랜(체크리스트)
+  - [x] `/login`, `/signup`의 하드코딩 번역(ko/en/vi) 제거 → `messages/*.json` 단일 소스 사용
+  - [x] Auth 페이지를 Server wrapper + Client 컴포넌트로 분리(SSR 가능, 번역은 서버에서 주입)
+  - [x] Auth 페이지 메타데이터 `noindex,nofollow` 적용(색인/노출 방지)
+- 변경 내용(why/what)
+  - why: 언어별 하드코딩/중복을 줄이고, 번역 소스/SEO 정책을 한 곳으로 통일
+  - what: `login/signup`을 `getDictionary` 기반으로 전환하고, `messages`에 `signup` 섹션 추가
+- 검증
+  - [x] npm run lint
+  - [ ] npm run type-check
+  - [ ] SKIP_SITEMAP_DB=true npm run build
+- 변경 파일
+  - src/app/[lang]/(auth)/login/page.tsx
+  - src/app/[lang]/(auth)/login/LoginClient.tsx
+  - src/app/[lang]/(auth)/signup/page.tsx
+  - src/app/[lang]/(auth)/signup/SignupClient.tsx
+  - messages/ko.json
+  - messages/vi.json
+  - messages/en.json
+
 ---
 
 ## Testing and validation (게이트)
