@@ -1025,6 +1025,7 @@ $gh-address-comments
   - 홈 피드(PostList)·추천 사용자(RecommendedUsersSection) 라벨을 dictionary 섹션(profile/post/common) 기준으로 재정렬하고 locale 분기 fallback 제거(추천 CTA 키 추가 포함)
   - 알림 페이지(NotificationsClient)에서 locale 분기 하드코딩 fallback 제거 → `messages.notifications` 기반으로 통일
   - 홈 피드(PostList) 점수 요약 카드의 레이블/레벨 표기 locale 분기 제거 → `profile.points/title/rank/leaderboard/levelFormat` 키 추가
+  - 프로필(ProfileClient)에서 locale 분기 하드코딩 fallback 제거 → `profile` 라벨/레벨 표기(`levelFormat`)/유저 타입 라벨을 messages 기반으로 통일(`editProfileTooltip/loading/userType*` 키 보강)
   - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
   - 변경: `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
   - 변경: `src/app/api/posts/[id]/report/route.ts`, `src/app/api/answers/[id]/report/route.ts`, `src/app/api/comments/[id]/report/route.ts`, `messages/ko.json`, `messages/vi.json`
