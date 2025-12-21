@@ -3,6 +3,7 @@ import ShortFormPlaylist from '@/components/organisms/ShortFormPlaylist';
 import CardNewsShowcase from '@/components/organisms/CardNewsShowcase';
 import MainLayout from '@/components/templates/MainLayout';
 import { getDictionary } from '@/i18n/get-dictionary';
+import type { Locale } from '@/i18n/config';
 import MediaClient from './MediaClient';
 import { queryKeys } from '@/repo/keys';
 import { fetchNews } from '@/repo/news/fetch';
@@ -10,25 +11,19 @@ import { fetchNews } from '@/repo/news/fetch';
 export const dynamic = 'force-dynamic';
 
 type PageProps = {
-  params: Promise<{ lang: string }>;
+  params: Promise<{ lang: Locale }>;
 };
 
 export default async function MediaPage({ params }: PageProps) {
   const { lang } = await params;
-  const dict = await getDictionary((lang || 'vi') as 'ko' | 'en' | 'vi');
-  const tMedia = (dict.media || {}) as { title?: string; description?: string };
-  const tNews = (dict.news || {}) as { title?: string };
-  const pageTitle = tMedia.title || (lang === 'vi' ? 'Media' : lang === 'en' ? 'Media' : '미디어');
-  const pageDescription =
-    tMedia.description ||
-    (lang === 'vi'
-      ? 'Xem bài nổi bật, card news và shorts ở một nơi.'
-      : lang === 'en'
-        ? 'Browse featured posts, card news, and shorts in one place.'
-        : '추천 콘텐츠, 카드뉴스, 숏폼을 한 곳에서 확인하세요.');
-  const featuredLabel = tNews.title || (lang === 'vi' ? 'Nội dung nổi bật' : lang === 'en' ? 'Featured content' : '추천 콘텐츠');
-  const cardnewsLabel = lang === 'vi' ? 'Card news' : lang === 'en' ? 'Card news' : '카드뉴스';
-  const shortsLabel = lang === 'vi' ? 'Shorts' : lang === 'en' ? 'Shorts' : '숏폼';
+  const dict = await getDictionary(lang);
+  const tMedia = (dict.media || {}) as Record<string, string>;
+  const tNews = (dict.news || {}) as Record<string, string>;
+  const pageTitle = tMedia.title || '';
+  const pageDescription = tMedia.description || '';
+  const featuredLabel = tNews.title || '';
+  const cardnewsLabel = tMedia.cardNewsTab || '';
+  const shortsLabel = tMedia.shortsTab || '';
 
   const queryClient = new QueryClient();
   try {
@@ -67,9 +62,9 @@ export default async function MediaPage({ params }: PageProps) {
               </a>
             </div>
           </section>
-          <MediaClient translations={dict} lang={lang || 'vi'} />
-          <ShortFormPlaylist />
-          <CardNewsShowcase />
+          <MediaClient translations={dict} lang={lang} />
+          <ShortFormPlaylist translations={dict} lang={lang} />
+          <CardNewsShowcase translations={dict} lang={lang} />
         </div>
       </MainLayout>
     </HydrationBoundary>

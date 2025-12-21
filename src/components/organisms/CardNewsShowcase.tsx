@@ -1,6 +1,5 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import ShareButton from '@/components/molecules/actions/ShareButton';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -9,66 +8,33 @@ import { useNews } from '@/repo/news/query';
 import type { NewsItem } from '@/repo/news/types';
 import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
-export default function CardNewsShowcase() {
-  const params = useParams();
-  const locale = (params?.lang as string) || 'vi';
-  const resolvedLocale = (['ko', 'en', 'vi'] as const).includes(locale as 'ko' | 'en' | 'vi') ? (locale as 'ko' | 'en' | 'vi') : 'vi';
+interface CardNewsShowcaseProps {
+  translations: Record<string, unknown>;
+  lang: string;
+}
 
-  const { data: newsItems, isLoading } = useNews(locale);
+export default function CardNewsShowcase({ translations, lang }: CardNewsShowcaseProps) {
+  const tCardNews = (translations?.cardNews || {}) as Record<string, string>;
+  const tNews = (translations?.news || {}) as Record<string, string>;
+
+  const label = tCardNews.label || '';
+  const sectionTitle = tCardNews.sectionTitle || '';
+  const moreLabel = tCardNews.moreLabel || '';
+  const viewSlide = tCardNews.viewSlide || '';
+  const saveLabel = tCardNews.saveLabel || '';
+  const shareLabel = tCardNews.shareLabel || '';
+  const moreMobile = tCardNews.moreMobile || '';
+  const emptyLabel = tCardNews.emptyLabel || '';
+  const closeLabel = tNews.close || '';
+  const openExternalLabel = tNews.openExternal || '';
+
+  const { data: newsItems, isLoading } = useNews(lang);
   const cards = (newsItems || []).filter((item) => item.type === 'cardnews').slice(0, 6);
 
   const [selected, setSelected] = useState<NewsItem | null>(null);
 
-  const labelsByLocale = {
-    ko: {
-      sectionTitle: '비자·취업 카드뉴스 모음',
-      moreLabel: '모두 보기',
-      viewSlide: '보기',
-      saveLabel: '저장',
-      shareLabel: '공유',
-      moreMobile: '카드뉴스 더 보기',
-      closeLabel: '닫기',
-      openExternalLabel: '외부 링크 열기',
-      emptyLabel: '아직 카드뉴스가 없습니다.',
-    },
-    en: {
-      sectionTitle: 'Visa/Jobs card news',
-      moreLabel: 'View all',
-      viewSlide: 'View',
-      saveLabel: 'Save',
-      shareLabel: 'Share',
-      moreMobile: 'More card news',
-      closeLabel: 'Close',
-      openExternalLabel: 'Open link',
-      emptyLabel: 'No card news yet.',
-    },
-    vi: {
-      sectionTitle: 'Card news Visa/Việc làm',
-      moreLabel: 'Xem tất cả',
-      viewSlide: 'Xem',
-      saveLabel: 'Lưu',
-      shareLabel: 'Chia sẻ',
-      moreMobile: 'Xem thêm card news',
-      closeLabel: 'Đóng',
-      openExternalLabel: 'Mở liên kết',
-      emptyLabel: 'Chưa có card news.',
-    },
-  } as const;
-  const resolvedLabels = labelsByLocale[resolvedLocale] || labelsByLocale.vi;
-  const {
-    sectionTitle,
-    moreLabel,
-    viewSlide,
-    saveLabel,
-    shareLabel,
-    moreMobile,
-    closeLabel,
-    openExternalLabel,
-    emptyLabel,
-  } = resolvedLabels;
-
   const handleViewAll = () => {
-    const target = `/${locale}/media`;
+    const target = `/${lang}/media`;
     if (typeof window !== 'undefined') {
       window.location.href = target;
     }
@@ -83,7 +49,7 @@ export default function CardNewsShowcase() {
       <section id="cardnews" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 md:px-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Card News</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">{label}</p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">{sectionTitle}</h2>
           </div>
         </div>
@@ -101,7 +67,7 @@ export default function CardNewsShowcase() {
       <section id="cardnews" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 md:px-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Card News</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">{label}</p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">{sectionTitle}</h2>
           </div>
           <button
@@ -122,7 +88,7 @@ export default function CardNewsShowcase() {
       <section id="cardnews" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 md:px-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Card News</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">{label}</p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">{sectionTitle}</h2>
           </div>
           <button

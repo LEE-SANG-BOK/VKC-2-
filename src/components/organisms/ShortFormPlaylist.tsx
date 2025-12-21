@@ -1,56 +1,31 @@
 'use client';
 
-import { useMemo } from 'react';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
 import ShareButton from '@/components/molecules/actions/ShareButton';
 import { useNews } from '@/repo/news/query';
 import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
-export default function ShortFormPlaylist() {
-  const params = useParams();
-  const locale = (params?.lang as string) || 'vi';
-  const resolvedLocale = (['ko', 'en', 'vi'] as const).includes(locale as 'ko' | 'en' | 'vi') ? (locale as 'ko' | 'en' | 'vi') : 'vi';
+interface ShortFormPlaylistProps {
+  translations: Record<string, unknown>;
+  lang: string;
+}
 
-  const { data: newsItems, isLoading } = useNews(locale);
+export default function ShortFormPlaylist({ translations, lang }: ShortFormPlaylistProps) {
+  const t = (translations?.shorts || {}) as Record<string, string>;
+  const label = t.label || '';
+  const title = t.title || '';
+  const autoplay = t.autoplay || '';
+  const more = t.more || '';
+  const watch = t.watch || '';
+  const save = t.save || '';
+  const share = t.share || '';
+  const emptyLabel = t.empty || '';
+
+  const { data: newsItems, isLoading } = useNews(lang);
   const clips = (newsItems || []).filter((item) => item.type === 'shorts').slice(0, 8);
 
-  const labels = useMemo(() => {
-    const labelsByLocale = {
-      ko: {
-        title: '숏폼 플레이리스트',
-        autoplay: '자동 재생',
-        more: '더 보기',
-        watch: '보기',
-        save: '저장',
-        share: '공유',
-        empty: '아직 숏폼이 없습니다.',
-      },
-      en: {
-        title: 'Shorts playlist',
-        autoplay: 'Autoplay',
-        more: 'More',
-        watch: 'Watch',
-        save: 'Save',
-        share: 'Share',
-        empty: 'No shorts yet.',
-      },
-      vi: {
-        title: 'Danh sách Shorts',
-        autoplay: 'Tự phát',
-        more: 'Xem thêm',
-        watch: 'Xem',
-        save: 'Lưu',
-        share: 'Chia sẻ',
-        empty: 'Chưa có shorts.',
-      },
-    } as const;
-    return labelsByLocale[resolvedLocale] || labelsByLocale.vi;
-  }, [resolvedLocale]);
-  const { title, autoplay, more, watch, save, share, empty: emptyLabel } = labels;
-
   const handleViewAll = () => {
-    const target = `/${locale}/media`;
+    const target = `/${lang}/media`;
     if (typeof window !== 'undefined') {
       window.location.href = target;
     }
@@ -66,7 +41,7 @@ export default function ShortFormPlaylist() {
       <section id="shorts" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 md:px-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Shorts</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">{label}</p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
           </div>
         </div>
@@ -84,7 +59,7 @@ export default function ShortFormPlaylist() {
       <section id="shorts" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 md:px-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Shorts</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">{label}</p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
           </div>
           <button
@@ -104,7 +79,7 @@ export default function ShortFormPlaylist() {
     <section id="shorts" className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm">
       <div className="flex items-center justify-between px-4 py-3 md:px-5">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Shorts</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">{label}</p>
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
         </div>
         <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">

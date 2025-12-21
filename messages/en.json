@@ -229,11 +229,36 @@
     "subscribeError": "Failed to update subscription."
   },
   "news": {
-    "title": "Featured content"
+    "title": "Featured content",
+    "empty": "No content yet.",
+    "openExternal": "Open link",
+    "close": "Close"
   },
   "media": {
     "title": "Media",
-    "description": "Browse featured posts, card news, and shorts in one place."
+    "description": "Browse featured posts, card news, and shorts in one place.",
+    "cardNewsTab": "Card news",
+    "shortsTab": "Shorts"
+  },
+  "cardNews": {
+    "label": "Card News",
+    "sectionTitle": "Visa/Jobs card news",
+    "moreLabel": "View all",
+    "viewSlide": "View",
+    "saveLabel": "Save",
+    "shareLabel": "Share",
+    "moreMobile": "More card news",
+    "emptyLabel": "No card news yet."
+  },
+  "shorts": {
+    "label": "Shorts",
+    "title": "Shorts playlist",
+    "autoplay": "Autoplay",
+    "more": "More",
+    "watch": "Watch",
+    "save": "Save",
+    "share": "Share",
+    "empty": "No shorts yet."
   },
   "post": {
     "readTime": "{minutes} min",
