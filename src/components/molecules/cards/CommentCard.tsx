@@ -57,14 +57,14 @@ export default function CommentCard({
   
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
-  const originalPostLabel = tCommon.originalPost || (locale === 'vi' ? 'Bài viết gốc' : locale === 'en' ? 'Original post' : '원글');
-  const deletedPostLabel = tCommon.deletedPost || (locale === 'vi' ? 'Bài viết đã bị xóa' : locale === 'en' ? 'Deleted post' : '삭제된 게시글');
-  const noTitleLabel = tCommon.noTitle || (locale === 'vi' ? 'Không có tiêu đề' : locale === 'en' ? 'No title' : '제목 없음');
-  const hideLabel = tCommon.hide || (locale === 'vi' ? 'Ẩn' : locale === 'en' ? 'Hide' : '안보기');
-  const unhideLabel = tCommon.unhide || (locale === 'vi' ? 'Bỏ ẩn' : locale === 'en' ? 'Unhide' : '숨김 해제');
-  const hiddenCommentLabel = tCommon.hiddenComment || (locale === 'vi' ? 'Bình luận đã được ẩn.' : locale === 'en' ? 'This comment is hidden.' : '숨긴 댓글입니다.');
-  const hideFailedLabel = tCommon.hideFailed || (locale === 'vi' ? 'Không thể ẩn bình luận.' : locale === 'en' ? 'Failed to hide the comment.' : '댓글을 숨길 수 없습니다.');
-  const unhideFailedLabel = tCommon.unhideFailed || (locale === 'vi' ? 'Không thể bỏ ẩn.' : locale === 'en' ? 'Failed to unhide.' : '숨김 해제에 실패했습니다.');
+  const originalPostLabel = tCommon.originalPost || '';
+  const deletedPostLabel = tCommon.deletedPost || '';
+  const noTitleLabel = tCommon.noTitle || '';
+  const hideLabel = tCommon.hide || '';
+  const unhideLabel = tCommon.unhide || '';
+  const hiddenCommentLabel = tCommon.hiddenComment || '';
+  const hideFailedLabel = tCommon.hideFailed || '';
+  const unhideFailedLabel = tCommon.unhideFailed || '';
 
   const trustBadgePresentation = getTrustBadgePresentation({
     locale,
