@@ -119,7 +119,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
 
   const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
-  const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
+  const learnMoreLabel = tCommon.learnMore || '';
   const profileFallbacks = useMemo(() => {
     if (locale === 'en') {
       return {

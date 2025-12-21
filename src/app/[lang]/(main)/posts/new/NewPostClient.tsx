@@ -1146,7 +1146,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
         onClose={closeGuidelines}
         title={rulesTitleLabel}
         items={[rulesRespectLabel, rulesAdsLabel, rulesDupLabel]}
-        confirmLabel={lang === 'vi' ? 'Đã hiểu' : lang === 'en' ? 'Got it' : '확인'}
+        confirmLabel={(((translations as any)?.common || {}) as Record<string, string>).confirm || ''}
       />
       <Modal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)}>
         <LoginPrompt onClose={() => setIsLoginPromptOpen(false)} variant="modal" translations={translations} />

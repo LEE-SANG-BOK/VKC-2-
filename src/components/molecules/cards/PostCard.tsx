@@ -119,7 +119,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   });
 
   const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
-  const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
+  const learnMoreLabel = tCommon.learnMore || '';
 
   const responseCount = Math.max(0, Number(stats.comments ?? 0));
   const responseLabel = isQuestion

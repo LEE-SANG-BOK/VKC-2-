@@ -730,7 +730,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   });
 
   const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
-  const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
+  const learnMoreLabel = tCommon.learnMore || '';
   const relatedTitleLabel = tPostDetail.relatedPostsTitle || (locale === 'vi' ? 'Bài viết liên quan' : locale === 'en' ? 'Related posts' : '관련 글');
   const categoryPopularTitleLabel = tPostDetail.categoryPopularTitle || (locale === 'vi' ? 'Bài viết phổ biến trong danh mục' : locale === 'en' ? 'Popular in this category' : '같은 카테고리 인기글');
   const relatedEmptyLabel = tPostDetail.relatedPostsEmpty || (locale === 'vi' ? 'Chưa có bài viết liên quan.' : locale === 'en' ? 'No related posts yet.' : '관련 글이 아직 없습니다.');

@@ -315,8 +315,8 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
     t.stepDocuments || (lang === 'vi' ? 'Tài liệu' : lang === 'en' ? 'Documents' : '서류 업로드');
   const stepStatusLabel =
     t.stepStatus || (lang === 'vi' ? 'Trạng thái' : lang === 'en' ? 'Status' : '상태 확인');
-  const nextLabel = tCommon.next || (lang === 'vi' ? 'Tiếp theo' : lang === 'en' ? 'Next' : '다음');
-  const previousLabel = tCommon.previous || (lang === 'vi' ? 'Trước' : lang === 'en' ? 'Previous' : '이전');
+  const nextLabel = tCommon.next || '';
+  const previousLabel = tCommon.previous || '';
   const typeStepValidation =
     t.typeValidationError ||
     (lang === 'vi'
@@ -335,7 +335,7 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
   ];
 
   const trustBadgeGuideHref = `/${lang}/guide/trust-badges`;
-  const learnMoreLabel = tCommon.learnMore || (lang === 'vi' ? 'Xem thêm' : lang === 'en' ? 'Learn more' : '자세히');
+  const learnMoreLabel = tCommon.learnMore || '';
 
   const [formData, setFormData] = useState({
     verificationType: '' as VerificationType | '',

@@ -73,7 +73,7 @@ export default function CommentCard({
   });
 
   const trustBadgeGuideHref = `/${locale}/guide/trust-badges`;
-  const learnMoreLabel = tCommon.learnMore || (locale === 'vi' ? 'Xem thêm' : locale === 'en' ? 'Learn more' : '자세히');
+  const learnMoreLabel = tCommon.learnMore || '';
   
   const [localIsLiked, setLocalIsLiked] = useState(isLiked);
   const [localLikes, setLocalLikes] = useState(likes);
