@@ -2030,7 +2030,7 @@ $gh-address-comments
   - [x] npm run lint
   - [x] npm run type-check
   - [x] SKIP_SITEMAP_DB=true npm run build
-  - [x] PORT=3001 npm run test:e2e
+  - [x] npm run test:e2e (PORT=3000 고정, dev 실행 시 reuse)
 - 변경 파일
   - src/app/[lang]/(main)/HomeClient.tsx
   - src/components/organisms/CategorySidebar.tsx
@@ -2045,6 +2045,7 @@ $gh-address-comments
   - [x] 인증 답변 안내 라벨을 모바일에서 컴팩트 표기로 전환(툴팁은 상세 유지)
   - [x] 액션 행 `nowrap` 강제 제거로 모바일 줄바꿈/정렬을 CSS 규칙에 위임
   - [x] 가로 스크롤 칩/태그 우측 클립 방지(`pr` + `scroll-px`)
+  - [x] 해결/미해결(채택) 아이콘은 모바일에서 숨김(밀집 완화)
 - 현황 분석(코드 기준)
   - 현재 구현/문제 위치: `src/components/molecules/cards/PostCard.tsx`(액션/메뉴), `src/components/organisms/NewsSection.tsx`(가로 스크롤), `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`(태그)
   - 재현/리스크: 모바일에서 `...` 버튼이 썸네일 영역에 겹치고, 인증 답변 문구가 길어 액션이 밀집됨
@@ -2055,13 +2056,14 @@ $gh-address-comments
   - [x] npm run lint
   - [x] npm run type-check
   - [x] SKIP_SITEMAP_DB=true npm run build
-  - [x] PORT=3001 npm run test:e2e
+  - [x] npm run test:e2e (PORT=3000 고정, dev 실행 시 reuse)
 - 변경 파일
   - src/components/molecules/cards/PostCard.tsx
   - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
   - src/components/organisms/NewsSection.tsx
 - 커밋
   - `[FE] harden mobile post cards and horizontal chips` (df850ab)
+  - `[FE] hide solved indicator on mobile post cards` (9e85b02)
 
 #### (2025-12-22) [BE] 추천 사용자 API 500(빈 interests) 수정
 
@@ -2077,11 +2079,32 @@ $gh-address-comments
   - [x] npm run lint
   - [x] npm run type-check
   - [x] SKIP_SITEMAP_DB=true npm run build
-  - [x] PORT=3001 npm run test:e2e
+  - [x] npm run test:e2e (PORT=3000 고정, dev 실행 시 reuse)
 - 변경 파일
   - src/app/api/users/recommended/route.ts
 - 커밋
   - `[BE] fix recommended users when interests empty` (d769ff9)
+
+#### (2025-12-22) [LEAD] Leaderboard 이미지 500 방지 + E2E(3000) 안정화
+
+- 플랜(체크리스트)
+  - [x] `next/image` 원격 호스트(`ui-avatars.com`) 허용 추가(leaderboard 500 방지)
+  - [x] Playwright는 PORT=3000 고정 + dev 서버 재사용 기본값으로 충돌 방지
+  - [x] probe rate-limit 엔드포인트는 dev/E2E에서 기본 활성(프로덕션은 env로 차단 유지)
+- 변경 내용(why/what)
+  - why: leaderboard에서 `ui-avatars.com` 아바타가 `next/image`에 의해 차단되며 500 발생, 또한 E2E가 포트 충돌(3000)로 깨짐
+  - what: `next.config.ts`에 remotePatterns 추가, `playwright.config.ts`의 `reuseExistingServer` 기본 활성, `/api/probe/rate-limit`은 production만 env로 게이트
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e (PORT=3000 고정)
+- 변경 파일
+  - next.config.ts
+  - playwright.config.ts
+  - src/app/api/probe/rate-limit/route.ts
+- 커밋
+  - `[LEAD] allow ui-avatars images and stabilize e2e on 3000` (cdd9149)
 
 ---
 
