@@ -15,17 +15,16 @@ interface AdminPostRailProps {
 }
 
 export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPostRailProps) {
-  const tNews = (translations?.news || {}) as { title?: string };
+  const tNews = (translations?.news || {}) as { title?: string; moreLabel?: string; close?: string; openExternal?: string };
   const [selected, setSelected] = useState<NewsItem | null>(null);
 
   const { data: newsItems, isLoading } = useNews(lang);
   const items = (newsItems || []).filter((item) => item.type === 'post').slice(0, limit);
 
-  const title =
-    tNews.title || (lang === 'vi' ? 'Nội dung nổi bật' : lang === 'en' ? 'Featured content' : '추천 콘텐츠');
-  const moreLabel = lang === 'vi' ? 'Xem tất cả' : lang === 'en' ? 'View all' : '모두 보기';
-  const closeLabel = lang === 'vi' ? 'Đóng' : lang === 'en' ? 'Close' : '닫기';
-  const openExternalLabel = lang === 'vi' ? 'Mở liên kết' : lang === 'en' ? 'Open link' : '외부 링크 열기';
+  const title = tNews.title || '';
+  const moreLabel = tNews.moreLabel || '';
+  const closeLabel = tNews.close || '';
+  const openExternalLabel = tNews.openExternal || '';
 
   if (isLoading) {
     return (

@@ -171,6 +171,10 @@
       "title": "Quyền riêng tư - viet kconnect",
       "description": "Tìm hiểu cách viet kconnect xử lý dữ liệu của bạn."
     },
+    "faq": {
+      "title": "Câu hỏi thường gặp - viet kconnect",
+      "description": "Giải đáp các câu hỏi phổ biến khi sử dụng viet kconnect."
+    },
     "keywords": {
       "vietnam": "Việt Nam",
       "korean": "Người Hàn",
@@ -194,6 +198,16 @@
       "heading": "Quyền riêng tư",
       "body1": "Chúng tôi chỉ thu thập và xử lý dữ liệu cần thiết để cung cấp dịch vụ.",
       "body2": "Bạn có thể yêu cầu xóa tài khoản và dữ liệu liên quan bất cứ lúc nào."
+    },
+    "faq": {
+      "heading": "Câu hỏi thường gặp",
+      "intro": "Câu trả lời nhanh giúp bạn bắt đầu dễ dàng.",
+      "q1": "Làm sao để tìm câu trả lời đã xác minh?",
+      "a1": "Hãy tìm huy hiệu Đã xác minh/Chuyên gia trên bài viết và hồ sơ.",
+      "q2": "Tôi quản lý theo dõi ở đâu?",
+      "a2": "Mở cài đặt hồ sơ để quản lý danh mục/chủ đề theo dõi.",
+      "q3": "Báo cáo thông tin sai thế nào?",
+      "a3": "Dùng nút báo cáo ở mỗi bài viết hoặc câu trả lời."
     }
   },
   "header": {
@@ -261,6 +275,7 @@
   },
   "news": {
     "title": "Nội dung nổi bật",
+    "moreLabel": "Xem tất cả",
     "empty": "Chưa có nội dung.",
     "openExternal": "Mở liên kết",
     "close": "Đóng"
