@@ -98,7 +98,7 @@ export default function FollowButton({
 
   const sizeClasses =
     size === 'xs'
-      ? 'px-3 py-2 text-xs min-h-[44px] sm:px-2 sm:py-0.5 sm:text-[9px] sm:leading-none sm:min-h-[20px]'
+      ? 'px-3 py-1.5 text-xs min-h-[36px] sm:px-2.5 sm:py-1 sm:text-[11px] sm:min-h-[28px]'
       : size === 'sm'
         ? 'px-3 py-2 text-sm min-h-[44px] sm:px-3 sm:py-1.5 sm:text-xs sm:min-h-[36px]'
         : 'px-4 py-2 text-sm min-h-[44px] sm:min-h-[40px]';
