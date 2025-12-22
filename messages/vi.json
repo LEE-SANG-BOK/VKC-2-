@@ -1079,6 +1079,8 @@
     "REPORT_SELF_FORBIDDEN": "Bạn không thể báo cáo nội dung của chính mình.",
     "REPORT_DUPLICATE": "Bạn đã báo cáo mục này rồi.",
     "REPORT_RATE_LIMITED": "Bạn gửi báo cáo quá nhiều lần. Vui lòng thử lại sau.",
+    "REPORT_FAILED": "Không thể gửi báo cáo.",
+    "FEEDBACK_FAILED": "Gửi phản hồi thất bại.",
     "FEEDBACK_RATE_LIMITED": "Bạn gửi phản hồi quá nhiều lần. Vui lòng thử lại sau.",
     "VERIFICATION_RATE_LIMITED": "Bạn gửi yêu cầu xác minh quá nhiều lần. Vui lòng thử lại sau.",
     "PROBE_RATE_LIMITED": "Bạn gửi quá nhiều yêu cầu. Vui lòng thử lại sau."

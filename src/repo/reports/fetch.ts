@@ -6,7 +6,9 @@ export async function reportPost(
   postId: string,
   data: CreateReportData
 ): Promise<ApiResponse<Report>> {
-  const res = await fetch(`${API_BASE}/api/posts/${postId}/report`, {
+  const isServer = typeof window === 'undefined';
+  const url = isServer ? `${API_BASE}/api/posts/${postId}/report` : `/api/posts/${postId}/report`;
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -19,9 +21,9 @@ export async function reportPost(
   
   if (!res.ok || !result.success) {
     throw new ApiError(
-      result.error || result.message || '게시글 신고에 실패했습니다.',
+      result.error || result.message || '',
       res.status,
-      result.code,
+      result.code || 'REPORT_FAILED',
       getRetryAfterSeconds(res.headers)
     );
   }
@@ -33,7 +35,9 @@ export async function reportComment(
   commentId: string,
   data: CreateReportData
 ): Promise<ApiResponse<Report>> {
-  const res = await fetch(`${API_BASE}/api/comments/${commentId}/report`, {
+  const isServer = typeof window === 'undefined';
+  const url = isServer ? `${API_BASE}/api/comments/${commentId}/report` : `/api/comments/${commentId}/report`;
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -46,9 +50,9 @@ export async function reportComment(
   
   if (!res.ok || !result.success) {
     throw new ApiError(
-      result.error || result.message || '댓글 신고에 실패했습니다.',
+      result.error || result.message || '',
       res.status,
-      result.code,
+      result.code || 'REPORT_FAILED',
       getRetryAfterSeconds(res.headers)
     );
   }
@@ -60,7 +64,9 @@ export async function reportAnswer(
   answerId: string,
   data: CreateReportData
 ): Promise<ApiResponse<Report>> {
-  const res = await fetch(`${API_BASE}/api/answers/${answerId}/report`, {
+  const isServer = typeof window === 'undefined';
+  const url = isServer ? `${API_BASE}/api/answers/${answerId}/report` : `/api/answers/${answerId}/report`;
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -73,9 +79,9 @@ export async function reportAnswer(
   
   if (!res.ok || !result.success) {
     throw new ApiError(
-      result.error || result.message || '답글 신고에 실패했습니다.',
+      result.error || result.message || '',
       res.status,
-      result.code,
+      result.code || 'REPORT_FAILED',
       getRetryAfterSeconds(res.headers)
     );
   }

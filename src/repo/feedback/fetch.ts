@@ -27,9 +27,9 @@ export async function submitFeedback(
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     throw new ApiError(
-      error.error || error.message || '피드백 제출에 실패했습니다.',
+      error.error || error.message || '',
       res.status,
-      error.code,
+      error.code || 'FEEDBACK_FAILED',
       getRetryAfterSeconds(res.headers)
     );
   }
