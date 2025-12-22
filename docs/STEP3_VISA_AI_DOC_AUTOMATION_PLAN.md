@@ -59,6 +59,9 @@
 
 > 실제 구현 시 기존 테이블(`profiles`, `verification_requests`, `users.isVerified` 등)과 충돌 없이 추가/확장한다.
 
+- `document_templates`
+  - `id`, `docType`, `version`, `status(draft|active|archived)`, `effectiveFrom`, `effectiveTo?`
+  - `templatePdfPath?`(원본 PDF), `renderSpecJson`(필드→폼필드명 또는 좌표/폰트/크기 매핑), `updatedBy`, `updatedAt`
 - `visa_rulesets`
   - `id`, `visaType`, `version`, `effectiveFrom`, `effectiveTo?`, `status(draft|active|archived)`
   - `rulesJson`(요건/점수/패널티 규칙), `sourcesJson`(공식 출처/링크), `updatedBy`, `updatedAt`
@@ -138,9 +141,28 @@
 - [ ] 룰셋/체크리스트가 “활성 공식정보”를 참조하도록 연결
 - [ ] 운영 루틴 고정(주 1회 점검 + 변경 시 즉시 반영)
 
+## 10) 자동서류 확장(Phase 2, 추가 도입 전략)
+
+`통합신청서 + 유학생 알바` 이후에 “신고 기한/과태료/지속 이용” 효용이 큰 서류부터 확장한다.
+
+- P2-1 (최우선, Low risk / High ROI): **체류지(주소) 변경 신고서**
+  - 기한/효용: 주소 변경 후 신고 의무(14일 내) 성격으로 사용자 체감 ROI가 큼
+  - 구현: 정형 PDF 템플릿 + 필드 매핑(주소/등록번호/성명 등) + 상황 기반 Wizard(“주소가 변경되셨나요?”)
+- P2-2 (우선, Medium risk / High ROI): **고용/신분 변동 신고서**
+  - 기한/효용: 고용 변경/신분 변경 후 신고 의무(예: 15일 내) + “졸업 이후에도 플랫폼 잔존”에 직접 기여
+  - 구현: 변경 유형 분기(이직/회사정보/근무지/직종 등) Wizard + 템플릿/버전 관리
+- P2-3 (중요, High risk / Medium ROI): **가족 초청 서류(사증발급인정신청/신원보증서 등)**
+  - 효용: 작성 난이도/언어장벽이 커서 자동화 가치가 높고, “상담 전환” 트리거로 ROI가 큼
+  - 구현: 2종 이상 문서 묶음 생성(패키지 다운로드) + 첨부서류 체크리스트 + 리드 우선순위 상향
+
+## 11) OCR(입력 자동화) 도입(Phase 2.5)
+
+- 여권 MRZ 인식(v1): 정확도가 높고(체크섬 검증 가능) 입력시간을 크게 단축 → Wizard의 “자동 채움”으로 연결
+- ARC OCR(v2): 난이도 높음(한글 주소) → 앞면(영문명/번호) 중심 + 포맷 검증 + 사용자 수정 허용
+- UX 원칙: OCR은 “선택 옵션”으로 제공하고, 결과는 항상 사용자가 수정 가능한 상태로 유지
+
 ## 9) 스킬(레포 로컬)과의 연결
 
 - `vkc-visa-assessment-engine`: 룰셋 스키마/버전/효력일자/결과 스키마를 강제
 - `vkc-docgen-template-engine`: 템플릿 스키마 + PDF renderSpec + 생성 히스토리 구조를 강제
 - `vkc-admin-ops-workflow`: Draft → 검토 → Activate 운영 흐름을 표준화
-
