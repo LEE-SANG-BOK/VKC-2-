@@ -70,18 +70,28 @@ export default function Avatar({ name, size = 'md', imageUrl, showVerifiedOverla
   if (hasValidImage) {
     return (
       <div className={`${sizeStyles[size]} rounded-full ${interactiveScale} ${interactiveRing} transition-all duration-200 ease-out relative bg-gray-100 dark:bg-gray-800 overflow-hidden`}>
-        <Image
-          src={resolvedImageUrl}
-          alt={name}
-          width={sizePixels[size]}
-          height={sizePixels[size]}
-          sizes={`${sizePixels[size]}px`}
-          className="w-full h-full object-cover"
-          unoptimized={isUiAvatars}
-          placeholder="blur"
-          blurDataURL={DEFAULT_BLUR_DATA_URL}
-          onError={() => setImgError(true)}
-        />
+        {isUiAvatars ? (
+          <img
+            src={resolvedImageUrl}
+            alt={name}
+            width={sizePixels[size]}
+            height={sizePixels[size]}
+            className="w-full h-full object-cover"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <Image
+            src={resolvedImageUrl}
+            alt={name}
+            width={sizePixels[size]}
+            height={sizePixels[size]}
+            sizes={`${sizePixels[size]}px`}
+            className="w-full h-full object-cover"
+            placeholder="blur"
+            blurDataURL={DEFAULT_BLUR_DATA_URL}
+            onError={() => setImgError(true)}
+          />
+        )}
         {overlay}
       </div>
     );

@@ -32,3 +32,10 @@
 - Admin UI routes: `src/app/admin/**`
 - Admin data access: `src/repo/admin/**`
 - Admin-only helpers: `src/lib/admin/**`
+
+## Task Intake / Done Criteria
+
+- 프로젝트 공통 프롬프트/워크플로우 규칙(SoT): `docs/CODEX_PROMPT_PROTOCOL.md`
+- 구현 전 반드시 고정할 것
+  - Scope(In/Out) + Non‑negotiables + Done(acceptance criteria)
+  - 변경 리스크(문서/FE/BE/DB) 등급과 검증 게이트(`lint/type-check/build/e2e`)

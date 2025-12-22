@@ -34,3 +34,6 @@ Keep “규정/서류 요구사항/공식 공지” up-to-date as **data**, not 
   - immediate fallback to manual admin upload if unstable
 - Scheduler: external cron hits `/api/admin/immigration/sync` (authenticated)
 
+## STEP3 official sources (SoT)
+
+- Source list (A/B/C) and update cadence: `docs/STEP3_SOT_RESOURCES.md`

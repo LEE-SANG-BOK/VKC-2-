@@ -8,6 +8,8 @@
 - P1은 안정화/유지보수 체계(테스트 확장, Admin 정리, 모니터링), P2는 스케일/확장(캐시/레플리카/플래그/CMS/추천 고도화)로 분리한다.
 - 추가 정책: `en`은 웹 UI에서 숨김(언어 스위치/노출 동선 제거)하되, 기존 `en` 페이지/번역은 삭제하지 않고 SEO 노출은 유지한다. 앞으로 신규 작업은 `en` 번역 추가/검수는 하지 않음(단, 페이지 렌더가 깨지지 않도록 fallback은 보장).
 - STEP3(비자 확률 추천/서류 PDF 자동화/공식정보 동기화) 실행 문서는 `docs/STEP3_VISA_AI_DOC_AUTOMATION_PLAN.md`에서 관리한다.
+  - STEP3 SoT(공식 링크/템플릿/비자 목록/리드 기준): `docs/STEP3_SOT_RESOURCES.md`
+- Codex 프롬프트/개발 워크플로우 SoT: `docs/CODEX_PROMPT_PROTOCOL.md` (Task Intake → Done 기준 → 검증 게이트)
 
 ## Policy decisions (확정)
 
@@ -147,6 +149,8 @@ $gh-address-comments
 - `vkc-wizardkit`: Step UI + 하단 고정 CTA + safe-area + draft 저장 + 제출 이벤트 로깅 패턴
   - Wizard 카피/톤은 `docs/UX_AGENT_PERSONA.md`를 단일 소스로 고정(비자/서류/상담 플로우 공통)
 - `vkc-admin-ops-workflow`: Draft → 검토 → 예약발행 → 게시 운영 워크플로우 표준화
+- `vkc-ux-audit`: UX 전문가 감사(휴리스틱 + 모바일 + i18n + CWV/a11y) — 스프린트 말/릴리즈 전 QA 게이트
+  - 페르소나 SoT: `docs/UX_REVIEW_AGENT_PERSONA.md`
 
 ##### P1 (차별화 핵심) — 엔진화 2개
 
@@ -2394,6 +2398,30 @@ $gh-address-comments
   - src/components/templates/MainLayout.tsx
   - src/lib/api/post-list.ts
   - src/repo/users/types.ts
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+
+#### (2025-12-22) [P0] 모바일 사이드바/추천 사용자/UGC 이미지 안정화 + Admin Feedback fallback
+
+- 작업
+  - 모바일 사이드바: Sheet가 화면을 전부 덮지 않도록 폭 제한(`max-w-[90vw]`)
+  - 추천 사용자: 카드 레이아웃을 “아바타 좌측 + 정보 + 팔로우 버튼” 1행으로 재정렬(모바일 CTA 과대 문제 완화)
+  - PostCard: 숨김 `×` 아이콘 크기/여백 미세 조정(이미지 유무 관계 없이 안정)
+  - PostCard: 좋아요/북마크 active 상태 배경색 강조 제거(아이콘/텍스트 컬러로만 상태 표현)
+  - 구독/카테고리: 구독 버튼 우측 클립 완화(행 wrap + 버튼 min-width 축소)
+  - Post Detail: 본문/답변 UGC 영역에 `ugc-content` 적용 → 첨부 이미지가 원본 크기로 튀지 않게 제한
+  - Admin Feedback: `feedbacks` 테이블 컬럼 불일치(title/steps/page_url 등)에서도 목록 조회가 깨지지 않게 fallback 보강
+- 변경 파일
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/app/api/admin/feedback/route.ts
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - src/components/templates/MainLayout.tsx
+  - docs/WORKING_PLAN.md
 - 검증
   - [x] npm run lint
   - [x] npm run type-check

@@ -77,24 +77,25 @@ export async function GET(req: NextRequest) {
     ];
     const matchScore = sql<number>`${sql.join(matchScoreParts, sql` + `)}`;
 
-    const recommendedUsers = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        displayName: users.displayName,
-        image: users.image,
-        bio: users.bio,
-        isVerified: users.isVerified,
-        isExpert: users.isExpert,
-        badgeType: users.badgeType,
-        badgeExpiresAt: users.badgeExpiresAt,
-        status: users.status,
-        userType: users.userType,
-        interests: users.interests,
-        visaType: users.visaType,
-        koreanLevel: users.koreanLevel,
-        followersCount: sql<number>`(
-          SELECT COUNT(*)::int 
+	    const recommendedUsers = await db
+	      .select({
+	        id: users.id,
+	        name: users.name,
+	        displayName: users.displayName,
+	        image: users.image,
+	        bio: users.bio,
+	        isVerified: users.isVerified,
+	        isExpert: users.isExpert,
+	        badgeType: users.badgeType,
+	        badgeExpiresAt: users.badgeExpiresAt,
+	        status: users.status,
+	        nationality: users.nationality,
+	        userType: users.userType,
+	        interests: users.interests,
+	        visaType: users.visaType,
+	        koreanLevel: users.koreanLevel,
+	        followersCount: sql<number>`(
+	          SELECT COUNT(*)::int 
           FROM ${follows} 
           WHERE ${follows.followingId} = ${users.id}
         )`,
@@ -149,19 +150,20 @@ export async function GET(req: NextRequest) {
       return interestList[0] || '';
     };
 
-    const formattedUsers = recommendedUsers.map((user) => {
-      const resolvedInterests = (user.interests || [])
-        .map((value) => (typeof value === 'string' ? resolveInterest(value) : ''))
-        .filter((value) => value.length > 0);
+	    const formattedUsers = recommendedUsers.map((user) => {
+	      const resolvedInterests = (user.interests || [])
+	        .map((value) => (typeof value === 'string' ? resolveInterest(value) : ''))
+	        .filter((value) => value.length > 0);
 
-      const recommendationMeta = [
-        { key: 'userType', value: user.userType || '' },
-        { key: 'visaType', value: user.visaType || '' },
-        { key: 'interest', value: pickInterest(resolvedInterests) },
-        { key: 'koreanLevel', value: user.koreanLevel || '' },
-      ]
-        .filter((item) => typeof item.value === 'string' && item.value.trim().length > 0)
-        .slice(0, 3);
+	      const recommendationMeta = [
+	        { key: 'nationality', value: user.nationality || '' },
+	        { key: 'userType', value: user.userType || '' },
+	        { key: 'visaType', value: user.visaType || '' },
+	        { key: 'interest', value: pickInterest(resolvedInterests) },
+	        { key: 'koreanLevel', value: user.koreanLevel || '' },
+	      ]
+	        .filter((item) => typeof item.value === 'string' && item.value.trim().length > 0)
+	        .slice(0, 3);
 
       return {
         id: user.id,
