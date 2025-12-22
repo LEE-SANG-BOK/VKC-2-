@@ -91,7 +91,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
         }
         text-gray-900 dark:text-white`}
     >
-      <div className="mx-auto grid w-full max-w-[1680px] h-[var(--vk-header-height)] grid-cols-[auto_minmax(0,1fr)_auto] lg:grid-cols-[320px_minmax(0,1fr)_320px] 2xl:grid-cols-[320px_minmax(0,960px)_320px] 2xl:justify-center items-center gap-2 px-2 sm:px-3 lg:px-4">
+      <div className="mx-auto grid w-full max-w-[1680px] h-[var(--vk-header-height)] grid-cols-[auto_minmax(0,1fr)_auto] lg:grid-cols-[320px_minmax(0,1fr)_320px] 2xl:grid-cols-[320px_minmax(0,920px)_320px] 2xl:justify-center items-center gap-2 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 justify-self-start">
           {showBackButton && (
             <button

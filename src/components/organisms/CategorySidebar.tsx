@@ -258,7 +258,7 @@ export default function CategorySidebar({
               : 'pb-4 border-b border-gray-200/40 dark:border-gray-700/40'
           }
         >
-          <div className={isMobileVariant ? 'flex items-center justify-between px-4 pb-2' : ''}>
+          <div className={isMobileVariant ? 'flex items-center gap-2 px-4 pb-2' : ''}>
             {isMobileVariant ? (
               <button
                 type="button"
