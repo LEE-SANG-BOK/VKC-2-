@@ -2424,6 +2424,28 @@ $gh-address-comments
   - P0-3: 모바일 키보드/스크롤 — 입력/제출 막힘 0
   - P0-9: 크로스브라우징/반응형 QA — Blocker/Major 0 리포트
 
+#### (2025-12-22) [LEAD] 모바일 UI 회귀 수정 + UGC 이미지 제한 (P0-3/P0-16)
+
+- 플랜(체크리스트)
+  - [x] MainLayout: 모바일에서 rightRail을 본문 상단으로 이동 + 좌측 Sheet 폭을 360px로 복구
+  - [x] PostCard: hide(×) 고정 위치 + 하단 액션바(좋아요/공유/북마크) 형태 일관화
+  - [x] 추천 사용자: avatar 확대 + follow CTA 축소
+  - [x] 상세: UGC 이미지가 원본 크기로 과대 노출되지 않게 제한(`ugc-content`)
+- 변경 내용(why/what)
+  - why: 모바일에서 “추천 콘텐츠 위치/사이드바 시트 폭/카드 액션/상세 이미지” 회귀를 정리해 전환·체류에 영향을 주는 UI 리스크를 제거
+  - what:
+    - `src/components/templates/MainLayout.tsx`: mobile에서 rightRail 상단 렌더 + rightRail aside는 lg+만 노출, Sheet 폭 고정
+    - `src/components/molecules/cards/PostCard.tsx`: hide(×) absolute 고정 + 액션바 좋아요 버튼을 icon variant로 통일
+    - `src/components/organisms/RecommendedUsersSection.tsx`, `src/components/atoms/FollowButton.tsx`: 모바일 카드에서 avatar/CTA 비율 조정
+    - `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`, `src/app/globals.css`: UGC 컨테이너에 `ugc-content` 적용 + img max-height 제한
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+- PR/머지
+  - [x] PR #39 (@codex) → `main` 머지
+
 #### (2025-12-22) [LEAD] P0-9 QA 매트릭스 (1라운드)
 
 - 대상 브랜치: `codex-integration` (QA 통과 후 `main` 머지)
