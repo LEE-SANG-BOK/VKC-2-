@@ -2597,3 +2597,18 @@ $gh-address-comments
   - [x] `npm run test:e2e`
 - PR/머지
   - [x] PR #46 (@codex) → `main` 머지
+
+#### (2025-12-22) [P0] 상세 공유 on-demand + 자기답변 채택 방지 + 리더보드 스모크
+
+- 목표: 상세 화면 전환 흐름(본문/답변)에 집중시키고, 채택 룰/회귀 테스트로 P0 리스크를 줄임
+- 변경 내용
+  - `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`: 상세 “공유 박스” 상시 노출 제거 → 공유 버튼 클릭 시 모달로 노출(복사/공유 후 자동 닫힘)
+  - `src/app/api/answers/[id]/adopt/route.ts`: 질문 작성자라 하더라도 “본인 답변”은 채택 불가(403)
+  - `e2e/smoke.spec.ts`: `/leaderboard` 렌더 스모크 추가(브라우저/모바일/웹킷 공통)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+- PR/머지
+  - [x] PR #48 (@codex) → `main` 머지
