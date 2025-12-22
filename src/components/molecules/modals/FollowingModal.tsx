@@ -341,19 +341,14 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
         key={userItem.id}
         className="bg-white dark:bg-gray-800 rounded-xl p-4 hover:shadow-lg transition-all border border-gray-200 dark:border-gray-700"
       >
-        <div className="flex items-start gap-4">
-          <div className="flex flex-col items-center gap-2">
-            <Avatar
-              name={displayName}
-              imageUrl={userItem.avatar || userItem.image}
-              size="lg"
-              hoverHighlight
-            />
+        <div className="flex items-start gap-3">
+          <div className="flex items-center gap-2 shrink-0">
+            <Avatar name={displayName} imageUrl={userItem.avatar || userItem.image} size="xl" hoverHighlight />
             <FollowButton
               userId={String(userItem.id)}
               userName={displayName}
               isFollowing={isFollowing}
-              size="sm"
+              size="xs"
               translations={translations}
               onToggle={(next) =>
                 setFollowStates((prev) => ({
@@ -364,7 +359,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
             />
           </div>
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pt-0.5">
             <button
               type="button"
               onClick={() => handleUserClick(userItem.id)}
@@ -406,7 +401,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                 if (!effectiveUserType) return null;
                 return (
                   <span className="inline-block px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full mb-2">
-                    #{getUserTypeLabel(effectiveUserType, userTypeLabels)}
+                    {getUserTypeLabel(effectiveUserType, userTypeLabels)}
                   </span>
                 );
               })()}
@@ -415,13 +410,22 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                   {userItem.bio}
                 </p>
               )}
-              <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-1">
-                {metaTexts.map((text, index) => (
-                  <span key={`${userItem.id}-meta-${index}`} className="inline-flex">
-                    # {text}
-                  </span>
-                ))}
-              </div>
+              {metaTexts.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 text-[11px] text-gray-600 dark:text-gray-300">
+                  {metaTexts.slice(0, 3).map((text, index) => (
+                    <span
+                      key={`${userItem.id}-meta-${index}`}
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 ${
+                        index === 0
+                          ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200'
+                          : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                      }`}
+                    >
+                      {text}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </button>
           </div>
         </div>
