@@ -130,8 +130,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         .replace('{certified}', String(certifiedCount))
         .replace('{noun}', responseNoun.toLowerCase())
     : '';
-  const certifiedDisplayLabel = certifiedSummaryLabel || certifiedCompactLabel;
-  const certifiedDisplayLabelMobile = certifiedCompactLabel;
+  const certifiedDisplayLabel = certifiedCompactLabel;
   const verifiedSummaryTooltip = tTrust.verifiedUserTooltip || tTrust.verifiedTooltip || '';
   const certifiedTooltipContent = certifiedSummaryLabel
     ? `${certifiedSummaryLabel} - ${verifiedSummaryTooltip}`
@@ -500,17 +499,27 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     return null;
   }
 
-	  return (
-	    <>
-	      <article
-	        onClick={handleClick}
-	        className={`question-card group relative ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
-	          }`}
-	      >
-	        <div className="question-card-main">
-	          <div className="question-card-body">
-	          <div className="flex items-start gap-2 mb-3 min-w-0">
-	            <div className="flex items-start gap-2 min-w-0 flex-1">
+  return (
+    <>
+      <article
+        onClick={handleClick}
+        className={`question-card group relative ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
+          }`}
+      >
+        <Tooltip content={hideLabel} position="left" touchBehavior="longPress">
+          <button
+            type="button"
+            onClick={handleToggleHide}
+            aria-label={hideLabel}
+            className="absolute top-3 right-3 z-10 flex h-7 w-7 items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+          >
+            <span aria-hidden className="text-base leading-none">×</span>
+          </button>
+        </Tooltip>
+		        <div className="question-card-main">
+		          <div className="question-card-body">
+		          <div className="flex items-start gap-2 mb-3 min-w-0">
+		            <div className="flex items-start gap-2 min-w-0 flex-1">
               <button
                 type="button"
                 className="shrink-0"
@@ -562,17 +571,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 	                </div>
 	              </div>
 	            </div>
-	            <Tooltip content={hideLabel} position="left" touchBehavior="longPress">
-	              <button
-	                type="button"
-	                onClick={handleToggleHide}
-	                aria-label={hideLabel}
-	                className="shrink-0 mt-1 flex h-7 w-7 items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-	              >
-	                <span aria-hidden className="text-base leading-none">×</span>
-	              </button>
-	            </Tooltip>
-	          </div>
+		          </div>
 	
 	          <div className="min-w-0">
 	            <div className="flex flex-wrap items-center gap-2 mb-2 min-w-0">
@@ -647,27 +646,25 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       <div className="question-card-actions">
         <div className="question-card-footer-fixed">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <button
-              type="button"
+            <ActionIconButton
+              icon={<MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />}
+              label={answerLabel}
+              count={responseCount}
               onClick={handleAnswerCountClick}
-              aria-label={answerLabel}
-              className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0 overflow-hidden"
-            >
-              <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span className="truncate tabular-nums">{responseCount}</span>
-            </button>
+              variant="icon"
+              className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            />
             {certifiedDisplayLabel ? (
               <Tooltip content={certifiedTooltipContent} position="top">
                 <button
                   type="button"
                   onClick={handleAnswerCountClick}
                   aria-label={certifiedTooltipContent || certifiedDisplayLabel}
-                  title={certifiedSummaryLabel || certifiedDisplayLabel}
-                  className="group inline-flex items-center gap-1.5 px-1 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[200px] sm:max-w-none"
+                  title={certifiedTooltipContent || certifiedDisplayLabel}
+                  className="group inline-flex items-center gap-1.5 px-1 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200 hover:text-emerald-800 dark:hover:text-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[160px] sm:max-w-none"
                 >
                   <ShieldCheck className="h-3 w-3 shrink-0" />
-                  <span className="truncate sm:hidden">{certifiedDisplayLabelMobile}</span>
-                  <span className="truncate hidden sm:inline">{certifiedSummaryLabel || certifiedDisplayLabelMobile}</span>
+                  <span className="truncate">{certifiedDisplayLabel}</span>
                 </button>
               </Tooltip>
             ) : null}
