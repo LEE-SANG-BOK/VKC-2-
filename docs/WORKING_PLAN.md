@@ -82,7 +82,7 @@
 #### 0.5.1 Codex CLI 스킬 프롬프트 (GitHub PR/CI)
 
 - 목적: GitHub PR에서 **리뷰 코멘트 처리** / **CI(GitHub Actions) 실패 분석·수정**을 빠르게 표준화한다.
-- 사용 조건: Codex CLI에서 스킬이 설치되어 있고(예: `~/.codex/skills/*`), 스킬을 인식하는 **새 Codex 세션**에서 실행한다.
+- 사용 조건: Codex CLI에서 스킬이 존재하고(예: `~/.codex/skills/*`, `./.codex/skills/*`), 스킬을 인식하는 **새 Codex 세션**에서 실행한다.
 - 호출 방식: 프롬프트에 `$<skill-name>`을 명시해 스킬을 강제 사용한다(가능하면 상단에 배치).
 
 **A) PR CI가 깨졌을 때: `gh-fix-ci`**
@@ -124,6 +124,36 @@ $gh-address-comments
 - 코멘트별로: (1) 이해 요약 → (2) 조치(코드 변경) → (3) 답글(결과/근거/추가 질문) 순서로 처리
 - 변경 후 필요한 경우 `npm run lint` / `npm run build` 결과를 함께 기록
 - gh 인증이 안 되어 있으면 `oai_gh` 후 `gh auth status`부터 진행
+```
+
+#### 0.5.2 Repo-local Codex 스킬 세팅 (VKC)
+
+- 목적: 반복 폭발 구간을 “스킬”로 고정해 **반복 최소화/체계화/ROI/확장성**을 확보한다.
+- 위치: `./.codex/skills/**` (레포에 커밋/공유되는 표준 스킬)
+- 사용법
+  - 프롬프트 상단에 `$<skill-name>`을 명시하면 해당 스킬을 강제로 사용한다.
+  - 예: `$vkc-repo-guardrails` / `$vkc-api-route-pattern` / `$vkc-wizardkit`
+  - 로컬 검사 스크립트: `bash .codex/skills/vkc-repo-guardrails/scripts/guardrails.sh`
+- “새 Codex 세션” 의미: Codex는 **시작 시점에 스킬을 스캔**하므로, 새로 추가/수정된 `./.codex/skills/**`를 인식시키려면 Codex CLI를 종료 후 다시 실행(= 새 세션)해야 한다.
+  - 근거: Codex 스킬은 “startup discovery” 방식으로 로딩된다(스킬 목록은 실행 중 핫리로드되지 않음).
+
+##### P0 (무조건 먼저) — 반복 폭발 구간 6개
+
+- `vkc-repo-guardrails`: 비협상 규칙 점검(서버 액션 금지/API Routes만/Drizzle/Supabase/Repo 레이어/i18n 안전)
+- `vkc-api-route-pattern`: `src/app/api/**` 표준 골격(세션/검증/DB/응답/레이트리밋)
+- `vkc-drizzle-schema-migration`: Drizzle 스키마/마이그레이션 표준화(룰셋/템플릿 DB화 강제)
+- `vkc-i18n-ko-vi-safety`: ko/vi 키 안전 + 베트남어 긴 문자열 UI 깨짐 방지
+- `vkc-wizardkit`: Step UI + 하단 고정 CTA + safe-area + draft 저장 + 제출 이벤트 로깅 패턴
+- `vkc-admin-ops-workflow`: Draft → 검토 → 예약발행 → 게시 운영 워크플로우 표준화
+
+##### P1 (차별화 핵심) — 엔진화 2개
+
+- `vkc-visa-assessment-engine`: 비자 평가 엔진(룰셋 JSON/버전/효력일자, 결과 스키마) — 코드 하드코딩 금지
+- `vkc-docgen-template-engine`: 문서 템플릿 엔진(템플릿 스키마+PDF renderSpec+히스토리+Storage) — 2개→50개 선형 확장
+
+##### P2 (지속 업데이트/최신성)
+
+- `vkc-regulation-knowledge-updater`: 공식 공지/규정 업데이트 파이프라인(스냅샷→검수→활성화) 기반
 
 ## 객관적 개선점(효율/반복 최소화 관점에서 ‘구조적으로’ 해결해야 하는 것)
 

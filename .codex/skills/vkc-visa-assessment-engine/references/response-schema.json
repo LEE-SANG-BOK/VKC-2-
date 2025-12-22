@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vietkconnect.local/schemas/visa-assessment-response-v1.json",
+  "title": "Visa Assessment Response (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["fromVisa", "toVisa", "modelVersion", "probabilityPercent", "grade", "missing", "risks", "checklistLink"],
+  "properties": {
+    "fromVisa": { "type": "string" },
+    "toVisa": { "type": "string" },
+    "modelVersion": { "type": "string" },
+    "probabilityPercent": { "type": "number", "minimum": 0, "maximum": 100 },
+    "grade": { "type": "string" },
+    "missing": { "type": "array", "items": { "type": "string" } },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "checklistLink": { "type": "string" }
+  }
+}
+
