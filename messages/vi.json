@@ -726,7 +726,7 @@
     "contentMinWarning": "Vui lòng viết ít nhất {min} ký tự cho nội dung.",
     "contentMaxWarning": "Nội dung tối đa {max} ký tự.",
     "tags": "Thẻ",
-    "tagsMax": "Tối đa 5",
+    "tagsMax": "Tối đa 3",
     "defaultTag": "Gợi ý",
     "tagPlaceholder": "Nhập thẻ rồi nhấn Enter hoặc Thêm",
     "add": "Thêm",

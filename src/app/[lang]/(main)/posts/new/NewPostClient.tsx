@@ -98,7 +98,6 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const [templateGoal, setTemplateGoal] = useState('');
   const [templateBackground, setTemplateBackground] = useState('');
   const [tags, setTags] = useState<string[]>([]);
-  const [tagSeed] = useState(() => Math.floor(Math.random() * 1_000_000_000));
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasBannedWords, setHasBannedWords] = useState(false);
@@ -196,7 +195,6 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const contentMaxWarningTemplate = t.contentMaxWarning || '';
   const tagsLabel = t.tags || '';
   const tagsMaxLabel = t.tagsMax || '';
-  const defaultTagLabel = t.defaultTag || '';
   const tagPlaceholderLabel = t.tagPlaceholder || '';
   const addLabel = t.add || '';
   const submittingLabel = t.submitting || '';
@@ -400,6 +398,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const buildDefaultTags = () => {
     return generatePostTags({
       locale: lang,
+      postType,
       title,
       categorySlug: parentCategory || null,
       subcategorySlug: childCategory || null,
@@ -408,8 +407,6 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
         goal: templateGoal,
         background: templateBackground,
       },
-      defaultTag: defaultTagLabel,
-      seed: tagSeed,
     });
   };
 
@@ -455,14 +452,13 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     parentCategory,
     childCategory,
     title,
+    postType,
     templateCondition,
     templateGoal,
     templateBackground,
     manualTagEdit,
-    defaultTagLabel,
     lang,
     parentOptions,
-    tagSeed,
   ]);
 
   const handleCancel = () => {
@@ -475,7 +471,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   };
 
   const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim()) && tags.length < 5) {
+    if (tagInput.trim() && !tags.includes(tagInput.trim()) && tags.length < 3) {
       setTags([...tags, tagInput.trim()]);
       setTagInput('');
       setManualTagEdit(true);
@@ -854,12 +850,12 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                     onChange={(e) => setTagInput(e.target.value)}
                     className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                     placeholder={tagPlaceholderLabel}
-                    disabled={tags.length >= 5}
+                    disabled={tags.length >= 3}
                   />
                   <button
                     type="button"
                     onClick={handleAddTag}
-                    disabled={tags.length >= 5 || !tagInput.trim()}
+                    disabled={tags.length >= 3 || !tagInput.trim()}
                     className="px-6 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     {addLabel}

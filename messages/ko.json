@@ -726,7 +726,7 @@
     "contentMinWarning": "본문을 최소 {min}자 이상 작성해주세요.",
     "contentMaxWarning": "본문은 최대 {max}자까지 작성할 수 있습니다.",
     "tags": "태그",
-    "tagsMax": "최대 5개",
+    "tagsMax": "최대 3개",
     "defaultTag": "추천",
     "tagPlaceholder": "태그 입력 후 Enter 또는 추가",
     "add": "추가",
