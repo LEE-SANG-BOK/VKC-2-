@@ -109,6 +109,10 @@ export function getMigrationClient() {
   return initDb().migrationClient;
 }
 
+export function getQueryClient() {
+  return initDb().queryClient;
+}
+
 export const db = new Proxy({} as PostgresJsDatabase<typeof schema>, {
   get(_target, prop) {
     if (prop === 'then') return undefined;
@@ -135,6 +139,25 @@ export const migrationClient = new Proxy(migrationClientTarget, {
       PropertyKey,
       unknown
     >;
+    const value = actual[prop];
+    return typeof value === 'function'
+      ? (value as (...args: unknown[]) => unknown).bind(actual)
+      : value;
+  },
+}) as unknown as QueryClient;
+
+const queryClientTarget = (() => {}) as unknown as QueryClient;
+export const queryClient = new Proxy(queryClientTarget, {
+  apply(_target, thisArg, argArray) {
+    const actual = initDb().queryClient as unknown as (
+      this: unknown,
+      ...args: unknown[]
+    ) => unknown;
+    return Reflect.apply(actual, thisArg, argArray);
+  },
+  get(_target, prop) {
+    if (prop === 'then') return undefined;
+    const actual = initDb().queryClient as unknown as Record<PropertyKey, unknown>;
     const value = actual[prop];
     return typeof value === 'function'
       ? (value as (...args: unknown[]) => unknown).bind(actual)

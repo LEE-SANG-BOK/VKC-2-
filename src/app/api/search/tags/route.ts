@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { getQueryClient } from '@/lib/db';
 import { setPublicSWR, successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
-import { sql } from 'drizzle-orm';
 
 /**
  * GET /api/search/tags
@@ -27,7 +26,8 @@ export async function GET(request: NextRequest) {
 
     // 태그 검색 (text[] 배열에서 검색)
     // PostgreSQL의 unnest를 사용하여 태그 배열을 평면화하고 검색
-    const tagsResult = await db.execute(sql`
+    const client = getQueryClient();
+    const tagsResult = await client`
       SELECT
         tag,
         COUNT(*)::int as count
@@ -42,12 +42,12 @@ export async function GET(request: NextRequest) {
         count DESC,
         tag ASC
       LIMIT ${limit}
-    `);
+    `;
 
     // 결과를 정리
-    const tags = (Array.from(tagsResult) as Array<{ tag: string; count: string }>).map((row) => ({
-      tag: row.tag,
-      count: parseInt(row.count),
+    const tags = Array.from(tagsResult as Array<{ tag?: unknown; count?: unknown }>).map((row) => ({
+      tag: String(row.tag || '').trim(),
+      count: Number(row.count) || 0,
     }));
 
     const response = successResponse({

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { getQueryClient } from '@/lib/db';
 import { getAdminSession } from '@/lib/admin/auth';
 import { setNoStore, setPrivateNoStore } from '@/lib/api/response';
-import { sql } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +12,8 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    const result = await db.execute(sql`
+    const client = getQueryClient();
+    const result = await client`
       WITH inserted AS (
         INSERT INTO reports (
           id,
@@ -58,10 +58,13 @@ export async function POST(request: NextRequest) {
       SELECT
         (SELECT COUNT(*)::int FROM inserted) AS inserted_count,
         (SELECT COUNT(*)::int FROM content_reports) AS legacy_total
-    `);
+    `;
 
-    const rows = Array.from(result) as Array<{ inserted_count: number; legacy_total: number }>;
-    const summary = rows[0] || { inserted_count: 0, legacy_total: 0 };
+    const summaryRow = Array.from(result as Array<{ inserted_count?: unknown; legacy_total?: unknown }>)[0];
+    const summary = {
+      inserted_count: Number(summaryRow?.inserted_count || 0),
+      legacy_total: Number(summaryRow?.legacy_total || 0),
+    };
 
     const response = NextResponse.json({
       success: true,

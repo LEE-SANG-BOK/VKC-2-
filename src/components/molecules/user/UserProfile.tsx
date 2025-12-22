@@ -141,6 +141,16 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    const handleOpenFollowing = () => {
+      setIsOpen(false);
+      setActiveModal('following');
+    };
+
+    window.addEventListener('vk:open-following-modal', handleOpenFollowing);
+    return () => window.removeEventListener('vk:open-following-modal', handleOpenFollowing);
+  }, []);
+
   const openModal = (modal: ModalType) => {
     setIsOpen(false);
     setActiveModal(modal);

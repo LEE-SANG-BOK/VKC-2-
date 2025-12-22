@@ -78,6 +78,8 @@ export default function RecommendedUsersSection({
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
   const [hasInteracted, setHasInteracted] = useState(false);
+  const tCommon = (translations?.common || {}) as Record<string, string>;
+  const moreLabel = tCommon.more || '';
   const cardPaddingClass = compact ? 'px-2.5 py-2' : 'px-3 py-3';
   const cardGapClass = compact ? 'gap-2' : 'gap-3';
   const cardNameClass = compact ? 'text-[13px]' : 'text-sm';
@@ -99,6 +101,11 @@ export default function RecommendedUsersSection({
 
   const markInteracted = useCallback(() => {
     setHasInteracted((prev) => (prev ? prev : true));
+  }, []);
+
+  const openFollowingModal = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new Event('vk:open-following-modal'));
   }, []);
 
   const scrollCarousel = useCallback((direction: -1 | 1) => {
@@ -278,6 +285,15 @@ export default function RecommendedUsersSection({
           {title}
         </h3>
         <div className="flex items-center gap-1">
+          {moreLabel ? (
+            <button
+              type="button"
+              onClick={openFollowingModal}
+              className="inline-flex items-center px-2 py-1 text-xs font-semibold text-blue-700 dark:text-blue-200 hover:underline"
+            >
+              {moreLabel}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => scrollCarousel(-1)}
