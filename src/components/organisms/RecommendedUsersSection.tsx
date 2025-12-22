@@ -83,7 +83,7 @@ export default function RecommendedUsersSection({
   const cardNameClass = compact ? 'text-[13px]' : 'text-sm';
   const cardMetaClass = compact ? 'text-[10px]' : 'text-[11px]';
   const badgeLabelClass = compact ? 'text-[10px] text-gray-500 dark:text-gray-400' : 'text-[11px] text-gray-500 dark:text-gray-400';
-  const avatarSize = compact ? 'md' : 'lg';
+  const avatarSize = compact ? 'lg' : 'lg';
   const followButtonSize = compact ? 'xs' : 'sm';
 
   const mergedMetaLabels = useMemo<Record<string, string>>(() => ({
@@ -150,7 +150,7 @@ export default function RecommendedUsersSection({
         >
           <div className={`flex items-center ${cardGapClass} w-full animate-pulse`}>
             <div className="flex flex-col items-center gap-2">
-              <div className={`${compact ? 'h-8 w-8' : 'h-12 w-12'} rounded-full bg-gray-200 dark:bg-gray-800`} />
+              <div className={`${compact ? 'h-10 w-10' : 'h-12 w-12'} rounded-full bg-gray-200 dark:bg-gray-800`} />
               <div className={`${compact ? 'h-6 w-16' : 'h-8 w-20'} rounded-md bg-gray-200 dark:bg-gray-800`} />
             </div>
             <div className="flex-1 min-w-0">
