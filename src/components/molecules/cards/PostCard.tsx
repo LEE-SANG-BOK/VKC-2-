@@ -147,7 +147,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         .replace('{noun}', responseNoun.toLowerCase())
     : '';
   const certifiedDisplayLabel = certifiedSummaryLabel || certifiedCompactLabel;
-  const certifiedDisplayLabelMobile = certifiedCompactLabel || certifiedSummaryLabel;
+  const certifiedDisplayLabelMobile = certifiedCount > 0 ? `+${certifiedCount}` : '';
   const verifiedSummaryTooltip = tTrust.verifiedUserTooltip || tTrust.verifiedTooltip || '';
   const certifiedTooltipContent = certifiedSummaryLabel
     ? `${certifiedSummaryLabel} - ${verifiedSummaryTooltip}`
