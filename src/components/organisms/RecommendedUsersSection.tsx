@@ -85,7 +85,7 @@ export default function RecommendedUsersSection({
   const badgeLabelClass = compact ? 'text-[10px] text-gray-500 dark:text-gray-400' : 'text-[11px] text-gray-500 dark:text-gray-400';
   const avatarSize = compact ? 'xl' : 'lg';
   const followButtonSize = compact ? 'xs' : 'sm';
-  const followButtonClassName = compact ? 'min-h-[32px] px-3 py-1.5' : '';
+  const followButtonClassName = compact ? 'min-h-[30px] px-3 py-1' : '';
 
   const mergedMetaLabels = useMemo<Record<string, string>>(() => ({
     followers: followerLabel,
@@ -272,7 +272,7 @@ export default function RecommendedUsersSection({
   if (!isLoading && !hasUsers) return null;
 
   return (
-    <div className={`rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 ${compact ? 'p-3' : 'p-4'}`}>
+    <div className={`rounded-xl border border-dashed border-blue-200/70 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 ${compact ? 'p-3' : 'p-4'}`}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           {title}
@@ -300,7 +300,11 @@ export default function RecommendedUsersSection({
       <div
         ref={carouselRef}
         onScroll={markInteracted}
-        className={`grid grid-flow-col ${compact ? 'auto-cols-[minmax(260px,1fr)]' : 'auto-cols-[minmax(220px,1fr)]'} sm:auto-cols-[minmax(280px,1fr)] lg:auto-cols-[minmax(260px,1fr)] ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 pr-3 scroll-px-3`}
+        className={`grid grid-flow-col ${
+          compact
+            ? 'auto-cols-[minmax(300px,1fr)] sm:auto-cols-[minmax(340px,1fr)]'
+            : 'auto-cols-[minmax(260px,1fr)] sm:auto-cols-[minmax(320px,1fr)]'
+        } lg:auto-cols-[minmax(280px,1fr)] ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 pr-3 scroll-px-3`}
       >
         {isLoading ? skeletonCards : userCards}
         {hasNextPage ? (
