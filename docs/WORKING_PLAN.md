@@ -155,6 +155,18 @@ $gh-address-comments
 
 - `vkc-regulation-knowledge-updater`: 공식 공지/규정 업데이트 파이프라인(스냅샷→검수→활성화) 기반
 
+#### 0.5.3 MCP (Model Context Protocol) 활용 (반복 최소화용)
+
+- 현황: 현재 Codex 환경에 연결된 MCP 서버/리소스가 0개(= 자동 컨텍스트 주입 없음)
+- 목적: PR/DB/배포 로그 같은 “외부 컨텍스트”를 리소스로 연결해, 리서치·재확인·복붙 비용을 구조적으로 제거
+- 운용 원칙
+  - MCP 리소스는 “근거 입력(SoT)”로만 사용하고, 실제 변경은 레포 규칙/게이트(Playwright 포함)로 검증한다.
+  - MCP에 없는 정보는 문서/코드/로그를 기준으로 판단하고, MCP는 “있으면 쓰는 가속기”로 취급한다.
+- 권장 연결(우선순위)
+  - GitHub(PR/Checks): PR 상태/실패 로그를 MCP 리소스로 제공(gh CLI 보완)
+  - DB/Schema: Drizzle 마이그레이션 상태/실 스키마를 리소스로 제공(피드백/추천 사용자 등 DB 불일치 예방)
+  - Deploy logs: Vercel 레이트리밋/배포 실패 로그를 리소스로 제공(원인 파악 시간 단축)
+
 ## 객관적 개선점(효율/반복 최소화 관점에서 ‘구조적으로’ 해결해야 하는 것)
 
 ### 1. 중복/분산된 규칙·로직을 ‘단일 소스’로 묶는 작업이 ROI 최상
@@ -2249,6 +2261,28 @@ $gh-address-comments
   - src/lib/constants/tag-translations.ts
   - messages/ko.json
   - messages/vi.json
+
+#### (2025-12-22) [FE/WEB] 모바일 우측 레일 노출 + 프로필(아바타) 클릭 통일 + Playwright 스모크 확장
+
+- 플랜(체크리스트)
+  - [x] 우측 레일은 모바일에서 메인 하단으로 노출(추천 콘텐츠를 “왼쪽 사이드바”에 넣지 않음)
+  - [x] 추천 사용자/커뮤니티 랭킹: 아바타 클릭도 프로필로 이동(닉네임과 동일 규칙)
+  - [x] 구독 토픽 칩 우측 클립 완화(패딩/scroll padding)
+  - [x] PostCard 상단 메뉴 버튼 위치 미세 조정(이미지와 간격)
+  - [x] Playwright 스모크: privacy/terms/faq/feedback + robots/sitemap 포함
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/components/templates/MainLayout.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - e2e/smoke.spec.ts
+  - docs/WORKING_PLAN.md
 
 ---
 
