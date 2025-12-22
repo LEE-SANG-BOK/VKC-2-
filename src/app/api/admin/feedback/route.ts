@@ -1,26 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { feedbacks, users } from '@/lib/db/schema';
 import { getAdminSession } from '@/lib/admin/auth';
-import { desc, eq, ilike, or, and, sql, SQL } from 'drizzle-orm';
+import { sql, SQL } from 'drizzle-orm';
 
-const hasMissingFeedbackTitleColumn = (error: unknown) => {
-  const visited = new Set<unknown>();
-  let current: unknown = error;
-  while (current && !visited.has(current)) {
-    visited.add(current);
-    const message =
-      current instanceof Error
-        ? current.message
-        : typeof (current as any)?.message === 'string'
-          ? String((current as any).message)
-          : '';
-    if (/column \"title\" of relation \"feedbacks\" does not exist/i.test(message)) {
-      return true;
+const feedbackColumnsCacheTtlMs = 5 * 60 * 1000;
+let cachedFeedbackColumns:
+  | {
+      fetchedAt: number;
+      columns: Set<string>;
     }
-    current = current instanceof Error ? current.cause : (current as any)?.cause;
+  | undefined;
+
+const getFeedbackColumns = async () => {
+  if (cachedFeedbackColumns && Date.now() - cachedFeedbackColumns.fetchedAt < feedbackColumnsCacheTtlMs) {
+    return cachedFeedbackColumns.columns;
   }
-  return false;
+
+  const result = await db.execute(sql`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'feedbacks'
+  `);
+
+  const columns = new Set(
+    Array.from(result)
+      .map((row) => String((row as { column_name?: unknown }).column_name || '').trim())
+      .filter(Boolean)
+  );
+
+  cachedFeedbackColumns = { fetchedAt: Date.now(), columns };
+  return columns;
 };
 
 export async function GET(request: NextRequest) {
@@ -38,136 +48,103 @@ export async function GET(request: NextRequest) {
     const search = (searchParams.get('search') || '').trim();
 
     const offset = (page - 1) * limit;
+    const columns = await getFeedbackColumns();
+    const hasTitle = columns.has('title');
+    const hasDescription = columns.has('description');
+    const hasContent = columns.has('content');
+    const bodyColumn = hasDescription ? 'description' : hasContent ? 'content' : null;
+
     const conditions: SQL[] = [];
-
     if (type === 'feedback' || type === 'bug') {
-      conditions.push(eq(feedbacks.type, type));
+      conditions.push(sql`${sql.identifier('f')}.${sql.identifier('type')} = ${type}`);
     }
 
-    if (search) {
-      const searchCondition = or(
-        ilike(feedbacks.title, `%${search}%`),
-        ilike(feedbacks.description, `%${search}%`)
-      );
-      if (searchCondition) conditions.push(searchCondition);
+    if (search && bodyColumn) {
+      const like = `%${search}%`;
+      const bodyExpr = sql`${sql.identifier('f')}.${sql.identifier(bodyColumn)}`;
+      if (hasTitle) {
+        conditions.push(
+          sql`(${sql.identifier('f')}.${sql.identifier('title')} ILIKE ${like} OR ${bodyExpr} ILIKE ${like})`
+        );
+      } else {
+        conditions.push(sql`${bodyExpr} ILIKE ${like}`);
+      }
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const whereClause = conditions.length > 0 ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
 
-    const runQuery = async () => {
-      const [countResult, feedbackList] = await Promise.all([
-        db.select({ count: sql<number>`count(*)::int` }).from(feedbacks).where(whereClause),
-        db
-          .select({
-            id: feedbacks.id,
-            type: feedbacks.type,
-            title: feedbacks.title,
-            description: feedbacks.description,
-            steps: feedbacks.steps,
-            pageUrl: feedbacks.pageUrl,
-            contactEmail: feedbacks.contactEmail,
-            ipAddress: feedbacks.ipAddress,
-            userAgent: feedbacks.userAgent,
-            createdAt: feedbacks.createdAt,
-            user: {
-              id: users.id,
-              name: users.name,
-              displayName: users.displayName,
-              email: users.email,
-              image: users.image,
-            },
-          })
-          .from(feedbacks)
-          .leftJoin(users, eq(feedbacks.userId, users.id))
-          .where(whereClause)
-          .orderBy(desc(feedbacks.createdAt))
-          .limit(limit)
-          .offset(offset),
-      ]);
+    const countResult = await db.execute(sql`
+      SELECT COUNT(*)::int AS count
+      FROM feedbacks ${sql.identifier('f')}
+      ${whereClause}
+    `);
+    const total = Number((Array.from(countResult)[0] as { count?: unknown })?.count || 0);
 
-      return { countResult, feedbackList };
-    };
+    const descriptionExpr = bodyColumn
+      ? sql`${sql.identifier('f')}.${sql.identifier(bodyColumn)}`
+      : sql`''`;
+    const titleExpr = hasTitle
+      ? sql`${sql.identifier('f')}.${sql.identifier('title')}`
+      : sql<string>`split_part(${descriptionExpr}, E'\n', 1)`;
+    const stepsExpr = columns.has('steps')
+      ? sql`${sql.identifier('f')}.${sql.identifier('steps')}`
+      : sql`NULL`;
 
-    const runQueryWithoutTitle = async () => {
-      const fallbackConditions: SQL[] = [];
+    const feedbackListResult = await db.execute(sql`
+      SELECT
+        ${sql.identifier('f')}.id AS id,
+        ${sql.identifier('f')}.type AS type,
+        ${titleExpr} AS title,
+        ${descriptionExpr} AS description,
+        ${stepsExpr} AS steps,
+        ${sql.identifier('f')}.page_url AS page_url,
+        ${sql.identifier('f')}.contact_email AS contact_email,
+        ${sql.identifier('f')}.ip_address AS ip_address,
+        ${sql.identifier('f')}.user_agent AS user_agent,
+        ${sql.identifier('f')}.created_at AS created_at,
+        ${sql.identifier('u')}.id AS user_id,
+        ${sql.identifier('u')}.name AS user_name,
+        ${sql.identifier('u')}.display_name AS user_display_name,
+        ${sql.identifier('u')}.email AS user_email,
+        ${sql.identifier('u')}.image AS user_image
+      FROM feedbacks ${sql.identifier('f')}
+      LEFT JOIN users ${sql.identifier('u')} ON ${sql.identifier('f')}.user_id = ${sql.identifier('u')}.id
+      ${whereClause}
+      ORDER BY ${sql.identifier('f')}.created_at DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `);
 
-      if (type === 'feedback' || type === 'bug') {
-        fallbackConditions.push(eq(feedbacks.type, type));
-      }
+    const feedbackRows = Array.from(feedbackListResult) as Array<Record<string, unknown>>;
+    const formattedFeedbacks = feedbackRows.map((row) => {
+      const createdAt = row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at;
+      const userId = typeof row.user_id === 'string' ? row.user_id : null;
+      const userEmail = typeof row.user_email === 'string' ? row.user_email : null;
+      const userDisplayName = typeof row.user_display_name === 'string' ? row.user_display_name : null;
+      const userName = typeof row.user_name === 'string' ? row.user_name : null;
+      const nameFallback = userEmail ? userEmail.split('@')[0] : null;
 
-      if (search) {
-        fallbackConditions.push(ilike(feedbacks.description, `%${search}%`));
-      }
-
-      const fallbackWhereClause = fallbackConditions.length > 0 ? and(...fallbackConditions) : undefined;
-      const titleExpr = sql<string>`split_part(${feedbacks.description}, E'\n', 1)`;
-
-      const [countResult, feedbackList] = await Promise.all([
-        db.select({ count: sql<number>`count(*)::int` }).from(feedbacks).where(fallbackWhereClause),
-        db
-          .select({
-            id: feedbacks.id,
-            type: feedbacks.type,
-            title: titleExpr,
-            description: feedbacks.description,
-            steps: feedbacks.steps,
-            pageUrl: feedbacks.pageUrl,
-            contactEmail: feedbacks.contactEmail,
-            ipAddress: feedbacks.ipAddress,
-            userAgent: feedbacks.userAgent,
-            createdAt: feedbacks.createdAt,
-            user: {
-              id: users.id,
-              name: users.name,
-              displayName: users.displayName,
-              email: users.email,
-              image: users.image,
-            },
-          })
-          .from(feedbacks)
-          .leftJoin(users, eq(feedbacks.userId, users.id))
-          .where(fallbackWhereClause)
-          .orderBy(desc(feedbacks.createdAt))
-          .limit(limit)
-          .offset(offset),
-      ]);
-
-      return { countResult, feedbackList };
-    };
-
-    let countResult: Array<{ count: number }>;
-    let feedbackList: Array<any>;
-    try {
-      ({ countResult, feedbackList } = await runQuery());
-    } catch (error) {
-      if (!hasMissingFeedbackTitleColumn(error)) {
-        throw error;
-      }
-      ({ countResult, feedbackList } = await runQueryWithoutTitle());
-    }
-
-    const total = countResult[0]?.count || 0;
-
-    const formattedFeedbacks = feedbackList.map((feedback) => ({
-      id: feedback.id,
-      type: feedback.type,
-      title: feedback.title,
-      description: feedback.description,
-      steps: feedback.steps,
-      pageUrl: feedback.pageUrl,
-      contactEmail: feedback.contactEmail,
-      ipAddress: feedback.ipAddress,
-      userAgent: feedback.userAgent,
-      createdAt: feedback.createdAt,
-      user: feedback.user?.id
-        ? {
-            id: feedback.user.id,
-            name: feedback.user.displayName || feedback.user.name || feedback.user.email?.split('@')[0] || null,
-            email: feedback.user.email,
-            image: feedback.user.image,
-          }
-        : null,
-    }));
+      return {
+        id: row.id,
+        type: row.type,
+        title: row.title,
+        description: row.description,
+        steps: row.steps,
+        pageUrl: row.page_url,
+        contactEmail: row.contact_email,
+        ipAddress: row.ip_address,
+        userAgent: row.user_agent,
+        createdAt,
+        user: userId
+          ? {
+              id: userId,
+              name: userDisplayName || userName || nameFallback,
+              email: userEmail,
+              image: row.user_image,
+            }
+          : null,
+      };
+    });
 
     return NextResponse.json({
       feedbacks: formattedFeedbacks,
