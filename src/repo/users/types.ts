@@ -116,9 +116,9 @@ export interface UserLeaderboardEntry {
   badgeType?: string | null;
   score: number;
   temperature: number;
-  trustScore: number;
   helpfulAnswers: number;
   adoptionRate: number;
+  weeklyAnswers: number;
   rank: number;
 }
 
