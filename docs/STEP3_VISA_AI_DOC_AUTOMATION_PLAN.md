@@ -79,6 +79,11 @@ STEP3의 현실적인 1차 목표는 “규정/템플릿 기반으로 정확히 
   - v1(권장): 소스별 Fetch/Parse → `official_info_snapshots(draft)` 저장 → 관리자 승인 → `active` 승격
   - v2(선택): 수집 규모가 커지면 Scrapy(크롤러) 또는 change-detection 계열 도구를 별도 워커로 운영
 
+### 3.4 Wizard 에이전트 페르소나(UX SoT)
+
+- Wizard 화면의 카피/톤/행동 규칙은 `docs/UX_AGENT_PERSONA.md`를 단일 소스로 사용한다.
+- 목표: “복잡한 행정 입력을 부담 없이 완료” + “결과 이해” + “상담 전환(리드)”을 같은 톤으로 연결한다.
+
 ## 4) DB 설계(최소 세트, Drizzle)
 
 > 실제 구현 시 기존 테이블(`profiles`, `verification_requests`, `users.isVerified` 등)과 충돌 없이 추가/확장한다.

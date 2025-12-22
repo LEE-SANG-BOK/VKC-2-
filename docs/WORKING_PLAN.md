@@ -145,6 +145,7 @@ $gh-address-comments
 - `vkc-drizzle-schema-migration`: Drizzle 스키마/마이그레이션 표준화(룰셋/템플릿 DB화 강제)
 - `vkc-i18n-ko-vi-safety`: ko/vi 키 안전 + 베트남어 긴 문자열 UI 깨짐 방지
 - `vkc-wizardkit`: Step UI + 하단 고정 CTA + safe-area + draft 저장 + 제출 이벤트 로깅 패턴
+  - Wizard 카피/톤은 `docs/UX_AGENT_PERSONA.md`를 단일 소스로 고정(비자/서류/상담 플로우 공통)
 - `vkc-admin-ops-workflow`: Draft → 검토 → 예약발행 → 게시 운영 워크플로우 표준화
 
 ##### P1 (차별화 핵심) — 엔진화 2개

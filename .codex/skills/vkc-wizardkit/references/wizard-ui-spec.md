@@ -1,5 +1,9 @@
 # Wizard UI spec (VKC)
 
+## Agent persona (copy + tone)
+
+- Wizard 내 안내 문구/오류/CTA 카피는 `docs/UX_AGENT_PERSONA.md`를 따른다(ko/vi 동기화 포함).
+
 ## Layout
 
 - Container width follows Tailwind `container` conventions.
@@ -29,4 +33,3 @@
   - step complete
   - submit success/failure
 - Use existing allowlists in `src/app/api/events/route.ts` (extend only if necessary).
-
