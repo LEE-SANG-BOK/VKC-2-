@@ -24,11 +24,11 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
   const hasLeftRail = !hideSidebar;
   const hasRightRail = Boolean(rightRail);
   const gridColumns = hasLeftRail && hasRightRail
-    ? 'lg:grid-cols-[320px_minmax(0,1fr)_320px] 2xl:grid-cols-[320px_minmax(0,960px)_320px] 2xl:justify-center'
+    ? 'lg:grid-cols-[320px_minmax(0,1fr)_320px] 2xl:grid-cols-[320px_minmax(0,920px)_320px] 2xl:justify-center'
     : hasLeftRail
-      ? 'lg:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[320px_minmax(0,960px)] 2xl:justify-center'
+      ? 'lg:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[320px_minmax(0,920px)] 2xl:justify-center'
       : hasRightRail
-        ? 'lg:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,960px)_320px] 2xl:justify-center'
+        ? 'lg:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,920px)_320px] 2xl:justify-center'
         : 'lg:grid-cols-1';
 
   useEffect(() => onHomeReset(() => {
@@ -64,12 +64,12 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
                   translations={translations}
                 />
               </aside>
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetContent side="left" className="p-0 w-[360px] max-w-[100vw]">
-                  <CategorySidebar
-                    variant="mobile"
-                    setIsMobileMenuOpen={setIsMobileMenuOpen}
-                    selectedCategory={selectedCategory}
+	              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+	                <SheetContent side="left" className="p-0 w-[360px] max-w-[90vw]">
+	                  <CategorySidebar
+	                    variant="mobile"
+	                    setIsMobileMenuOpen={setIsMobileMenuOpen}
+	                    selectedCategory={selectedCategory}
                     onCategoryChange={onCategoryChange}
                     translations={translations}
                   />
@@ -80,7 +80,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
           <main
             className={`min-w-0 w-full ${
               centerVariant === 'canvas' ? 'bg-transparent' : 'bg-white dark:bg-gray-900'
-            } ${hasLeftRail && hasRightRail ? 'lg:max-w-[960px] lg:justify-self-center' : ''}`}
+            } ${hasLeftRail && hasRightRail ? 'lg:max-w-[920px] lg:justify-self-center' : ''}`}
           >
             {hasRightRail ? (
               <div className="lg:hidden mb-4">

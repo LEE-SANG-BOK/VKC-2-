@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 import { useNews } from '@/repo/news/query';
@@ -15,7 +15,9 @@ interface AdminPostRailProps {
 
 export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPostRailProps) {
   const tNews = (translations?.news || {}) as { title?: string; moreLabel?: string; close?: string; openExternal?: string };
+  const tCommon = (translations?.common || {}) as { previous?: string; next?: string };
   const [selected, setSelected] = useState<NewsItem | null>(null);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
 
   const { data: newsItems, isLoading } = useNews(lang);
   const items = (newsItems || []).filter((item) => item.type === 'post').slice(0, limit);
@@ -23,6 +25,15 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
   const title = tNews.title || '';
   const closeLabel = tNews.close || '';
   const openExternalLabel = tNews.openExternal || '';
+  const previousLabel = tCommon.previous || '';
+  const nextLabel = tCommon.next || '';
+
+  const scrollCarousel = useCallback((direction: -1 | 1) => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const delta = Math.max(220, Math.round(el.clientWidth * 0.85));
+    el.scrollBy({ left: direction * delta, behavior: 'smooth' });
+  }, []);
 
   if (isLoading) {
     return (
@@ -30,7 +41,12 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
         </div>
-        <div className="space-y-2">
+        <div className="lg:hidden flex gap-2 overflow-x-auto scrollbar-hide pb-1 pr-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="min-w-[220px] h-16 rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse" />
+          ))}
+        </div>
+        <div className="hidden lg:block space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-14 rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse" />
           ))}
@@ -46,8 +62,61 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
       <section className="rounded-xl bg-transparent p-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
+          <div className="lg:hidden flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => scrollCarousel(-1)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              aria-label={previousLabel}
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollCarousel(1)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              aria-label={nextLabel}
+            >
+              ›
+            </button>
+          </div>
         </div>
-        <ul className="space-y-2">
+
+        <div
+          ref={carouselRef}
+          className="lg:hidden flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 pr-2"
+        >
+          {items.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setSelected(item)}
+              className="min-w-[220px] max-w-[240px] snap-start text-left rounded-lg border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <div className="flex gap-2 p-2">
+                <div className="relative w-16 h-12 shrink-0 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800">
+                  {item.imageUrl ? (
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.title}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                      placeholder="blur"
+                      blurDataURL={DEFAULT_BLUR_DATA_URL}
+                    />
+                  ) : null}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1">{item.category}</div>
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">{item.title}</div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <ul className="hidden lg:block space-y-2">
           {items.map((item) => (
             <li key={item.id}>
               <button

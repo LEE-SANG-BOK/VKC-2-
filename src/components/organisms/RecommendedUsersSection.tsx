@@ -83,8 +83,9 @@ export default function RecommendedUsersSection({
   const cardNameClass = compact ? 'text-[13px]' : 'text-sm';
   const cardMetaClass = compact ? 'text-[10px]' : 'text-[11px]';
   const badgeLabelClass = compact ? 'text-[10px] text-gray-500 dark:text-gray-400' : 'text-[11px] text-gray-500 dark:text-gray-400';
-  const avatarSize = compact ? 'lg' : 'lg';
+  const avatarSize = compact ? 'xl' : 'lg';
   const followButtonSize = compact ? 'xs' : 'sm';
+  const followButtonClassName = compact ? 'min-h-[32px] px-3 py-1.5' : '';
 
   const mergedMetaLabels = useMemo<Record<string, string>>(() => ({
     followers: followerLabel,
@@ -196,33 +197,19 @@ export default function RecommendedUsersSection({
             className={`flex items-center ${cardGapClass} rounded-lg border border-gray-200 dark:border-gray-800 ${cardPaddingClass} w-full snap-start`}
           >
             <div className={`flex items-center ${cardGapClass} w-full`}>
-              <div className="flex flex-col items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => router.push(`/${locale}/profile/${userId}`)}
-                  aria-label={displayName}
-                >
-                  <Avatar
-                    name={displayName}
-                    imageUrl={user.image || undefined}
-                    size={avatarSize}
-                    hoverHighlight
-                  />
-                </button>
-                <FollowButton
-                  userId={userId}
-                  userName={displayName}
-                  isFollowing={followStates[userId] ?? user.isFollowing ?? false}
-                  size={followButtonSize}
-                  translations={translations}
-                  onToggle={(next) =>
-                    setFollowStates((prev) => ({
-                      ...prev,
-                      [userId]: next,
-                    }))
-                  }
+              <button
+                type="button"
+                onClick={() => router.push(`/${locale}/profile/${userId}`)}
+                aria-label={displayName}
+                className="shrink-0"
+              >
+                <Avatar
+                  name={displayName}
+                  imageUrl={user.image || undefined}
+                  size={avatarSize}
+                  hoverHighlight
                 />
-              </div>
+              </button>
               <div className="flex-1 min-w-0">
                 <button
                   type="button"
@@ -258,6 +245,22 @@ export default function RecommendedUsersSection({
                     </div>
                   ) : null}
                 </button>
+              </div>
+              <div className="shrink-0">
+                <FollowButton
+                  userId={userId}
+                  userName={displayName}
+                  isFollowing={followStates[userId] ?? user.isFollowing ?? false}
+                  size={followButtonSize}
+                  translations={translations}
+                  className={followButtonClassName}
+                  onToggle={(next) =>
+                    setFollowStates((prev) => ({
+                      ...prev,
+                      [userId]: next,
+                    }))
+                  }
+                />
               </div>
             </div>
           </div>
@@ -297,7 +300,7 @@ export default function RecommendedUsersSection({
       <div
         ref={carouselRef}
         onScroll={markInteracted}
-        className={`grid grid-flow-col ${compact ? 'auto-cols-[minmax(200px,1fr)]' : 'auto-cols-[minmax(220px,1fr)]'} sm:auto-cols-[minmax(240px,1fr)] lg:auto-cols-[minmax(260px,1fr)] ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 pr-3 scroll-px-3`}
+        className={`grid grid-flow-col ${compact ? 'auto-cols-[minmax(260px,1fr)]' : 'auto-cols-[minmax(220px,1fr)]'} sm:auto-cols-[minmax(280px,1fr)] lg:auto-cols-[minmax(260px,1fr)] ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 pr-3 scroll-px-3`}
       >
         {isLoading ? skeletonCards : userCards}
         {hasNextPage ? (

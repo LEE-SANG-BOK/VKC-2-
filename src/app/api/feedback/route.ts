@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
 
     const columnKeyByName: Record<string, string> = {
       title: 'title',
+      steps: 'steps',
       page_url: 'pageUrl',
       contact_email: 'contactEmail',
       ip_address: 'ipAddress',
@@ -139,7 +140,10 @@ export async function POST(request: NextRequest) {
 
       for (let attempt = 0; attempt < 6; attempt += 1) {
         try {
-          return await db.insert(feedbacks).values(payload as any).returning();
+          return await db
+            .insert(feedbacks)
+            .values(payload as any)
+            .returning({ createdAt: feedbacks.createdAt });
         } catch (error) {
           const columnName = missingFeedbackColumnName(error);
           if (!columnName) throw error;
