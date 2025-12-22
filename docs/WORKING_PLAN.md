@@ -18,6 +18,9 @@
 - i18n: 신규 작업은 `en` 번역 키를 추가/검수하지 않음, `en` 렌더는 `ko` fallback으로 깨짐 방지
 - E2E: Playwright 필수(릴리즈 게이트에 포함)
 - Abuse 방어: Rate limit 필수(주요 쓰기 API에 적용)
+- 프로필 이동 UX(통일): “프로필 사진/닉네임이 보이는 모든 영역”은 동일 규칙을 따른다 = 클릭 시 `/{lang}/profile/{id}`로 이동(leaderboard/추천 사용자/댓글/답변/모달 포함). 구현은 공용 컴포넌트/랩퍼로만 처리해 페이지별 편차를 금지한다.
+- 팔로우 추천(필수): 홈의 `팔로우(following)` 탭은 **상단 CTA(추천 사용자 보기)** + **하단 추천 사용자 리스트**를 기본 구성으로 유지한다. 추천 결과가 0이면 fallback(예: leaderboard 상위/최근 활동)로 최소 N명을 노출한다. 비로그인 상태에서도 노출은 가능하되 Follow 액션은 로그인 프롬프트로 게이트한다.
+- 글쓰기 #태그 자동생성(품질 규칙): 자동 태그는 **3개 고정**. 금지 = `#정보/#Tip/#추천` 같은 범용 seed 도배. 규칙 = (A) 모더레이션 입력(조건/목표/배경)이 있으면 “모더레이션에서 2개 추출 + (대분류/세부분류/작성 목적)에서 1개” (B) 모더레이션 미입력 시 “대분류 + 세부분류 + 작성 목적” 3개. 중복 제거/현지화/길이·품질 필터는 공용 유틸에서 단일화한다.
 - 커뮤니티 랭킹(leaderboard): `레벨` UI는 폐지하고 `온도(기본 36.5)`만 노출(온도 상승 시 더 “뜨거운” 이모지/아이콘), 총 멤버 수는 미노출, 상단 안내는 “신뢰도 계산식”이 아니라 “랭킹이 오르는 행동” 설명으로 고정
 - 커뮤니티 랭킹 레이아웃: 웹은 우측 여백(약 4컬럼)을 남기고, 모바일은 상단 안내 영역을 남겨 “Event(추후)” 영역으로 확장 가능한 구조로 고정(메뉴 라벨은 `상위 기여자(Event)`로 임시 표기)
 
@@ -79,7 +82,7 @@
 #### 0.5.1 Codex CLI 스킬 프롬프트 (GitHub PR/CI)
 
 - 목적: GitHub PR에서 **리뷰 코멘트 처리** / **CI(GitHub Actions) 실패 분석·수정**을 빠르게 표준화한다.
-- 사용 조건: Codex CLI에서 스킬이 설치되어 있고(예: `~/.codex/skills/*`), 스킬을 인식하는 **새 Codex 세션**에서 실행한다.
+- 사용 조건: Codex CLI에서 스킬이 존재하고(예: `~/.codex/skills/*`, `./.codex/skills/*`), 스킬을 인식하는 **새 Codex 세션**에서 실행한다.
 - 호출 방식: 프롬프트에 `$<skill-name>`을 명시해 스킬을 강제 사용한다(가능하면 상단에 배치).
 
 **A) PR CI가 깨졌을 때: `gh-fix-ci`**
@@ -121,6 +124,48 @@ $gh-address-comments
 - 코멘트별로: (1) 이해 요약 → (2) 조치(코드 변경) → (3) 답글(결과/근거/추가 질문) 순서로 처리
 - 변경 후 필요한 경우 `npm run lint` / `npm run build` 결과를 함께 기록
 - gh 인증이 안 되어 있으면 `oai_gh` 후 `gh auth status`부터 진행
+```
+
+#### 0.5.2 Repo-local Codex 스킬 세팅 (VKC)
+
+- 목적: 반복 폭발 구간을 “스킬”로 고정해 **반복 최소화/체계화/ROI/확장성**을 확보한다.
+- 위치: `./.codex/skills/**` (레포에 커밋/공유되는 표준 스킬)
+- 사용법
+  - 프롬프트 상단에 `$<skill-name>`을 명시하면 해당 스킬을 강제로 사용한다.
+  - 예: `$vkc-repo-guardrails` / `$vkc-api-route-pattern` / `$vkc-wizardkit`
+  - 로컬 검사 스크립트: `bash .codex/skills/vkc-repo-guardrails/scripts/guardrails.sh`
+- “새 Codex 세션” 의미: Codex는 **시작 시점에 스킬을 스캔**하므로, 새로 추가/수정된 `./.codex/skills/**`를 인식시키려면 Codex CLI를 종료 후 다시 실행(= 새 세션)해야 한다.
+  - 근거: Codex 스킬은 “startup discovery” 방식으로 로딩된다(스킬 목록은 실행 중 핫리로드되지 않음).
+
+##### P0 (무조건 먼저) — 반복 폭발 구간 6개
+
+- `vkc-repo-guardrails`: 비협상 규칙 점검(서버 액션 금지/API Routes만/Drizzle/Supabase/Repo 레이어/i18n 안전)
+- `vkc-api-route-pattern`: `src/app/api/**` 표준 골격(세션/검증/DB/응답/레이트리밋)
+- `vkc-drizzle-schema-migration`: Drizzle 스키마/마이그레이션 표준화(룰셋/템플릿 DB화 강제)
+- `vkc-i18n-ko-vi-safety`: ko/vi 키 안전 + 베트남어 긴 문자열 UI 깨짐 방지
+- `vkc-wizardkit`: Step UI + 하단 고정 CTA + safe-area + draft 저장 + 제출 이벤트 로깅 패턴
+- `vkc-admin-ops-workflow`: Draft → 검토 → 예약발행 → 게시 운영 워크플로우 표준화
+
+##### P1 (차별화 핵심) — 엔진화 2개
+
+- `vkc-visa-assessment-engine`: 비자 평가 엔진(룰셋 JSON/버전/효력일자, 결과 스키마) — 코드 하드코딩 금지
+- `vkc-docgen-template-engine`: 문서 템플릿 엔진(템플릿 스키마+PDF renderSpec+히스토리+Storage) — 2개→50개 선형 확장
+
+##### P2 (지속 업데이트/최신성)
+
+- `vkc-regulation-knowledge-updater`: 공식 공지/규정 업데이트 파이프라인(스냅샷→검수→활성화) 기반
+
+#### 0.5.3 MCP (Model Context Protocol) 활용 (반복 최소화용)
+
+- 현황: 현재 Codex 환경에 연결된 MCP 서버/리소스가 0개(= 자동 컨텍스트 주입 없음)
+- 목적: PR/DB/배포 로그 같은 “외부 컨텍스트”를 리소스로 연결해, 리서치·재확인·복붙 비용을 구조적으로 제거
+- 운용 원칙
+  - MCP 리소스는 “근거 입력(SoT)”로만 사용하고, 실제 변경은 레포 규칙/게이트(Playwright 포함)로 검증한다.
+  - MCP에 없는 정보는 문서/코드/로그를 기준으로 판단하고, MCP는 “있으면 쓰는 가속기”로 취급한다.
+- 권장 연결(우선순위)
+  - GitHub(PR/Checks): PR 상태/실패 로그를 MCP 리소스로 제공(gh CLI 보완)
+  - DB/Schema: Drizzle 마이그레이션 상태/실 스키마를 리소스로 제공(피드백/추천 사용자 등 DB 불일치 예방)
+  - Deploy logs: Vercel 레이트리밋/배포 실패 로그를 리소스로 제공(원인 파악 시간 단축)
 
 ## 객관적 개선점(효율/반복 최소화 관점에서 ‘구조적으로’ 해결해야 하는 것)
 
@@ -1058,6 +1103,12 @@ $gh-address-comments
   - 변경: `src/components/molecules/actions/ShareButton.tsx`, `src/components/organisms/CardNewsShowcase.tsx`, `src/components/organisms/ShortFormPlaylist.tsx`, `src/components/molecules/modals/NotificationModal.tsx`
   - 변경: `src/utils/dateTime.ts`, `src/lib/utils/trustBadges.ts`, `src/lib/constants/tag-translations.ts`, `src/lib/constants/categories.ts`
   - 변경: `src/app/[lang]/layout.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`
+  - 추가 i18n 스윕(2025-12-21): 온보딩/검색/글쓰기/인증/피드백/리더보드/게시글 상세 메타의 locale 분기 fallback 제거 → messages 기반으로 단일화(ko/vi 우선, en은 SEO 렌더 안정성만 보장)
+  - 메타 보강: `metadata.feedback`, `metadata.leaderboard` 추가 + PostDetail notFound 메타 하드코딩 제거
+  - 검증: `npm run lint`, `npm run type-check`, `SKIP_SITEMAP_DB=true npm run build`, `npm run test:e2e`
+  - 변경: `src/app/[lang]/(main)/onboarding/OnboardingClient.tsx`, `src/app/[lang]/(main)/search/SearchClient.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`
+  - 변경: `src/app/[lang]/(main)/verification/request/VerificationRequestClient.tsx`, `src/app/[lang]/(main)/verification/history/VerificationHistoryClient.tsx`, `src/app/[lang]/(main)/feedback/FeedbackClient.tsx`
+  - 변경: `src/app/[lang]/(main)/leaderboard/page.tsx`, `src/app/[lang]/(main)/posts/[id]/page.tsx`, `messages/ko.json`, `messages/vi.json`, `messages/en.json`
 
 #### (2025-12-20) [FE] P0-3 모바일 키보드/스크롤(WebView 포함) UX 하드닝 (P0)
 
@@ -1744,6 +1795,10 @@ $gh-address-comments
     - 페이지 구조: H1 단일 + H2/H3 계층 + 즉답(2~3문장) + 리스트/표(체크리스트) 우선
     - UGC(질문/답변)는 `QAPage/DiscussionForumPosting`만(FAQPage 남용 금지), 운영자 큐레이션만 `FAQPage/HowTo/Article/VideoObject` 적용
     - 최신성/신뢰: `dateModified`/업데이트 문구/출처 표기(`P1-8`)의 “표시 기준”을 문서로 확정
+    - 크롤링 친화: 중요한 본문 텍스트는 SSR HTML에 포함(비동기/클라 전용 렌더에 의존 금지), `<article>` 등 의미 있는 마크업 유지
+    - 토픽 클러스터(경쟁사 벤치마크): “허브(가이드) → 하위 글(세부)” 구조로 내부 링크를 엮고, 허브 페이지에 소개 텍스트/목차/관련 글을 고정(얇은 카테고리 페이지 금지)
+    - 내부 링크 규칙: 새 글 발행 시 관련 글 2~3개 이상 본문 링크(의미 있는 앵커 텍스트), 기존 핵심 글에도 역링크 추가(쌍방향)
+    - URL(운영자 큐레이션): 가이드/뉴스/FAQ는 의미 있는 `slug` 기반 URL(키워드 포함) 우선, UGC는 `id` 유지(크롤링/공유/중복 방지 기준으로)
   - JSON-LD 보강(핵심만)
     - 채택 답변이 있을 때만 `acceptedAnswer` 포함
     - `datePublished/dateModified`를 게시글/답변/프로필에 일관되게 포함(가능 범위에서)
@@ -1752,6 +1807,7 @@ $gh-address-comments
     - `GPTBot`(학습) vs `OAI-SearchBot`(검색) 허용/차단 기준을 1회 결정하고 `robots.ts`로 반영
   - 검증 루틴(차단 최소)
     - 구조화 데이터 스냅샷 검증(샘플 URL 3~5개) + 깨짐/누락은 이슈로 기록(릴리즈 차단은 P0가 아닌 P1에서만)
+    - 분기 1회(선택): 크롤러 감사(Screaming Frog 등)로 링크/메타/중복/404/스키마 오류를 묶어서 점검(자동화가 어렵다면 체크리스트로만 유지)
 - 완료 기준
   - Q&A 상세/프로필에서 JSON-LD가 일관된 필드를 포함하고(채택/수정일 등) “추출 가능한 구조”가 문서/코드에서 한 규칙으로 수렴
   - AI 크롤러 robots 정책이 결정되어 문서와 코드가 일치
@@ -1768,6 +1824,11 @@ $gh-address-comments
     - 리뷰 주기: 런칭 직후 2주간 주 1회, 이후 월 1회(30분)로 고정 + 액션 3개만 선정
   - 콘텐츠 업데이트 운영
     - “법/비자/제도” 성격 페이지는 업데이트 날짜를 표준 위치에 표기하고(템플릿), 반기 단위 갱신 목록을 유지
+    - 실시간 이슈 대응(시의성): 정책 변경/입국 규정/최신 통계 등 “뉴스성” 이슈는 24~48h 내 업데이트 또는 신규 발행(제목에 “2025년 기준/최신” 등 명시)
+    - Evergreen 축적: 시의성 글은 허브(가이드) 페이지로 흡수/정리해 장기 콘텐츠로 누적(“최신 업데이트” 섹션으로 연결)
+    - 트렌드 탐지(최소): GSC 쿼리 급상승 + 커뮤니티 질문 급증(카테고리/태그) + (선택) Google Trends를 “다음 2주 액션 3개”로만 연결
+    - 언어/키워드 우선순위(운영): `vi`(타겟) > `ko`(파트너/기관) > `en`(SEO 보조) — hreflang/alternates는 유지(P0-1), 콘텐츠 생산/리프레시는 vi 중심
+    - Discover/뉴스탭(선택): 운영자 큐레이션 뉴스/가이드만 대상으로 대표 이미지/요약/업데이트 일자를 갖춘 “읽기 좋은” 페이지로 운영(팝업/강제 로그인/무거운 스크립트 지양)
 - 완료 기준
   - KPI/리뷰 루틴이 문서로 고정되고, 리포트가 자동/반자동으로 재현 가능(사람이 매번 수작업으로 모으지 않음)
 
@@ -1896,9 +1957,17 @@ $gh-address-comments
   - 외부 공유 품질(클릭률) 기반 정비
     - OG/Twitter 메타를 신뢰할 수 있게 유지(P0-12의 공용 메타 빌더를 그대로 활용)
     - 공유 CTA/버튼은 P0-15 정책(중복 제거) 하에서 채널 확장(Zalo/FB 등)은 “필요 시”만
-    - 영상(선택): Self-hosting 금지, `YouTube 업로드 + lazy embed`를 기본으로 하고 운영자 큐레이션 페이지에만 `VideoObject` 스키마 적용
+    - 영상(선택) — 성능/SEO 원칙(고정)
+      - Self-hosting 금지(서버 부하/CWV 리스크)
+      - 기본: `YouTube 업로드 + lazy embed`(썸네일 프리뷰 → 클릭 시 iframe 로드)
+      - UX: autoplay 금지, 자막/요약 텍스트 제공, 모바일 기준 비율 고정(예: 16:9 또는 Shorts는 9:16)으로 CLS 방지
+      - 임베드 최소화: 페이지당 임베드 수 제한(탭/아코디언 등으로 “1~2개만 로드”)
+      - 파라미터(선택): `rel=0&modestbranding=1` 등으로 추천영상/브랜딩 최소화
+      - SEO: 운영자 큐레이션 페이지에만 `VideoObject` 스키마 적용(필드: name/description/thumbnailUrl/uploadDate/duration/embedUrl)
   - 운영 자동화(반복 최소화)
     - 코딩 없이 가능한 자동화(Zapier/IFTTT 등)와 “주간/월간 요약 발행” 루틴을 비교해, 최소 운영 비용으로 가능한 흐름부터 적용
+  - 권위/백링크(선택, 장기)
+    - 운영자 큐레이션 콘텐츠를 외부 채널/파트너(학교/기관/커뮤니티)에서 인용/링크될 수 있게 “허브 페이지” 중심으로 배포(브랜드 언급/백링크 축적)
 - 완료 기준
   - 외부 배포 대상/권한/노출 정책이 문서로 고정되고, 운영자 개입 없이도 일정 수준의 자동 배포가 가능
 
@@ -2008,6 +2077,254 @@ $gh-address-comments
   - src/lib/seo/postTags.ts
   - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
 
+#### (2025-12-22) [FE] 모바일 홈 추천 콘텐츠 재배치 + 피드 상단 점수 카드 제거
+
+- 플랜(체크리스트)
+  - [x] 모바일 드로어(좌측)에서 추천 콘텐츠 제거
+  - [x] 모바일 홈 메인에서 추천 콘텐츠 노출(우측 레일의 모바일 대체)
+  - [x] 피드 상단 포인트/Lv/랭킹 카드 제거(게시글 소비 흐름 우선)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/organisms/CategorySidebar.tsx`(모바일 홈 드로어), `src/components/organisms/PostList.tsx`(피드 상단 점수 카드)
+  - 재현/리스크: 모바일에서 드로어에 추천 콘텐츠가 들어오면 “메인=게시글” 규칙이 깨지고, 상단 점수 카드로 인해 피드 첫 화면이 분산됨
+- 변경 내용(why/what)
+  - why: 홈은 “게시글 위주”를 유지하되, 추천 콘텐츠는 드로어가 아니라 메인(모바일)에서 접근 가능해야 함
+  - what: 모바일 홈은 `NewsSection`을 메인 상단 카드로 노출(`lg:hidden`), 드로어에서는 제거, 피드 상단 점수 카드 제거
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e (PORT=3000 고정, dev 실행 시 reuse)
+- 변경 파일
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/organisms/PostList.tsx
+- 커밋
+  - `[FE] move featured content to home and remove score widget` (ce170f6)
+
+#### (2025-12-22) [FE] PostCard 모바일 액션 밀집/겹침 개선 + 태그/칩 클립 보정
+
+- 플랜(체크리스트)
+  - [x] `...`(숨김/신고) 메뉴가 썸네일과 겹치지 않게 위치 조정
+  - [x] 인증 답변 안내 라벨을 모바일에서 컴팩트 표기로 전환(툴팁은 상세 유지)
+  - [x] 액션 행 `nowrap` 강제 제거로 모바일 줄바꿈/정렬을 CSS 규칙에 위임
+  - [x] 가로 스크롤 칩/태그 우측 클립 방지(`pr` + `scroll-px`)
+  - [x] 해결/미해결(채택) 아이콘은 모바일에서 숨김(밀집 완화)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/components/molecules/cards/PostCard.tsx`(액션/메뉴), `src/components/organisms/NewsSection.tsx`(가로 스크롤), `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`(태그)
+  - 재현/리스크: 모바일에서 `...` 버튼이 썸네일 영역에 겹치고, 인증 답변 문구가 길어 액션이 밀집됨
+- 변경 내용(why/what)
+  - why: 모바일에서 “터치 타깃 44px” 유지하면서도 액션이 겹치지 않게 정돈해야 함
+  - what: `...` 메뉴를 카드 상단(작성자 라인)으로 이동, 인증 라벨은 `certifiedResponderCompact`로 모바일 표기, 가로 스크롤은 `pr-3 scroll-px-3`로 클립 방지
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e (PORT=3000 고정, dev 실행 시 reuse)
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/components/organisms/NewsSection.tsx
+- 커밋
+  - `[FE] harden mobile post cards and horizontal chips` (df850ab)
+  - `[FE] hide solved indicator on mobile post cards` (9e85b02)
+
+#### (2025-12-22) [BE] 추천 사용자 API 500(빈 interests) 수정
+
+- 플랜(체크리스트)
+  - [x] viewer interests가 비어도 SQL이 유효하도록 배열 표현을 안전하게 구성
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/api/users/recommended/route.ts`
+  - 재현/리스크: interests가 비어 있을 때 `array_length(()::text[], 1)` 형태로 생성되며 Postgres syntax error로 500 발생
+- 변경 내용(why/what)
+  - why: 추천 사용자 섹션은 홈/팔로잉 플로우 핵심이며, 500은 즉시 사용자 경험을 깨뜨림
+  - what: `viewerInterestsArray = ARRAY[...]::text[] | ARRAY[]::text[]`로 고정하고 overlap 조건은 해당 배열을 사용
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e (PORT=3000 고정, dev 실행 시 reuse)
+- 변경 파일
+  - src/app/api/users/recommended/route.ts
+- 커밋
+  - `[BE] fix recommended users when interests empty` (d769ff9)
+
+#### (2025-12-22) [LEAD] Leaderboard 이미지 500 방지 + E2E(3000) 안정화
+
+- 플랜(체크리스트)
+  - [x] `next/image` 원격 호스트(`ui-avatars.com`) 허용 추가(leaderboard 500 방지)
+  - [x] Playwright는 PORT=3000 고정 + dev 서버 재사용 기본값으로 충돌 방지
+  - [x] probe rate-limit 엔드포인트는 dev/E2E에서 기본 활성(프로덕션은 env로 차단 유지)
+- 변경 내용(why/what)
+  - why: leaderboard에서 `ui-avatars.com` 아바타가 `next/image`에 의해 차단되며 500 발생, 또한 E2E가 포트 충돌(3000)로 깨짐
+  - what: `next.config.ts`에 remotePatterns 추가, `playwright.config.ts`의 `reuseExistingServer` 기본 활성, `/api/probe/rate-limit`은 production만 env로 게이트
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e (PORT=3000 고정)
+- 변경 파일
+  - next.config.ts
+  - playwright.config.ts
+  - src/app/api/probe/rate-limit/route.ts
+- 커밋
+  - `[LEAD] allow ui-avatars images and stabilize e2e on 3000` (cdd9149)
+
+#### (2025-12-22) [FE] 가로 스크롤 우측 클립 방지(Profile/추천 사용자)
+
+- 플랜(체크리스트)
+  - [x] 가로 스크롤 컨테이너에 `pr-3 scroll-px-3` 적용(우측 잘림 방지)
+- 변경 내용(why/what)
+  - why: 모바일에서 스탯/탭/캐러셀 마지막 아이템이 우측에서 잘려 보임
+  - what: Profile 스탯/탭, 추천 사용자 캐러셀에 우측 패딩 + scroll padding 추가
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+- 커밋
+  - `[FE] prevent horizontal scroll clipping` (b6d60a8)
+
+#### (2025-12-22) [FE] 모바일 키보드 대응: 하단 시트/모달 dvh + safe-area
+
+- 플랜(체크리스트)
+  - [x] 입력이 있는 시트/모달의 max-height를 `dvh`로 전환(키보드/웹뷰 대응)
+  - [x] 하단 버튼 영역에 safe-area inset-bottom을 반영(홈 인디케이터 간섭 방지)
+- 변경 내용(why/what)
+  - why: iOS/Android에서 키보드가 올라오면 `vh` 기준 모달이 과대 계산되어 입력/버튼이 가려질 수 있음
+  - what: 신고 모달(게시글 카드/상세) 스크롤 영역을 `max-h-[60dvh]`로, 하단 액션은 `pb-[calc(1rem+env(safe-area-inset-bottom))]`로 보정. 팔로잉/내 글 모달도 `80dvh`로 통일
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+- 커밋
+  - `[FE] harden modals for mobile keyboard` (9944b32)
+
+#### (2025-12-22) [BE] 추천 사용자 API 500(Postgres param 타입) 수정
+
+- 플랜(체크리스트)
+  - [x] Postgres `42P18`(파라미터 타입 추론 실패) 제거
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/api/users/recommended/route.ts`
+  - 재현/리스크: `CASE WHEN $x IS NOT NULL ...` 형태에서 Postgres가 `$x` 타입을 추론하지 못해 500 발생
+- 변경 내용(why/what)
+  - why: 추천 사용자 섹션(홈/팔로잉)이 500으로 깨지면 핵심 플로우가 즉시 붕괴
+  - what: 가중치 score는 JS에서 조건 분기 후 `sql.join(parts, ' + ')`로 구성, `avatar` 중복 select 제거
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/app/api/users/recommended/route.ts
+
+#### (2025-12-22) [BE/WEB] 피드백 제출 500 방지 + 최소 길이 제거
+
+- 플랜(체크리스트)
+  - [x] FE: 텍스트 최소 글자수 강제 제거(빈 값만 차단)
+  - [x] BE: `feedbacks.title` 컬럼이 없을 때도 500 방지(fallback insert)
+  - [x] Admin: 목록 API도 title-less 환경에서 동작(fallback title derivation)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/api/feedback/route.ts`, `src/app/api/admin/feedback/route.ts`
+  - 재현/리스크: DB가 마이그레이션되지 않은 환경에서 `column "title" of relation "feedbacks" does not exist`로 500
+- 변경 내용(why/what)
+  - what: insert 실패 시 title 없는 insert로 fallback(제목은 `description` 상단에 합침), Admin 목록은 `split_part(description, '\n', 1)`로 title 제공
+  - note: 근본 해결은 `npm run db:migrate`로 DB 스키마를 동기화하는 것(운영 반영 시점에 수행)
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/app/[lang]/(main)/feedback/FeedbackClient.tsx
+  - src/app/api/feedback/route.ts
+  - src/app/api/admin/feedback/route.ts
+
+#### (2025-12-22) [FE] ui-avatars SVG `next/image` 에러 방지
+
+- 변경 내용(why/what)
+  - why: `ui-avatars.com`가 기본 SVG 응답을 반환하여 `next/image`가 차단(leaderboard 500)
+  - what: Avatar에서 `ui-avatars.com` URL은 `format=png&size=`로 정규화하고 `unoptimized`로 처리
+- 변경 파일
+  - src/components/atoms/Avatar.tsx
+
+#### (2025-12-22) [FE/WEB] 모바일 post-first 유지 + 태그 자동생성 3개 고정
+
+- 플랜(체크리스트)
+  - [x] 홈 메인 컬럼은 `PostList`가 첫 콘텐츠(모바일 상단 카드 제거)
+  - [x] 인증 답변 배지는 모바일에서 `+N` 컴팩트 표기(상세는 툴팁 유지)
+  - [x] 토픽/칩 우측 클립 완화(좌우 패딩/scroll padding)
+  - [x] 글쓰기 자동 태그는 3개 고정 + 범용 seed(`#정보/#Tip/#추천`) 생성 금지
+- 변경 파일
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/globals.css
+  - src/components/organisms/PostList.tsx
+  - src/lib/seo/postTags.ts
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - src/lib/constants/tag-translations.ts
+  - messages/ko.json
+  - messages/vi.json
+
+#### (2025-12-22) [FE/WEB] 모바일 우측 레일 노출 + 프로필(아바타) 클릭 통일 + Playwright 스모크 확장
+
+- 플랜(체크리스트)
+  - [x] 우측 레일은 모바일에서 메인 하단으로 노출(추천 콘텐츠를 “왼쪽 사이드바”에 넣지 않음)
+  - [x] 추천 사용자/커뮤니티 랭킹: 아바타 클릭도 프로필로 이동(닉네임과 동일 규칙)
+  - [x] 구독 토픽 칩 우측 클립 완화(패딩/scroll padding)
+  - [x] PostCard 상단 메뉴 버튼 위치 미세 조정(이미지와 간격)
+  - [x] Playwright 스모크: privacy/terms/faq/feedback + robots/sitemap 포함
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/components/templates/MainLayout.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - e2e/smoke.spec.ts
+  - docs/WORKING_PLAN.md
+
+#### (2025-12-22) [P0] PostCard 모바일 UX + 피드백/아바타 안정화
+
+- 플랜(체크리스트)
+  - [x] PostCard 상단 메뉴(…) 위치를 카드 우상단으로 통일(이미지 유무 관계 없음)
+  - [x] “인증 답변/댓글” 배지는 모바일에서 compact 텍스트 유지 + truncate 처리
+  - [x] PostCard 하단 액션 아이콘은 ActionIconButton 기반으로 스타일/터치 영역 규칙 통일
+  - [x] 해시태그 칩은 최대 3개만 노출 + 범용 태그(`정보/추천/tip`) 노출 차단
+  - [x] 모바일 좌측 메뉴 Sheet 폭을 화면에 맞게 확장(사이드바 뒤로 콘텐츠가 비치지 않음)
+  - [x] 홈/검색 메인 배경을 canvas로 전환(카드는 white surface 유지)
+  - [x] /api/feedback: `feedbacks.title` 컬럼이 없는 DB에서도 저장되도록 fallback 보강
+  - [x] next/image: ui-avatars remotePatterns 경로 매칭 완화
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/templates/MainLayout.tsx
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - src/app/[lang]/(main)/search/SearchClient.tsx
+  - src/app/api/feedback/route.ts
+  - src/app/api/admin/feedback/route.ts
+  - next.config.ts
+  - messages/ko.json
+  - messages/vi.json
+  - docs/WORKING_PLAN.md
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+
 ---
 
 ## Testing and validation (게이트)
@@ -2017,3 +2334,39 @@ $gh-address-comments
 - 필수: Rate limit 동작 확인(429 + UX 처리)
 - 수동: P0-9 크로스브라우징 체크리스트 완료
 - 정기(비차단): `P1-12` 성능 감사(CWV) = `LCP ≤ 2.5s`, `INP ≤ 200ms`, `CLS ≤ 0.1`
+
+---
+
+## Release Candidate (RC) Protocol (P0 종료 방식)
+
+#### (2025-12-22) [LEAD] P0 기능 동결 + DoD(완료 정의) 기반 종료
+
+- 원칙
+  - 지금부터 신규 기능/확장 작업 금지(문서/리팩토링 포함). 오직 P0-2/P0-3/P0-9를 닫는 변경만 허용한다.
+  - “집계용 Progress Checklist”는 최종 RC 서명(DoD 만족) 시점에만 갱신한다(중간 진행은 작업 로그로만 기록).
+- 남은 Launch Blocker(문서 기준)
+  - P0-2: i18n/클립 0(ko/vi) — 하드코딩 제거 + 텍스트 잘림 0
+  - P0-3: 모바일 키보드/스크롤 — 입력/제출 막힘 0
+  - P0-9: 크로스브라우징/반응형 QA — Blocker/Major 0 리포트
+
+#### (2025-12-22) [LEAD] P0-9 QA 매트릭스 (1라운드)
+
+- 대상 브랜치: `codex-integration` (QA 통과 후 `main` 머지)
+- 기기/브라우저 매트릭스(필수)
+  - iOS Safari: iPhone SE(또는 동급 소형), iPhone 14/15(일반), iPad(태블릿)
+  - Android Chrome: 1종(중저가) + 1종(대화면)
+  - Desktop: Chrome + Edge + Safari(가능하면)
+- 핵심 플로우(필수)
+  - 홈(피드) → 카테고리 전환 → 검색 → 상세 진입
+  - 로그인 모달/게이팅(글쓰기/좋아요/팔로우 등)
+  - 글쓰기(템플릿/에디터/태그) → 제출 버튼 접근(키보드 올라온 상태)
+  - 댓글/답변 입력 → 제출 버튼 접근(키보드 올라온 상태)
+  - 프로필/구독/알림/인증 신청(모달/시트 포함)
+- 이슈 기록 포맷(필수)
+  - 환경(기기/OS/브라우저) + URL + 재현 스텝 + 기대/실제 + 스크린샷 + 심각도(Blocker/Major/Minor)
+
+#### P0 Sign-off (RC 서명)
+
+- P0-2 (i18n/클립): [ ] Blocker/Major 0  [ ] 핵심 플로우 ko/vi 텍스트 클립 0
+- P0-3 (모바일 키보드): [ ] iOS/Android에서 입력/제출 막힘 0
+- P0-9 (QA): [ ] 리포트 완료  [ ] Blocker/Major 0  [ ] Minor는 P1로 이월 목록화

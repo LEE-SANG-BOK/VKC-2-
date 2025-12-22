@@ -26,288 +26,75 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tErrors = (translations?.errors || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
-  const fallback = useMemo(() => {
-    if (lang === 'en') {
-      return {
-        documentLimitError: 'You can attach up to 5 documents.',
-        validationError: 'Please select a verification type and documents.',
-        uploadError: 'Failed to upload file.',
-        urlError: 'Failed to retrieve file path.',
-        submitSuccess: 'Verification request submitted!\nWe will notify you after review.',
-        submitError: 'Failed to submit verification request.',
-        cancelConfirm: 'You have unsaved changes. Are you sure you want to cancel?',
-        statusPending: 'Pending',
-        statusApproved: 'Approved',
-        statusRejected: 'Rejected',
-        typeStudent: 'Student verification',
-        typeWorker: 'Worker verification',
-        typeExpert: 'Expert verification',
-        typeBusiness: 'Business verification',
-        typeOther: 'Other',
-        goBack: 'Go back',
-        historyPageTitle: 'Verification history',
-        historyPageDescription: 'Review and manage your verification requests.',
-        alreadyVerifiedTitle: 'Already verified',
-        alreadyVerifiedMessage: 'Your profile now shows a verified badge.',
-        pendingRequestTitle: 'A request is under review',
-        pendingRequestMessage: 'You already have a pending request. Please wait for review to complete.',
-        historyTitle: 'Requests',
-        historyCount: 'Total {count}',
-        noHistoryTitle: 'No requests yet',
-        noHistoryDescription: 'Apply for verification to boost trust.',
-        applyVerification: 'Apply for verification',
-        submitted: 'Submitted',
-        reviewed: 'Reviewed',
-        rejectionReason: 'Rejection reason',
-        pendingMessage: 'Under review. It takes 1–3 business days.',
-        approvedMessage: 'Approved. A verified badge will appear on your profile.',
-        pageTitle: 'Verification request',
-        pageDescription: 'Apply for expert verification.',
-        typeLabel: 'Verification type',
-        typePlaceholder: 'Select a verification type',
-        visaTypeLabel: 'Visa type',
-        visaTypePlaceholder: 'e.g., D-2, D-10, E-7-1, F-2-7',
-        jobTitleLabel: 'Job title (optional)',
-        jobTitlePlaceholder: 'e.g., Frontend developer, student',
-        universityNameLabel: 'University/School name',
-        universityNamePlaceholder: 'e.g., Pusan National University',
-        universityEmailLabel: 'School email',
-        industryLabel: 'Industry',
-        industryPlaceholder: 'e.g., Manufacturing, IT, Service',
-        companyLabel: 'Company name',
-        companyPlaceholder: 'e.g., K-Tech',
-        documentLabel: 'Supporting documents',
-        documentUpload: 'Click or drag files to upload',
-        documentFormats: 'JPG, PNG, PDF (max 10MB)',
-        removeDocument: 'Remove document',
-        documentHint: '※ Attach documents such as student ID, employment certificate, or licenses.',
-        additionalInfoLabel: 'Additional info (optional)',
-        additionalInfoPlaceholder: 'Add extra details related to verification',
-        guideTitle: '📌 Verification review guide',
-        guide1: 'Review takes 1–3 business days.',
-        guide2: 'Submitted documents are used only for verification and stored securely.',
-        guide3: 'Once approved, a verified badge appears on your profile.',
-        guide4: 'We will contact you by email if more documents are needed.',
-        submitting: 'Submitting...',
-        submitButton: 'Submit verification request',
-        studentRequiredError: 'Student verification requires a university name or school email.',
-        workerRequiredError: 'Worker verification requires industry or company name.',
-        documentRequiredError: 'Please attach verification documents.',
-        documentNotOwnedError: 'Only documents you uploaded can be attached.',
-        alreadyVerifiedError: 'Already verified.',
-        pendingRequestError: 'A request is already under review.',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        documentLimitError: 'Bạn chỉ có thể đính kèm tối đa 5 tài liệu.',
-        validationError: 'Vui lòng chọn loại xác minh và tài liệu.',
-        uploadError: 'Tải tệp lên thất bại.',
-        urlError: 'Không lấy được đường dẫn tệp.',
-        submitSuccess: 'Đã gửi yêu cầu xác minh!\nChúng tôi sẽ thông báo sau khi xét duyệt.',
-        submitError: 'Không thể gửi yêu cầu xác minh.',
-        cancelConfirm: 'Bạn có thay đổi chưa lưu. Bạn có chắc muốn hủy không?',
-        statusPending: 'Đang xét duyệt',
-        statusApproved: 'Đã duyệt',
-        statusRejected: 'Từ chối',
-        typeStudent: 'Xác minh sinh viên',
-        typeWorker: 'Xác minh người đi làm',
-        typeExpert: 'Xác minh chuyên gia',
-        typeBusiness: 'Xác minh doanh nghiệp',
-        typeOther: 'Khác',
-        goBack: 'Quay lại',
-        historyPageTitle: 'Lịch sử xác minh',
-        historyPageDescription: 'Xem và quản lý các yêu cầu xác minh.',
-        alreadyVerifiedTitle: 'Đã xác minh',
-        alreadyVerifiedMessage: 'Huy hiệu xác minh đã hiển thị trên hồ sơ của bạn.',
-        pendingRequestTitle: 'Đang có yêu cầu xét duyệt',
-        pendingRequestMessage: 'Bạn đã có yêu cầu đang xét duyệt. Vui lòng chờ hoàn tất.',
-        historyTitle: 'Lịch sử',
-        historyCount: 'Tổng {count}',
-        noHistoryTitle: 'Chưa có yêu cầu',
-        noHistoryDescription: 'Hãy gửi yêu cầu xác minh để tăng độ tin cậy.',
-        applyVerification: 'Gửi yêu cầu xác minh',
-        submitted: 'Đã gửi',
-        reviewed: 'Đã xét',
-        rejectionReason: 'Lý do từ chối',
-        pendingMessage: 'Đang xét duyệt. Mất 1–3 ngày làm việc.',
-        approvedMessage: 'Đã duyệt. Huy hiệu xác minh sẽ hiển thị trên hồ sơ.',
-        pageTitle: 'Yêu cầu xác minh',
-        pageDescription: 'Gửi yêu cầu xác minh chuyên gia.',
-        typeLabel: 'Loại xác minh',
-        typePlaceholder: 'Chọn loại xác minh',
-        visaTypeLabel: 'Loại visa',
-        visaTypePlaceholder: 'VD: D-2, D-10, E-7-1, F-2-7',
-        jobTitleLabel: 'Chức danh (tuỳ chọn)',
-        jobTitlePlaceholder: 'VD: Lập trình viên Frontend, sinh viên',
-        universityNameLabel: 'Tên trường',
-        universityNamePlaceholder: 'VD: Đại học Pusan',
-        universityEmailLabel: 'Email trường',
-        industryLabel: 'Ngành nghề',
-        industryPlaceholder: 'VD: Sản xuất, IT, Dịch vụ',
-        companyLabel: 'Tên công ty',
-        companyPlaceholder: 'VD: K-Tech',
-        documentLabel: 'Tài liệu chứng minh',
-        documentUpload: 'Nhấp hoặc kéo thả tệp để tải lên',
-        documentFormats: 'JPG, PNG, PDF (tối đa 10MB)',
-        removeDocument: 'Xoá tài liệu',
-        documentHint: '※ Đính kèm thẻ sinh viên, giấy xác nhận công việc, chứng chỉ, v.v.',
-        additionalInfoLabel: 'Thông tin bổ sung (tuỳ chọn)',
-        additionalInfoPlaceholder: 'Nhập thông tin bổ sung liên quan đến xác minh',
-        guideTitle: '📌 Hướng dẫn xét duyệt',
-        guide1: 'Xét duyệt mất 1–3 ngày làm việc.',
-        guide2: 'Tài liệu chỉ dùng cho xác minh và được lưu trữ an toàn.',
-        guide3: 'Khi được duyệt, huy hiệu xác minh sẽ hiển thị trên hồ sơ.',
-        guide4: 'Chúng tôi sẽ liên hệ qua email nếu cần thêm tài liệu.',
-        submitting: 'Đang xử lý...',
-        submitButton: 'Gửi yêu cầu xác minh',
-        studentRequiredError: 'Xác minh sinh viên cần tên trường hoặc email trường.',
-        workerRequiredError: 'Xác minh người đi làm cần ngành nghề hoặc tên công ty.',
-        documentRequiredError: 'Vui lòng đính kèm tài liệu xác minh.',
-        documentNotOwnedError: 'Chỉ có thể đính kèm tài liệu do bạn tải lên.',
-        alreadyVerifiedError: 'Đã xác minh.',
-        pendingRequestError: 'Đã có yêu cầu đang xét duyệt.',
-      };
-    }
-    return {
-      documentLimitError: '서류는 최대 5개까지 첨부할 수 있습니다.',
-      validationError: '인증 유형과 증빙 서류를 선택해주세요.',
-      uploadError: '파일 업로드에 실패했습니다.',
-      urlError: '파일 경로를 받지 못했습니다.',
-      submitSuccess: '인증 신청이 완료되었습니다!\n관리자 검토 후 결과를 알려드립니다.',
-      submitError: '인증 신청 중 오류가 발생했습니다.',
-      cancelConfirm: '작성 중인 내용이 있습니다. 정말 취소하시겠습니까?',
-      statusPending: '심사중',
-      statusApproved: '승인',
-      statusRejected: '반려',
-      typeStudent: '학생 인증',
-      typeWorker: '직장인 인증',
-      typeExpert: '전문가 인증',
-      typeBusiness: '사업자 인증',
-      typeOther: '기타',
-      goBack: '뒤로 가기',
-      historyPageTitle: '인증 신청 내역',
-      historyPageDescription: '인증 신청 현황을 확인하고 관리하세요',
-      alreadyVerifiedTitle: '이미 인증되었습니다',
-      alreadyVerifiedMessage: '인증이 승인되어 프로필에 인증 배지가 표시됩니다.',
-      pendingRequestTitle: '검토 중인 신청이 있습니다',
-      pendingRequestMessage: '이미 검토 중인 인증 신청이 있습니다. 검토가 완료된 후 다시 신청해주세요.',
-      historyTitle: '신청 내역',
-      historyCount: '총 {count}건',
-      noHistoryTitle: '신청 내역이 없습니다',
-      noHistoryDescription: '전문가 인증을 신청하여 신뢰도를 높여보세요',
-      applyVerification: '인증 신청하기',
-      submitted: '신청',
-      reviewed: '검토',
-      rejectionReason: '반려 사유',
-      pendingMessage: '관리자가 검토 중입니다. 영업일 기준 1~3일 소요됩니다.',
-      approvedMessage: '인증이 승인되었습니다. 프로필에 인증 배지가 표시됩니다.',
-      pageTitle: '인증 신청',
-      pageDescription: '전문가 인증을 신청하세요',
-      typeLabel: '인증 유형',
-      typePlaceholder: '인증 유형을 선택하세요',
-      visaTypeLabel: '비자 종류',
-      visaTypePlaceholder: '예: D-2, D-10, E-7-1, F-2-7',
-      jobTitleLabel: '직무/포지션 (선택)',
-      jobTitlePlaceholder: '예: 프론트엔드 개발자, 유학생',
-      universityNameLabel: '대학/학교명',
-      universityNamePlaceholder: '예: 부산대학교',
-      universityEmailLabel: '학교 이메일',
-      industryLabel: '산업 분야',
-      industryPlaceholder: '예: 제조, IT, 서비스',
-      companyLabel: '회사명',
-      companyPlaceholder: '예: K-Tech',
-      documentLabel: '증빙 서류',
-      documentUpload: '클릭하거나 파일을 드래그하여 업로드',
-      documentFormats: 'JPG, PNG, PDF (최대 10MB)',
-      removeDocument: '서류 삭제',
-      documentHint: '※ 학생증, 재직증명서, 자격증 등 인증을 위한 서류를 첨부해주세요',
-      additionalInfoLabel: '추가 정보 (선택)',
-      additionalInfoPlaceholder: '인증과 관련된 추가 정보를 입력해주세요',
-      guideTitle: '📌 인증 심사 안내',
-      guide1: '인증 심사는 영업일 기준 1~3일 소요됩니다.',
-      guide2: '제출하신 서류는 인증 목적으로만 사용되며, 안전하게 보관됩니다.',
-      guide3: '인증이 승인되면 프로필에 인증 배지가 표시됩니다.',
-      guide4: '추가 서류가 필요한 경우 이메일로 연락드립니다.',
-      submitting: '처리 중...',
-      submitButton: '인증 신청하기',
-      studentRequiredError: '학생 인증은 대학명 또는 학교 이메일이 필요합니다.',
-      workerRequiredError: '직장인 인증은 산업 분야 또는 회사명이 필요합니다.',
-      documentRequiredError: '인증 서류를 다시 첨부해주세요.',
-      documentNotOwnedError: '본인이 업로드한 서류만 첨부할 수 있습니다.',
-      alreadyVerifiedError: '이미 인증이 완료되었습니다.',
-      pendingRequestError: '이미 검토 중인 인증 요청이 있습니다.',
-    };
-  }, [lang]);
-  const documentLimitError = t.documentLimitError || fallback.documentLimitError;
-  const validationError = t.validationError || fallback.validationError;
-  const uploadError = t.uploadError || fallback.uploadError;
-  const urlError = t.urlError || fallback.urlError;
-  const submitSuccessLabel = t.submitSuccess || fallback.submitSuccess;
-  const submitErrorLabel = t.submitError || fallback.submitError;
-  const cancelConfirmLabel = t.cancelConfirm || fallback.cancelConfirm;
-  const statusPendingLabel = t.statusPending || fallback.statusPending;
-  const statusApprovedLabel = t.statusApproved || fallback.statusApproved;
-  const statusRejectedLabel = t.statusRejected || fallback.statusRejected;
+  const documentLimitError = t.documentLimitError || '';
+  const validationError = t.validationError || '';
+  const uploadError = t.uploadError || '';
+  const urlError = t.urlError || '';
+  const submitSuccessLabel = t.submitSuccess || '';
+  const submitErrorLabel = t.submitError || '';
+  const cancelConfirmLabel = t.cancelConfirm || '';
+  const statusPendingLabel = t.statusPending || '';
+  const statusApprovedLabel = t.statusApproved || '';
+  const statusRejectedLabel = t.statusRejected || '';
   const typeLabels: Record<string, string> = {
-    student: t.typeStudent || fallback.typeStudent,
-    worker: t.typeWorker || fallback.typeWorker,
-    expert: t.typeExpert || fallback.typeExpert,
-    business: t.typeBusiness || fallback.typeBusiness,
-    other: t.typeOther || fallback.typeOther,
+    student: t.typeStudent || '',
+    worker: t.typeWorker || '',
+    expert: t.typeExpert || '',
+    business: t.typeBusiness || '',
+    other: t.typeOther || '',
   };
-  const goBackLabel = t.goBack || fallback.goBack;
-  const historyPageTitle = t.historyPageTitle || fallback.historyPageTitle;
-  const historyPageDescription = t.historyPageDescription || fallback.historyPageDescription;
-  const alreadyVerifiedTitle = t.alreadyVerifiedTitle || fallback.alreadyVerifiedTitle;
-  const alreadyVerifiedMessage = t.alreadyVerifiedMessage || fallback.alreadyVerifiedMessage;
-  const pendingRequestTitle = t.pendingRequestTitle || fallback.pendingRequestTitle;
-  const pendingRequestMessage = t.pendingRequestMessage || fallback.pendingRequestMessage;
-  const historyTitle = t.historyTitle || fallback.historyTitle;
-  const historyCountLabel = t.historyCount || fallback.historyCount;
-  const noHistoryTitle = t.noHistoryTitle || fallback.noHistoryTitle;
-  const noHistoryDescription = t.noHistoryDescription || fallback.noHistoryDescription;
-  const applyVerificationLabel = t.applyVerification || fallback.applyVerification;
-  const submittedLabel = t.submitted || fallback.submitted;
-  const reviewedLabel = t.reviewed || fallback.reviewed;
-  const rejectionReasonLabel = t.rejectionReason || fallback.rejectionReason;
-  const pendingMessageLabel = t.pendingMessage || fallback.pendingMessage;
-  const approvedMessageLabel = t.approvedMessage || fallback.approvedMessage;
-  const pageTitleLabel = t.pageTitle || fallback.pageTitle;
-  const pageDescriptionLabel = t.pageDescription || fallback.pageDescription;
-  const typeLabel = t.typeLabel || fallback.typeLabel;
-  const typePlaceholderLabel = t.typePlaceholder || fallback.typePlaceholder;
-  const visaTypeLabel = t.visaTypeLabel || fallback.visaTypeLabel;
-  const visaTypePlaceholderLabel = t.visaTypePlaceholder || fallback.visaTypePlaceholder;
-  const jobTitleLabel = t.jobTitleLabel || fallback.jobTitleLabel;
-  const jobTitlePlaceholderLabel = t.jobTitlePlaceholder || fallback.jobTitlePlaceholder;
-  const universityNameLabel = t.universityNameLabel || fallback.universityNameLabel;
-  const universityNamePlaceholderLabel = t.universityNamePlaceholder || fallback.universityNamePlaceholder;
-  const universityEmailLabel = t.universityEmailLabel || fallback.universityEmailLabel;
-  const industryLabel = t.industryLabel || fallback.industryLabel;
-  const industryPlaceholderLabel = t.industryPlaceholder || fallback.industryPlaceholder;
-  const companyLabel = t.companyLabel || fallback.companyLabel;
-  const companyPlaceholderLabel = t.companyPlaceholder || fallback.companyPlaceholder;
-  const documentLabel = t.documentLabel || fallback.documentLabel;
-  const documentUploadLabel = t.documentUpload || fallback.documentUpload;
-  const documentFormatsLabel = t.documentFormats || fallback.documentFormats;
-  const removeDocumentLabel = t.removeDocument || fallback.removeDocument;
-  const documentHintLabel = t.documentHint || fallback.documentHint;
-  const additionalInfoLabel = t.additionalInfoLabel || fallback.additionalInfoLabel;
-  const additionalInfoPlaceholderLabel = t.additionalInfoPlaceholder || fallback.additionalInfoPlaceholder;
-  const guideTitleLabel = t.guideTitle || fallback.guideTitle;
-  const guide1Label = t.guide1 || fallback.guide1;
-  const guide2Label = t.guide2 || fallback.guide2;
-  const guide3Label = t.guide3 || fallback.guide3;
-  const guide4Label = t.guide4 || fallback.guide4;
-  const submittingLabel = t.submitting || fallback.submitting;
-  const submitButtonLabel = t.submitButton || fallback.submitButton;
-  const alreadyVerifiedErrorLabel = t.alreadyVerifiedMessage || fallback.alreadyVerifiedError;
-  const pendingRequestErrorLabel = t.pendingRequestMessage || fallback.pendingRequestError;
-  const studentRequiredErrorLabel = t.studentRequiredError || fallback.studentRequiredError;
-  const workerRequiredErrorLabel = t.workerRequiredError || fallback.workerRequiredError;
-  const documentRequiredErrorLabel = t.documentRequiredError || fallback.documentRequiredError;
-  const documentNotOwnedErrorLabel = t.documentNotOwnedError || fallback.documentNotOwnedError;
+  const goBackLabel = t.goBack || '';
+  const historyPageTitle = t.historyPageTitle || '';
+  const historyPageDescription = t.historyPageDescription || '';
+  const alreadyVerifiedTitle = t.alreadyVerifiedTitle || '';
+  const alreadyVerifiedMessage = t.alreadyVerifiedMessage || '';
+  const pendingRequestTitle = t.pendingRequestTitle || '';
+  const pendingRequestMessage = t.pendingRequestMessage || '';
+  const historyTitle = t.historyTitle || '';
+  const historyCountLabel = t.historyCount || '';
+  const noHistoryTitle = t.noHistoryTitle || '';
+  const noHistoryDescription = t.noHistoryDescription || '';
+  const applyVerificationLabel = t.applyVerification || '';
+  const submittedLabel = t.submitted || '';
+  const reviewedLabel = t.reviewed || '';
+  const rejectionReasonLabel = t.rejectionReason || '';
+  const pendingMessageLabel = t.pendingMessage || '';
+  const approvedMessageLabel = t.approvedMessage || '';
+  const pageTitleLabel = t.pageTitle || '';
+  const pageDescriptionLabel = t.pageDescription || '';
+  const typeLabel = t.typeLabel || '';
+  const typePlaceholderLabel = t.typePlaceholder || '';
+  const visaTypeLabel = t.visaTypeLabel || '';
+  const visaTypePlaceholderLabel = t.visaTypePlaceholder || '';
+  const jobTitleLabel = t.jobTitleLabel || '';
+  const jobTitlePlaceholderLabel = t.jobTitlePlaceholder || '';
+  const universityNameLabel = t.universityNameLabel || '';
+  const universityNamePlaceholderLabel = t.universityNamePlaceholder || '';
+  const universityEmailLabel = t.universityEmailLabel || '';
+  const industryLabel = t.industryLabel || '';
+  const industryPlaceholderLabel = t.industryPlaceholder || '';
+  const companyLabel = t.companyLabel || '';
+  const companyPlaceholderLabel = t.companyPlaceholder || '';
+  const documentLabel = t.documentLabel || '';
+  const documentUploadLabel = t.documentUpload || '';
+  const documentFormatsLabel = t.documentFormats || '';
+  const removeDocumentLabel = t.removeDocument || '';
+  const documentHintLabel = t.documentHint || '';
+  const additionalInfoLabel = t.additionalInfoLabel || '';
+  const additionalInfoPlaceholderLabel = t.additionalInfoPlaceholder || '';
+  const guideTitleLabel = t.guideTitle || '';
+  const guide1Label = t.guide1 || '';
+  const guide2Label = t.guide2 || '';
+  const guide3Label = t.guide3 || '';
+  const guide4Label = t.guide4 || '';
+  const submittingLabel = t.submitting || '';
+  const submitButtonLabel = t.submitButton || '';
+  const alreadyVerifiedErrorLabel = t.alreadyVerifiedMessage || '';
+  const pendingRequestErrorLabel = t.pendingRequestMessage || '';
+  const studentRequiredErrorLabel = t.studentRequiredError || '';
+  const workerRequiredErrorLabel = t.workerRequiredError || '';
+  const documentRequiredErrorLabel = t.documentRequiredError || '';
+  const documentNotOwnedErrorLabel = t.documentNotOwnedError || '';
 
   const stepInfoLabel =
     t.stepInfo || '';
@@ -1103,12 +890,7 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                       ) : null}
 
                       <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        {t.profilePreviewDisclaimer ||
-                          (lang === 'vi'
-                            ? 'Quản trị viên có thể chỉnh sửa nội dung hiển thị sau khi xác minh.'
-                            : lang === 'en'
-                              ? 'Admins may adjust what is shown after review.'
-                              : '관리자 검토 과정에서 표시 내용이 일부 수정될 수 있어요.')}
+                        {t.profilePreviewDisclaimer || ''}
                       </p>
                     </div>
                   ) : null}
@@ -1157,21 +939,10 @@ export default function VerificationRequestClient({ translations, lang }: Verifi
                           <>
                             <FileText className="w-12 h-12 text-green-500 mb-3" />
                             <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                              {(t.documentsSelectedCount || '').includes('{count}')
-                                ? t.documentsSelectedCount.replace('{count}', String(formData.documents.length))
-                                : lang === 'vi'
-                                  ? `Đã chọn ${formData.documents.length} tệp`
-                                  : lang === 'en'
-                                    ? `${formData.documents.length} files selected`
-                                    : `선택된 파일 ${formData.documents.length}개`}
+                              {(t.documentsSelectedCount || '').replace('{count}', String(formData.documents.length))}
                             </p>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {t.documentsAddMore ||
-                                (lang === 'vi'
-                                  ? 'Nhấn để thêm tệp khác'
-                                  : lang === 'en'
-                                    ? 'Click to add more files'
-                                    : '클릭하여 추가 파일 선택')}
+                              {t.documentsAddMore || ''}
                             </p>
                           </>
                         ) : (

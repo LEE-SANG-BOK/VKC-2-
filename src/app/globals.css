@@ -851,7 +851,7 @@
     width: 9.75rem !important;
     max-width: 9.75rem !important;
     margin-left: 0 !important;
-    margin-top: 24px !important;
+    margin-top: 52px !important;
     align-self: flex-start;
   }
   .question-card-thumb__inner {
@@ -1040,5 +1040,9 @@
 @media (max-width: 1024px) {
   .vk-safe-bottom {
     padding-bottom: calc(var(--vk-bottom-safe-offset, 72px) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .vk-safe-bottom :where(input, textarea, [contenteditable='true']) {
+    scroll-margin-bottom: calc(var(--vk-bottom-safe-offset, 72px) + env(safe-area-inset-bottom, 0px) + 24px);
   }
 }

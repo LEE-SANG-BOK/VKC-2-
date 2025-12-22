@@ -3,9 +3,8 @@
 import { useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
-import Image from 'next/image';
 import { Bell, CheckCircle, MessageCircle, MessageSquare, Award, UserPlus, Settings } from 'lucide-react';
-import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
+import Avatar from '@/components/atoms/Avatar';
 import { useNotifications } from '@/repo/notifications/query';
 import { useMarkAsRead } from '@/repo/notifications/mutation';
 import { useSession } from 'next-auth/react';
@@ -282,21 +281,12 @@ export default function NotificationModal({ isOpen, onClose, translations = {} }
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
-                      <Image
-                        src={notification.author.avatar}
-                        alt={notification.author.name}
-                        width={16}
-                        height={16}
-                        sizes="20px"
-                        className="w-4 h-4 sm:w-5 sm:h-5 rounded-full flex-shrink-0"
-                        placeholder="blur"
-                        blurDataURL={DEFAULT_BLUR_DATA_URL}
-                      />
-                      <span className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white truncate">
-                        {notification.author.name}
-                      </span>
-                    </div>
+	                <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+	                  <Avatar name={notification.author.name} imageUrl={notification.author.avatar} size="sm" />
+	                  <span className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white truncate">
+	                    {notification.author.name}
+	                  </span>
+	                </div>
                     <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-1">
                       {notification.message}
                     </p>

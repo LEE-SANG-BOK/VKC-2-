@@ -4,6 +4,25 @@ import { feedbacks, users } from '@/lib/db/schema';
 import { getAdminSession } from '@/lib/admin/auth';
 import { desc, eq, ilike, or, and, sql, SQL } from 'drizzle-orm';
 
+const hasMissingFeedbackTitleColumn = (error: unknown) => {
+  const visited = new Set<unknown>();
+  let current: unknown = error;
+  while (current && !visited.has(current)) {
+    visited.add(current);
+    const message =
+      current instanceof Error
+        ? current.message
+        : typeof (current as any)?.message === 'string'
+          ? String((current as any).message)
+          : '';
+    if (/column \"title\" of relation \"feedbacks\" does not exist/i.test(message)) {
+      return true;
+    }
+    current = current instanceof Error ? current.cause : (current as any)?.cause;
+  }
+  return false;
+};
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getAdminSession(request);
@@ -35,35 +54,97 @@ export async function GET(request: NextRequest) {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const [countResult, feedbackList] = await Promise.all([
-      db.select({ count: sql<number>`count(*)::int` }).from(feedbacks).where(whereClause),
-      db
-        .select({
-          id: feedbacks.id,
-          type: feedbacks.type,
-          title: feedbacks.title,
-          description: feedbacks.description,
-          steps: feedbacks.steps,
-          pageUrl: feedbacks.pageUrl,
-          contactEmail: feedbacks.contactEmail,
-          ipAddress: feedbacks.ipAddress,
-          userAgent: feedbacks.userAgent,
-          createdAt: feedbacks.createdAt,
-          user: {
-            id: users.id,
-            name: users.name,
-            displayName: users.displayName,
-            email: users.email,
-            image: users.image,
-          },
-        })
-        .from(feedbacks)
-        .leftJoin(users, eq(feedbacks.userId, users.id))
-        .where(whereClause)
-        .orderBy(desc(feedbacks.createdAt))
-        .limit(limit)
-        .offset(offset),
-    ]);
+    const runQuery = async () => {
+      const [countResult, feedbackList] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` }).from(feedbacks).where(whereClause),
+        db
+          .select({
+            id: feedbacks.id,
+            type: feedbacks.type,
+            title: feedbacks.title,
+            description: feedbacks.description,
+            steps: feedbacks.steps,
+            pageUrl: feedbacks.pageUrl,
+            contactEmail: feedbacks.contactEmail,
+            ipAddress: feedbacks.ipAddress,
+            userAgent: feedbacks.userAgent,
+            createdAt: feedbacks.createdAt,
+            user: {
+              id: users.id,
+              name: users.name,
+              displayName: users.displayName,
+              email: users.email,
+              image: users.image,
+            },
+          })
+          .from(feedbacks)
+          .leftJoin(users, eq(feedbacks.userId, users.id))
+          .where(whereClause)
+          .orderBy(desc(feedbacks.createdAt))
+          .limit(limit)
+          .offset(offset),
+      ]);
+
+      return { countResult, feedbackList };
+    };
+
+    const runQueryWithoutTitle = async () => {
+      const fallbackConditions: SQL[] = [];
+
+      if (type === 'feedback' || type === 'bug') {
+        fallbackConditions.push(eq(feedbacks.type, type));
+      }
+
+      if (search) {
+        fallbackConditions.push(ilike(feedbacks.description, `%${search}%`));
+      }
+
+      const fallbackWhereClause = fallbackConditions.length > 0 ? and(...fallbackConditions) : undefined;
+      const titleExpr = sql<string>`split_part(${feedbacks.description}, E'\n', 1)`;
+
+      const [countResult, feedbackList] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` }).from(feedbacks).where(fallbackWhereClause),
+        db
+          .select({
+            id: feedbacks.id,
+            type: feedbacks.type,
+            title: titleExpr,
+            description: feedbacks.description,
+            steps: feedbacks.steps,
+            pageUrl: feedbacks.pageUrl,
+            contactEmail: feedbacks.contactEmail,
+            ipAddress: feedbacks.ipAddress,
+            userAgent: feedbacks.userAgent,
+            createdAt: feedbacks.createdAt,
+            user: {
+              id: users.id,
+              name: users.name,
+              displayName: users.displayName,
+              email: users.email,
+              image: users.image,
+            },
+          })
+          .from(feedbacks)
+          .leftJoin(users, eq(feedbacks.userId, users.id))
+          .where(fallbackWhereClause)
+          .orderBy(desc(feedbacks.createdAt))
+          .limit(limit)
+          .offset(offset),
+      ]);
+
+      return { countResult, feedbackList };
+    };
+
+    let countResult: Array<{ count: number }>;
+    let feedbackList: Array<any>;
+    try {
+      ({ countResult, feedbackList } = await runQuery());
+    } catch (error) {
+      if (!hasMissingFeedbackTitleColumn(error)) {
+        throw error;
+      }
+      ({ countResult, feedbackList } = await runQueryWithoutTitle());
+    }
 
     const total = countResult[0]?.count || 0;
 

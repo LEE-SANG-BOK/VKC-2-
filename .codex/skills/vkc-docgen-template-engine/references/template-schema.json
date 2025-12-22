@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vietkconnect.local/schemas/doc-template-v1.json",
+  "title": "Document Template Schema (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "docType", "purpose", "version", "steps"],
+  "properties": {
+    "kind": { "const": "doc_template_v1" },
+    "docType": { "type": "string", "minLength": 1 },
+    "purpose": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "titleKey", "fields"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "titleKey": { "type": "string", "minLength": 1 },
+          "descriptionKey": { "type": "string" },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["key", "labelKey", "type"],
+              "properties": {
+                "key": { "type": "string", "minLength": 1 },
+                "labelKey": { "type": "string", "minLength": 1 },
+                "helpKey": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["text", "textarea", "select", "checkbox", "date", "number"]
+                },
+                "required": { "type": "boolean" },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["value", "labelKey"],
+                    "properties": {
+                      "value": { "type": "string" },
+                      "labelKey": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

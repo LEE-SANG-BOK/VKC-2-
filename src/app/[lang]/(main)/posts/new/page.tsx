@@ -23,28 +23,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang } = await params;
   const dict = await getDictionary(lang);
   const t = (dict?.metadata?.newPost || {}) as Record<string, string>;
-  const fallback = (() => {
-    if (lang === 'en') {
-      return {
-        title: 'Create a new post - viet kconnect',
-        description: 'Write a new post for the Viet K-Connect community.',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        title: 'Tạo bài viết mới - viet kconnect',
-        description: 'Hãy viết bài mới cho cộng đồng Viet K-Connect.',
-      };
-    }
-    return {
-      title: '새 게시글 작성 - viet kconnect',
-      description: '베트남 한인 커뮤니티에 새로운 게시글을 작성하세요.',
-    };
-  })();
 
   const meta = (dict?.metadata as Record<string, unknown>) || {};
-  const title = t.title || fallback.title;
-  const description = t.description || fallback.description;
+  const title = t.title || '';
+  const description = t.description || '';
   const keywords = flattenKeywords(buildKeywords({ title, content: description }));
 
   return buildPageMetadata({

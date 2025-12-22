@@ -1,5 +1,7 @@
 export const COMMON_TAG_TRANSLATIONS = {
   en: {
+    질문: 'Question',
+    공유: 'Share',
     비자: 'Visa',
     연장: 'Extension',
     체류: 'Stay',
@@ -40,6 +42,8 @@ export const COMMON_TAG_TRANSLATIONS = {
     생활정보: 'Life tips',
   },
   vi: {
+    질문: 'Câu hỏi',
+    공유: 'Chia sẻ',
     비자: 'Visa',
     연장: 'Gia hạn',
     체류: 'Lưu trú',

@@ -38,7 +38,7 @@ export default defineConfig({
     ? {
         command: startCommand,
         url: healthUrl,
-        reuseExistingServer: !process.env.CI && process.env.REUSE_E2E_SERVER === 'true',
+        reuseExistingServer: !process.env.CI || process.env.REUSE_E2E_SERVER === 'true',
         timeout: 120_000,
         env: {
           ...process.env,

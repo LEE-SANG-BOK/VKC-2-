@@ -38,21 +38,6 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const dict = await getDictionary(lang);
   const metadata = dict.metadata;
   const sidebar = dict.sidebar;
-  const categoryFallbacks = {
-    ko: {
-      title: '{category} - viet kconnect',
-      description: '{category} 카테고리의 질문과 답변을 확인하세요.',
-    },
-    en: {
-      title: '{category} - viet kconnect',
-      description: 'Explore questions and answers in {category}.',
-    },
-    vi: {
-      title: '{category} - viet kconnect',
-      description: 'Khám phá câu hỏi và câu trả lời trong {category}.',
-    },
-  };
-  const categoryFallback = categoryFallbacks[lang] ?? categoryFallbacks.ko;
 
   const currentPage = Math.max(1, parseInt(page || '1') || 1);
 
@@ -63,8 +48,8 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   // 카테고리별 메타데이터
   if (category && category !== 'all') {
     categoryName = sidebar[category as keyof typeof sidebar] || category;
-    title = (metadata.category?.title || categoryFallback.title).replace('{category}', categoryName);
-    description = (metadata.category?.description || categoryFallback.description)
+    title = (metadata.category?.title || metadata.home.title).replace('{category}', categoryName);
+    description = (metadata.category?.description || metadata.home.description)
       .replace('{category}', categoryName);
   }
 

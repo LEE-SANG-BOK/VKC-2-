@@ -16,139 +16,37 @@ export default function VerificationHistoryClient({ translations, lang }: Verifi
   const router = useRouter();
   const { status } = useSession();
   const t = (translations?.verification || {}) as Record<string, string>;
-  const fallback = useMemo(() => {
-    if (lang === 'en') {
-      return {
-        statusPending: 'Pending',
-        statusApproved: 'Approved',
-        statusRejected: 'Rejected',
-        typeStudent: 'Student verification',
-        typeWorker: 'Worker verification',
-        typeExpert: 'Expert verification',
-        typeBusiness: 'Business verification',
-        typeOther: 'Other',
-        goBack: 'Go back',
-        historyPageTitle: 'Verification history',
-        historyPageDescription: 'Review and manage your verification requests.',
-        newRequest: 'New request',
-        historyLoadErrorTitle: 'Unable to load history',
-        historyLoadErrorDescription: 'Please try again later.',
-        retry: 'Try again',
-        noHistoryTitle: 'No requests yet',
-        noHistoryDescription: 'Apply for verification to boost trust.',
-        applyVerification: 'Apply for verification',
-        applicationDate: 'Applied',
-        reviewDate: 'Reviewed',
-        rejectionReason: 'Rejection reason',
-        pendingMessage: 'Under review. It takes 1–3 business days.',
-        approvedMessage: 'Approved. A verified badge will appear on your profile.',
-        loadingMore: 'Loading...',
-        loadMore: 'Load more',
-        benefitsTitle: '💡 Verification benefits',
-        benefit1: 'A verified badge appears on your profile to increase trust.',
-        benefit2: 'Get higher trust when answering in your field.',
-        benefit3: 'Be recognized as an expert in the community.',
-        benefit4: 'Access features for verified users only.',
-      };
-    }
-    if (lang === 'vi') {
-      return {
-        statusPending: 'Đang xét duyệt',
-        statusApproved: 'Đã duyệt',
-        statusRejected: 'Từ chối',
-        typeStudent: 'Xác minh sinh viên',
-        typeWorker: 'Xác minh người đi làm',
-        typeExpert: 'Xác minh chuyên gia',
-        typeBusiness: 'Xác minh doanh nghiệp',
-        typeOther: 'Khác',
-        goBack: 'Quay lại',
-        historyPageTitle: 'Lịch sử xác minh',
-        historyPageDescription: 'Xem và quản lý yêu cầu xác minh.',
-        newRequest: 'Yêu cầu mới',
-        historyLoadErrorTitle: 'Không thể tải lịch sử',
-        historyLoadErrorDescription: 'Vui lòng thử lại sau.',
-        retry: 'Thử lại',
-        noHistoryTitle: 'Chưa có yêu cầu',
-        noHistoryDescription: 'Hãy xác minh để tăng độ tin cậy.',
-        applyVerification: 'Gửi yêu cầu xác minh',
-        applicationDate: 'Ngày gửi',
-        reviewDate: 'Ngày duyệt',
-        rejectionReason: 'Lý do từ chối',
-        pendingMessage: 'Đang xét duyệt. Mất 1–3 ngày làm việc.',
-        approvedMessage: 'Đã duyệt. Huy hiệu xác minh sẽ hiển thị trên hồ sơ.',
-        loadingMore: 'Đang tải...',
-        loadMore: 'Xem thêm',
-        benefitsTitle: '💡 Lợi ích xác minh',
-        benefit1: 'Huy hiệu xác minh hiển thị trên hồ sơ để tăng độ tin cậy.',
-        benefit2: 'Nhận thêm niềm tin khi trả lời trong lĩnh vực chuyên môn.',
-        benefit3: 'Được cộng đồng công nhận là chuyên gia.',
-        benefit4: 'Truy cập các tính năng dành cho người đã xác minh.',
-      };
-    }
-    return {
-      statusPending: '심사중',
-      statusApproved: '승인',
-      statusRejected: '반려',
-      typeStudent: '학생 인증',
-      typeWorker: '직장인 인증',
-      typeExpert: '전문가 인증',
-      typeBusiness: '사업자 인증',
-      typeOther: '기타',
-      goBack: '뒤로 가기',
-      historyPageTitle: '인증 신청 내역',
-      historyPageDescription: '인증 신청 현황을 확인하고 관리하세요',
-      newRequest: '새 인증 신청',
-      historyLoadErrorTitle: '내역을 불러오지 못했습니다',
-      historyLoadErrorDescription: '잠시 후 다시 시도해주세요.',
-      retry: '다시 시도',
-      noHistoryTitle: '신청 내역이 없습니다',
-      noHistoryDescription: '전문가 인증을 신청하여 신뢰도를 높여보세요',
-      applyVerification: '인증 신청하기',
-      applicationDate: '신청일',
-      reviewDate: '검토일',
-      rejectionReason: '반려 사유',
-      pendingMessage: '관리자가 검토 중입니다. 영업일 기준 1~3일 소요됩니다.',
-      approvedMessage: '인증이 승인되었습니다. 프로필에 인증 배지가 표시됩니다.',
-      loadingMore: '불러오는 중...',
-      loadMore: '더 보기',
-      benefitsTitle: '💡 인증의 장점',
-      benefit1: '프로필에 인증 배지가 표시되어 신뢰도가 높아집니다',
-      benefit2: '전문 분야의 질문에 답변 시 더 높은 신뢰를 받습니다',
-      benefit3: '커뮤니티에서 전문가로 인정받을 수 있습니다',
-      benefit4: '인증된 사용자만 이용할 수 있는 기능에 접근할 수 있습니다',
-    };
-  }, [lang]);
-  const statusPendingLabel = t.statusPending || fallback.statusPending;
-  const statusApprovedLabel = t.statusApproved || fallback.statusApproved;
-  const statusRejectedLabel = t.statusRejected || fallback.statusRejected;
+  const statusPendingLabel = t.statusPending || '';
+  const statusApprovedLabel = t.statusApproved || '';
+  const statusRejectedLabel = t.statusRejected || '';
   const typeLabels: Record<string, string> = {
-    student: t.typeStudent || fallback.typeStudent,
-    worker: t.typeWorker || fallback.typeWorker,
-    expert: t.typeExpert || fallback.typeExpert,
-    business: t.typeBusiness || fallback.typeBusiness,
-    other: t.typeOther || fallback.typeOther,
+    student: t.typeStudent || '',
+    worker: t.typeWorker || '',
+    expert: t.typeExpert || '',
+    business: t.typeBusiness || '',
+    other: t.typeOther || '',
   };
-  const goBackLabel = t.goBack || fallback.goBack;
-  const historyPageTitle = t.historyPageTitle || fallback.historyPageTitle;
-  const historyPageDescription = t.historyPageDescription || fallback.historyPageDescription;
-  const newRequestLabel = t.newRequest || fallback.newRequest;
-  const historyLoadErrorTitle = t.historyLoadErrorTitle || fallback.historyLoadErrorTitle;
-  const historyLoadErrorDescription = t.historyLoadErrorDescription || fallback.historyLoadErrorDescription;
-  const retryLabel = t.retry || fallback.retry;
-  const noHistoryTitle = t.noHistoryTitle || fallback.noHistoryTitle;
-  const noHistoryDescription = t.noHistoryDescription || fallback.noHistoryDescription;
-  const applyVerificationLabel = t.applyVerification || fallback.applyVerification;
-  const applicationDateLabel = t.applicationDate || fallback.applicationDate;
-  const reviewDateLabel = t.reviewDate || fallback.reviewDate;
-  const rejectionReasonLabel = t.rejectionReason || fallback.rejectionReason;
-  const pendingMessageLabel = t.pendingMessage || fallback.pendingMessage;
-  const approvedMessageLabel = t.approvedMessage || fallback.approvedMessage;
-  const loadingMoreLabel = t.loadingMore || fallback.loadingMore;
-  const benefitsTitleLabel = t.benefitsTitle || fallback.benefitsTitle;
-  const benefit1Label = t.benefit1 || fallback.benefit1;
-  const benefit2Label = t.benefit2 || fallback.benefit2;
-  const benefit3Label = t.benefit3 || fallback.benefit3;
-  const benefit4Label = t.benefit4 || fallback.benefit4;
+  const goBackLabel = t.goBack || '';
+  const historyPageTitle = t.historyPageTitle || '';
+  const historyPageDescription = t.historyPageDescription || '';
+  const newRequestLabel = t.newRequest || '';
+  const historyLoadErrorTitle = t.historyLoadErrorTitle || '';
+  const historyLoadErrorDescription = t.historyLoadErrorDescription || '';
+  const retryLabel = t.retry || '';
+  const noHistoryTitle = t.noHistoryTitle || '';
+  const noHistoryDescription = t.noHistoryDescription || '';
+  const applyVerificationLabel = t.applyVerification || '';
+  const applicationDateLabel = t.applicationDate || '';
+  const reviewDateLabel = t.reviewDate || '';
+  const rejectionReasonLabel = t.rejectionReason || '';
+  const pendingMessageLabel = t.pendingMessage || '';
+  const approvedMessageLabel = t.approvedMessage || '';
+  const loadingMoreLabel = t.loadingMore || '';
+  const benefitsTitleLabel = t.benefitsTitle || '';
+  const benefit1Label = t.benefit1 || '';
+  const benefit2Label = t.benefit2 || '';
+  const benefit3Label = t.benefit3 || '';
+  const benefit4Label = t.benefit4 || '';
 
   const [page, setPage] = useState(1);
   const sentinelRef = useRef<HTMLDivElement | null>(null);

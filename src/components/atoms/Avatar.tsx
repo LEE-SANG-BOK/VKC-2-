@@ -35,6 +35,26 @@ export default function Avatar({ name, size = 'md', imageUrl, showVerifiedOverla
   const displayName = name || '?';
 
   const hasValidImage = imageUrl && imageUrl.trim() !== '' && !imgError;
+  const resolvedImageUrl = (() => {
+    if (!hasValidImage || !imageUrl) return '';
+    try {
+      const parsed = new URL(imageUrl);
+      if (parsed.hostname !== 'ui-avatars.com') return imageUrl;
+      if (!parsed.searchParams.has('format')) parsed.searchParams.set('format', 'png');
+      if (!parsed.searchParams.has('size')) parsed.searchParams.set('size', String(sizePixels[size]));
+      return parsed.toString();
+    } catch {
+      return imageUrl;
+    }
+  })();
+  const isUiAvatars = (() => {
+    if (!hasValidImage || !imageUrl) return false;
+    try {
+      return new URL(imageUrl).hostname === 'ui-avatars.com';
+    } catch {
+      return false;
+    }
+  })();
 
   const overlay = showVerifiedOverlay ? (
     <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center overflow-hidden">
@@ -51,13 +71,13 @@ export default function Avatar({ name, size = 'md', imageUrl, showVerifiedOverla
     return (
       <div className={`${sizeStyles[size]} rounded-full ${interactiveScale} ${interactiveRing} transition-all duration-200 ease-out relative bg-gray-100 dark:bg-gray-800 overflow-hidden`}>
         <Image
-          src={imageUrl}
+          src={resolvedImageUrl}
           alt={name}
           width={sizePixels[size]}
           height={sizePixels[size]}
           sizes={`${sizePixels[size]}px`}
           className="w-full h-full object-cover"
-          unoptimized={false}
+          unoptimized={isUiAvatars}
           placeholder="blur"
           blurDataURL={DEFAULT_BLUR_DATA_URL}
           onError={() => setImgError(true)}

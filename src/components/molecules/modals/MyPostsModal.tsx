@@ -101,7 +101,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-2xl">
-      <div ref={modalBodyRef} className="relative max-h-[80vh] flex flex-col">
+      <div ref={modalBodyRef} className="relative max-h-[80dvh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">

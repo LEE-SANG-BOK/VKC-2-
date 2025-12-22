@@ -65,7 +65,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
                 />
               </aside>
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetContent side="left" className="p-0 w-[320px] max-w-[88vw]">
+                <SheetContent side="left" className="p-0 w-[min(360px,100vw)]">
                   <CategorySidebar
                     variant="mobile"
                     setIsMobileMenuOpen={setIsMobileMenuOpen}
@@ -85,7 +85,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
             {children}
           </main>
           {hasRightRail ? (
-            <aside className="hidden lg:block w-[320px] shrink-0 lg:justify-self-end">
+            <aside className="w-full lg:w-[320px] shrink-0 lg:justify-self-end">
               {rightRail}
             </aside>
           ) : null}

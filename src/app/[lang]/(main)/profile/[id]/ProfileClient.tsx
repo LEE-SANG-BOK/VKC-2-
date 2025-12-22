@@ -601,7 +601,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
               ) : null}
 
               <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide pr-3 scroll-px-3">
                   <div className="flex min-w-[72px] flex-1 flex-col items-center text-center cursor-pointer hover:opacity-80 transition-opacity">
                     <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{followersCount}</div>
                     <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.followers}</div>
@@ -630,7 +630,7 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="flex overflow-x-auto scrollbar-hide">
+            <div className="flex overflow-x-auto scrollbar-hide pr-3 scroll-px-3">
               <button
                 onClick={() => setActiveTab('posts')}
                 className={`flex-1 min-w-fit py-3 sm:py-4 px-3 sm:px-6 text-center font-medium transition-colors whitespace-nowrap ${

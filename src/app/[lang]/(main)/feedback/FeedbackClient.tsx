@@ -33,80 +33,39 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
   }, []);
 
   const copy = useMemo(() => {
-    const isVi = lang === 'vi';
-    const isEn = lang === 'en';
-    const ratingLabels = isVi
-      ? ['Rất không hài lòng', 'Không hài lòng', 'Bình thường', 'Hài lòng', 'Rất hài lòng']
-      : isEn
-        ? ['Very dissatisfied', 'Dissatisfied', 'Okay', 'Satisfied', 'Very satisfied']
-        : ['매우 불만족', '불만족', '보통', '만족', '매우 만족'];
+    const ratingLabels = [
+      t.rating1 || '',
+      t.rating2 || '',
+      t.rating3 || '',
+      t.rating4 || '',
+      t.rating5 || '',
+    ];
     return {
-      title: t.title || (isVi ? 'Khảo sát phản hồi' : isEn ? 'Feedback Survey' : '피드백 설문'),
-      subtitle:
-        t.subtitle ||
-        (isVi
-          ? 'Đánh giá trải nghiệm và cho biết điều cần cải thiện, hoặc báo lỗi.'
-          : isEn
-            ? 'Rate your experience and share what we should improve, or report a bug.'
-            : '만족도와 개선점을 알려주시거나 버그를 제보해 주세요.'),
-      typeLabel: t.typeLabel || (isVi ? 'Loại' : isEn ? 'Type' : '유형'),
-      bugLabel: t.bugLabel || (isVi ? 'Báo lỗi' : isEn ? 'Bug' : '버그'),
-      feedbackLabel: t.feedbackLabel || (isVi ? 'Phản hồi' : isEn ? 'Feedback' : '피드백'),
-      satisfactionLabel: t.satisfactionLabel || (isVi ? 'Mức độ hài lòng' : isEn ? 'Satisfaction' : '만족도'),
-      satisfactionHint:
-        t.satisfactionHint ||
-        (isVi
-          ? 'Vui lòng viết trải nghiệm tổng thể của bạn về trang web này.'
-          : isEn
-            ? 'Write about your overall experience with this site.'
-            : '본 사이트에 대한 전반적인 경험을 작성해주세요.'),
+      title: t.title || '',
+      subtitle: t.subtitle || '',
+      typeLabel: t.typeLabel || '',
+      bugLabel: t.bugLabel || '',
+      feedbackLabel: t.feedbackLabel || '',
+      satisfactionLabel: t.satisfactionLabel || '',
+      satisfactionHint: t.satisfactionHint || '',
       ratingLabels,
-      improvementLabel:
-        t.improvementLabel || (isVi ? 'Điều cần cải thiện' : isEn ? 'What should we improve?' : '개선이 필요한 점'),
-      improvementPlaceholder:
-        t.improvementPlaceholder ||
-        (isVi
-          ? 'Ví dụ: Tốc độ tìm kiếm chậm, khó tìm chủ đề.'
-          : isEn
-            ? 'Example: Search feels slow, hard to find topics.'
-            : '예: 검색 속도가 느리고 주제를 찾기 어려워요.'),
-      issueLabel: t.issueLabel || (isVi ? 'Chi tiết lỗi' : isEn ? 'Issue details' : '버그 상세'),
-      issuePlaceholder:
-        t.issuePlaceholder ||
-        (isVi
-          ? 'Mô tả kết quả mong đợi và thực tế.'
-          : isEn
-            ? 'Describe expected vs actual result.'
-            : '기대 결과와 실제 결과를 설명해 주세요.'),
-      submit: t.submit || (isVi ? 'Gửi' : isEn ? 'Submit' : '제출하기'),
-      submitting: t.submitting || (isVi ? 'Đang gửi...' : isEn ? 'Submitting...' : '제출 중...'),
-      successTitle:
-        t.successTitle || (isVi ? 'Đã gửi' : isEn ? 'Submitted' : '제출이 완료되었습니다.'),
-      successDesc:
-        t.successDesc ||
-        (isVi
-          ? 'Cảm ơn bạn. Chúng tôi sẽ phản ánh nội dung bạn gửi và cải thiện trang.'
-          : isEn
-            ? 'Thanks. We’ll use your submission to improve the site.'
-            : '감사합니다. 제출하신 내용 반영하여 페이지 개선에 힘쓰겠습니다.'),
-      submitError:
-        t.submitError ||
-        (isVi
-          ? 'Gửi thất bại.'
-          : isEn
-            ? 'Failed to submit.'
-            : '제출에 실패했습니다.'),
-      backHome: t.backHome || (isVi ? 'Về trang chủ' : isEn ? 'Back to home' : '홈으로'),
-      submitAnother: t.submitAnother || (isVi ? 'Gửi thêm' : isEn ? 'Submit another' : '다시 작성하기'),
-      ratingRequired:
-        t.ratingRequired || (isVi ? 'Vui lòng chọn mức độ hài lòng.' : isEn ? 'Please select a rating.' : '만족도를 선택해 주세요.'),
-      detailRequired:
-        t.detailRequired ||
-        (isVi ? 'Vui lòng nhập chi tiết.' : isEn ? 'Please enter details.' : '상세 내용을 입력해주세요.'),
-      bugTitle: t.bugTitle || (isVi ? 'Báo lỗi' : isEn ? 'Bug report' : '버그 제보'),
-      cancel: tCommon.cancel || (isVi ? 'Huỷ' : isEn ? 'Cancel' : '취소'),
+      improvementLabel: t.improvementLabel || '',
+      improvementPlaceholder: t.improvementPlaceholder || '',
+      issueLabel: t.issueLabel || '',
+      issuePlaceholder: t.issuePlaceholder || '',
+      submit: t.submit || '',
+      submitting: t.submitting || '',
+      successTitle: t.successTitle || '',
+      successDesc: t.successDesc || '',
+      submitError: t.submitError || '',
+      backHome: t.backHome || '',
+      submitAnother: t.submitAnother || '',
+      ratingRequired: t.ratingRequired || '',
+      detailRequired: t.detailRequired || '',
+      bugTitle: t.bugTitle || '',
+      cancel: tCommon.cancel || '',
     };
-  }, [lang, t, tCommon]);
+  }, [t, tCommon]);
 
   const showRating = type === 'feedback';
   const ratingTitle = copy.satisfactionLabel;
@@ -124,14 +83,13 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedDetail = description.trim();
-    const minDetail = 10;
 
     if (showRating && !rating) {
       toast.error(copy.ratingRequired);
       return;
     }
 
-    if (trimmedDetail.length < minDetail) {
+    if (!trimmedDetail) {
       toast.error(copy.detailRequired);
       return;
     }

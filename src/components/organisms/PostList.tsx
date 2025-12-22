@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
-import { Sparkles } from 'lucide-react';
 import PostCard from '@/components/molecules/cards/PostCard';
 import { useInfinitePosts, useMyPostInteractions } from '@/repo/posts/query';
-import { useInfiniteRecommendedUsers, useUserScore } from '@/repo/users/query';
+import { useInfiniteRecommendedUsers } from '@/repo/users/query';
 import { useMySubscriptions } from '@/repo/categories/query';
 import RecommendedUsersSection from '@/components/organisms/RecommendedUsersSection';
 import { CATEGORY_GROUPS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
@@ -44,7 +43,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const resolvedSubscribedParam = subscribedParam && subscribedParam.trim().length > 0 ? subscribedParam : 'all';
   const [selectedSubscribedCategory, setSelectedSubscribedCategory] = useState(resolvedSubscribedParam);
   const observerRef = useRef<HTMLDivElement>(null);
-  const recommendedRef = useRef<HTMLDivElement>(null);
 
   const parentSlugs = useMemo(() => Object.keys(CATEGORY_GROUPS), []);
   const childSlugToParent = useMemo(() => {
@@ -220,24 +218,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     return deduped;
   }, [recommendedUsers]);
 
-  const scoreLabels = {
-    points: tProfile.points || '',
-    title: tProfile.title || '',
-    rank: tProfile.rank || '',
-    leaderboard: tProfile.leaderboard || '',
-  };
-
-  const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
-  const scoreUserId = session?.user?.id ? String(session.user.id) : '';
-  const { data: scoreData } = useUserScore(scoreUserId, { enabled: !!scoreUserId });
-  const scoreSummary = scoreData?.data;
-  const rankValue = scoreSummary?.rank ?? null;
-  const progressPercent = scoreSummary ? Math.round(scoreSummary.levelProgress * 100) : 0;
-  const levelFormat = tProfile.levelFormat || '';
-  const titleValue = scoreSummary
-    ? levelFormat.replace('{level}', String(scoreSummary.level))
-    : '';
-
   const shouldFetchInteractions = Boolean(session?.user) && !filterForQueryResolved && allPosts.length > 0;
   const interactionPostIds = useMemo(() => allPosts.map((post) => post.id), [allPosts]);
   const { data: interactionsData } = useMyPostInteractions(interactionPostIds, {
@@ -287,7 +267,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     badge: verifiedLabel,
   };
   const recommendedUsersLabel = t.recommendedUsersTitle || t.recommendedUsers || '';
-  const recommendedCtaLabel = t.recommendedUsersCta || '';
   const allSubscriptionsLabel = t.allSubscriptions || t.allSubcategories || '';
   const noFollowingPostsLabel = t.noFollowingPosts || '';
   const noPostsLabel = t.noPosts || '';
@@ -322,17 +301,11 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     updateSubscribedParam,
   ]);
 
-  const scrollToRecommended = () => {
-    if (recommendedRef.current) {
-      recommendedRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
   return (
     <div className="pt-0 pb-4">
       {selectedCategory === 'subscribed' && topicSubscriptions.length > 0 ? (
         <div className="mb-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5 pl-3 pr-6 scroll-px-6">
             <button
               type="button"
               onClick={() => handleSubscribedCategoryChange('all')}
@@ -388,50 +361,34 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
           </div>
         )}
 
-      {selectedCategory === 'following' && sortedRecommendations.length ? (
-        <button
-          type="button"
-          onClick={scrollToRecommended}
-          className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-500 dark:to-indigo-400 px-4 py-3.5 text-base font-semibold text-white shadow-md hover:-translate-y-0.5 hover:shadow-lg hover:from-blue-500 hover:to-indigo-500 transition-all"
-        >
-          <Sparkles className="h-4 w-4" />
-          {recommendedCtaLabel}
-        </button>
-      ) : null}
-
-      {scoreSummary ? (
-        <div className="mb-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-col min-w-[90px]">
-              <span className="text-xs text-gray-500 dark:text-gray-400">{scoreLabels.points}</span>
-              <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {numberFormatter.format(scoreSummary.score)}
-              </span>
-            </div>
-            <div className="flex flex-col min-w-[90px]">
-              <span className="text-xs text-gray-500 dark:text-gray-400">{scoreLabels.title}</span>
-              <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{titleValue}</span>
-            </div>
-            <div className="flex flex-col min-w-[90px]">
-              <span className="text-xs text-gray-500 dark:text-gray-400">{scoreLabels.rank}</span>
-              <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {rankValue ? `#${numberFormatter.format(rankValue)}` : '-'}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => router.push(`/${locale}/leaderboard`)}
-              className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              {scoreLabels.leaderboard}
-            </button>
-          </div>
-          <div className="mt-3 h-2 rounded-full bg-gray-200 dark:bg-gray-800">
-            <div
-              className="h-2 rounded-full bg-blue-600 dark:bg-blue-400"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
+      {selectedCategory === 'following' && (recommendedLoading || sortedRecommendations.length) ? (
+        <div className="mb-4">
+          <RecommendedUsersSection
+            title={recommendedUsersLabel}
+            locale={locale}
+            users={sortedRecommendations}
+            isLoading={recommendedLoading}
+            translations={translations}
+            hasNextPage={hasNextRecommendedPage}
+            isFetchingNextPage={isFetchingNextRecommendedPage}
+            onLoadMore={() => {
+              if (hasNextRecommendedPage && !isFetchingNextRecommendedPage) {
+                fetchNextRecommendedPage();
+              }
+            }}
+            followerLabel={followerLabel}
+            postsLabel={postsLabel}
+            followingLabel={followingLabel}
+            metaLabels={metaLabels}
+            verifiedLabel={verifiedLabel}
+            trustBadgeTranslations={tTrust}
+            badgeLabels={badgeLabels}
+            previousLabel={previousLabel}
+            nextLabel={nextLabel}
+            anonymousLabel={anonymousLabel}
+            onboardingLabels={tOnboarding}
+            compact
+          />
         </div>
       ) : null}
 
@@ -535,36 +492,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
             </div>
           )}
 
-          {selectedCategory === 'following' && (recommendedLoading || sortedRecommendations.length) ? (
-            <div ref={recommendedRef} className="mt-3">
-              <RecommendedUsersSection
-                title={recommendedUsersLabel}
-                locale={locale}
-                users={sortedRecommendations}
-                isLoading={recommendedLoading}
-                translations={translations}
-                hasNextPage={hasNextRecommendedPage}
-                isFetchingNextPage={isFetchingNextRecommendedPage}
-                onLoadMore={() => {
-                  if (hasNextRecommendedPage && !isFetchingNextRecommendedPage) {
-                    fetchNextRecommendedPage();
-                  }
-                }}
-                followerLabel={followerLabel}
-                postsLabel={postsLabel}
-                followingLabel={followingLabel}
-                metaLabels={metaLabels}
-                verifiedLabel={verifiedLabel}
-                trustBadgeTranslations={tTrust}
-                badgeLabels={badgeLabels}
-                previousLabel={previousLabel}
-                nextLabel={nextLabel}
-                anonymousLabel={anonymousLabel}
-                onboardingLabels={tOnboarding}
-                compact
-              />
-            </div>
-          ) : null}
         </div>
       )}
 

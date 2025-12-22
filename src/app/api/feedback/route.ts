@@ -8,12 +8,31 @@ import { and, eq, gte, sql } from 'drizzle-orm';
 
 const feedbackRateLimitWindowMs = 60 * 60 * 1000;
 const feedbackRateLimitMax = 3;
-const feedbackTitleMin = 3;
+const feedbackTitleMin = 1;
 const feedbackTitleMax = 200;
-const feedbackDescriptionMin = 10;
+const feedbackDescriptionMin = 1;
 const feedbackDescriptionMax = 2000;
-const feedbackStepsMin = 5;
+const feedbackStepsMin = 1;
 const feedbackStepsMax = 2000;
+
+const hasMissingFeedbackTitleColumn = (error: unknown) => {
+  const visited = new Set<unknown>();
+  let current: unknown = error;
+  while (current && !visited.has(current)) {
+    visited.add(current);
+    const message =
+      current instanceof Error
+        ? current.message
+        : typeof (current as any)?.message === 'string'
+          ? String((current as any).message)
+          : '';
+    if (/column \"title\" of relation \"feedbacks\" does not exist/i.test(message)) {
+      return true;
+    }
+    current = current instanceof Error ? current.cause : (current as any)?.cause;
+  }
+  return false;
+};
 
 const resolveClientIp = (request: NextRequest) => {
   const forwarded = request.headers.get('x-forwarded-for');
@@ -118,20 +137,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const [createdFeedback] = await db
-      .insert(feedbacks)
-      .values({
-        userId: user?.id || null,
-        type,
-        title,
-        description,
-        steps: steps || null,
-        pageUrl: pageUrl || null,
-        contactEmail: contactEmail || null,
-        ipAddress,
-        userAgent,
-      })
-      .returning();
+    const [createdFeedback] = await (async () => {
+      try {
+        return await db
+          .insert(feedbacks)
+          .values({
+            userId: user?.id || null,
+            type,
+            title,
+            description,
+            steps: steps || null,
+            pageUrl: pageUrl || null,
+            contactEmail: contactEmail || null,
+            ipAddress,
+            userAgent,
+          })
+          .returning();
+      } catch (error) {
+        if (!hasMissingFeedbackTitleColumn(error)) {
+          throw error;
+        }
+
+        const combinedDescription = title ? `${title}\n\n${description}` : description;
+        return await db
+          .insert(feedbacks)
+          .values({
+            userId: user?.id || null,
+            type,
+            description: combinedDescription,
+            steps: steps || null,
+            pageUrl: pageUrl || null,
+            contactEmail: contactEmail || null,
+            ipAddress,
+            userAgent,
+          } as any)
+          .returning();
+      }
+    })();
 
     const receivedAt =
       createdFeedback?.createdAt instanceof Date

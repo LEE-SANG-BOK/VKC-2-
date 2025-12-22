@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vietkconnect.local/schemas/visa-transition-rules-v1.json",
+  "title": "Visa Transition Ruleset (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "fromVisa", "toVisa", "effectiveFrom", "scoreRules", "scoreToPercent"],
+  "properties": {
+    "kind": { "const": "visa_transition_rules_v1" },
+    "fromVisa": { "type": "string", "minLength": 1 },
+    "toVisa": { "type": "string", "minLength": 1 },
+    "effectiveFrom": { "type": "string", "format": "date" },
+    "inputs": {
+      "type": "array",
+      "description": "Question keys required for evaluation (WizardKit question-bank keys).",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "scoreRules": {
+      "type": "array",
+      "description": "Deterministic scoring rules; evaluator applies all matching rules.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "when", "scoreDelta"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "when": {
+            "type": "object",
+            "description": "Predicate in a simple JSON form (keep evaluator deterministic).",
+            "additionalProperties": true
+          },
+          "scoreDelta": { "type": "number" },
+          "missing": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "risks": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "scoreToPercent": {
+      "type": "array",
+      "description": "Monotonic mapping from score to probability percent.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["minScore", "percent"],
+        "properties": {
+          "minScore": { "type": "number" },
+          "percent": { "type": "number", "minimum": 0, "maximum": 100 }
+        }
+      }
+    },
+    "checklistLink": { "type": "string" },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "url"],
+        "properties": {
+          "title": { "type": "string" },
+          "url": { "type": "string" },
+          "publishedAt": { "type": "string" }
+        }
+      }
+    }
+  }
+}
+

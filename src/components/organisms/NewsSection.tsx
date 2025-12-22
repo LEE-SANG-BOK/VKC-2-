@@ -90,7 +90,7 @@ export default function NewsSection({ translations, lang }: NewsSectionProps) {
 
         <div
           ref={scrollRef}
-          className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth pb-1.5"
+          className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth pb-1.5 pr-3 scroll-px-3"
         >
           {items.map((news) => (
             <NewsCard

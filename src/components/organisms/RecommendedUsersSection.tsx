@@ -197,12 +197,18 @@ export default function RecommendedUsersSection({
           >
             <div className={`flex items-center ${cardGapClass} w-full`}>
               <div className="flex flex-col items-center gap-2">
-                <Avatar
-                  name={displayName}
-                  imageUrl={user.image || undefined}
-                  size={avatarSize}
-                  hoverHighlight
-                />
+                <button
+                  type="button"
+                  onClick={() => router.push(`/${locale}/profile/${userId}`)}
+                  aria-label={displayName}
+                >
+                  <Avatar
+                    name={displayName}
+                    imageUrl={user.image || undefined}
+                    size={avatarSize}
+                    hoverHighlight
+                  />
+                </button>
                 <FollowButton
                   userId={userId}
                   userName={displayName}
@@ -291,7 +297,7 @@ export default function RecommendedUsersSection({
       <div
         ref={carouselRef}
         onScroll={markInteracted}
-        className={`grid grid-flow-col ${compact ? 'auto-cols-[minmax(200px,1fr)]' : 'auto-cols-[minmax(220px,1fr)]'} sm:auto-cols-[minmax(240px,1fr)] lg:auto-cols-[minmax(260px,1fr)] ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1`}
+        className={`grid grid-flow-col ${compact ? 'auto-cols-[minmax(200px,1fr)]' : 'auto-cols-[minmax(220px,1fr)]'} sm:auto-cols-[minmax(240px,1fr)] lg:auto-cols-[minmax(260px,1fr)] ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 pr-3 scroll-px-3`}
       >
         {isLoading ? skeletonCards : userCards}
         {hasNextPage ? (
