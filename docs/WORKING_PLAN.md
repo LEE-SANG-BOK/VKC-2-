@@ -2652,3 +2652,26 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-22) [UI] Header/Sidebar/Feed 모바일 회귀 정리 (P0-3/P0-9)
+
+- 목표: 모바일에서 “시작점 불일치/닫기 버튼 중복/카드 액션 오작동/세로 과확장”으로 보이는 회귀를 줄여 체류·전환 리스크를 낮춤
+- 변경 내용
+  - `src/components/ui/sheet.tsx`: Sheet 기본 닫기 버튼 on/off 지원(`showCloseButton`)
+  - `src/components/templates/MainLayout.tsx`: 모바일 사이드바 Sheet 기본 닫기 버튼 비활성화(사이드바 상단 닫기 버튼만 사용)
+  - `src/components/organisms/CategorySidebar.tsx`: 모바일 사이드바 “× + 메뉴” 헤더를 좌측 정렬(중복/혼선 제거)
+  - `src/components/organisms/Header.tsx`: Header padding/grid를 MainLayout과 정렬(2xl center 920px, padding 통일)
+  - `src/components/molecules/cards/PostCard.tsx`: hide(×)를 작성자 라인 우측으로 고정(썸네일 유무와 무관하게 동일 위치)
+  - `src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx`: 모바일 이벤트 설명을 tooltip로 축소(세로 과확장 방지)
+  - `src/components/organisms/PostList.tsx`: 토픽(구독) 칩 row 우측 패딩 증가(마지막 칩 클립 완화)
+  - `src/components/organisms/RecommendedUsersSection.tsx`: 모바일 추천 사용자 캐러셀 auto-cols를 `100vw` 기반으로 재조정(카드/버튼 클립 완화)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+- PR/머지
+  - [x] PR #53 (@codex) → `main` 머지
+  - [x] PR #54 (@codex) → `main` 머지
+  - [x] PR #55 (@codex) → `main` 머지
+  - [x] PR #56 (@codex) → `main` 머지
