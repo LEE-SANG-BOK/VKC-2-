@@ -7,7 +7,7 @@ import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface AvatarProps {
   name: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   imageUrl?: string;
   showVerifiedOverlay?: boolean;
   hoverHighlight?: boolean;
@@ -22,6 +22,7 @@ export default function Avatar({ name, size = 'md', imageUrl, showVerifiedOverla
     md: 'h-6 w-6 text-xs',
     lg: 'h-10 w-10 text-base',
     xl: 'h-12 w-12 text-base',
+    '2xl': 'h-14 w-14 text-base',
   };
 
   const sizePixels = {
@@ -30,6 +31,7 @@ export default function Avatar({ name, size = 'md', imageUrl, showVerifiedOverla
     md: 24,
     lg: 40,
     xl: 48,
+    '2xl': 56,
   };
 
   const displayName = name || '?';

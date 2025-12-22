@@ -143,7 +143,9 @@ export async function POST(request: NextRequest) {
     }
 
     const columnKeyByName: Record<string, string> = {
+      content: 'content',
       title: 'title',
+      description: 'description',
       steps: 'steps',
       page_url: 'pageUrl',
       contact_email: 'contactEmail',
@@ -169,13 +171,18 @@ export async function POST(request: NextRequest) {
     let receivedAt = new Date().toISOString();
     const executeInsert = async (columns: Set<string>) => {
       const usesTitle = columns.has('title');
+      const usesDescription = columns.has('description');
+      const usesContent = columns.has('content');
 
       const insertValues: Record<string, unknown> = {};
       if (columns.has('user_id')) insertValues.user_id = basePayload.userId;
       if (columns.has('type')) insertValues.type = basePayload.type;
       if (usesTitle) insertValues.title = basePayload.title;
-      if (columns.has('description')) {
+      if (usesDescription) {
         insertValues.description = usesTitle ? basePayload.description : basePayload.descriptionWithoutTitle;
+      }
+      if (usesContent) {
+        insertValues.content = usesTitle ? basePayload.description : basePayload.descriptionWithoutTitle;
       }
       if (columns.has('page_url')) insertValues.page_url = basePayload.pageUrl;
       if (columns.has('contact_email')) insertValues.contact_email = basePayload.contactEmail;

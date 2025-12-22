@@ -2428,6 +2428,28 @@ $gh-address-comments
   - [x] SKIP_SITEMAP_DB=true npm run build
   - [x] npm run test:e2e
 
+#### (2025-12-22) [P0] Feedback 컬럼 호환 + PostCard hide(×) 미디어 겹침 방지
+
+- 작업
+  - /api/feedback: `feedbacks.content`(legacy) / `feedbacks.title+description`(new) 모두 insert 지원(마이그레이션 없이 동작)
+  - /api/admin/feedback: `feedbacks` 컬럼 자동 감지 후 검색/목록 조회 지원(legacy/new 모두 호환)
+  - PostCard: hide(×)를 본문 영역으로 이동해 썸네일과 겹치지 않게 조정
+- 변경 파일
+  - src/app/api/admin/feedback/route.ts
+  - src/app/api/feedback/route.ts
+  - src/components/atoms/Avatar.tsx
+  - src/components/atoms/FollowButton.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - docs/WORKING_PLAN.md
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+
 ---
 
 ## Testing and validation (게이트)
