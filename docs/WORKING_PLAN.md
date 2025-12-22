@@ -1935,7 +1935,13 @@ $gh-address-comments
   - 외부 공유 품질(클릭률) 기반 정비
     - OG/Twitter 메타를 신뢰할 수 있게 유지(P0-12의 공용 메타 빌더를 그대로 활용)
     - 공유 CTA/버튼은 P0-15 정책(중복 제거) 하에서 채널 확장(Zalo/FB 등)은 “필요 시”만
-    - 영상(선택): Self-hosting 금지, `YouTube 업로드 + lazy embed`를 기본으로 하고 운영자 큐레이션 페이지에만 `VideoObject` 스키마 적용
+    - 영상(선택) — 성능/SEO 원칙(고정)
+      - Self-hosting 금지(서버 부하/CWV 리스크)
+      - 기본: `YouTube 업로드 + lazy embed`(썸네일 프리뷰 → 클릭 시 iframe 로드)
+      - UX: autoplay 금지, 자막/요약 텍스트 제공, 모바일 기준 비율 고정(예: 16:9 또는 Shorts는 9:16)으로 CLS 방지
+      - 임베드 최소화: 페이지당 임베드 수 제한(탭/아코디언 등으로 “1~2개만 로드”)
+      - 파라미터(선택): `rel=0&modestbranding=1` 등으로 추천영상/브랜딩 최소화
+      - SEO: 운영자 큐레이션 페이지에만 `VideoObject` 스키마 적용(필드: name/description/thumbnailUrl/uploadDate/duration/embedUrl)
   - 운영 자동화(반복 최소화)
     - 코딩 없이 가능한 자동화(Zapier/IFTTT 등)와 “주간/월간 요약 발행” 루틴을 비교해, 최소 운영 비용으로 가능한 흐름부터 적용
 - 완료 기준
@@ -2177,6 +2183,72 @@ $gh-address-comments
   - src/components/molecules/modals/FollowingModal.tsx
 - 커밋
   - `[FE] harden modals for mobile keyboard` (9944b32)
+
+#### (2025-12-22) [BE] 추천 사용자 API 500(Postgres param 타입) 수정
+
+- 플랜(체크리스트)
+  - [x] Postgres `42P18`(파라미터 타입 추론 실패) 제거
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/api/users/recommended/route.ts`
+  - 재현/리스크: `CASE WHEN $x IS NOT NULL ...` 형태에서 Postgres가 `$x` 타입을 추론하지 못해 500 발생
+- 변경 내용(why/what)
+  - why: 추천 사용자 섹션(홈/팔로잉)이 500으로 깨지면 핵심 플로우가 즉시 붕괴
+  - what: 가중치 score는 JS에서 조건 분기 후 `sql.join(parts, ' + ')`로 구성, `avatar` 중복 select 제거
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/app/api/users/recommended/route.ts
+
+#### (2025-12-22) [BE/WEB] 피드백 제출 500 방지 + 최소 길이 제거
+
+- 플랜(체크리스트)
+  - [x] FE: 텍스트 최소 글자수 강제 제거(빈 값만 차단)
+  - [x] BE: `feedbacks.title` 컬럼이 없을 때도 500 방지(fallback insert)
+  - [x] Admin: 목록 API도 title-less 환경에서 동작(fallback title derivation)
+- 현황 분석(코드 기준)
+  - 현재 구현/문제 위치: `src/app/api/feedback/route.ts`, `src/app/api/admin/feedback/route.ts`
+  - 재현/리스크: DB가 마이그레이션되지 않은 환경에서 `column "title" of relation "feedbacks" does not exist`로 500
+- 변경 내용(why/what)
+  - what: insert 실패 시 title 없는 insert로 fallback(제목은 `description` 상단에 합침), Admin 목록은 `split_part(description, '\n', 1)`로 title 제공
+  - note: 근본 해결은 `npm run db:migrate`로 DB 스키마를 동기화하는 것(운영 반영 시점에 수행)
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/app/[lang]/(main)/feedback/FeedbackClient.tsx
+  - src/app/api/feedback/route.ts
+  - src/app/api/admin/feedback/route.ts
+
+#### (2025-12-22) [FE] ui-avatars SVG `next/image` 에러 방지
+
+- 변경 내용(why/what)
+  - why: `ui-avatars.com`가 기본 SVG 응답을 반환하여 `next/image`가 차단(leaderboard 500)
+  - what: Avatar에서 `ui-avatars.com` URL은 `format=png&size=`로 정규화하고 `unoptimized`로 처리
+- 변경 파일
+  - src/components/atoms/Avatar.tsx
+
+#### (2025-12-22) [FE/WEB] 모바일 post-first 유지 + 태그 자동생성 3개 고정
+
+- 플랜(체크리스트)
+  - [x] 홈 메인 컬럼은 `PostList`가 첫 콘텐츠(모바일 상단 카드 제거)
+  - [x] 인증 답변 배지는 모바일에서 `+N` 컴팩트 표기(상세는 툴팁 유지)
+  - [x] 토픽/칩 우측 클립 완화(좌우 패딩/scroll padding)
+  - [x] 글쓰기 자동 태그는 3개 고정 + 범용 seed(`#정보/#Tip/#추천`) 생성 금지
+- 변경 파일
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/globals.css
+  - src/components/organisms/PostList.tsx
+  - src/lib/seo/postTags.ts
+  - src/app/[lang]/(main)/posts/new/NewPostClient.tsx
+  - src/lib/constants/tag-translations.ts
+  - messages/ko.json
+  - messages/vi.json
 
 ---
 
