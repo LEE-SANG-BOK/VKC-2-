@@ -2568,3 +2568,32 @@ $gh-address-comments
   - src/lib/db/seed.ts
 - PR/머지
   - [x] PR #43 (@codex) → `main` 머지
+
+#### (2025-12-22) [WEB] report/feedback fetch fallback 코드화 (P0-2)
+
+- 목표: 에러 메시지(ko) 누수 없이, UI에서 `errors` 키로 일관된 로컬라이즈 처리
+- 변경 내용
+  - `src/repo/reports/fetch.ts`: report 실패 시 fallback 메시지 제거 → `REPORT_FAILED` 코드로 고정
+  - `src/repo/feedback/fetch.ts`: feedback 실패 시 fallback 메시지 제거 → `FEEDBACK_FAILED` 코드로 고정
+  - `messages/ko.json`, `messages/vi.json`: `REPORT_FAILED`, `FEEDBACK_FAILED` 추가
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+- PR/머지
+  - [x] PR #45 (@codex) → `main` 머지
+
+#### (2025-12-22) [FE] 팔로우 모달/카드/에디터 모바일 UX 보강 (P0-3/P0-9)
+
+- 목표: 모바일에서 “세로 과확장/클릭 오해/링크 미가시성”을 줄여 체류/전환 리스크를 낮춤
+- 변경 내용
+  - `src/components/molecules/modals/FollowingModal.tsx`: 추천 사용자 카드에서 아바타 확대 + Follow CTA 축소 + 메타는 최대 3개 칩으로 노출(불필요 `#` 제거)
+  - `src/components/molecules/cards/PostCard.tsx`: 숨김(×)을 카드 헤더 라인으로 이동(미디어 유무와 무관하게 동일 위치)
+  - `src/app/globals.css`: ProseMirror 링크 스타일 추가(에디터에서 링크가 시각적으로 보이게)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+- PR/머지
+  - [x] PR #46 (@codex) → `main` 머지
