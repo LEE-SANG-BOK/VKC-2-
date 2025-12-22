@@ -2495,3 +2495,38 @@ $gh-address-comments
 - P0-2 (i18n/클립): [ ] Blocker/Major 0  [ ] 핵심 플로우 ko/vi 텍스트 클립 0
 - P0-3 (모바일 키보드): [ ] iOS/Android에서 입력/제출 막힘 0
 - P0-9 (QA): [ ] 리포트 완료  [ ] Blocker/Major 0  [ ] Minor는 P1로 이월 목록화
+
+#### (2025-12-22) [LEAD] 모바일 랭킹/프로필/추천유저 컴팩트화 + 레이아웃 시작점 정렬 (P0-16/P0-19)
+
+- 플랜(체크리스트)
+  - [x] Leaderboard: 모바일 “상위 랭커” 세로 스택 → 가로 캐러셀, 랭킹 설명은 Tooltip로 축약
+  - [x] Leaderboard: `hideSidebar` 제거로 모바일 사이드바 버튼 동작 복구
+  - [x] Profile: 메인 헤더/레이아웃과 동일한 골격(MainLayout)로 통일 + 모바일에서 아바타/닉네임 1행 정렬
+  - [x] 추천 사용자: 게시글 카드와 구분되는 섹션 스타일(배경/보더) + 카드 폭 확장
+  - [x] 홈 레이아웃: 좌/우 레일 상단 패딩 튜닝으로 시작점 정렬(메뉴/추천콘텐츠/피드)
+- 현황 분석(코드 기준)
+  - Leaderboard: 모바일에서 상위 3명 카드가 세로로 길게 쌓이며 스크롤 부담이 큼 + 랭킹 설명 블록도 세로 확장(`src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx`)
+  - Leaderboard: `hideSidebar`로 인해 헤더 햄버거 버튼이 동작해도 Sheet가 렌더되지 않음(`src/app/[lang]/(main)/leaderboard/page.tsx`)
+  - Profile: 개별 Header/컨테이너로 운영되어 메인 헤더와 이질감 + 모바일 아바타가 닉네임과 분리되어 공간 낭비(`src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`)
+  - 추천 사용자: 게시글 카드와 거의 동일한 톤으로 구분감이 약함(`src/components/organisms/RecommendedUsersSection.tsx`)
+- 변경 내용(why/what)
+  - why: 모바일에서 “세로로 길어지는 블록”을 줄이고, 페이지 간 골격/정렬 일관성을 회복해 인지부하/이탈 리스크를 낮춤
+  - what:
+    - `src/app/[lang]/(main)/leaderboard/page.tsx`: `hideSidebar` 제거(모바일 사이드바 버튼 동작 복구)
+    - `src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx`: 상위 랭커 캐러셀 + 랭킹 설명 Tooltip(모바일) + “신뢰1”류 배지 노출 제거
+    - `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`: MainLayout로 통일 + 모바일 헤더 영역 1행 정렬(아바타↔닉네임)
+    - `src/components/organisms/RecommendedUsersSection.tsx`: 섹션 배경/보더로 구분 + auto-cols 확장
+    - `src/components/organisms/CategorySidebar.tsx`: 메뉴 섹션 상단 padding 제거(정렬 보정)
+    - `src/components/organisms/AdminPostRail.tsx`: 데스크톱 padding 축소(정렬 보정)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+- 변경 파일
+  - src/app/[lang]/(main)/leaderboard/page.tsx
+  - src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - src/components/organisms/CategorySidebar.tsx
+  - src/components/organisms/AdminPostRail.tsx
