@@ -11,7 +11,7 @@ import Button from '@/components/atoms/Button';
 import Tooltip from '@/components/atoms/Tooltip';
 import Modal from '@/components/atoms/Modal';
 import PostCard from '@/components/molecules/cards/PostCard';
-import Header from '@/components/organisms/Header';
+import MainLayout from '@/components/templates/MainLayout';
 import FollowButton from '@/components/atoms/FollowButton';
 import LoginPrompt from '@/components/organisms/LoginPrompt';
 import { useSession } from 'next-auth/react';
@@ -938,7 +938,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const answersLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const commentsLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const answersHashHandledRef = useRef(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editPostTitle, setEditPostTitle] = useState('');
   const [editPostContent, setEditPostContent] = useState('');
@@ -2091,45 +2090,35 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   };
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-gray-50 dark:bg-gray-900">
-      {/* Unified Header */}
-      <Header
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        showBackButton={true}
-        hideSearch={true}
-        translations={translations || {}}
-        rightActions={
-          <>
-            {isUserPost && (
-              <>
-                <Tooltip content={editLabel}>
-                  <button
-                    onClick={handleEditPost}
-                    className="p-1.5 sm:p-2 rounded-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                  >
-                    <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </button>
-                </Tooltip>
-                <Tooltip content={deleteLabel}>
-                  <button
-                    onClick={handleDeletePost}
-                    className="p-1.5 sm:p-2 rounded-full text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </button>
-                </Tooltip>
-              </>
-            )}
-          </>
-        }
-      />
-
-      {/* Main Content */}
-          <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+    <MainLayout translations={translations || {}} centerVariant="canvas">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Article */}
         <article className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-4 sm:mb-6">
           <div className="p-4 sm:p-6 md:p-8">
+            {!isEditingPost && isUserPost ? (
+              <div className="mb-4 flex items-center gap-2">
+                <Tooltip content={editLabel} position="bottom-right">
+                  <button
+                    type="button"
+                    onClick={handleEditPost}
+                    aria-label={editLabel}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 text-gray-600 hover:bg-gray-50 hover:text-blue-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-blue-300 transition-colors"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                </Tooltip>
+                <Tooltip content={deleteLabel} position="bottom-right">
+                  <button
+                    type="button"
+                    onClick={handleDeletePost}
+                    aria-label={deleteLabel}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 text-gray-600 hover:bg-gray-50 hover:text-red-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-red-300 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </Tooltip>
+              </div>
+            ) : null}
             {/* Edit Mode */}
             {isEditingPost ? (
               <div className="space-y-4 mb-6">
@@ -2662,11 +2651,11 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                               {replyLabel}
                             </button>
 
-                            {!answer.isAdopted && isUserPost && !post.isAdopted && (
-                              <div className="ml-auto">
-                                <Button
-                                  onClick={() => handleAdoptAnswer(answer.id)}
-                                  variant="primary"
+	                            {!answer.isAdopted && isUserPost && !post.isAdopted && Boolean(answer.author?.id) && answer.author.id !== user?.id && (
+	                              <div className="ml-auto">
+	                                <Button
+	                                  onClick={() => handleAdoptAnswer(answer.id)}
+	                                  variant="primary"
                                   size="sm"
                                 >
                                   <CheckCircle className="w-4 h-4 mr-1" />
@@ -3387,7 +3376,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             ) : null}
           </section>
         ) : null}
-      </main>
+      </div>
 
       {/* Report Dialog */}
       {showReportDialog && (
@@ -3489,6 +3478,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       <Modal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)}>
         <LoginPrompt onClose={() => setIsLoginPromptOpen(false)} variant="modal" translations={translations} />
       </Modal>
-    </div>
+    </MainLayout>
   );
 }
