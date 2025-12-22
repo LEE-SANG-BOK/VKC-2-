@@ -183,15 +183,25 @@ export default function RichTextEditor({
     if (!editor) return;
 
     if (linkUrl) {
-      // Set link
-      editor
-        .chain()
-        .focus()
-        .extendMarkRange('link')
-        .setLink({ href: linkUrl })
-        .run();
+      const selection = editor.state.selection;
+      if (selection.empty) {
+        const insertFrom = selection.from;
+        editor
+          .chain()
+          .focus()
+          .insertContent(linkUrl)
+          .setTextSelection({ from: insertFrom, to: insertFrom + linkUrl.length })
+          .setLink({ href: linkUrl })
+          .run();
+      } else {
+        editor
+          .chain()
+          .focus()
+          .extendMarkRange('link')
+          .setLink({ href: linkUrl })
+          .run();
+      }
     } else {
-      // Remove link
       editor.chain().focus().unsetLink().run();
     }
 

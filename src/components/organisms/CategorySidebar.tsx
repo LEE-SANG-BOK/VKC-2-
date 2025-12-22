@@ -7,7 +7,6 @@ import { TrendingUp, Users, MessageCircle, Share2, ShieldCheck, Sparkles, HeartH
 import { LEGACY_CATEGORIES, getCategoryName, CATEGORY_GROUPS } from '@/lib/constants/categories';
 import CategoryItem from '@/components/molecules/categories/CategoryItem';
 import Tooltip from '@/components/atoms/Tooltip';
-import NoticeBanner from '@/components/organisms/NoticeBanner';
 import { useSession } from 'next-auth/react';
 import { useCategories, useMySubscriptions } from '@/repo/categories/query';
 import { useToggleSubscription } from '@/repo/categories/mutation';
@@ -118,7 +117,6 @@ export default function CategorySidebar({
     return (mySubs || []).filter((cat) => topicSlugs.has(cat.slug));
   }, [mySubs, topicSlugs]);
   const isLeaderboardRoute = pathname === `/${locale}/leaderboard`;
-  const isHomeRoute = pathname === `/${locale}` || pathname === `/${locale}/`;
   const activeCategory = isLeaderboardRoute ? 'leaderboard' : selectedCategory;
 
   const groupOptions = useMemo(() => {
@@ -203,7 +201,14 @@ export default function CategorySidebar({
 
     if (onCategoryChange) {
       onCategoryChange(categoryId);
+      setIsMobileMenuOpen(false);
+      return;
     }
+
+    const url = categoryId === 'all'
+      ? `/${locale}`
+      : `/${locale}?c=${encodeURIComponent(categoryId)}`;
+    router.push(url);
     setIsMobileMenuOpen(false);
 
   };
@@ -238,23 +243,9 @@ export default function CategorySidebar({
         ${isMobileVariant ? '' : 'hidden lg:flex'}
         ${isMobileVariant ? '' : 'h-full'}
         ${isMobileVariant ? 'flex' : ''}
-        ${containerClass}
+	        ${containerClass}
         ${isMobileVariant ? '' : 'px-0'}
 	      `}>
-
-		        {isHomeRoute && !isMobileVariant ? (
-		          <div
-		            className={
-	              isMobileVariant
-	                ? 'mt-4 mx-3 space-y-3'
-	                : 'py-4 border-b border-gray-200/40 dark:border-gray-700/40'
-		            }
-		          >
-	            <div className={isMobileVariant ? 'space-y-3' : 'px-4 space-y-3'}>
-	              <NoticeBanner translations={translations} lang={locale} limit={1} />
-	            </div>
-	          </div>
-	        ) : null}
 
         {/* Menu Section */}
         <div

@@ -507,22 +507,12 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           }`}
       >
 		        <div className="question-card-main">
-		          <div className="question-card-body relative">
-                <Tooltip content={hideLabel} position="left" touchBehavior="longPress">
-                  <button
-                    type="button"
-                    onClick={handleToggleHide}
-                    aria-label={hideLabel}
-                    className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                  >
-                    <span aria-hidden className="text-sm leading-none">×</span>
-                  </button>
-                </Tooltip>
-		          <div className="flex items-start gap-2 mb-3 min-w-0">
-		            <div className="flex items-start gap-2 min-w-0 flex-1">
-              <button
-                type="button"
-                className="shrink-0"
+			          <div className="question-card-body relative">
+			          <div className="flex items-start gap-2 mb-3 min-w-0">
+			            <div className="flex items-start gap-2 min-w-0 flex-1">
+	              <button
+	                type="button"
+	                className="shrink-0"
                 onClick={handleAuthorClick}
                 aria-label={safeName(author.name)}
               >
@@ -569,13 +559,23 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
 	                  <span>{formatDateTime(publishedAt, locale)}</span>
 	                </div>
-		              </div>
-		            </div>
-			          </div>
-		
-		          <div className="min-w-0">
-	            <div className="flex flex-wrap items-center gap-2 mb-2 min-w-0">
-              <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
+			              </div>
+			            </div>
+			            <Tooltip content={hideLabel} position="left" touchBehavior="longPress">
+			              <button
+			                type="button"
+			                onClick={handleToggleHide}
+			                aria-label={hideLabel}
+			                className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+			              >
+			                <span aria-hidden className="text-base leading-none">×</span>
+			              </button>
+			            </Tooltip>
+				          </div>
+			
+			          <div className="min-w-0">
+		            <div className="flex flex-wrap items-center gap-2 mb-2 min-w-0">
+	              <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
                 {title}
               </h3>
               {sourceLabel && (
