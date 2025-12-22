@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { getQueryClient } from '@/lib/db';
 import { setPublicSWR, successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
-import { sql } from 'drizzle-orm';
 
 type KeywordSource = 'tag' | 'category' | 'subcategory';
 type RawKeywordRow = { value?: unknown; count?: unknown };
@@ -30,64 +29,110 @@ export async function GET(request: NextRequest) {
 
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - (hasQuery ? 180 : 30));
+    const dateFromIso = dateFrom.toISOString();
 
-    const dateCondition = hasQuery ? sql`true` : sql`posts.created_at >= ${dateFrom.toISOString()}`;
-    const tagCondition = hasQuery ? sql`tag ILIKE ${likeQuery}` : sql`true`;
-    const categoryCondition = hasQuery ? sql`category ILIKE ${likeQuery}` : sql`true`;
-    const subcategoryCondition = hasQuery ? sql`subcategory ILIKE ${likeQuery}` : sql`true`;
+    const client = getQueryClient();
+    const tagRows = hasQuery
+      ? await client`
+          SELECT
+            tag as value,
+            COUNT(*)::int as count
+          FROM
+            posts,
+            unnest(posts.tags) as tag
+          WHERE
+            tag ILIKE ${likeQuery}
+          GROUP BY
+            tag
+          ORDER BY
+            count DESC,
+            tag ASC
+          LIMIT ${fetchLimit}
+        `
+      : await client`
+          SELECT
+            tag as value,
+            COUNT(*)::int as count
+          FROM
+            posts,
+            unnest(posts.tags) as tag
+          WHERE
+            posts.created_at >= ${dateFromIso}
+          GROUP BY
+            tag
+          ORDER BY
+            count DESC,
+            tag ASC
+          LIMIT ${fetchLimit}
+        `;
 
-    const [tagRows, categoryRows, subcategoryRows] = await Promise.all([
-      db.execute(sql`
-        SELECT
-          tag as value,
-          COUNT(*)::int as count
-        FROM
-          posts,
-          unnest(posts.tags) as tag
-        WHERE
-          ${tagCondition} AND ${dateCondition}
-        GROUP BY
-          tag
-        ORDER BY
-          count DESC,
-          tag ASC
-        LIMIT ${fetchLimit}
-      `),
-      db.execute(sql`
-        SELECT
-          category as value,
-          COUNT(*)::int as count
-        FROM
-          posts
-        WHERE
-          category IS NOT NULL
-          AND ${categoryCondition}
-          AND ${dateCondition}
-        GROUP BY
-          category
-        ORDER BY
-          count DESC,
-          category ASC
-        LIMIT ${fetchLimit}
-      `),
-      db.execute(sql`
-        SELECT
-          subcategory as value,
-          COUNT(*)::int as count
-        FROM
-          posts
-        WHERE
-          subcategory IS NOT NULL
-          AND ${subcategoryCondition}
-          AND ${dateCondition}
-        GROUP BY
-          subcategory
-        ORDER BY
-          count DESC,
-          subcategory ASC
-        LIMIT ${fetchLimit}
-      `),
-    ]);
+    const categoryRows = hasQuery
+      ? await client`
+          SELECT
+            category as value,
+            COUNT(*)::int as count
+          FROM
+            posts
+          WHERE
+            category IS NOT NULL
+            AND category ILIKE ${likeQuery}
+          GROUP BY
+            category
+          ORDER BY
+            count DESC,
+            category ASC
+          LIMIT ${fetchLimit}
+        `
+      : await client`
+          SELECT
+            category as value,
+            COUNT(*)::int as count
+          FROM
+            posts
+          WHERE
+            category IS NOT NULL
+            AND posts.created_at >= ${dateFromIso}
+          GROUP BY
+            category
+          ORDER BY
+            count DESC,
+            category ASC
+          LIMIT ${fetchLimit}
+        `;
+
+    const subcategoryRows = hasQuery
+      ? await client`
+          SELECT
+            subcategory as value,
+            COUNT(*)::int as count
+          FROM
+            posts
+          WHERE
+            subcategory IS NOT NULL
+            AND subcategory ILIKE ${likeQuery}
+          GROUP BY
+            subcategory
+          ORDER BY
+            count DESC,
+            subcategory ASC
+          LIMIT ${fetchLimit}
+        `
+      : await client`
+          SELECT
+            subcategory as value,
+            COUNT(*)::int as count
+          FROM
+            posts
+          WHERE
+            subcategory IS NOT NULL
+            AND posts.created_at >= ${dateFromIso}
+          GROUP BY
+            subcategory
+          ORDER BY
+            count DESC,
+            subcategory ASC
+          LIMIT ${fetchLimit}
+        `;
 
     const normalizeRows = (rows: Iterable<Record<string, unknown>>, source: KeywordSource) =>
       Array.from(rows)
