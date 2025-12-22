@@ -38,6 +38,23 @@ const stripHtmlToText = (html: string) =>
 
 export const buildExcerpt = (html: string, maxLength = 200) => stripHtmlToText(html).slice(0, maxLength);
 
+const stripTemplatePrelude = (html: string) => {
+  const trimmed = html.trimStart();
+  if (!trimmed.startsWith('<p>')) return html;
+
+  const withSeparator = /^(?:\s*<p>\s*<strong>[\s\S]*?<\/strong>\s*<\/p>\s*)+<p>\s*<\/p>/i;
+  if (withSeparator.test(trimmed)) {
+    return trimmed.replace(withSeparator, '').trimStart();
+  }
+
+  const onlyPrelude = /^(?:\s*<p>\s*<strong>[\s\S]*?<\/strong>\s*<\/p>\s*)+/i;
+  if (onlyPrelude.test(trimmed)) {
+    return trimmed.replace(onlyPrelude, '').trimStart();
+  }
+
+  return html;
+};
+
 export const extractImages = (html: string, maxThumbs = 4) => {
   if (!html) return { thumbnails: [] as string[], thumbnail: null as string | null, imageCount: 0 };
   const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
@@ -94,6 +111,7 @@ export const serializePostPreview = (
 ) => {
   const preview = typeof post.content === 'string' ? post.content : '';
   const { thumbnail, thumbnails, imageCount } = extractImages(preview, 4);
+  const excerptSource = stripTemplatePrelude(preview);
   const author = post.author
     ? {
         ...post.author,
@@ -107,7 +125,7 @@ export const serializePostPreview = (
     authorId: post.authorId,
     type: post.type,
     title: post.title,
-    excerpt: buildExcerpt(preview),
+    excerpt: buildExcerpt(excerptSource),
     category: post.category,
     subcategory: post.subcategory ?? null,
     tags: Array.isArray(post.tags) ? post.tags : [],

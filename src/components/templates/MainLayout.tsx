@@ -50,7 +50,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
         />
       </Suspense>
 
-      <div className="relative z-10 w-full px-2 sm:px-3 lg:px-4">
+      <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-x-0 top-0 h-[300px] bg-gradient-to-b from-blue-500/5 dark:from-blue-500/10 to-transparent pointer-events-none z-0" />
         <div className={`relative z-10 mx-auto max-w-[1680px] grid grid-cols-1 items-start ${gridColumns} gap-4 lg:gap-6`}>
           {hasLeftRail ? (
@@ -65,7 +65,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
                 />
               </aside>
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetContent side="left" className="p-0 w-[min(360px,100vw)]">
+                <SheetContent side="left" className="p-0 w-full sm:w-[360px]">
                   <CategorySidebar
                     variant="mobile"
                     setIsMobileMenuOpen={setIsMobileMenuOpen}
