@@ -55,6 +55,7 @@ test('renders feedback page (ko)', async ({ page }) => {
 
 test('language switcher hides en and can switch ko↔vi', async ({ page }) => {
   await page.goto('/ko/about');
+  await page.waitForLoadState('networkidle');
 
   await page.getByTestId('language-switcher-toggle').click();
   await expect(page.getByTestId('language-switcher-menu')).toBeVisible();
@@ -62,12 +63,14 @@ test('language switcher hides en and can switch ko↔vi', async ({ page }) => {
 
   await page.getByTestId('language-option-vi').click();
   await page.waitForURL(/\/vi\/about$/, { timeout: 15_000 });
+  await page.waitForLoadState('networkidle');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Giới thiệu');
 
   await page.getByTestId('language-switcher-toggle').click();
   await expect(page.getByTestId('language-switcher-menu')).toBeVisible();
   await page.getByTestId('language-option-ko').click();
   await page.waitForURL(/\/ko\/about$/, { timeout: 15_000 });
+  await page.waitForLoadState('networkidle');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('소개');
 });
 

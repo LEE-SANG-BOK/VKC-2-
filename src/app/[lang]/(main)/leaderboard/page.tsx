@@ -98,7 +98,6 @@ export default async function LeaderboardPage({ params, searchParams }: PageProp
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <MainLayout
-        hideSidebar
         rightRail={
           <div className="sticky top-[var(--vk-header-height)] py-6">
             <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-4">

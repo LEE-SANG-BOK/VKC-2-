@@ -37,7 +37,7 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
 
   if (isLoading) {
     return (
-      <section className="rounded-xl bg-transparent p-2">
+      <section className="rounded-xl bg-transparent p-2 lg:p-0">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
         </div>
@@ -59,7 +59,7 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
 
   return (
     <>
-      <section className="rounded-xl bg-transparent p-2">
+      <section className="rounded-xl bg-transparent p-2 lg:p-0">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
           <div className="lg:hidden flex items-center gap-1">

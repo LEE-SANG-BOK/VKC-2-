@@ -9,7 +9,7 @@ import Button from '@/components/atoms/Button';
 import Avatar from '@/components/atoms/Avatar';
 import FollowButton from '@/components/atoms/FollowButton';
 import UserTrustBadge from '@/components/molecules/user/UserTrustBadge';
-import Header from '@/components/organisms/Header';
+import MainLayout from '@/components/templates/MainLayout';
 import Tooltip from '@/components/atoms/Tooltip';
 import PostCard from '@/components/molecules/cards/PostCard';
 import AnswerCard from '@/components/molecules/cards/AnswerCard';
@@ -17,7 +17,6 @@ import CommentCard from '@/components/molecules/cards/CommentCard';
 import { useInfiniteUserPosts, useInfiniteUserAnswers, useInfiniteUserComments, useInfiniteUserBookmarks, useFollowStatus, useUserScore } from '@/repo/users/query';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 import { getUserTypeLabel } from '@/utils/userTypeLabel';
-
 
 export interface ProfileData {
   id: string;
@@ -184,7 +183,6 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
   });
 
   const [activeTab, setActiveTab] = useState<'posts' | 'accepted' | 'comments' | 'bookmarks'>('posts');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const postsObserverRef = useRef<HTMLDivElement>(null);
   const answersObserverRef = useRef<HTMLDivElement>(null);
   const commentsObserverRef = useRef<HTMLDivElement>(null);
@@ -387,130 +385,121 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
   };
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-gray-50 dark:bg-gray-900">
-      <Header
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        showBackButton={true}
-        hideSearch={true}
-        translations={translations || {}}
-      />
-
-      <div className="container mx-auto px-4 py-8">
+    <MainLayout translations={translations || {}} centerVariant="canvas">
+      <div className="px-4 py-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="flex-shrink-0 flex flex-col items-center gap-3">
-              <Avatar
-                name={displayName}
-                imageUrl={initialProfile.avatar}
-                size="xl"
-                hoverHighlight
-              />
-              {!isOwnProfile && (
-                <FollowButton
-                  userId={initialProfile.id}
-                  isFollowing={isFollowing}
-                  size="sm"
-                  onToggle={handleFollowChange}
-                  userName={displayName}
-                  translations={translations || {}}
-                />
-              )}
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {profileLabels.followers} {followersCount.toLocaleString()}
-              </div>
-            </div>
+          <div className="flex items-start gap-4">
+            <Avatar
+              name={displayName}
+              imageUrl={initialProfile.avatar}
+              size="xl"
+              hoverHighlight
+            />
 
-            <div className="flex-1">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{displayName}</h1>
-                    <UserTrustBadge
-                      presentation={trustBadgePresentation}
-                      learnMoreLabel={learnMoreLabel}
-                      onClick={() => router.push(trustBadgeGuideHref)}
-                      labelVariant="text"
-                      badgeClassName="!px-1.5 !py-0.5"
-                    />
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1 min-w-0">
+                      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                        {displayName}
+                      </h1>
+                      <UserTrustBadge
+                        presentation={trustBadgePresentation}
+                        learnMoreLabel={learnMoreLabel}
+                        onClick={() => router.push(trustBadgeGuideHref)}
+                        labelVariant="text"
+                        badgeClassName="!px-1.5 !py-0.5"
+                      />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 truncate">@{initialProfile.username}</p>
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {profileLabels.followers} {followersCount.toLocaleString()}
+                    </div>
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400">@{initialProfile.username}</p>
 
-                  {trustBadgePresentation.show &&
-                    (Boolean(initialProfile.verifiedProfileSummary) ||
-                      Boolean(initialProfile.verifiedProfileKeywords?.length)) && (
-                      <div className="mt-3 space-y-2">
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                          {profileLabels.verifiedInfoTitle}
-                        </p>
-                        {Boolean(initialProfile.verifiedProfileKeywords?.length) && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {(initialProfile.verifiedProfileKeywords || [])
-                              .filter(Boolean)
-                              .slice(0, 12)
-                              .map((keyword) => (
-                                <span
-                                  key={keyword}
-                                  className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200 px-2 py-0.5 text-xs font-medium"
-                                >
-                                  #{String(keyword).replace(/^#/, '')}
-                                </span>
-                              ))}
-                          </div>
-                        )}
-
-                        {initialProfile.verifiedProfileSummary && (
-                          <p className="text-sm text-gray-700 dark:text-gray-300">
-                            {initialProfile.verifiedProfileSummary}
-                          </p>
-                        )}
+                  {isOwnProfile ? (
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <div className="relative flex-1 sm:flex-initial">
+                        <Button
+                          variant="secondary"
+                          onClick={handleEditProfile}
+                          className="flex items-center justify-center gap-2 border border-gray-300 w-full pr-9 sm:pr-4"
+                          size="sm"
+                        >
+                          <Edit className="w-4 h-4" />
+                          <span className="hidden sm:inline">{profileLabels.editProfile}</span>
+                        </Button>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 sm:hidden">
+                          <Tooltip content={profileLabels.editProfileTooltip} position="top">
+                            <button
+                              type="button"
+                              aria-label={profileLabels.editProfileTooltip}
+                              className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/60 text-gray-600 dark:text-gray-200 shadow-sm"
+                            >
+                              <Info className="h-4 w-4" />
+                            </button>
+                          </Tooltip>
+                        </div>
                       </div>
-                    )}
-                </div>
-
-                {isOwnProfile ? (
-                  <div className="flex gap-2 w-full sm:w-auto">
-                    <div className="relative flex-1 sm:flex-initial">
                       <Button
                         variant="secondary"
-                        onClick={handleEditProfile}
-                        className="flex items-center justify-center gap-2 border border-gray-300 w-full pr-9 sm:pr-4"
+                        onClick={handleLogout}
+                        className="flex items-center justify-center gap-2 border border-gray-300 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 flex-1 sm:flex-initial"
                         size="sm"
                       >
-                        <Edit className="w-4 h-4" />
-                        <span className="hidden sm:inline">{profileLabels.editProfile}</span>
+                        <LogOut className="w-4 h-4" />
+                        <span className="hidden sm:inline">{profileLabels.logout}</span>
                       </Button>
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 sm:hidden">
-                        <Tooltip
-                          content={profileLabels.editProfileTooltip}
-                          position="top"
-                        >
-                          <button
-                            type="button"
-                            aria-label={profileLabels.editProfileTooltip}
-                            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/60 text-gray-600 dark:text-gray-200 shadow-sm"
-                          >
-                            <Info className="h-4 w-4" />
-                          </button>
-                        </Tooltip>
-                      </div>
                     </div>
-                    <Button
-                      variant="secondary"
-                      onClick={handleLogout}
-                      className="flex items-center justify-center gap-2 border border-gray-300 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 flex-1 sm:flex-initial"
-                      size="sm"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span className="hidden sm:inline">{profileLabels.logout}</span>
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
+                  ) : (
+                    <div className="sm:pt-0">
+                      <FollowButton
+                        userId={initialProfile.id}
+                        isFollowing={isFollowing}
+                        size="sm"
+                        onToggle={handleFollowChange}
+                        userName={displayName}
+                        translations={translations || {}}
+                      />
+                    </div>
+                  )}
+                </div>
 
-              {initialProfile.bio && (
-                <p className="text-gray-700 dark:text-gray-300 mb-4">{initialProfile.bio}</p>
-              )}
+                {trustBadgePresentation.show &&
+                  (Boolean(initialProfile.verifiedProfileSummary) ||
+                    Boolean(initialProfile.verifiedProfileKeywords?.length)) && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        {profileLabels.verifiedInfoTitle}
+                      </p>
+                      {Boolean(initialProfile.verifiedProfileKeywords?.length) && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {(initialProfile.verifiedProfileKeywords || [])
+                            .filter(Boolean)
+                            .slice(0, 12)
+                            .map((keyword) => (
+                              <span
+                                key={keyword}
+                                className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200 px-2 py-0.5 text-xs font-medium"
+                              >
+                                #{String(keyword).replace(/^#/, '')}
+                              </span>
+                            ))}
+                        </div>
+                      )}
+
+                      {initialProfile.verifiedProfileSummary && (
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          {initialProfile.verifiedProfileSummary}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                {initialProfile.bio ? (
+                  <p className="text-gray-700 dark:text-gray-300">{initialProfile.bio}</p>
+                ) : null}
 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-2 sm:gap-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-2 min-w-0">
@@ -623,14 +612,15 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
                     <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">{profileLabels.comments}</div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
+	              </div>
+	            </div>
+	          </div>
+	        </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="flex overflow-x-auto scrollbar-hide pr-3 scroll-px-3">
+	        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+	          <div className="border-b border-gray-200 dark:border-gray-700">
+	            <div className="flex overflow-x-auto scrollbar-hide pr-3 scroll-px-3">
               <button
                 onClick={() => setActiveTab('posts')}
                 className={`flex-1 min-w-fit py-3 sm:py-4 px-3 sm:px-6 text-center font-medium transition-colors whitespace-nowrap ${
@@ -896,6 +886,6 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
           </div>
         </div>
       </div>
-    </div>
-  );
+		    </MainLayout>
+		  );
 }
