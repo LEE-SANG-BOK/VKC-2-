@@ -63,3 +63,4 @@ client_secret*.json
 /.last-processed-agents
 /recovery/
 docs/Knowlege/
+docs/STEP3_VISA_AI_DOC_AUTOMATION_PLAN.md
