@@ -15,6 +15,25 @@ const feedbackDescriptionMax = 2000;
 const feedbackStepsMin = 1;
 const feedbackStepsMax = 2000;
 
+const hasMissingFeedbackTitleColumn = (error: unknown) => {
+  const visited = new Set<unknown>();
+  let current: unknown = error;
+  while (current && !visited.has(current)) {
+    visited.add(current);
+    const message =
+      current instanceof Error
+        ? current.message
+        : typeof (current as any)?.message === 'string'
+          ? String((current as any).message)
+          : '';
+    if (/column \"title\" of relation \"feedbacks\" does not exist/i.test(message)) {
+      return true;
+    }
+    current = current instanceof Error ? current.cause : (current as any)?.cause;
+  }
+  return false;
+};
+
 const resolveClientIp = (request: NextRequest) => {
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
@@ -135,9 +154,7 @@ export async function POST(request: NextRequest) {
           })
           .returning();
       } catch (error) {
-        const message = error instanceof Error ? error.message : '';
-        const missingTitleColumn = /column \"title\" of relation \"feedbacks\" does not exist/i.test(message);
-        if (!missingTitleColumn) {
+        if (!hasMissingFeedbackTitleColumn(error)) {
           throw error;
         }
 

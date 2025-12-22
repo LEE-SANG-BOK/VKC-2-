@@ -4,6 +4,25 @@ import { feedbacks, users } from '@/lib/db/schema';
 import { getAdminSession } from '@/lib/admin/auth';
 import { desc, eq, ilike, or, and, sql, SQL } from 'drizzle-orm';
 
+const hasMissingFeedbackTitleColumn = (error: unknown) => {
+  const visited = new Set<unknown>();
+  let current: unknown = error;
+  while (current && !visited.has(current)) {
+    visited.add(current);
+    const message =
+      current instanceof Error
+        ? current.message
+        : typeof (current as any)?.message === 'string'
+          ? String((current as any).message)
+          : '';
+    if (/column \"title\" of relation \"feedbacks\" does not exist/i.test(message)) {
+      return true;
+    }
+    current = current instanceof Error ? current.cause : (current as any)?.cause;
+  }
+  return false;
+};
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getAdminSession(request);
@@ -121,9 +140,7 @@ export async function GET(request: NextRequest) {
     try {
       ({ countResult, feedbackList } = await runQuery());
     } catch (error) {
-      const message = error instanceof Error ? error.message : '';
-      const missingTitleColumn = /column \"title\" of relation \"feedbacks\" does not exist/i.test(message);
-      if (!missingTitleColumn) {
+      if (!hasMissingFeedbackTitleColumn(error)) {
         throw error;
       }
       ({ countResult, feedbackList } = await runQueryWithoutTitle());
