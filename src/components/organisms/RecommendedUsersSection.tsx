@@ -189,7 +189,7 @@ export default function RecommendedUsersSection({
           metaLabels: mergedMetaLabels,
           badgeLabels,
         });
-        const visibleMetaTexts = metaTexts.slice(0, 2);
+        const visibleMetaTexts = metaTexts.slice(0, 3);
         return (
           <div
             key={userId}

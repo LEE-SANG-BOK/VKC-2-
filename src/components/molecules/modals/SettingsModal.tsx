@@ -299,7 +299,7 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex items-start gap-2">
                     <Rss className="w-5 h-5 text-blue-500 mt-0.5" />
                     <div>
@@ -317,7 +317,7 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
                       onClose();
                       router.push(`/${locale}/subscriptions`);
                     }}
-                    className="px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                    className="self-start sm:self-auto px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                   >
                     {settingsLabels.manageSubscriptions}
                   </button>

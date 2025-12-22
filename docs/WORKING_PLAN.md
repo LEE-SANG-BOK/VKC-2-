@@ -7,6 +7,7 @@
 - P0(출시 전)은 “실데이터/SEO 정합 + 모바일 UX + 신뢰(인증/배지) + 운영도구(계측/방어) + 필수 자동화(Playwright/Rate limit)”를 닫는 데 집중한다.
 - P1은 안정화/유지보수 체계(테스트 확장, Admin 정리, 모니터링), P2는 스케일/확장(캐시/레플리카/플래그/CMS/추천 고도화)로 분리한다.
 - 추가 정책: `en`은 웹 UI에서 숨김(언어 스위치/노출 동선 제거)하되, 기존 `en` 페이지/번역은 삭제하지 않고 SEO 노출은 유지한다. 앞으로 신규 작업은 `en` 번역 추가/검수는 하지 않음(단, 페이지 렌더가 깨지지 않도록 fallback은 보장).
+- STEP3(비자 확률 추천/서류 PDF 자동화/공식정보 동기화) 실행 문서는 `docs/STEP3_VISA_AI_DOC_AUTOMATION_PLAN.md`에서 관리한다.
 
 ## Policy decisions (확정)
 
@@ -459,6 +460,7 @@ $gh-address-comments
 - [x] P1-17 (LEAD/WEB: PWA 의존성 단일화 + 캐시 경계 고정)
 - [x] P1-18 (LEAD: 패키지 매니저/락파일 단일화)
 - [x] P1-19 (BE/LEAD: Cache-Control 정책 SoT + 캐시 감사)
+- [ ] P1-20 (LEAD/WEB: 카테고리 IA 개편 + 키워드 매핑/자동 분류)
 
 ### P2
 
@@ -1792,12 +1794,19 @@ $gh-address-comments
   - robots 정책은 Google/Bing 중심이며, GPTBot/OAI-SearchBot 등 AI 크롤러 허용/차단 정책이 미정(`src/app/robots.ts:4`)
 - 작업(권장 v1, 효율 우선)
   - “콘텐츠 계약(템플릿)” 1장 고정
-    - 페이지 구조: H1 단일 + H2/H3 계층 + 즉답(2~3문장) + 리스트/표(체크리스트) 우선
+    - 페이지 구조: H1 단일 + H2/H3 계층(가능하면 “질문형 헤딩”) + 즉답(2~3문장, 첫 단락) + 리스트/표(체크리스트) 우선
+    - 글쓰기 스타일(역피라미드): “답(결론) → 근거/절차 → 예외/주의” 순서로 배치해 사람/AI 모두 즉시 핵심을 추출 가능하게
     - UGC(질문/답변)는 `QAPage/DiscussionForumPosting`만(FAQPage 남용 금지), 운영자 큐레이션만 `FAQPage/HowTo/Article/VideoObject` 적용
     - 최신성/신뢰: `dateModified`/업데이트 문구/출처 표기(`P1-8`)의 “표시 기준”을 문서로 확정
     - 크롤링 친화: 중요한 본문 텍스트는 SSR HTML에 포함(비동기/클라 전용 렌더에 의존 금지), `<article>` 등 의미 있는 마크업 유지
     - 토픽 클러스터(경쟁사 벤치마크): “허브(가이드) → 하위 글(세부)” 구조로 내부 링크를 엮고, 허브 페이지에 소개 텍스트/목차/관련 글을 고정(얇은 카테고리 페이지 금지)
-    - 내부 링크 규칙: 새 글 발행 시 관련 글 2~3개 이상 본문 링크(의미 있는 앵커 텍스트), 기존 핵심 글에도 역링크 추가(쌍방향)
+    - 내부 링크(현실적 운영): “유저가 직접 링크를 붙이게” 강제하지 않고, **페이지 템플릿/에디터 UX가 링크를 자동 생산**하게 고정
+      - UGC(일반 사용자 글): 본문 강제 규칙 금지(현실성 낮음) → 상세 페이지 템플릿에 항상 `관련 글(2~5) + 같은 카테고리(2~5) + 허브/가이드 1개`를 SSR로 렌더(= 크롤러가 링크를 따라감)
+      - 글쓰기 UX(권장): 작성 단계에 “유사 질문/관련 글”을 먼저 노출하고, 원클릭으로 “관련 글 섹션”을 본문 하단에 삽입(선택 기능, 강제 X)
+      - 키워드 자동 링크: `TOPIK/EPS/D-2/D-10/E-7/F-2` 등 사전(키워드→허브 URL)을 SoT로 두고 본문 첫 등장만 자동 링크(과링크 방지)
+      - 쌍방향(역링크) 구현: “기존 핵심 글에 사람이 역링크 추가” 대신, 허브/가이드가 최신/인기 Q&A를 자동 집계해 역링크 역할을 수행(허브↔UGC)
+      - 중복 질문 운영: 유사 질문이 높으면 신규 작성 전 기존 스레드로 유도, 게시 후에는 운영자 큐레이션으로 “대표(캐노니컬) 스레드”를 지정해 권위를 한 URL로 집중(필요 시 리다이렉트/정리)
+    - 중복 질문 운영(SEO/신뢰): 글쓰기 시 “유사 질문”을 먼저 안내하고(검색 기반), 운영자 큐레이션 허브(FAQ/가이드)로 흡수해 동일 주제 권위를 한 페이지로 모으는 흐름을 고정
     - URL(운영자 큐레이션): 가이드/뉴스/FAQ는 의미 있는 `slug` 기반 URL(키워드 포함) 우선, UGC는 `id` 유지(크롤링/공유/중복 방지 기준으로)
   - JSON-LD 보강(핵심만)
     - 채택 답변이 있을 때만 `acceptedAnswer` 포함
@@ -1821,6 +1830,7 @@ $gh-address-comments
     - GA4(또는 대체)로 유입/전환 지표 수집(가능한 최소 이벤트만)
   - KPI/리듬 고정(초기 과투자 금지)
     - KPI(v1): Organic 세션, 쿼리별 노출/클릭/CTR, 상위 랜딩 URL, 색인 오류(404/리다이렉트), CWV 상태(`P1-12`)
+    - KPI(v1, 영상/숏폼 선택): Shorts/영상 조회수→사이트 유입(링크 클릭) + “영상 포함 페이지”의 CWV/이탈률/체류시간 비교(문제 페이지는 임베드 축소/제거)
     - 리뷰 주기: 런칭 직후 2주간 주 1회, 이후 월 1회(30분)로 고정 + 액션 3개만 선정
   - 콘텐츠 업데이트 운영
     - “법/비자/제도” 성격 페이지는 업데이트 날짜를 표준 위치에 표기하고(템플릿), 반기 단위 갱신 목록을 유지
@@ -1891,6 +1901,30 @@ $gh-address-comments
   - 캐시 정책이 유틸/헬퍼로 단일화되고, 공개 캐시 적용 엔드포인트가 “안전 목록”으로 관리됨
   - 개인화 응답이 public 캐시로 내려가는 케이스가 0
 
+#### (2025-12-22) [LEAD/WEB] P1-20 카테고리 IA 개편 + 키워드 매핑/자동 분류 (P1)
+
+- 목표: “한국에서의 유학→취업→체류” 타겟 여정과 검색 의도를 정확히 반영하는 카테고리/탐색 구조를 고정하고, SEO/AEO(인용/요약)까지 연결되는 정보 구조를 만든다.
+- 방향(IA 원칙)
+  - 카테고리명은 “한국” 맥락이 항상 드러나도록(ko/vi 모두) 네이밍을 고정한다.
+  - 초기에 카테고리가 과도하게 쪼개져 인기도가 분산되지 않도록 **대분류(탐색) + 세부분류/키워드(정밀)**의 역할을 분리한다.
+  - “검색/자동 분류”가 카테고리 UX를 보조하도록 키워드 매핑을 SoT로 둔다.
+- 작업(권장 v1)
+  - 카테고리 재구성(대분류/세부분류)
+    - 대분류(예시): `한국 비자·체류`, `한국 취업`, `한국 유학`, `한국 정착·주거`, `자유게시(기타)`
+    - 세부분류(예시): 주거·정착(집/생활비/통신/초기정착), 4대보험, 아르바이트, 노동법·근로자 권리(EPS 포함), 이력서·면접, 한국어(TOPIK), 입학·장학금, 유학생활 가이드
+  - 약어/코드 우선 반영
+    - 사용자 커뮤니티에서 통용되는 키워드(TOPIK/EPS/D-2/D-10/E-7/F-2 등)를 카테고리 설명/메타/검색 제안어에 포함
+  - 키워드 매핑/자동 분류(레거시 장점 흡수)
+    - SoT를 1곳으로 고정(상수 또는 DB): `{ keyword/synonyms -> category/subcategory }`
+    - 질문 작성 시 추천 카테고리/세부분류 자동 제안(강제 분류 X, “추천”)
+    - 검색 자동완성/추천 검색어에 동일 매핑을 재사용(반복 구현 금지)
+  - 모바일/PC 탐색 UX
+    - 모바일은 핵심 탭(비자/취업/유학/정착/검색) 중심으로 “한 손 탐색” 최적화(기존 BottomNav와 충돌 없이)
+    - PC는 카테고리 허브 페이지(소개/목차/관련 글/FAQ 일부)로 SEO 허브를 만들고 내부 링크를 고정(`P1-15` 연계)
+- 완료 기준
+  - 사용자 글 작성 시 카테고리 선택 이탈률이 줄고(추천 제안), 검색/탐색으로 같은 주제 글을 더 빨리 찾을 수 있음
+  - 카테고리 허브 페이지가 “얇은 페이지”가 아니라 소개/목차/FAQ/관련 링크를 갖춘 SEO 랜딩으로 기능함
+
 ---
 
 ## P2 (확장 단계: 스케일/성장)
@@ -1954,7 +1988,7 @@ $gh-address-comments
     - “외부 배포 가능한 콘텐츠 타입”을 명시적으로 정의(예: `news`, `admin notice`, `guide`)
   - 피드/배포 포맷 제공
     - RSS/Atom/JSON Feed 중 1~2개를 표준으로 선택하고, 배포 대상 콘텐츠만 포함(노출 정책/권한 준수)
-  - 외부 공유 품질(클릭률) 기반 정비
+    - 외부 공유 품질(클릭률) 기반 정비
     - OG/Twitter 메타를 신뢰할 수 있게 유지(P0-12의 공용 메타 빌더를 그대로 활용)
     - 공유 CTA/버튼은 P0-15 정책(중복 제거) 하에서 채널 확장(Zalo/FB 등)은 “필요 시”만
     - 영상(선택) — 성능/SEO 원칙(고정)
@@ -1964,6 +1998,8 @@ $gh-address-comments
       - 임베드 최소화: 페이지당 임베드 수 제한(탭/아코디언 등으로 “1~2개만 로드”)
       - 파라미터(선택): `rel=0&modestbranding=1` 등으로 추천영상/브랜딩 최소화
       - SEO: 운영자 큐레이션 페이지에만 `VideoObject` 스키마 적용(필드: name/description/thumbnailUrl/uploadDate/duration/embedUrl)
+      - 숏폼 검색 유입(선택): Google의 “Short Video” 노출을 고려해, 핵심 Q&A 5~10개를 Shorts(1분 내)로 제작/업로드하고 제목/설명에 핵심 키워드(ko/vi/필요 시 en)를 포함 + 설명/댓글에 canonical 링크를 고정
+      - 텍스트 우선(필수): 검색엔진/AI가 영상 내용을 직접 읽지 못하므로, 영상이 있는 페이지는 “요약 텍스트 + 체크리스트/FAQ(큐레이션)”를 SSR HTML 본문에 반드시 포함
   - 운영 자동화(반복 최소화)
     - 코딩 없이 가능한 자동화(Zapier/IFTTT 등)와 “주간/월간 요약 발행” 루틴을 비교해, 최소 운영 비용으로 가능한 흐름부터 적용
   - 권위/백링크(선택, 장기)
@@ -2319,6 +2355,44 @@ $gh-address-comments
   - messages/ko.json
   - messages/vi.json
   - docs/WORKING_PLAN.md
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+
+#### (2025-12-22) [P0] Feed/Feedback/Leaderboard 런타임 이슈 정리 + 모바일 정렬 보강
+
+- 작업
+  - PostCard: 숨김/신고(…) 제거 → `×(숨기기)` 단일 액션 + Tooltip(이미지 유무와 무관하게 동일 위치)
+  - PostCard: 제목/요약/태그/액션 인덴트(`pl-12`) 제거로 모바일 공간 확보
+  - PostCard: “인증 답변/댓글” 배지는 border 없이 compact 텍스트로 유지(+ truncate)
+  - 모바일: PostCard 하단 액션은 1열 유지(`globals.css` media query에서 wrap 제거)
+  - 추천 사용자: recommendation meta 최대 3개 노출(온보딩 핵심 정보 강조)
+  - /api/users/recommended: recommendation meta 우선순위 재정렬 + 최대 3개 반환
+  - /api/feedback: DB 컬럼 불일치(title/page_url/contact_email 등)에서도 insert가 깨지지 않게 “missing column 감지 → 해당 컬럼 제거 후 재시도”로 하드닝(추가 마이그레이션 없이 동작)
+  - Leaderboard: trustScore 노출 제거 + 주간 답변 수(최근 7일) 추가, 스코어 산식/정렬 기준 반영
+  - Modal: `createPortal(document.body)`로 렌더링해 헤더(backdrop-filter) 컨텍스트에서 fixed 오프셋 이슈 방지
+  - Rail/레이아웃: 추천 콘텐츠 “더보기” 제거, 모바일 메뉴 Sheet 폭을 w-full로 고정, 페이지 padding 보강
+  - Excerpt: 글쓰기 모더레이션 템플릿 prelude가 피드 excerpt에 노출되지 않게 strip
+- 변경 파일
+  - messages/ko.json
+  - messages/vi.json
+  - src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx
+  - src/app/api/feedback/route.ts
+  - src/app/api/users/leaderboard/route.ts
+  - src/app/api/users/recommended/route.ts
+  - src/app/globals.css
+  - src/components/atoms/Modal.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/modals/SettingsModal.tsx
+  - src/components/molecules/user/UserProfile.tsx
+  - src/components/organisms/AdminPostRail.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - src/components/templates/MainLayout.tsx
+  - src/lib/api/post-list.ts
+  - src/repo/users/types.ts
 - 검증
   - [x] npm run lint
   - [x] npm run type-check

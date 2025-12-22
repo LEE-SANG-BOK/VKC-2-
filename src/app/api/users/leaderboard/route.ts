@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { users, answers } from '@/lib/db/schema';
 import { desc, sql, count } from 'drizzle-orm';
 import { setPublicSWR, paginatedResponse, serverErrorResponse } from '@/lib/api/response';
 
@@ -20,7 +20,14 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(20, Math.max(1, limitCandidate));
     const offset = (page - 1) * limit;
 
-    const scoreExpr = sql<number>`(${users.trustScore} + ${users.helpfulAnswers} * 5 + ${users.adoptionRate})::float`;
+    const weeklyAnswersExpr = sql<number>`COALESCE((
+      SELECT COUNT(*)::int
+      FROM ${answers}
+      WHERE ${answers.authorId} = ${users.id}
+        AND ${answers.createdAt} >= (NOW() - INTERVAL '7 days')
+    ), 0)`;
+
+    const scoreExpr = sql<number>`(${users.helpfulAnswers} * 5 + ${users.adoptionRate} + (${weeklyAnswersExpr} * 3))::float`;
 
     const [countRows, rows] = await Promise.all([
       db.select({ count: count() }).from(users),
@@ -33,13 +40,13 @@ export async function GET(request: NextRequest) {
           isVerified: users.isVerified,
           isExpert: users.isExpert,
           badgeType: users.badgeType,
-          trustScore: users.trustScore,
           helpfulAnswers: users.helpfulAnswers,
           adoptionRate: users.adoptionRate,
+          weeklyAnswers: weeklyAnswersExpr,
           score: scoreExpr,
         })
         .from(users)
-        .orderBy(desc(scoreExpr), desc(users.createdAt), desc(users.id))
+        .orderBy(desc(scoreExpr), desc(weeklyAnswersExpr), desc(users.createdAt), desc(users.id))
         .limit(limit)
         .offset(offset),
     ]);
@@ -48,9 +55,9 @@ export async function GET(request: NextRequest) {
 
     const leaderboard = rows.map((row, index) => {
       const scoreValue = Number(row.score ?? 0);
-      const trustScore = Number(row.trustScore ?? 0);
       const helpfulAnswers = Number(row.helpfulAnswers ?? 0);
       const adoptionRate = Number(row.adoptionRate ?? 0);
+      const weeklyAnswers = Number(row.weeklyAnswers ?? 0);
       const temperature = resolveTemperature(scoreValue);
 
       return {
@@ -64,9 +71,9 @@ export async function GET(request: NextRequest) {
         badgeType: row.badgeType ?? null,
         score: Math.max(0, Math.round(scoreValue)),
         temperature,
-        trustScore,
         helpfulAnswers,
         adoptionRate,
+        weeklyAnswers,
         rank: offset + index + 1,
       };
     });

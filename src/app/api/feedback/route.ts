@@ -8,14 +8,11 @@ import { and, eq, gte, sql } from 'drizzle-orm';
 
 const feedbackRateLimitWindowMs = 60 * 60 * 1000;
 const feedbackRateLimitMax = 3;
-const feedbackTitleMin = 1;
 const feedbackTitleMax = 200;
 const feedbackDescriptionMin = 1;
 const feedbackDescriptionMax = 2000;
-const feedbackStepsMin = 1;
-const feedbackStepsMax = 2000;
 
-const hasMissingFeedbackTitleColumn = (error: unknown) => {
+const missingFeedbackColumnName = (error: unknown) => {
   const visited = new Set<unknown>();
   let current: unknown = error;
   while (current && !visited.has(current)) {
@@ -26,12 +23,11 @@ const hasMissingFeedbackTitleColumn = (error: unknown) => {
         : typeof (current as any)?.message === 'string'
           ? String((current as any).message)
           : '';
-    if (/column \"title\" of relation \"feedbacks\" does not exist/i.test(message)) {
-      return true;
-    }
+    const match = message.match(/column \"([^\"]+)\" of relation \"feedbacks\" does not exist/i);
+    if (match?.[1]) return match[1];
     current = current instanceof Error ? current.cause : (current as any)?.cause;
   }
-  return false;
+  return null;
 };
 
 const resolveClientIp = (request: NextRequest) => {
@@ -53,7 +49,6 @@ export async function POST(request: NextRequest) {
     const rawType = typeof body.type === 'string' ? body.type.trim().toLowerCase() : '';
     const title = typeof body.title === 'string' ? body.title.trim() : '';
     const description = typeof body.description === 'string' ? body.description.trim() : '';
-    const steps = typeof body.steps === 'string' ? body.steps.trim() : '';
     const contactEmail = typeof body.email === 'string' ? body.email.trim() : '';
     const pageUrl = typeof body.pageUrl === 'string' ? body.pageUrl.trim() : '';
     const userAgent =
@@ -69,19 +64,14 @@ export async function POST(request: NextRequest) {
       return errorResponse('올바르지 않은 유형입니다.', 'FEEDBACK_INVALID_TYPE');
     }
 
-    if (!title) {
-      return errorResponse('요약을 입력해주세요.', 'FEEDBACK_TITLE_REQUIRED');
-    }
-
-    const titleValidation = validateUgcText(title, feedbackTitleMin, feedbackTitleMax);
-    if (!titleValidation.ok) {
-      if (titleValidation.code === 'UGC_TOO_SHORT') {
-        return errorResponse('요약이 너무 짧습니다.', 'FEEDBACK_TITLE_TOO_SHORT');
+    if (title) {
+      const titleValidation = validateUgcText(title, 1, feedbackTitleMax);
+      if (!titleValidation.ok) {
+        if (titleValidation.code === 'UGC_TOO_LONG') {
+          return errorResponse('요약이 너무 깁니다.', 'FEEDBACK_TITLE_TOO_LONG');
+        }
+        return errorResponse('요약 내용이 올바르지 않습니다.', 'FEEDBACK_TITLE_INVALID');
       }
-      if (titleValidation.code === 'UGC_TOO_LONG') {
-        return errorResponse('요약이 너무 깁니다.', 'FEEDBACK_TITLE_TOO_LONG');
-      }
-      return errorResponse('요약 내용이 올바르지 않습니다.', 'FEEDBACK_TITLE_INVALID');
     }
 
     if (!description) {
@@ -101,19 +91,6 @@ export async function POST(request: NextRequest) {
         return errorResponse('상세 내용이 너무 깁니다.', 'FEEDBACK_DESCRIPTION_TOO_LONG');
       }
       return errorResponse('상세 내용이 올바르지 않습니다.', 'FEEDBACK_DESCRIPTION_INVALID');
-    }
-
-    if (steps) {
-      const stepsValidation = validateUgcText(steps, feedbackStepsMin, feedbackStepsMax);
-      if (!stepsValidation.ok) {
-        if (stepsValidation.code === 'UGC_TOO_SHORT') {
-          return errorResponse('재현 단계가 너무 짧습니다.', 'FEEDBACK_STEPS_TOO_SHORT');
-        }
-        if (stepsValidation.code === 'UGC_TOO_LONG') {
-          return errorResponse('재현 단계가 너무 깁니다.', 'FEEDBACK_STEPS_TOO_LONG');
-        }
-        return errorResponse('재현 단계가 올바르지 않습니다.', 'FEEDBACK_STEPS_INVALID');
-      }
     }
 
     if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
@@ -137,42 +114,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const [createdFeedback] = await (async () => {
-      try {
-        return await db
-          .insert(feedbacks)
-          .values({
-            userId: user?.id || null,
-            type,
-            title,
-            description,
-            steps: steps || null,
-            pageUrl: pageUrl || null,
-            contactEmail: contactEmail || null,
-            ipAddress,
-            userAgent,
-          })
-          .returning();
-      } catch (error) {
-        if (!hasMissingFeedbackTitleColumn(error)) {
-          throw error;
-        }
+    const columnKeyByName: Record<string, string> = {
+      title: 'title',
+      page_url: 'pageUrl',
+      contact_email: 'contactEmail',
+      ip_address: 'ipAddress',
+      user_agent: 'userAgent',
+    };
 
-        const combinedDescription = title ? `${title}\n\n${description}` : description;
-        return await db
-          .insert(feedbacks)
-          .values({
-            userId: user?.id || null,
-            type,
-            description: combinedDescription,
-            steps: steps || null,
-            pageUrl: pageUrl || null,
-            contactEmail: contactEmail || null,
-            ipAddress,
-            userAgent,
-          } as any)
-          .returning();
+    const autoTitle = title || description.slice(0, 80);
+    const basePayload: Record<string, unknown> = {
+      userId: user?.id || null,
+      type,
+      title: autoTitle,
+      description,
+      pageUrl: pageUrl || null,
+      contactEmail: contactEmail || null,
+      ipAddress,
+      userAgent,
+    };
+
+    const [createdFeedback] = await (async () => {
+      const payload: Record<string, any> = { ...basePayload };
+
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        try {
+          return await db.insert(feedbacks).values(payload as any).returning();
+        } catch (error) {
+          const columnName = missingFeedbackColumnName(error);
+          if (!columnName) throw error;
+
+          const key = columnKeyByName[columnName];
+          if (!key || !(key in payload)) throw error;
+
+          if (columnName === 'title' && typeof payload.description === 'string' && typeof payload.title === 'string') {
+            payload.description = payload.title ? `${payload.title}\n\n${payload.description}` : payload.description;
+          }
+
+          delete payload[key];
+        }
       }
+
+      throw new Error('Feedback insert failed');
     })();
 
     const receivedAt =

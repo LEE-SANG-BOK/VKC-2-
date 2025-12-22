@@ -19,7 +19,7 @@ interface LeaderboardClientProps {
 }
 
 const resolveTemperatureTone = (temperature: number) => {
-  if (temperature >= 41) {
+  if (temperature >= 40.5) {
     return {
       iconClassName: 'text-red-600',
       chipClassName: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-200',
@@ -27,7 +27,7 @@ const resolveTemperatureTone = (temperature: number) => {
       extraFlames: 1,
     };
   }
-  if (temperature >= 39.5) {
+  if (temperature >= 38.5) {
     return {
       iconClassName: 'text-red-500',
       chipClassName: 'bg-red-50/70 text-red-700 dark:bg-red-900/20 dark:text-red-200',
@@ -61,10 +61,10 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
       title: t.title || '',
       subtitle: t.subtitle || '',
       listTitle: t.listTitle || '',
-      trustLabel: t.trustLabel || '',
       temperatureLabel: t.temperatureLabel || '',
       helpfulLabel: tCommon.helpful || t.helpfulLabel || '',
       adoptionRateLabel: tCommon.adoptionRate || t.adoptionRateLabel || '',
+      weeklyAnswersLabel: t.weeklyAnswersLabel || '',
       pageInfo: t.pageInfo || '',
       previous: tCommon.previous || t.previous || '',
       next: tCommon.next || t.next || '',
@@ -239,9 +239,9 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
 	                      <Avatar name={displayName} imageUrl={avatarSrc} size="lg" hoverHighlight />
 	                    </Link>
 	                    <div className="flex-1 min-w-0">
-	                      <div className="flex flex-wrap items-center gap-2 text-xs">
-	                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${temperatureTone.chipClassName}`}>
-	                          <Flame
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${temperatureTone.chipClassName}`}>
+                          <Flame
                             className={`h-3.5 w-3.5 ${temperatureTone.iconClassName}`}
                             fill={temperatureTone.filled ? 'currentColor' : 'none'}
                           />
@@ -253,9 +253,6 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
                           ) : null}
                           {copy.temperatureLabel} {temperatureFormatter.format(entry.temperature)}°
                         </span>
-                        <span className="text-gray-500 dark:text-gray-400">
-                          {copy.trustLabel} {numberFormatter.format(entry.trustScore)}
-                        </span>
                       </div>
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-600 dark:text-gray-300">
                         <span>
@@ -263,6 +260,9 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
                         </span>
                         <span>
                           {copy.adoptionRateLabel} {percentFormatter.format(entry.adoptionRate)}%
+                        </span>
+                        <span>
+                          {copy.weeklyAnswersLabel} {numberFormatter.format(entry.weeklyAnswers)}
                         </span>
                       </div>
                     </div>
@@ -343,12 +343,6 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
                   </div>
                   <div className="grid grid-cols-3 gap-3 text-xs text-gray-600 dark:text-gray-300 sm:text-right">
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase tracking-wide text-gray-400">{copy.trustLabel}</span>
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">
-                        {numberFormatter.format(entry.trustScore)}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
                       <span className="text-[10px] uppercase tracking-wide text-gray-400">{copy.helpfulLabel}</span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100">
                         {numberFormatter.format(entry.helpfulAnswers)}
@@ -358,6 +352,12 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
                       <span className="text-[10px] uppercase tracking-wide text-gray-400">{copy.adoptionRateLabel}</span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100">
                         {percentFormatter.format(entry.adoptionRate)}%
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase tracking-wide text-gray-400">{copy.weeklyAnswersLabel}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">
+                        {numberFormatter.format(entry.weeklyAnswers)}
                       </span>
                     </div>
                   </div>

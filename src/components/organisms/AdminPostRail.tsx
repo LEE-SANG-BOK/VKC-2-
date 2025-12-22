@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { useNews } from '@/repo/news/query';
 import { NewsItem } from '@/repo/news/types';
@@ -22,7 +21,6 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
   const items = (newsItems || []).filter((item) => item.type === 'post').slice(0, limit);
 
   const title = tNews.title || '';
-  const moreLabel = tNews.moreLabel || '';
   const closeLabel = tNews.close || '';
   const openExternalLabel = tNews.openExternal || '';
 
@@ -31,7 +29,6 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
       <section className="rounded-xl bg-transparent p-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
-          <span className="text-xs text-gray-400">{moreLabel}</span>
         </div>
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -49,12 +46,6 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
       <section className="rounded-xl bg-transparent p-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
-          <Link
-            href={`/${lang}/media#featured`}
-            className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            {moreLabel}
-          </Link>
         </div>
         <ul className="space-y-2">
           {items.map((item) => (

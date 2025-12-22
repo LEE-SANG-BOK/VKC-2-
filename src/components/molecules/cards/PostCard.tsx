@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
@@ -19,8 +19,6 @@ import { useToggleFollow } from '@/repo/users/mutation';
 import { logEvent } from '@/repo/events/mutation';
 import { useHiddenTargets } from '@/repo/hides/query';
 import { useHideTarget } from '@/repo/hides/mutation';
-import { useReportPost } from '@/repo/reports/mutation';
-import type { ReportType } from '@/repo/reports/types';
 import { ALLOWED_CATEGORY_SLUGS, LEGACY_CATEGORIES, getCategoryName } from '@/lib/constants/categories';
 import { localizeCommonTagLabel } from '@/lib/constants/tag-translations';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
@@ -76,7 +74,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const { openLoginPrompt } = useLoginPrompt();
   const { idSet: hiddenPostIds } = useHiddenTargets('post', Boolean(session?.user));
   const hideTargetMutation = useHideTarget();
-  const reportPostMutation = useReportPost();
   const locale = (params?.lang as 'ko' | 'en' | 'vi') || 'ko';
   const t = (translations?.tooltips || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
@@ -92,19 +89,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const copyFailedLabel = tPostDetail.copyFailed || '';
   const sourcePrefix = tCommon.source || '';
   const hideLabel = tCommon.hide || '';
-  const reportLabel = tCommon.report || '';
-  const reportSubmittedLabel = tPostDetail.reportSubmitted || '';
-  const reportFailedLabel = tPostDetail.reportFailed || '';
-  const reportReasonRequiredLabel = tPostDetail.reportReasonRequired || '';
-  const reportSpamLabel = tPostDetail.reportSpam || '';
-  const reportHarassmentLabel = tPostDetail.reportHarassment || '';
-  const reportMisinformationLabel = tPostDetail.reportMisinformation || '';
-  const reportInappropriateLabel = tPostDetail.reportInappropriate || '';
-  const reportOtherLabel = tPostDetail.reportOther || '';
-  const reportPlaceholderLabel = tPostDetail.reportPlaceholder || '';
-  const reportSubmitLabel = tCommon.reportSubmit || '';
-  const processingLabel = tCommon.processing || '';
-  const cancelLabel = tCommon.cancel || '';
   const hideFailedLabel = tCommon.hideFailed || '';
 
   const trustBadgePresentation = getTrustBadgePresentation({
@@ -192,13 +176,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
   const [localIsBookmarked, setLocalIsBookmarked] = useState(initialIsBookmarked || false);
   const [localLikes, setLocalLikes] = useState(stats.likes);
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const [showHideMenu, setShowHideMenu] = useState(false);
-  const [showReportDialog, setShowReportDialog] = useState(false);
-  const [reportReason, setReportReason] = useState('');
-  const [selectedReportType, setSelectedReportType] = useState<ReportType | null>(null);
-  const hideMenuRef = useRef<HTMLDivElement | null>(null);
   const isHidden = hiddenPostIds.has(String(id));
-  const hideEmoji = '...';
   const localizeTag = (tag: string) => {
     const raw = tag?.replace(/^#/, '').trim();
     if (!raw) return '';
@@ -436,61 +414,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     setShowShareMenu((prev) => !prev);
   };
 
-  useEffect(() => {
-    if (!showHideMenu) return;
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!hideMenuRef.current?.contains(event.target as Node)) {
-        setShowHideMenu(false);
-      }
-    };
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [showHideMenu]);
-
-  const handleHideMenuToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowHideMenu((prev) => !prev);
-  };
-
-  const handleHideFromMenu = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowHideMenu(false);
-    await handleToggleHide(e);
-  };
-
-  const handleReportFromMenu = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowHideMenu(false);
-    if (!session?.user) {
-      openLoginPrompt();
-      return;
-    }
-    setSelectedReportType('spam');
-    setReportReason('');
-    setShowReportDialog(true);
-  };
-
-  const handleReportSubmit = async () => {
-    if (!selectedReportType) return;
-    if (selectedReportType === 'other' && reportReason.trim().length < 10) {
-      toast.error(reportReasonRequiredLabel);
-      return;
-    }
-    const reason = selectedReportType === 'other' ? reportReason : selectedReportType;
-    try {
-      await reportPostMutation.mutateAsync({
-        postId: String(id),
-        data: { type: selectedReportType, reason },
-      });
-      toast.success(reportSubmittedLabel);
-      setShowReportDialog(false);
-      setSelectedReportType(null);
-      setReportReason('');
-    } catch (error) {
-      toast.error(reportFailedLabel);
-    }
-  };
-
   const shareLabels = {
     title: shareLabel,
     facebook: t.shareFacebook || '',
@@ -584,39 +507,10 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         className={`question-card group relative ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
           }`}
       >
-        <div ref={hideMenuRef} className="absolute top-3 right-3 z-20">
-          <button
-            type="button"
-            onClick={handleHideMenuToggle}
-            aria-label={hideLabel}
-            className="inline-flex h-11 min-w-[44px] sm:h-8 sm:min-w-[32px] items-center justify-center rounded-full px-1 text-sm font-semibold text-gray-500 transition-colors bg-white/70 hover:bg-white dark:bg-gray-900/60 dark:hover:bg-gray-900 border border-gray-200/70 dark:border-gray-700"
-          >
-            {hideEmoji}
-          </button>
-          {showHideMenu ? (
-            <div className="absolute right-0 top-full mt-1 w-24 overflow-hidden rounded-lg border border-gray-200 bg-white text-sm shadow-lg dark:border-gray-700 dark:bg-gray-900">
-              <button
-                type="button"
-                onClick={handleHideFromMenu}
-                className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-                {hideLabel}
-              </button>
-              <button
-                type="button"
-                onClick={handleReportFromMenu}
-                className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-                {reportLabel}
-              </button>
-            </div>
-          ) : null}
-        </div>
         <div className="question-card-main">
           <div className="question-card-body">
-          {/* Author Info & Badges */}
           <div className="flex items-start gap-2 mb-3 min-w-0">
-            <div className="flex items-start gap-2 min-w-0">
+            <div className="flex items-start gap-2 min-w-0 flex-1">
               <button
                 type="button"
                 className="shrink-0"
@@ -668,10 +562,20 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 </div>
               </div>
             </div>
+            <Tooltip content={hideLabel} position="left" touchBehavior="longPress">
+              <button
+                type="button"
+                onClick={handleToggleHide}
+                aria-label={hideLabel}
+                className="flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              >
+                <span aria-hidden className="text-base leading-none">×</span>
+              </button>
+            </Tooltip>
           </div>
 
-          <div className="pl-12">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-2 min-w-0">
               <h3 className="text-[19px] font-bold leading-snug text-gray-900 dark:text-gray-100 transition-colors group-hover:opacity-90">
                 {title}
               </h3>
@@ -717,7 +621,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pr-3 pl-12 scroll-px-3">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 min-w-0">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -742,7 +646,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 
       <div className="question-card-actions">
         <div className="question-card-footer-fixed">
-          <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1 pl-12">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <button
               type="button"
               onClick={handleAnswerCountClick}
@@ -759,7 +663,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   onClick={handleAnswerCountClick}
                   aria-label={certifiedTooltipContent || certifiedDisplayLabel}
                   title={certifiedSummaryLabel || certifiedDisplayLabel}
-                  className="group inline-flex items-center gap-1.5 rounded-full border border-emerald-200/70 bg-emerald-50/60 px-2 py-1 text-[11px] font-semibold text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-900/35 dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[200px] sm:max-w-none"
+                  className="group inline-flex items-center gap-1.5 px-1 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[200px] sm:max-w-none"
                 >
                   <ShieldCheck className="h-3 w-3 shrink-0" />
                   <span className="truncate sm:hidden">{certifiedDisplayLabelMobile}</span>
@@ -886,96 +790,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         </div>
         </div>
       </article>
-      {showReportDialog ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
-          onClick={() => {
-            setShowReportDialog(false);
-            setSelectedReportType(null);
-            setReportReason('');
-          }}
-        >
-          <div
-            className="bg-white dark:bg-gray-800 w-full sm:max-w-sm sm:rounded-xl rounded-t-xl shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-                {reportLabel}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowReportDialog(false);
-                  setSelectedReportType(null);
-                  setReportReason('');
-                }}
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="p-4 sm:p-5 space-y-2 max-h-[60dvh] overflow-y-auto">
-              {[
-                { type: 'spam' as ReportType, label: reportSpamLabel, featured: true },
-                { type: 'harassment' as ReportType, label: reportHarassmentLabel },
-                { type: 'misinformation' as ReportType, label: reportMisinformationLabel },
-                { type: 'inappropriate' as ReportType, label: reportInappropriateLabel },
-                { type: 'other' as ReportType, label: reportOtherLabel },
-              ].map(({ type, label, featured }) => (
-                <button
-                  key={type}
-                  onClick={() => setSelectedReportType(type)}
-                  className={`w-full px-4 py-3 text-left rounded-lg text-sm transition-colors border ${
-                    selectedReportType === type
-                      ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold border-red-200 dark:border-red-800'
-                      : featured
-                      ? 'bg-red-50/60 dark:bg-red-900/10 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800 hover:bg-red-50'
-                      : 'text-gray-700 dark:text-gray-300 border-transparent hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-
-              {selectedReportType === 'other' ? (
-                <div className="pt-2">
-                  <textarea
-                    value={reportReason}
-                    onChange={(e) => setReportReason(e.target.value)}
-                    placeholder={reportPlaceholderLabel}
-                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
-                    rows={3}
-                    autoFocus
-                  />
-                </div>
-              ) : null}
-            </div>
-
-            <div className="p-4 sm:p-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
-              <button
-                onClick={() => {
-                  setShowReportDialog(false);
-                  setSelectedReportType(null);
-                  setReportReason('');
-                }}
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                {cancelLabel}
-              </button>
-              <button
-                onClick={handleReportSubmit}
-                disabled={!selectedReportType || (selectedReportType === 'other' && !reportReason.trim()) || reportPostMutation.isPending}
-                className="flex-1 px-4 py-3 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {reportPostMutation.isPending ? processingLabel : reportSubmitLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }

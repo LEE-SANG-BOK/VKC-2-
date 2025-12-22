@@ -299,6 +299,7 @@
     "listTitle": "전체 랭킹",
     "trustLabel": "신뢰",
     "temperatureLabel": "온도",
+    "weeklyAnswersLabel": "주간 답변",
     "pageInfo": "{current} / {total} 페이지",
     "empty": "아직 랭킹 데이터가 없습니다.",
     "loading": "로딩 중...",

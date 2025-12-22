@@ -149,17 +149,19 @@ export async function GET(req: NextRequest) {
       return interestList[0] || '';
     };
 
-    const formattedUsers = recommendedUsers.map(user => {
+    const formattedUsers = recommendedUsers.map((user) => {
       const resolvedInterests = (user.interests || [])
         .map((value) => (typeof value === 'string' ? resolveInterest(value) : ''))
         .filter((value) => value.length > 0);
 
       const recommendationMeta = [
-        { key: 'interest', value: pickInterest(resolvedInterests) },
         { key: 'userType', value: user.userType || '' },
         { key: 'visaType', value: user.visaType || '' },
+        { key: 'interest', value: pickInterest(resolvedInterests) },
         { key: 'koreanLevel', value: user.koreanLevel || '' },
-      ].filter((item) => typeof item.value === 'string' && item.value.trim().length > 0).slice(0, 2);
+      ]
+        .filter((item) => typeof item.value === 'string' && item.value.trim().length > 0)
+        .slice(0, 3);
 
       return {
         id: user.id,

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, createContext, useContext } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import dynamic from 'next/dynamic';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { User, FileText, Users, Bookmark, Settings, LogOut } from 'lucide-react';
@@ -42,7 +43,9 @@ function ModalLoadingFallback({ maxWidth }: { maxWidth: string }) {
     }
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={handleBackdropClick}
@@ -68,7 +71,7 @@ function ModalLoadingFallback({ maxWidth }: { maxWidth: string }) {
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }
 
 const ProfileModal = dynamic(() => import('@/components/molecules/modals/ProfileModal'), {
