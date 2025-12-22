@@ -1,15 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Flame, Medal, Sparkles, Trophy } from 'lucide-react';
 import Avatar from '@/components/atoms/Avatar';
 import Tooltip from '@/components/atoms/Tooltip';
-import TrustBadge from '@/components/atoms/TrustBadge';
 import { useUserLeaderboard } from '@/repo/users/query';
 import { UserLeaderboardEntry } from '@/repo/users/types';
-import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 
 interface LeaderboardClientProps {
   translations: Record<string, unknown>;
@@ -47,6 +45,7 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
   const searchParams = useSearchParams();
   const pageParam = parseInt(searchParams?.get('page') || '', 10);
   const limitParam = parseInt(searchParams?.get('limit') || '', 10);
+  const topCarouselRef = useRef<HTMLDivElement | null>(null);
 
   const currentPage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : initialPage;
   const currentLimit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(20, limitParam) : initialLimit;
@@ -141,6 +140,99 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
     .replace('{current}', numberFormatter.format(currentPage))
     .replace('{total}', numberFormatter.format(totalPages));
 
+  const scrollTopCarousel = useCallback((direction: -1 | 1) => {
+    const el = topCarouselRef.current;
+    if (!el) return;
+    const delta = Math.max(280, Math.round(el.clientWidth * 0.85));
+    el.scrollBy({ left: direction * delta, behavior: 'smooth' });
+  }, []);
+
+  const rankGuideContent = (
+    <div className="max-w-[280px] sm:max-w-[360px]">
+      <div className="flex items-center gap-2 text-xs font-semibold text-gray-900 dark:text-white">
+        <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+        {copy.rankGuideTitle}
+      </div>
+      <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-gray-600 dark:text-gray-300">
+        {(copy.rankGuideItems || []).map((item: string) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  const renderTopRankerCard = (entry: UserLeaderboardEntry, index: number) => {
+    const config = topConfigs[index] || topConfigs[0];
+    const Icon = config.icon;
+    const displayName = entry.displayName || entry.name || copy.unknownUser;
+    const avatarSrc = entry.avatar || entry.image || '';
+    const temperatureTone = resolveTemperatureTone(entry.temperature);
+
+    return (
+      <div
+        key={entry.id}
+        className="relative overflow-hidden rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 p-5"
+      >
+        <div className={`absolute inset-0 bg-gradient-to-br ${config.accent}`} />
+        <div className="relative flex flex-col gap-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <span
+                className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/90 dark:bg-gray-900/80 ring-1 ${config.ring}`}
+              >
+                <Icon className={`h-4 w-4 ${config.iconClass}`} />
+              </span>
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  {copy.rankLabel} #{entry.rank}
+                </div>
+                <Link
+                  href={`/${lang}/profile/${entry.id}`}
+                  className="text-base font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-300 transition truncate"
+                >
+                  {displayName}
+                </Link>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href={`/${lang}/profile/${entry.id}`} className="shrink-0">
+              <Avatar name={displayName} imageUrl={avatarSrc} size="lg" hoverHighlight />
+            </Link>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${temperatureTone.chipClassName}`}>
+                  <Flame
+                    className={`h-3.5 w-3.5 ${temperatureTone.iconClassName}`}
+                    fill={temperatureTone.filled ? 'currentColor' : 'none'}
+                  />
+                  {temperatureTone.extraFlames ? (
+                    <Flame
+                      className={`h-3.5 w-3.5 ${temperatureTone.iconClassName}`}
+                      fill={temperatureTone.filled ? 'currentColor' : 'none'}
+                    />
+                  ) : null}
+                  {copy.temperatureLabel} {temperatureFormatter.format(entry.temperature)}°
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-600 dark:text-gray-300">
+                <span>
+                  {copy.helpfulLabel} {numberFormatter.format(entry.helpfulAnswers)}
+                </span>
+                <span>
+                  {copy.adoptionRateLabel} {percentFormatter.format(entry.adoptionRate)}%
+                </span>
+                <span>
+                  {copy.weeklyAnswersLabel} {numberFormatter.format(entry.weeklyAnswers)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-6 px-4 py-6">
       <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-5 sm:p-6">
@@ -160,19 +252,32 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
           >
             {copy.guideLabel}
           </Link>
+          {(copy.rankGuideItems || []).length > 0 ? (
+            <Tooltip content={rankGuideContent} position="below" touchBehavior="longPress" interactive>
+              <button
+                type="button"
+                aria-label={copy.rankGuideTitle}
+                className="lg:hidden inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+              </button>
+            </Tooltip>
+          ) : null}
         </div>
 
-        <div className="mt-4 rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-gray-50 dark:bg-gray-900/40 p-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
-            <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-300" />
-            {copy.rankGuideTitle}
+        {(copy.rankGuideItems || []).length > 0 ? (
+          <div className="mt-4 hidden lg:block rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-gray-50 dark:bg-gray-900/40 p-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
+              <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+              {copy.rankGuideTitle}
+            </div>
+            <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-gray-600 dark:text-gray-300">
+              {(copy.rankGuideItems || []).map((item: string) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
-          <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-gray-600 dark:text-gray-300">
-            {(copy.rankGuideItems || []).map((item: string) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
+        ) : null}
 
         <div className="mt-3 lg:hidden rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 p-4">
           <div className="text-xs font-semibold text-gray-900 dark:text-white">
@@ -185,93 +290,44 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
       </section>
 
       {showTopSection ? (
-        <section className="grid gap-4 md:grid-cols-3">
-          {topRankers.map((entry: UserLeaderboardEntry, index: number) => {
-            const config = topConfigs[index] || topConfigs[0];
-            const Icon = config.icon;
-            const displayName = entry.displayName || entry.name || copy.unknownUser;
-            const avatarSrc = entry.avatar || entry.image || '';
-            const temperatureTone = resolveTemperatureTone(entry.temperature);
-            const badge = getTrustBadgePresentation({
-              locale: lang,
-              author: {
-                isVerified: entry.isVerified,
-                isExpert: entry.isExpert,
-                badgeType: entry.badgeType,
-              },
-              translations: tTrust,
-            });
-
-            return (
-              <div
-                key={entry.id}
-                className="relative overflow-hidden rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 p-5"
+        <>
+          <section className="md:hidden">
+            <div className="flex items-center justify-end gap-1 mb-2">
+              <button
+                type="button"
+                onClick={() => scrollTopCarousel(-1)}
+                className="inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                aria-label={copy.previous}
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${config.accent}`} />
-                <div className="relative flex flex-col gap-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/90 dark:bg-gray-900/80 ring-1 ${config.ring}`}>
-                        <Icon className={`h-4 w-4 ${config.iconClass}`} />
-                      </span>
-                      <div>
-                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                          {copy.rankLabel} #{entry.rank}
-                        </div>
-                        <Link
-                          href={`/${lang}/profile/${entry.id}`}
-                          className="text-base font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-300 transition"
-                        >
-                          {displayName}
-                        </Link>
-                      </div>
-                    </div>
-                    {badge.show ? (
-                      <Tooltip content={badge.tooltip} position="top" touchBehavior="longPress" interactive>
-                        <span>
-                          <TrustBadge level={badge.level} label={badge.label} />
-                        </span>
-                      </Tooltip>
-                    ) : null}
-	                  </div>
-	                  <div className="flex items-center gap-3">
-	                    <Link href={`/${lang}/profile/${entry.id}`} className="shrink-0">
-	                      <Avatar name={displayName} imageUrl={avatarSrc} size="lg" hoverHighlight />
-	                    </Link>
-	                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${temperatureTone.chipClassName}`}>
-                          <Flame
-                            className={`h-3.5 w-3.5 ${temperatureTone.iconClassName}`}
-                            fill={temperatureTone.filled ? 'currentColor' : 'none'}
-                          />
-                          {temperatureTone.extraFlames ? (
-                            <Flame
-                              className={`h-3.5 w-3.5 ${temperatureTone.iconClassName}`}
-                              fill={temperatureTone.filled ? 'currentColor' : 'none'}
-                            />
-                          ) : null}
-                          {copy.temperatureLabel} {temperatureFormatter.format(entry.temperature)}°
-                        </span>
-                      </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-600 dark:text-gray-300">
-                        <span>
-                          {copy.helpfulLabel} {numberFormatter.format(entry.helpfulAnswers)}
-                        </span>
-                        <span>
-                          {copy.adoptionRateLabel} {percentFormatter.format(entry.adoptionRate)}%
-                        </span>
-                        <span>
-                          {copy.weeklyAnswersLabel} {numberFormatter.format(entry.weeklyAnswers)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollTopCarousel(1)}
+                className="inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                aria-label={copy.next}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            <div
+              ref={topCarouselRef}
+              className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4 scroll-px-4"
+            >
+              {topRankers.map((entry, index) => (
+                <div
+                  key={entry.id}
+                  className="min-w-[280px] max-w-[340px] snap-start"
+                >
+                  {renderTopRankerCard(entry, index)}
                 </div>
-              </div>
-            );
-          })}
-        </section>
+              ))}
+            </div>
+          </section>
+          <section className="hidden md:grid gap-4 md:grid-cols-3">
+            {topRankers.map((entry, index) => renderTopRankerCard(entry, index))}
+          </section>
+        </>
       ) : null}
 
       <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 overflow-hidden">
@@ -289,15 +345,6 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
               const displayName = entry.displayName || entry.name || copy.unknownUser;
               const avatarSrc = entry.avatar || entry.image || '';
               const temperatureTone = resolveTemperatureTone(entry.temperature);
-              const badge = getTrustBadgePresentation({
-                locale: lang,
-                author: {
-                  isVerified: entry.isVerified,
-                  isExpert: entry.isExpert,
-                  badgeType: entry.badgeType,
-                },
-                translations: tTrust,
-              });
 
               return (
                 <div key={entry.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -310,19 +357,12 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
 	                    </Link>
 	                    <div className="min-w-0">
 	                      <div className="flex flex-wrap items-center gap-2">
-	                        <Link
+                        <Link
 	                          href={`/${lang}/profile/${entry.id}`}
                           className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-300 transition truncate"
                         >
                           {displayName}
                         </Link>
-                        {badge.show ? (
-                          <Tooltip content={badge.tooltip} position="top" touchBehavior="longPress" interactive>
-                            <span>
-                              <TrustBadge level={badge.level} label={badge.label} />
-                            </span>
-                          </Tooltip>
-                        ) : null}
                       </div>
                       <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${temperatureTone.chipClassName}`}>
