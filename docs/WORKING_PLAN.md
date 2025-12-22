@@ -2634,3 +2634,21 @@ $gh-address-comments
   - [x] `npm run test:e2e`
 - PR/머지
   - [x] PR #48 (@codex) → `main` 머지
+
+#### (2025-12-22) [FE] 홈/상세 레이아웃 일관성 + 사이드바 네비게이션 fallback (P0-3/P0-9)
+
+- 목표: “헤더/사이드바/폭”을 전 페이지에서 일관되게 유지하고, 모바일에서 회귀(클립/오작동)를 줄임
+- 변경 내용
+  - `src/components/organisms/CategorySidebar.tsx`: `onCategoryChange` 미전달 페이지에서도 메뉴 클릭 시 `/${lang}?c=...`로 fallback 네비게이션(리더보드 등에서 메뉴 동작 보장)
+  - `src/components/organisms/CategorySidebar.tsx`: 홈 전용 NoticeBanner를 좌측 레일에서 제거(메뉴 시작점 정렬)
+  - `src/app/[lang]/(main)/HomeClient.tsx`: NoticeBanner를 우측 레일(Desktop only)로 이동(메뉴 정렬 유지 + 본문 피드 방해 최소화)
+  - `src/components/templates/MainLayout.tsx`: 레일 존재 시 메인 폭을 `lg:max-w-[920px]`로 고정(데스크톱 과확장 억제)
+  - `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`: 상세 페이지를 MainLayout 기반으로 통합(메인 페이지와 동일한 헤더/사이드바 구조)
+  - `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`: 본인 답변에는 “채택하기” 버튼 노출하지 않음(서버 403 이전에 UX 차단)
+  - `src/components/molecules/editor/RichTextEditor.tsx`: 링크 추가 시 선택 텍스트가 없으면 URL을 삽입 후 링크 적용(“추가했는데 안 보임” 이슈 완화)
+  - `src/components/molecules/cards/PostCard.tsx`: 숨김(×)을 작성자 라인 우측으로 이동해 미디어 유무와 무관하게 동일 위치
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
