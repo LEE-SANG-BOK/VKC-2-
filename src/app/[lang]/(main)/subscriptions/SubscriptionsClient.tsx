@@ -227,16 +227,16 @@ export default function SubscriptionsClient({ translations, lang }: Subscription
                             return (
                               <div
                                 key={child.id}
-                                className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 px-3 py-2"
+                                className="flex min-w-0 flex-col gap-2 rounded-lg border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                               >
-                                <span className="min-w-0 flex-1 text-sm text-gray-800 dark:text-gray-100 truncate">
+                                <span className="min-w-0 flex-1 text-sm text-gray-800 dark:text-gray-100 break-words sm:truncate">
                                   {childName}
                                 </span>
                                 <button
                                   type="button"
                                   onClick={() => handleToggleSubscription(child.id)}
                                   disabled={pendingToggleId === child.id}
-                                  className={`shrink-0 whitespace-nowrap text-xs font-semibold px-2.5 py-1 rounded-full border transition ${
+                                  className={`shrink-0 self-end whitespace-nowrap text-xs font-semibold px-2.5 py-1 rounded-full border transition sm:self-auto ${
                                     childSubscribed
                                       ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-200'
                                       : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:text-gray-300'
