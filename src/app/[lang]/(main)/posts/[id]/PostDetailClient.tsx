@@ -2855,7 +2855,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                         </div>
                                       ) : (
                                         <div
-                                          className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mb-2 leading-relaxed"
+                                          className="ugc-content prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mb-2 leading-relaxed"
                                           dangerouslySetInnerHTML={createSafeUgcMarkup(reply.content, { targetBlank: true })}
                                         />
                                       )}
@@ -3039,7 +3039,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                             </div>
                           ) : (
                             <div
-                              className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mb-3 leading-relaxed"
+                              className="ugc-content prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mb-3 leading-relaxed"
                               dangerouslySetInnerHTML={createSafeUgcMarkup(comment.content, { targetBlank: true })}
                             />
                           )}
@@ -3243,7 +3243,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
                                       </div>
                                     ) : (
                                       <div
-                                    className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mb-2 leading-relaxed"
+                                    className="ugc-content prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mb-2 leading-relaxed"
                                     dangerouslySetInnerHTML={createSafeUgcMarkup(reply.content, { targetBlank: true })}
                                   />
                                     )}
