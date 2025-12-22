@@ -72,7 +72,7 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https' as const,
         hostname: 'ui-avatars.com',
-        pathname: '/api/**',
+        pathname: '/**',
       },
     ],
     formats: ['image/avif', 'image/webp'],

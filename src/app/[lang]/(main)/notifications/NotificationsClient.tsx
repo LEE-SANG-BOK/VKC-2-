@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
-import Image from 'next/image';
 import { Bell, CheckCircle, MessageCircle, MessageSquare, Award, Settings, UserPlus, CheckCheck, Trash2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
+import Avatar from '@/components/atoms/Avatar';
 import Header from '@/components/organisms/Header';
 import Button from '@/components/atoms/Button';
 import { useNotifications } from '@/repo/notifications/query';
@@ -256,21 +255,12 @@ export default function NotificationsClient({ locale, translations }: Notificati
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-4 mb-2">
-                          <div className="flex items-center gap-2">
-                            <Image
-                              src={notification.author.avatar}
-                              alt={notification.author.name}
-                              width={24}
-                              height={24}
-                              sizes="24px"
-                              className="w-6 h-6 rounded-full"
-                              placeholder="blur"
-                              blurDataURL={DEFAULT_BLUR_DATA_URL}
-                            />
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                              {notification.author.name}
-                            </span>
-                          </div>
+	                          <div className="flex items-center gap-2">
+	                            <Avatar name={notification.author.name} imageUrl={notification.author.avatar} size="md" />
+	                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+	                              {notification.author.name}
+	                            </span>
+	                          </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                               {notification.createdAt}
