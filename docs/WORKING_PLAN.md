@@ -2106,6 +2106,45 @@ $gh-address-comments
 - 커밋
   - `[LEAD] allow ui-avatars images and stabilize e2e on 3000` (cdd9149)
 
+#### (2025-12-22) [FE] 가로 스크롤 우측 클립 방지(Profile/추천 사용자)
+
+- 플랜(체크리스트)
+  - [x] 가로 스크롤 컨테이너에 `pr-3 scroll-px-3` 적용(우측 잘림 방지)
+- 변경 내용(why/what)
+  - why: 모바일에서 스탯/탭/캐러셀 마지막 아이템이 우측에서 잘려 보임
+  - what: Profile 스탯/탭, 추천 사용자 캐러셀에 우측 패딩 + scroll padding 추가
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+- 커밋
+  - `[FE] prevent horizontal scroll clipping` (b6d60a8)
+
+#### (2025-12-22) [FE] 모바일 키보드 대응: 하단 시트/모달 dvh + safe-area
+
+- 플랜(체크리스트)
+  - [x] 입력이 있는 시트/모달의 max-height를 `dvh`로 전환(키보드/웹뷰 대응)
+  - [x] 하단 버튼 영역에 safe-area inset-bottom을 반영(홈 인디케이터 간섭 방지)
+- 변경 내용(why/what)
+  - why: iOS/Android에서 키보드가 올라오면 `vh` 기준 모달이 과대 계산되어 입력/버튼이 가려질 수 있음
+  - what: 신고 모달(게시글 카드/상세) 스크롤 영역을 `max-h-[60dvh]`로, 하단 액션은 `pb-[calc(1rem+env(safe-area-inset-bottom))]`로 보정. 팔로잉/내 글 모달도 `80dvh`로 통일
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx
+  - src/components/molecules/modals/MyPostsModal.tsx
+  - src/components/molecules/modals/FollowingModal.tsx
+- 커밋
+  - `[FE] harden modals for mobile keyboard` (9944b32)
+
 ---
 
 ## Testing and validation (게이트)
