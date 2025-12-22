@@ -80,7 +80,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
           <main
             className={`min-w-0 w-full ${
               centerVariant === 'canvas' ? 'bg-transparent' : 'bg-white dark:bg-gray-900'
-            } ${hasLeftRail && hasRightRail ? 'lg:max-w-[920px] lg:justify-self-center' : ''}`}
+            } ${hasLeftRail || hasRightRail ? 'lg:max-w-[920px] lg:justify-self-center' : ''}`}
           >
             {hasRightRail ? (
               <div className="lg:hidden mb-4">

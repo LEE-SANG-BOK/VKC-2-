@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import MainLayout from '@/components/templates/MainLayout';
 import AdminPostRail from '@/components/organisms/AdminPostRail';
+import NoticeBanner from '@/components/organisms/NoticeBanner';
 import PostList from '@/components/organisms/PostList';
 import type { Locale } from '@/i18n/config';
 import { useMyProfile } from '@/repo/users/query';
@@ -75,7 +76,14 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
     <MainLayout
       selectedCategory={resolvedCategory}
       onCategoryChange={handleCategoryChange}
-      rightRail={<AdminPostRail translations={dict} lang={lang} />}
+      rightRail={(
+        <div className="space-y-4">
+          <div className="hidden lg:block">
+            <NoticeBanner translations={dict} lang={lang} limit={1} />
+          </div>
+          <AdminPostRail translations={dict} lang={lang} />
+        </div>
+      )}
       centerVariant="canvas"
       translations={dict}
     >
