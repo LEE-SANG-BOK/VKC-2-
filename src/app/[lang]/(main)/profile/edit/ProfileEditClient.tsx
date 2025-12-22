@@ -361,8 +361,28 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
   }
 
   const profileImage = (profile as { image?: string | null } | null)?.image;
-  const avatarPreview = avatarPreviewOverride || profile?.avatar || profileImage || user?.image || '/avatar-default.jpg';
-  const avatarUnoptimized = avatarPreview.startsWith('blob:') || avatarPreview.startsWith('data:');
+  const rawAvatarPreview = avatarPreviewOverride || profile?.avatar || profileImage || user?.image || '/avatar-default.jpg';
+  const isUiAvatars = (() => {
+    if (typeof rawAvatarPreview !== 'string') return false;
+    if (!rawAvatarPreview.startsWith('http')) return false;
+    try {
+      return new URL(rawAvatarPreview).hostname === 'ui-avatars.com';
+    } catch {
+      return false;
+    }
+  })();
+  const avatarPreview = (() => {
+    if (!isUiAvatars || typeof rawAvatarPreview !== 'string') return rawAvatarPreview;
+    try {
+      const parsed = new URL(rawAvatarPreview);
+      if (!parsed.searchParams.has('format')) parsed.searchParams.set('format', 'png');
+      if (!parsed.searchParams.has('size')) parsed.searchParams.set('size', '256');
+      return parsed.toString();
+    } catch {
+      return rawAvatarPreview;
+    }
+  })();
+  const avatarUnoptimized = avatarPreview.startsWith('blob:') || avatarPreview.startsWith('data:') || isUiAvatars;
 
   const handleAvatarPick = () => {
     if (!user?.id || isAvatarUploading) return;
@@ -477,17 +497,26 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="flex flex-col items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="relative group">
-                  <Image
-                    src={avatarPreview}
-                    alt={formData.name || copy.profileAlt}
-                    width={128}
-                    height={128}
-                    unoptimized={avatarUnoptimized}
-                    sizes="128px"
-                    className="w-32 h-32 rounded-full border-4 border-gray-100 dark:border-gray-700 object-cover"
-                    placeholder="blur"
-                    blurDataURL={DEFAULT_BLUR_DATA_URL}
-                  />
+                  {avatarUnoptimized ? (
+                    <img
+                      src={avatarPreview}
+                      alt={formData.name || copy.profileAlt}
+                      width={128}
+                      height={128}
+                      className="w-32 h-32 rounded-full border-4 border-gray-100 dark:border-gray-700 object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src={avatarPreview}
+                      alt={formData.name || copy.profileAlt}
+                      width={128}
+                      height={128}
+                      sizes="128px"
+                      className="w-32 h-32 rounded-full border-4 border-gray-100 dark:border-gray-700 object-cover"
+                      placeholder="blur"
+                      blurDataURL={DEFAULT_BLUR_DATA_URL}
+                    />
+                  )}
                   <input
                     ref={avatarInputRef}
                     type="file"

@@ -11,6 +11,14 @@ const feedbackRateLimitMax = 3;
 const feedbackTitleMax = 200;
 const feedbackDescriptionMin = 1;
 const feedbackDescriptionMax = 2000;
+const feedbackColumnsCacheTtlMs = 5 * 60 * 1000;
+
+let cachedFeedbackColumns:
+  | {
+      fetchedAt: number;
+      columns: Set<string>;
+    }
+  | undefined;
 
 const missingFeedbackColumnName = (error: unknown) => {
   const visited = new Set<unknown>();
@@ -36,6 +44,26 @@ const resolveClientIp = (request: NextRequest) => {
     return forwarded.split(',')[0]?.trim() || 'unknown';
   }
   return request.headers.get('x-real-ip') || 'unknown';
+};
+
+const getFeedbackColumns = async () => {
+  if (cachedFeedbackColumns && Date.now() - cachedFeedbackColumns.fetchedAt < feedbackColumnsCacheTtlMs) {
+    return cachedFeedbackColumns.columns;
+  }
+
+  const result = await db.execute(sql`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'feedbacks'
+  `);
+
+  const columns = new Set(
+    Array.from(result).map((row) => String((row as { column_name?: unknown }).column_name || '').trim()).filter(Boolean)
+  );
+
+  cachedFeedbackColumns = { fetchedAt: Date.now(), columns };
+  return columns;
 };
 
 export async function POST(request: NextRequest) {
@@ -124,48 +152,69 @@ export async function POST(request: NextRequest) {
     };
 
     const autoTitle = title || description.slice(0, 80);
-    const basePayload: Record<string, unknown> = {
+    const descriptionWithoutTitle = title && title !== description ? `${title}\n\n${description}` : description;
+
+    const basePayload = {
       userId: user?.id || null,
       type,
       title: autoTitle,
       description,
+      descriptionWithoutTitle,
       pageUrl: pageUrl || null,
       contactEmail: contactEmail || null,
       ipAddress,
       userAgent,
     };
 
-    const [createdFeedback] = await (async () => {
-      const payload: Record<string, any> = { ...basePayload };
+    let receivedAt = new Date().toISOString();
+    const executeInsert = async (columns: Set<string>) => {
+      const usesTitle = columns.has('title');
 
-      for (let attempt = 0; attempt < 6; attempt += 1) {
-        try {
-          return await db
-            .insert(feedbacks)
-            .values(payload as any)
-            .returning({ createdAt: feedbacks.createdAt });
-        } catch (error) {
-          const columnName = missingFeedbackColumnName(error);
-          if (!columnName) throw error;
+      const insertValues: Record<string, unknown> = {};
+      if (columns.has('user_id')) insertValues.user_id = basePayload.userId;
+      if (columns.has('type')) insertValues.type = basePayload.type;
+      if (usesTitle) insertValues.title = basePayload.title;
+      if (columns.has('description')) {
+        insertValues.description = usesTitle ? basePayload.description : basePayload.descriptionWithoutTitle;
+      }
+      if (columns.has('page_url')) insertValues.page_url = basePayload.pageUrl;
+      if (columns.has('contact_email')) insertValues.contact_email = basePayload.contactEmail;
+      if (columns.has('ip_address')) insertValues.ip_address = basePayload.ipAddress;
+      if (columns.has('user_agent')) insertValues.user_agent = basePayload.userAgent;
 
-          const key = columnKeyByName[columnName];
-          if (!key || !(key in payload)) throw error;
-
-          if (columnName === 'title' && typeof payload.description === 'string' && typeof payload.title === 'string') {
-            payload.description = payload.title ? `${payload.title}\n\n${payload.description}` : payload.description;
-          }
-
-          delete payload[key];
-        }
+      const insertColumns = Object.keys(insertValues);
+      if (insertColumns.length === 0) {
+        throw new Error('Feedback insert payload is empty');
       }
 
-      throw new Error('Feedback insert failed');
-    })();
+      const result = await db.execute(sql`
+        INSERT INTO feedbacks (
+          ${sql.join(insertColumns.map((column) => sql.identifier(column)), sql`, `)}
+        ) VALUES (
+          ${sql.join(insertColumns.map((column) => sql`${insertValues[column]}`), sql`, `)}
+        )
+        RETURNING created_at
+      `);
 
-    const receivedAt =
-      createdFeedback?.createdAt instanceof Date
-        ? createdFeedback.createdAt.toISOString()
-        : new Date().toISOString();
+      const rows = Array.from(result) as Array<{ created_at?: unknown }>;
+      const createdAt = rows[0]?.created_at;
+      if (createdAt instanceof Date) {
+        receivedAt = createdAt.toISOString();
+      } else if (typeof createdAt === 'string') {
+        receivedAt = new Date(createdAt).toISOString();
+      }
+    };
+
+    let columns = await getFeedbackColumns();
+    try {
+      await executeInsert(columns);
+    } catch (error) {
+      const columnName = missingFeedbackColumnName(error);
+      if (!columnName || !columnKeyByName[columnName]) throw error;
+      cachedFeedbackColumns = undefined;
+      columns = await getFeedbackColumns();
+      await executeInsert(columns);
+    }
 
     return successResponse({ receivedAt }, '피드백이 접수되었습니다.');
   } catch (error) {

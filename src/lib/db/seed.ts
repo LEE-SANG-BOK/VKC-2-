@@ -54,7 +54,7 @@ async function seed() {
     isVerified: true,
     onboardingCompleted: true,
     isProfileComplete: true,
-    image: 'https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff', // Simple placeholder
+    image: 'https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff&format=png', // Simple placeholder
   }).onConflictDoUpdate({
     target: users.email,
     set: {

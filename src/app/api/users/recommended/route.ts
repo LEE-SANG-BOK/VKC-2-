@@ -8,7 +8,7 @@ import { setPrivateNoStore, errorResponse } from '@/lib/api/response';
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return errorResponse('인증이 필요합니다.', 'UNAUTHORIZED', 401);
     }
@@ -33,9 +33,6 @@ export async function GET(req: NextRequest) {
     const viewerUserType = viewer?.userType || null;
     const viewerVisaType = viewer?.visaType || null;
     const viewerKoreanLevel = viewer?.koreanLevel || null;
-    const viewerUserTypeText = viewerUserType ? sql`${viewerUserType}::text` : null;
-    const viewerVisaTypeText = viewerVisaType ? sql`${viewerVisaType}::text` : null;
-    const viewerKoreanLevelText = viewerKoreanLevel ? sql`${viewerKoreanLevel}::text` : null;
     const viewerInterests = (viewer?.interests || []).filter((value) => typeof value === 'string' && value.trim().length > 0);
     const viewerInterestsArray = viewerInterests.length > 0
       ? sql`ARRAY[${sql.join(viewerInterests.map((value) => sql`${value}`), sql`, `)}]::text[]`
@@ -65,9 +62,9 @@ export async function GET(req: NextRequest) {
     const total = Number(totalResult[0]?.count || 0);
 
     const matchScoreParts = [
-      viewerUserTypeText ? sql`(CASE WHEN ${users.userType}::text = ${viewerUserTypeText} THEN 4 ELSE 0 END)` : sql`0`,
-      viewerVisaTypeText ? sql`(CASE WHEN ${users.visaType}::text = ${viewerVisaTypeText} THEN 3 ELSE 0 END)` : sql`0`,
-      viewerKoreanLevelText ? sql`(CASE WHEN ${users.koreanLevel}::text = ${viewerKoreanLevelText} THEN 1 ELSE 0 END)` : sql`0`,
+      viewerUserType ? sql`(CASE WHEN ${users.userType} = ${viewerUserType} THEN 4 ELSE 0 END)` : sql`0`,
+      viewerVisaType ? sql`(CASE WHEN ${users.visaType} = ${viewerVisaType} THEN 3 ELSE 0 END)` : sql`0`,
+      viewerKoreanLevel ? sql`(CASE WHEN ${users.koreanLevel} = ${viewerKoreanLevel} THEN 1 ELSE 0 END)` : sql`0`,
       viewerInterests.length > 0
         ? sql`(CASE WHEN COALESCE(${users.interests} && ${viewerInterestsArray}, false) THEN 3 ELSE 0 END)`
         : sql`0`,
@@ -77,26 +74,26 @@ export async function GET(req: NextRequest) {
     ];
     const matchScore = sql<number>`${sql.join(matchScoreParts, sql` + `)}`;
 
-	    const recommendedUsers = await db
-	      .select({
-	        id: users.id,
-	        name: users.name,
-	        displayName: users.displayName,
-	        image: users.image,
-	        bio: users.bio,
-	        isVerified: users.isVerified,
-	        isExpert: users.isExpert,
-	        badgeType: users.badgeType,
-	        badgeExpiresAt: users.badgeExpiresAt,
-	        status: users.status,
-	        nationality: users.nationality,
-	        userType: users.userType,
-	        interests: users.interests,
-	        visaType: users.visaType,
-	        koreanLevel: users.koreanLevel,
-	        followersCount: sql<number>`(
-	          SELECT COUNT(*)::int 
-          FROM ${follows} 
+    const recommendedUsers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        displayName: users.displayName,
+        image: users.image,
+        bio: users.bio,
+        isVerified: users.isVerified,
+        isExpert: users.isExpert,
+        badgeType: users.badgeType,
+        badgeExpiresAt: users.badgeExpiresAt,
+        status: users.status,
+        nationality: users.nationality,
+        userType: users.userType,
+        interests: users.interests,
+        visaType: users.visaType,
+        koreanLevel: users.koreanLevel,
+        followersCount: sql<number>`(
+          SELECT COUNT(*)::int
+          FROM ${follows}
           WHERE ${follows.followingId} = ${users.id}
         )`,
         followingCount: sql<number>`(
@@ -150,20 +147,20 @@ export async function GET(req: NextRequest) {
       return interestList[0] || '';
     };
 
-	    const formattedUsers = recommendedUsers.map((user) => {
-	      const resolvedInterests = (user.interests || [])
-	        .map((value) => (typeof value === 'string' ? resolveInterest(value) : ''))
-	        .filter((value) => value.length > 0);
+    const formattedUsers = recommendedUsers.map((user) => {
+      const resolvedInterests = (user.interests || [])
+        .map((value) => (typeof value === 'string' ? resolveInterest(value) : ''))
+        .filter((value) => value.length > 0);
 
-	      const recommendationMeta = [
-	        { key: 'nationality', value: user.nationality || '' },
-	        { key: 'userType', value: user.userType || '' },
-	        { key: 'visaType', value: user.visaType || '' },
-	        { key: 'interest', value: pickInterest(resolvedInterests) },
-	        { key: 'koreanLevel', value: user.koreanLevel || '' },
-	      ]
-	        .filter((item) => typeof item.value === 'string' && item.value.trim().length > 0)
-	        .slice(0, 3);
+      const recommendationMeta = [
+        { key: 'nationality', value: user.nationality || '' },
+        { key: 'userType', value: user.userType || '' },
+        { key: 'visaType', value: user.visaType || '' },
+        { key: 'interest', value: pickInterest(resolvedInterests) },
+        { key: 'koreanLevel', value: user.koreanLevel || '' },
+      ]
+        .filter((item) => typeof item.value === 'string' && item.value.trim().length > 0)
+        .slice(0, 3);
 
       return {
         id: user.id,
