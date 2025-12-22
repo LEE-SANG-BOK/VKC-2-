@@ -1079,6 +1079,8 @@
     "REPORT_SELF_FORBIDDEN": "본인의 콘텐츠는 신고할 수 없습니다.",
     "REPORT_DUPLICATE": "이미 신고한 항목입니다.",
     "REPORT_RATE_LIMITED": "신고 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
+    "REPORT_FAILED": "신고에 실패했습니다.",
+    "FEEDBACK_FAILED": "피드백 제출에 실패했습니다.",
     "FEEDBACK_RATE_LIMITED": "피드백 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
     "VERIFICATION_RATE_LIMITED": "인증 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
     "PROBE_RATE_LIMITED": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."
