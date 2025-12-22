@@ -507,7 +507,17 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
           }`}
       >
 		        <div className="question-card-main">
-		          <div className="question-card-body">
+		          <div className="question-card-body relative">
+                <Tooltip content={hideLabel} position="left" touchBehavior="longPress">
+                  <button
+                    type="button"
+                    onClick={handleToggleHide}
+                    aria-label={hideLabel}
+                    className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  >
+                    <span aria-hidden className="text-sm leading-none">×</span>
+                  </button>
+                </Tooltip>
 		          <div className="flex items-start gap-2 mb-3 min-w-0">
 		            <div className="flex items-start gap-2 min-w-0 flex-1">
               <button
@@ -561,16 +571,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 	                </div>
 		              </div>
 		            </div>
-                <Tooltip content={hideLabel} position="left" touchBehavior="longPress">
-                  <button
-                    type="button"
-                    onClick={handleToggleHide}
-                    aria-label={hideLabel}
-                    className="mt-1 flex h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                  >
-                    <span aria-hidden className="text-sm leading-none">×</span>
-                  </button>
-                </Tooltip>
 			          </div>
 		
 		          <div className="min-w-0">

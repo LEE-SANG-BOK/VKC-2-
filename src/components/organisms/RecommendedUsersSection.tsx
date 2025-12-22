@@ -83,9 +83,9 @@ export default function RecommendedUsersSection({
   const cardNameClass = compact ? 'text-[13px]' : 'text-sm';
   const cardMetaClass = compact ? 'text-[10px]' : 'text-[11px]';
   const badgeLabelClass = compact ? 'text-[10px] text-gray-500 dark:text-gray-400' : 'text-[11px] text-gray-500 dark:text-gray-400';
-  const avatarSize = compact ? 'xl' : 'lg';
+  const avatarSize = compact ? '2xl' : 'lg';
   const followButtonSize = compact ? 'xs' : 'sm';
-  const followButtonClassName = compact ? 'min-h-[30px] px-3 py-1' : '';
+  const followButtonClassName = compact ? 'min-h-[26px] px-2.5 py-0.5' : '';
 
   const mergedMetaLabels = useMemo<Record<string, string>>(() => ({
     followers: followerLabel,
@@ -151,8 +151,8 @@ export default function RecommendedUsersSection({
         >
           <div className={`flex items-center ${cardGapClass} w-full animate-pulse`}>
             <div className="flex flex-col items-center gap-2">
-              <div className={`${compact ? 'h-10 w-10' : 'h-12 w-12'} rounded-full bg-gray-200 dark:bg-gray-800`} />
-              <div className={`${compact ? 'h-6 w-16' : 'h-8 w-20'} rounded-md bg-gray-200 dark:bg-gray-800`} />
+              <div className={`${compact ? 'h-14 w-14' : 'h-12 w-12'} rounded-full bg-gray-200 dark:bg-gray-800`} />
+              <div className={`${compact ? 'h-6 w-14' : 'h-8 w-20'} rounded-md bg-gray-200 dark:bg-gray-800`} />
             </div>
             <div className="flex-1 min-w-0">
               <div className={`${compact ? 'h-3 w-28' : 'h-4 w-36'} rounded bg-gray-200 dark:bg-gray-800`} />
@@ -302,7 +302,7 @@ export default function RecommendedUsersSection({
         onScroll={markInteracted}
         className={`grid grid-flow-col ${
           compact
-            ? 'auto-cols-[minmax(300px,1fr)] sm:auto-cols-[minmax(340px,1fr)]'
+            ? 'auto-cols-[minmax(340px,1fr)] sm:auto-cols-[minmax(380px,1fr)]'
             : 'auto-cols-[minmax(260px,1fr)] sm:auto-cols-[minmax(320px,1fr)]'
         } lg:auto-cols-[minmax(280px,1fr)] ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 pr-3 scroll-px-3`}
       >

@@ -305,7 +305,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     <div className="pt-0 pb-4">
       {selectedCategory === 'subscribed' && topicSubscriptions.length > 0 ? (
         <div className="mb-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5 pl-3 pr-10 scroll-px-10">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5 px-3 pr-6 scroll-px-3">
             <button
               type="button"
               onClick={() => handleSubscribedCategoryChange('all')}
