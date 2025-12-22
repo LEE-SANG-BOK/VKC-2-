@@ -279,13 +279,23 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
           </div>
         ) : null}
 
-        <div className="mt-3 lg:hidden rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 p-4">
-          <div className="text-xs font-semibold text-gray-900 dark:text-white">
-            {copy.eventTitle}
+        <div className="mt-3 lg:hidden flex items-center justify-between gap-3 rounded-xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 px-4 py-3">
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+              {copy.eventTitle}
+            </div>
           </div>
-          <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-            {copy.eventDescription}
-          </div>
+          {copy.eventDescription ? (
+            <Tooltip content={copy.eventDescription} position="below" touchBehavior="longPress">
+              <button
+                type="button"
+                aria-label={copy.eventTitle}
+                className="shrink-0 inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <span aria-hidden className="text-sm font-semibold">i</span>
+              </button>
+            </Tooltip>
+          ) : null}
         </div>
       </section>
 
