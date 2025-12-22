@@ -53,6 +53,11 @@ test('renders feedback page (ko)', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toContainText('피드백 설문');
 });
 
+test('renders leaderboard page (ko)', async ({ page }) => {
+  await page.goto('/ko/leaderboard');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
+
 test('language switcher hides en and can switch ko↔vi', async ({ page }) => {
   await page.goto('/ko/about');
   await page.waitForLoadState('networkidle');
