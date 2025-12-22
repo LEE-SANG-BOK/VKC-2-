@@ -83,14 +83,13 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedDetail = description.trim();
-    const minDetail = 10;
 
     if (showRating && !rating) {
       toast.error(copy.ratingRequired);
       return;
     }
 
-    if (trimmedDetail.length < minDetail) {
+    if (!trimmedDetail) {
       toast.error(copy.detailRequired);
       return;
     }
