@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import dayjs from 'dayjs';
-import { Sparkles } from 'lucide-react';
 import PostCard from '@/components/molecules/cards/PostCard';
 import { useInfinitePosts, useMyPostInteractions } from '@/repo/posts/query';
 import { useInfiniteRecommendedUsers } from '@/repo/users/query';
@@ -44,7 +43,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const resolvedSubscribedParam = subscribedParam && subscribedParam.trim().length > 0 ? subscribedParam : 'all';
   const [selectedSubscribedCategory, setSelectedSubscribedCategory] = useState(resolvedSubscribedParam);
   const observerRef = useRef<HTMLDivElement>(null);
-  const recommendedRef = useRef<HTMLDivElement>(null);
 
   const parentSlugs = useMemo(() => Object.keys(CATEGORY_GROUPS), []);
   const childSlugToParent = useMemo(() => {
@@ -269,7 +267,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     badge: verifiedLabel,
   };
   const recommendedUsersLabel = t.recommendedUsersTitle || t.recommendedUsers || '';
-  const recommendedCtaLabel = t.recommendedUsersCta || '';
   const allSubscriptionsLabel = t.allSubscriptions || t.allSubcategories || '';
   const noFollowingPostsLabel = t.noFollowingPosts || '';
   const noPostsLabel = t.noPosts || '';
@@ -304,17 +301,11 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     updateSubscribedParam,
   ]);
 
-  const scrollToRecommended = () => {
-    if (recommendedRef.current) {
-      recommendedRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
   return (
     <div className="pt-0 pb-4">
       {selectedCategory === 'subscribed' && topicSubscriptions.length > 0 ? (
         <div className="mb-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5 pl-3 pr-4 scroll-px-4">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5 pl-3 pr-6 scroll-px-6">
             <button
               type="button"
               onClick={() => handleSubscribedCategoryChange('all')}
@@ -370,15 +361,35 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
           </div>
         )}
 
-      {selectedCategory === 'following' && sortedRecommendations.length ? (
-        <button
-          type="button"
-          onClick={scrollToRecommended}
-          className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-500 dark:to-indigo-400 px-4 py-3.5 text-base font-semibold text-white shadow-md hover:-translate-y-0.5 hover:shadow-lg hover:from-blue-500 hover:to-indigo-500 transition-all"
-        >
-          <Sparkles className="h-4 w-4" />
-          {recommendedCtaLabel}
-        </button>
+      {selectedCategory === 'following' && (recommendedLoading || sortedRecommendations.length) ? (
+        <div className="mb-4">
+          <RecommendedUsersSection
+            title={recommendedUsersLabel}
+            locale={locale}
+            users={sortedRecommendations}
+            isLoading={recommendedLoading}
+            translations={translations}
+            hasNextPage={hasNextRecommendedPage}
+            isFetchingNextPage={isFetchingNextRecommendedPage}
+            onLoadMore={() => {
+              if (hasNextRecommendedPage && !isFetchingNextRecommendedPage) {
+                fetchNextRecommendedPage();
+              }
+            }}
+            followerLabel={followerLabel}
+            postsLabel={postsLabel}
+            followingLabel={followingLabel}
+            metaLabels={metaLabels}
+            verifiedLabel={verifiedLabel}
+            trustBadgeTranslations={tTrust}
+            badgeLabels={badgeLabels}
+            previousLabel={previousLabel}
+            nextLabel={nextLabel}
+            anonymousLabel={anonymousLabel}
+            onboardingLabels={tOnboarding}
+            compact
+          />
+        </div>
       ) : null}
 
       {/* 로딩 상태 */}
@@ -481,36 +492,6 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
             </div>
           )}
 
-          {selectedCategory === 'following' && (recommendedLoading || sortedRecommendations.length) ? (
-            <div ref={recommendedRef} className="mt-3">
-              <RecommendedUsersSection
-                title={recommendedUsersLabel}
-                locale={locale}
-                users={sortedRecommendations}
-                isLoading={recommendedLoading}
-                translations={translations}
-                hasNextPage={hasNextRecommendedPage}
-                isFetchingNextPage={isFetchingNextRecommendedPage}
-                onLoadMore={() => {
-                  if (hasNextRecommendedPage && !isFetchingNextRecommendedPage) {
-                    fetchNextRecommendedPage();
-                  }
-                }}
-                followerLabel={followerLabel}
-                postsLabel={postsLabel}
-                followingLabel={followingLabel}
-                metaLabels={metaLabels}
-                verifiedLabel={verifiedLabel}
-                trustBadgeTranslations={tTrust}
-                badgeLabels={badgeLabels}
-                previousLabel={previousLabel}
-                nextLabel={nextLabel}
-                anonymousLabel={anonymousLabel}
-                onboardingLabels={tOnboarding}
-                compact
-              />
-            </div>
-          ) : null}
         </div>
       )}
 

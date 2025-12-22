@@ -353,7 +353,7 @@
     "question": "Câu hỏi",
     "solved": "Đã giải quyết",
     "unsolved": "Chưa giải quyết",
-    "certifiedResponderCompact": "Đã xác minh +{certified} {noun}",
+    "certifiedResponderCompact": "{noun} đã xác minh +{certified}",
     "certifiedResponderSummary": "Có {noun} từ {certified} người dùng đã xác minh và {others} người khác",
     "certifiedResponderSummaryOnly": "Có {noun} từ {certified} người dùng đã xác minh",
     "previous": "Trước",

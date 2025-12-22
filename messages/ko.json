@@ -353,7 +353,7 @@
     "question": "질문",
     "solved": "해결",
     "unsolved": "미해결",
-    "certifiedResponderCompact": "인증 사용자 +{certified} {noun}",
+    "certifiedResponderCompact": "인증 {noun} +{certified}",
     "certifiedResponderSummary": "인증 사용자 {certified}명 외 {others}명의 {noun}이 있습니다",
     "certifiedResponderSummaryOnly": "인증 사용자 {certified}명의 {noun}이 있습니다",
     "previous": "이전",

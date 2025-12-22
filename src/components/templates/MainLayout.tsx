@@ -65,7 +65,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
                 />
               </aside>
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetContent side="left" className="p-0 w-[320px] max-w-[88vw]">
+                <SheetContent side="left" className="p-0 w-[min(360px,100vw)]">
                   <CategorySidebar
                     variant="mobile"
                     setIsMobileMenuOpen={setIsMobileMenuOpen}

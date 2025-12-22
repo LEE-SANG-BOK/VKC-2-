@@ -242,14 +242,14 @@ export default function CategorySidebar({
         ${isMobileVariant ? '' : 'px-0'}
 	      `}>
 
-	        {isHomeRoute ? (
-	          <div
-	            className={
-              isMobileVariant
-                ? 'mt-4 mx-3 space-y-3'
-                : 'py-4 border-b border-gray-200/40 dark:border-gray-700/40'
-	            }
-	          >
+		        {isHomeRoute && !isMobileVariant ? (
+		          <div
+		            className={
+	              isMobileVariant
+	                ? 'mt-4 mx-3 space-y-3'
+	                : 'py-4 border-b border-gray-200/40 dark:border-gray-700/40'
+		            }
+		          >
 	            <div className={isMobileVariant ? 'space-y-3' : 'px-4 space-y-3'}>
 	              <NoticeBanner translations={translations} lang={locale} limit={1} />
 	            </div>

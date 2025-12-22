@@ -414,6 +414,7 @@ export default function SearchClient({
       onCategoryChange={() => {}}
       hideSidebar={false}
       hideSearch={true}
+      centerVariant="canvas"
       translations={translations || {}}
     >
       <div className="px-3 py-6">

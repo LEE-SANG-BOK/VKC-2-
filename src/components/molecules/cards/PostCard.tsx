@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
+import { Bookmark, CircleCheck, CircleDashed, CircleHelp, MessageCircle, Share2, ShieldCheck, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import Tooltip from '@/components/atoms/Tooltip';
 import ActionIconButton from '@/components/atoms/ActionIconButton';
@@ -147,7 +147,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         .replace('{noun}', responseNoun.toLowerCase())
     : '';
   const certifiedDisplayLabel = certifiedSummaryLabel || certifiedCompactLabel;
-  const certifiedDisplayLabelMobile = certifiedCount > 0 ? `+${certifiedCount}` : '';
+  const certifiedDisplayLabelMobile = certifiedCompactLabel;
   const verifiedSummaryTooltip = tTrust.verifiedUserTooltip || tTrust.verifiedTooltip || '';
   const certifiedTooltipContent = certifiedSummaryLabel
     ? `${certifiedSummaryLabel} - ${verifiedSummaryTooltip}`
@@ -256,6 +256,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         '전문가',
         '커뮤니티',
         '오래된 정보',
+        'tip',
+        '추천',
+        '정보',
       ]
         .map((v) => v?.toString().trim())
         .filter(Boolean)
@@ -276,7 +279,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         seen.add(key);
         return true;
       })
-      .slice(0, 4);
+      .slice(0, 3);
   }, [categoryLabel, subcategoryLabel, displayTags, tTrust.communityLabel, tTrust.expertEmploymentLabel, tTrust.expertLabel, tTrust.expertVisaLabel, tTrust.outdatedLabel, tTrust.trustedAnswererLabel, tTrust.verifiedLabel, tTrust.verifiedStudentLabel, tTrust.verifiedUserLabel, tTrust.verifiedWorkerLabel]);
 
   const displayImages = useMemo(() => {
@@ -578,9 +581,37 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     <>
       <article
         onClick={handleClick}
-        className={`question-card group ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
+        className={`question-card group relative ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
           }`}
       >
+        <div ref={hideMenuRef} className="absolute top-3 right-3 z-20">
+          <button
+            type="button"
+            onClick={handleHideMenuToggle}
+            aria-label={hideLabel}
+            className="inline-flex h-11 min-w-[44px] sm:h-8 sm:min-w-[32px] items-center justify-center rounded-full px-1 text-sm font-semibold text-gray-500 transition-colors bg-white/70 hover:bg-white dark:bg-gray-900/60 dark:hover:bg-gray-900 border border-gray-200/70 dark:border-gray-700"
+          >
+            {hideEmoji}
+          </button>
+          {showHideMenu ? (
+            <div className="absolute right-0 top-full mt-1 w-24 overflow-hidden rounded-lg border border-gray-200 bg-white text-sm shadow-lg dark:border-gray-700 dark:bg-gray-900">
+              <button
+                type="button"
+                onClick={handleHideFromMenu}
+                className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                {hideLabel}
+              </button>
+              <button
+                type="button"
+                onClick={handleReportFromMenu}
+                className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                {reportLabel}
+              </button>
+            </div>
+          ) : null}
+        </div>
         <div className="question-card-main">
           <div className="question-card-body">
           {/* Author Info & Badges */}
@@ -636,34 +667,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   <span>{formatDateTime(publishedAt, locale)}</span>
                 </div>
               </div>
-            </div>
-            <div ref={hideMenuRef} className="relative shrink-0 ml-auto mt-0.5 z-10">
-              <button
-                type="button"
-                onClick={handleHideMenuToggle}
-                aria-label={hideLabel}
-                className="inline-flex h-11 min-w-[44px] sm:h-8 sm:min-w-[32px] items-center justify-center rounded-full px-1 text-sm font-semibold text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-              >
-                {hideEmoji}
-              </button>
-              {showHideMenu ? (
-                <div className="absolute right-0 top-full mt-1 w-24 overflow-hidden rounded-lg border border-gray-200 bg-white text-sm shadow-lg dark:border-gray-700 dark:bg-gray-900">
-                  <button
-                    type="button"
-                    onClick={handleHideFromMenu}
-                    className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-                  >
-                    {hideLabel}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleReportFromMenu}
-                    className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-                  >
-                    {reportLabel}
-                  </button>
-                </div>
-              ) : null}
             </div>
           </div>
 
@@ -756,9 +759,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   onClick={handleAnswerCountClick}
                   aria-label={certifiedTooltipContent || certifiedDisplayLabel}
                   title={certifiedSummaryLabel || certifiedDisplayLabel}
-                  className="group inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/70 px-2 py-1 text-[11px] font-semibold text-blue-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-100/80 hover:text-blue-800 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-blue-900/60 dark:bg-blue-900/30 dark:text-blue-200 dark:hover:border-blue-700 dark:hover:bg-blue-900/50 dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[220px] sm:max-w-none"
+                  className="group inline-flex items-center gap-1.5 rounded-full border border-emerald-200/70 bg-emerald-50/60 px-2 py-1 text-[11px] font-semibold text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-900/35 dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[200px] sm:max-w-none"
                 >
-                  <CircleCheck className="h-3 w-3 shrink-0 transition-transform duration-200 group-hover:scale-110 group-hover:animate-pulse" />
+                  <ShieldCheck className="h-3 w-3 shrink-0" />
                   <span className="truncate sm:hidden">{certifiedDisplayLabelMobile}</span>
                   <span className="truncate hidden sm:inline">{certifiedSummaryLabel || certifiedDisplayLabelMobile}</span>
                 </button>
@@ -837,45 +840,48 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   document.body
                 )
                 : null}
-            </div>
-            <Tooltip content={bookmarkLabel} position="top">
-              <button
-                type="button"
-                onClick={handleBookmarkClick}
-                aria-label={bookmarkLabel}
-                className={`inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] transition-colors ${localIsBookmarked ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-              >
-                <Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
-              </button>
-            </Tooltip>
-		            {isQuestion ? (
-		              <>
-		                <Tooltip content={questionPostLabel} position="top">
-		                  <button
-		                    type="button"
-		                    onClick={(e) => e.stopPropagation()}
-		                    aria-label={questionPostLabel}
-		                    className="inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 shrink-0"
-		                  >
-		                    <CircleHelp className="w-4 h-4" />
-		                  </button>
-		                </Tooltip>
-		                <Tooltip content={isAdopted ? solvedPostLabel : unsolvedPostLabel} position="top">
-		                  <button
-		                    type="button"
-		                    onClick={(e) => e.stopPropagation()}
-		                    aria-label={isAdopted ? solvedPostLabel : unsolvedPostLabel}
-		                    className={`hidden sm:inline-flex items-center justify-center rounded-full p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px] ${
-		                      isAdopted
-		                        ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
-		                        : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'
-		                    } shrink-0`}
-		                  >
-		                    {isAdopted ? <CircleCheck className="w-4 h-4" /> : <CircleDashed className="w-4 h-4" />}
-		                  </button>
-		                </Tooltip>
-		              </>
-		            ) : null}
+              </div>
+              <Tooltip content={bookmarkLabel} position="top">
+                <ActionIconButton
+                  icon={<Bookmark className={`w-4 h-4 ${localIsBookmarked ? 'fill-current' : ''}`} />}
+                  label={bookmarkLabel}
+                  onClick={handleBookmarkClick}
+                  aria-pressed={localIsBookmarked}
+                  aria-disabled={toggleBookmarkMutation.isPending}
+                  className={
+                    localIsBookmarked
+                      ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }
+                  variant="icon"
+                />
+              </Tooltip>
+              {isQuestion ? (
+                <>
+                  <Tooltip content={questionPostLabel} position="top">
+                    <ActionIconButton
+                      icon={<CircleHelp className="w-4 h-4" />}
+                      label={questionPostLabel}
+                      onClick={(e) => e.stopPropagation()}
+                      className="hidden sm:inline-flex text-blue-600 bg-blue-50 dark:bg-blue-900/30 shrink-0"
+                      variant="icon"
+                    />
+                  </Tooltip>
+                  <Tooltip content={isAdopted ? solvedPostLabel : unsolvedPostLabel} position="top">
+                    <ActionIconButton
+                      icon={isAdopted ? <CircleCheck className="w-4 h-4" /> : <CircleDashed className="w-4 h-4" />}
+                      label={isAdopted ? solvedPostLabel : unsolvedPostLabel}
+                      onClick={(e) => e.stopPropagation()}
+                      className={`hidden sm:inline-flex ${
+                        isAdopted
+                          ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-900/20'
+                          : 'text-gray-600 bg-gray-50 dark:text-gray-200 dark:bg-gray-800'
+                      } shrink-0`}
+                      variant="icon"
+                    />
+                  </Tooltip>
+                </>
+              ) : null}
           </div>
         </div>
         </div>

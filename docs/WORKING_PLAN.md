@@ -1795,6 +1795,10 @@ $gh-address-comments
     - 페이지 구조: H1 단일 + H2/H3 계층 + 즉답(2~3문장) + 리스트/표(체크리스트) 우선
     - UGC(질문/답변)는 `QAPage/DiscussionForumPosting`만(FAQPage 남용 금지), 운영자 큐레이션만 `FAQPage/HowTo/Article/VideoObject` 적용
     - 최신성/신뢰: `dateModified`/업데이트 문구/출처 표기(`P1-8`)의 “표시 기준”을 문서로 확정
+    - 크롤링 친화: 중요한 본문 텍스트는 SSR HTML에 포함(비동기/클라 전용 렌더에 의존 금지), `<article>` 등 의미 있는 마크업 유지
+    - 토픽 클러스터(경쟁사 벤치마크): “허브(가이드) → 하위 글(세부)” 구조로 내부 링크를 엮고, 허브 페이지에 소개 텍스트/목차/관련 글을 고정(얇은 카테고리 페이지 금지)
+    - 내부 링크 규칙: 새 글 발행 시 관련 글 2~3개 이상 본문 링크(의미 있는 앵커 텍스트), 기존 핵심 글에도 역링크 추가(쌍방향)
+    - URL(운영자 큐레이션): 가이드/뉴스/FAQ는 의미 있는 `slug` 기반 URL(키워드 포함) 우선, UGC는 `id` 유지(크롤링/공유/중복 방지 기준으로)
   - JSON-LD 보강(핵심만)
     - 채택 답변이 있을 때만 `acceptedAnswer` 포함
     - `datePublished/dateModified`를 게시글/답변/프로필에 일관되게 포함(가능 범위에서)
@@ -1803,6 +1807,7 @@ $gh-address-comments
     - `GPTBot`(학습) vs `OAI-SearchBot`(검색) 허용/차단 기준을 1회 결정하고 `robots.ts`로 반영
   - 검증 루틴(차단 최소)
     - 구조화 데이터 스냅샷 검증(샘플 URL 3~5개) + 깨짐/누락은 이슈로 기록(릴리즈 차단은 P0가 아닌 P1에서만)
+    - 분기 1회(선택): 크롤러 감사(Screaming Frog 등)로 링크/메타/중복/404/스키마 오류를 묶어서 점검(자동화가 어렵다면 체크리스트로만 유지)
 - 완료 기준
   - Q&A 상세/프로필에서 JSON-LD가 일관된 필드를 포함하고(채택/수정일 등) “추출 가능한 구조”가 문서/코드에서 한 규칙으로 수렴
   - AI 크롤러 robots 정책이 결정되어 문서와 코드가 일치
@@ -1819,6 +1824,11 @@ $gh-address-comments
     - 리뷰 주기: 런칭 직후 2주간 주 1회, 이후 월 1회(30분)로 고정 + 액션 3개만 선정
   - 콘텐츠 업데이트 운영
     - “법/비자/제도” 성격 페이지는 업데이트 날짜를 표준 위치에 표기하고(템플릿), 반기 단위 갱신 목록을 유지
+    - 실시간 이슈 대응(시의성): 정책 변경/입국 규정/최신 통계 등 “뉴스성” 이슈는 24~48h 내 업데이트 또는 신규 발행(제목에 “2025년 기준/최신” 등 명시)
+    - Evergreen 축적: 시의성 글은 허브(가이드) 페이지로 흡수/정리해 장기 콘텐츠로 누적(“최신 업데이트” 섹션으로 연결)
+    - 트렌드 탐지(최소): GSC 쿼리 급상승 + 커뮤니티 질문 급증(카테고리/태그) + (선택) Google Trends를 “다음 2주 액션 3개”로만 연결
+    - 언어/키워드 우선순위(운영): `vi`(타겟) > `ko`(파트너/기관) > `en`(SEO 보조) — hreflang/alternates는 유지(P0-1), 콘텐츠 생산/리프레시는 vi 중심
+    - Discover/뉴스탭(선택): 운영자 큐레이션 뉴스/가이드만 대상으로 대표 이미지/요약/업데이트 일자를 갖춘 “읽기 좋은” 페이지로 운영(팝업/강제 로그인/무거운 스크립트 지양)
 - 완료 기준
   - KPI/리뷰 루틴이 문서로 고정되고, 리포트가 자동/반자동으로 재현 가능(사람이 매번 수작업으로 모으지 않음)
 
@@ -1956,6 +1966,8 @@ $gh-address-comments
       - SEO: 운영자 큐레이션 페이지에만 `VideoObject` 스키마 적용(필드: name/description/thumbnailUrl/uploadDate/duration/embedUrl)
   - 운영 자동화(반복 최소화)
     - 코딩 없이 가능한 자동화(Zapier/IFTTT 등)와 “주간/월간 요약 발행” 루틴을 비교해, 최소 운영 비용으로 가능한 흐름부터 적용
+  - 권위/백링크(선택, 장기)
+    - 운영자 큐레이션 콘텐츠를 외부 채널/파트너(학교/기관/커뮤니티)에서 인용/링크될 수 있게 “허브 페이지” 중심으로 배포(브랜드 언급/백링크 축적)
 - 완료 기준
   - 외부 배포 대상/권한/노출 정책이 문서로 고정되고, 운영자 개입 없이도 일정 수준의 자동 배포가 가능
 
@@ -2283,6 +2295,35 @@ $gh-address-comments
   - src/components/molecules/cards/PostCard.tsx
   - e2e/smoke.spec.ts
   - docs/WORKING_PLAN.md
+
+#### (2025-12-22) [P0] PostCard 모바일 UX + 피드백/아바타 안정화
+
+- 플랜(체크리스트)
+  - [x] PostCard 상단 메뉴(…) 위치를 카드 우상단으로 통일(이미지 유무 관계 없음)
+  - [x] “인증 답변/댓글” 배지는 모바일에서 compact 텍스트 유지 + truncate 처리
+  - [x] PostCard 하단 액션 아이콘은 ActionIconButton 기반으로 스타일/터치 영역 규칙 통일
+  - [x] 해시태그 칩은 최대 3개만 노출 + 범용 태그(`정보/추천/tip`) 노출 차단
+  - [x] 모바일 좌측 메뉴 Sheet 폭을 화면에 맞게 확장(사이드바 뒤로 콘텐츠가 비치지 않음)
+  - [x] 홈/검색 메인 배경을 canvas로 전환(카드는 white surface 유지)
+  - [x] /api/feedback: `feedbacks.title` 컬럼이 없는 DB에서도 저장되도록 fallback 보강
+  - [x] next/image: ui-avatars remotePatterns 경로 매칭 완화
+- 변경 파일
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/templates/MainLayout.tsx
+  - src/app/[lang]/(main)/HomeClient.tsx
+  - src/app/[lang]/(main)/search/SearchClient.tsx
+  - src/app/api/feedback/route.ts
+  - src/app/api/admin/feedback/route.ts
+  - next.config.ts
+  - messages/ko.json
+  - messages/vi.json
+  - docs/WORKING_PLAN.md
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
 
 ---
 
