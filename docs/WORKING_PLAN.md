@@ -2530,3 +2530,41 @@ $gh-address-comments
   - src/components/organisms/RecommendedUsersSection.tsx
   - src/components/organisms/CategorySidebar.tsx
   - src/components/organisms/AdminPostRail.tsx
+
+#### (2025-12-22) [WEB/BE] 추천유저/피드백 오류 해소 + PostCard/구독 UI 모바일 하드닝 (P0 보완)
+
+- 플랜(체크리스트)
+  - [x] 추천 사용자: `/api/users/recommended` SQL 파라미터 타입 에러 제거(500 방지)
+  - [x] 피드백: `feedbacks` 테이블 컬럼 불일치(마이그레이션 미적용 등)에서도 저장 가능하도록 삽입 로직 보강
+  - [x] ui-avatars: 프로필 수정 페이지에서 `next/image` 크래시 방지(미리보기는 `<img>`로 처리)
+  - [x] PostCard: 숨김(×) 위치 고정 + 인증 답변 라벨 compact 고정 + 댓글 액션 버튼 톤 통일
+  - [x] 구독: 토픽 구독 버튼이 우측에서 잘리는 케이스 완화(모바일에서 2줄 배치)
+- 현황 분석(로그/코드 기준)
+  - 추천 사용자: `could not determine data type of parameter` / `syntax error` 류로 `/api/users/recommended` 500 발생 가능(`src/app/api/users/recommended/route.ts`)
+  - 피드백: `feedbacks.title` 컬럼 불일치 시 `/api/feedback` 500(`src/app/api/feedback/route.ts`)
+  - ui-avatars: 프로필 수정 페이지에서 원격 아바타가 ui-avatars(SVG)일 때 `next/image`가 에러를 던질 수 있음(`src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`)
+  - PostCard: 숨김 버튼이 레이아웃에 영향을 줘 텍스트/미디어와 간격 이슈 유발 + 인증 답변 라벨이 문장형으로 길어짐(`src/components/molecules/cards/PostCard.tsx`)
+  - 구독(Topics): 토픽명/구독 버튼이 한 줄에 고정되어 일부 언어(vi)에서 클립(`src/app/[lang]/(main)/subscriptions/SubscriptionsClient.tsx`)
+- 변경 내용(what)
+  - `src/app/api/users/recommended/route.ts`: match score 계산을 단순화해 Postgres 타입 추론 오류 방지
+  - `src/app/api/feedback/route.ts`: `information_schema` 기반 컬럼 감지 → 존재 컬럼만 INSERT(환경별 스키마 차이 흡수)
+  - `src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`: ui-avatars/blob/data 미리보기는 `<img>`로 렌더
+  - `src/lib/db/seed.ts`: ui-avatars 기본 URL을 `format=png`로 고정
+  - `src/components/molecules/cards/PostCard.tsx`: 숨김(×) 버튼을 absolute로 고정 + 인증 라벨 compact 고정 + 댓글 액션을 ActionIconButton 톤으로 통일
+  - `src/components/atoms/FollowButton.tsx`: `xs` 사이즈 버튼 높이/패딩 축소(추천 사용자 카드에서 과도한 버튼 크기 완화)
+  - `src/app/[lang]/(main)/subscriptions/SubscriptionsClient.tsx`: 토픽 행을 `flex-col sm:flex-row`로 변경해 버튼/라벨 클립 완화
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+- 변경 파일
+  - src/app/api/users/recommended/route.ts
+  - src/app/api/feedback/route.ts
+  - src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/atoms/FollowButton.tsx
+  - src/app/[lang]/(main)/subscriptions/SubscriptionsClient.tsx
+  - src/lib/db/seed.ts
+- PR/머지
+  - [x] PR #43 (@codex) → `main` 머지
