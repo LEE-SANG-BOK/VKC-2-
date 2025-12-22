@@ -37,6 +37,8 @@ export default function CategorySidebar({
   translations,
 }: CategorySidebarProps) {
   const t = (translations?.sidebar || {}) as Record<string, string>;
+  const tNews = (translations?.news || {}) as Record<string, string>;
+  const tNotice = (translations?.noticeBanner || {}) as Record<string, string>;
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -64,6 +66,7 @@ export default function CategorySidebar({
   const askQuestionTooltipText = t.askQuestionTooltip || '';
   const sharePostTooltipText = t.sharePostTooltip || '';
   const verificationTooltipText = t.verificationRequestTooltip || '';
+  const closeLabel = tNotice.close || tNews.close || '';
 
   useEffect(() => onHomeReset(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -256,6 +259,16 @@ export default function CategorySidebar({
           }
         >
           <div className={isMobileVariant ? 'flex items-center justify-between px-4 pb-2' : ''}>
+            {isMobileVariant ? (
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                aria-label={closeLabel}
+                className="shrink-0 flex h-9 w-9 items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition-colors"
+              >
+                <span aria-hidden className="text-base leading-none">×</span>
+              </button>
+            ) : null}
             <h3
               className={`${isMobileVariant ? '' : 'px-4 pb-2 '}text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider`}
             >
@@ -367,7 +380,7 @@ export default function CategorySidebar({
                       const apiChild = apiBySlug.get(child.slug);
                       const subscribed = apiChild ? subscribedIds.has(apiChild.id) : false;
                       return (
-                        <div key={child.slug} className="flex flex-wrap items-center gap-2 pr-4 py-1 min-w-0">
+                        <div key={child.slug} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 pr-4 py-1 min-w-0">
                           <CategoryItem
                             id={child.slug}
                             name={getCategoryName(child, locale)}
@@ -380,13 +393,13 @@ export default function CategorySidebar({
                           {apiChild ? (
                           <button
                             onClick={() => handleSubscribe(apiChild.id)}
-                            className={`ml-auto shrink-0 text-center whitespace-normal break-words text-[11px] min-h-[32px] px-2.5 sm:px-3 py-1.5 rounded-full transition-colors max-w-[140px] ${
+                            className={`shrink-0 text-center whitespace-normal break-words text-[11px] min-h-[32px] px-2.5 sm:px-3 py-1.5 rounded-full transition-colors max-w-[140px] ${
                               subscribed
                                 ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
                                 : 'border border-transparent bg-blue-600 text-white shadow-sm hover:bg-blue-700'
                             }`}
                           >
-                            <span className="block leading-none">
+                            <span className="block leading-snug">
                               {subscribed
                                 ? subscribedLabel
                                 : subscribeLabel}
@@ -410,7 +423,7 @@ export default function CategorySidebar({
           {topicSubscriptions.length > 0 ? (
             <div className="space-y-1">
               {topicSubscriptions.map((cat) => (
-                <div key={cat.id} className="flex flex-wrap items-center gap-2 pr-3 pl-0 py-1.5 min-w-0">
+                <div key={cat.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 pr-3 pl-0 py-1.5 min-w-0">
                   <CategoryItem
                     id={cat.slug}
                     name={getTranslatedCategoryName(cat)}
@@ -422,9 +435,9 @@ export default function CategorySidebar({
                   />
                   <button
                     onClick={() => handleSubscribe(cat.id)}
-                    className="ml-auto shrink-0 text-center whitespace-normal break-words text-[11px] min-h-[32px] px-2.5 sm:px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors max-w-[140px]"
+                    className="shrink-0 text-center whitespace-normal break-words text-[11px] min-h-[32px] px-2.5 sm:px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors max-w-[140px]"
                   >
-                    <span className="block leading-none">
+                    <span className="block leading-snug">
                       {subscribedLabel}
                     </span>
                   </button>
