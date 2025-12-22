@@ -22,3 +22,8 @@
 
 - Never paste API keys into chat, code, or committed files.
 - Use environment variables (e.g. `OPENAI_API_KEY`) and local config files outside git (e.g. `~/.codex/config.toml`).
+
+## Planning / Prompt Protocol
+
+- 작업 시작 전 “Task Intake → Done 기준”을 먼저 고정한다: `docs/CODEX_PROMPT_PROTOCOL.md`
+- 질문하기 전에 `AGENTS.md` + `docs/EXECUTION_PLAN.md` + `docs/WORKING_PLAN.md`를 먼저 확인하고, `rg`로 기존 패턴/근거를 찾는다.

@@ -9,7 +9,7 @@ metadata:
 
 ## Goal
 
-Generate official-form PDFs (starting with unified application + S-3) from:
+Generate official-form PDFs (starting with unified application + **international student part-time work package**) from:
 
 - template schema (wizard fields/steps/i18n labels)
 - renderSpec (PDF mapping)
@@ -45,3 +45,9 @@ Generate official-form PDFs (starting with unified application + S-3) from:
   - upload to private storage
   - save history row
 
+## STEP3 templates (SoT)
+
+- Official originals + file IDs: `docs/STEP3_SOT_RESOURCES.md`
+- v1 doc types
+  - `docgen_unified`: 통합신청서(신고서)
+  - `docgen_parttime`: 유학생 시간제취업 패키지(시간제취업확인서 + 조건부 요건 준수 확인서 + 통합신청서 선택 포함)

@@ -42,3 +42,7 @@ Provide “비자변경 가능성(%)” outputs at scale (cover target-customer 
   - Activate a ruleset version (switch to active)
   - Manage `visa_assessment_models` version and activation
 
+## STEP3 visa registry (SoT)
+
+- “전체 커버” visa code registry lives in: `docs/STEP3_SOT_RESOURCES.md`
+- Implementation rule: registry is complete first → rulesets are filled in iteratively (v1→vN)

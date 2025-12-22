@@ -17,6 +17,7 @@ metadata:
 1) Run local checks:
 - `bash .codex/skills/vkc-repo-guardrails/scripts/guardrails.sh`
 2) If it fails, fix violations first (especially Server Actions / i18n key drift).
+3) For new work, follow the VKC prompt protocol: `docs/CODEX_PROMPT_PROTOCOL.md`
 
 ## Non‑negotiables (must keep)
 
