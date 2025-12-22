@@ -38,16 +38,14 @@ export async function GET(req: NextRequest) {
       ? sql`ARRAY[${sql.join(viewerInterests.map((value) => sql`${value}`), sql`, `)}]::text[]`
       : sql`ARRAY[]::text[]`;
 
-    // Get users that current user is already following
     const followingUsers = await db
       .select({ followingId: follows.followingId })
       .from(follows)
       .where(eq(follows.followerId, session.user.id));
 
-    const followingIds = followingUsers.map(f => f.followingId).filter(Boolean) as string[];
+    const followingIds = followingUsers.map((row) => row.followingId).filter(Boolean) as string[];
     const followingIdSet = new Set(followingIds);
 
-    // Get recommended users (exclude self and already following)
     const whereConditions = [
       ne(users.id, session.user.id),
     ];
@@ -56,7 +54,6 @@ export async function GET(req: NextRequest) {
       whereConditions.push(notInArray(users.id, followingIds));
     }
 
-    // Get total count
     const totalResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(users)
@@ -64,21 +61,18 @@ export async function GET(req: NextRequest) {
 
     const total = Number(totalResult[0]?.count || 0);
 
-    // Get recommended users with stats
-    const matchScore = sql<number>`
-      (CASE WHEN ${viewerUserType} IS NOT NULL AND ${users.userType} = ${viewerUserType} THEN 4 ELSE 0 END)
-      + (CASE WHEN ${viewerVisaType} IS NOT NULL AND ${users.visaType} = ${viewerVisaType} THEN 3 ELSE 0 END)
-      + (CASE WHEN ${viewerKoreanLevel} IS NOT NULL AND ${users.koreanLevel} = ${viewerKoreanLevel} THEN 1 ELSE 0 END)
-      + (CASE
-          WHEN COALESCE(array_length(${viewerInterestsArray}, 1), 0) > 0
-            AND COALESCE(${users.interests} && ${viewerInterestsArray}, false)
-          THEN 3
-          ELSE 0
-        END)
-      + (CASE WHEN ${users.isVerified} THEN 1 ELSE 0 END)
-      + (CASE WHEN ${users.isExpert} THEN 1 ELSE 0 END)
-      + (CASE WHEN ${users.badgeType} IS NOT NULL THEN 1 ELSE 0 END)
-    `;
+    const matchScoreParts = [
+      viewerUserType ? sql`(CASE WHEN ${users.userType} = ${viewerUserType} THEN 4 ELSE 0 END)` : sql`0`,
+      viewerVisaType ? sql`(CASE WHEN ${users.visaType} = ${viewerVisaType} THEN 3 ELSE 0 END)` : sql`0`,
+      viewerKoreanLevel ? sql`(CASE WHEN ${users.koreanLevel} = ${viewerKoreanLevel} THEN 1 ELSE 0 END)` : sql`0`,
+      viewerInterests.length > 0
+        ? sql`(CASE WHEN COALESCE(${users.interests} && ${viewerInterestsArray}, false) THEN 3 ELSE 0 END)`
+        : sql`0`,
+      sql`(CASE WHEN ${users.isVerified} THEN 1 ELSE 0 END)`,
+      sql`(CASE WHEN ${users.isExpert} THEN 1 ELSE 0 END)`,
+      sql`(CASE WHEN ${users.badgeType} IS NOT NULL THEN 1 ELSE 0 END)`,
+    ];
+    const matchScore = sql<number>`${sql.join(matchScoreParts, sql` + `)}`;
 
     const recommendedUsers = await db
       .select({
@@ -86,7 +80,6 @@ export async function GET(req: NextRequest) {
         name: users.name,
         displayName: users.displayName,
         image: users.image,
-        avatar: users.image,
         bio: users.bio,
         isVerified: users.isVerified,
         isExpert: users.isExpert,
@@ -166,29 +159,29 @@ export async function GET(req: NextRequest) {
       ].filter((item) => typeof item.value === 'string' && item.value.trim().length > 0).slice(0, 2);
 
       return {
-      id: user.id,
-      name: user.name,
-      displayName: user.displayName,
-      avatar: user.avatar,
-      image: user.image,
-      bio: user.bio,
-      isVerified: user.isVerified,
-      isExpert: user.isExpert,
-      badgeType: user.badgeType,
-      badgeExpiresAt: user.badgeExpiresAt,
-      status: user.status,
-      userType: user.userType,
-      visaType: user.visaType,
-      koreanLevel: user.koreanLevel,
-      interests: resolvedInterests,
-      isFollowing: followingIdSet.has(user.id),
-      recommendationMeta,
-      stats: {
-        followers: user.followersCount,
-        following: user.followingCount,
-        posts: user.postsCount,
-      },
-    };
+        id: user.id,
+        name: user.name,
+        displayName: user.displayName,
+        avatar: user.image,
+        image: user.image,
+        bio: user.bio,
+        isVerified: user.isVerified,
+        isExpert: user.isExpert,
+        badgeType: user.badgeType,
+        badgeExpiresAt: user.badgeExpiresAt,
+        status: user.status,
+        userType: user.userType,
+        visaType: user.visaType,
+        koreanLevel: user.koreanLevel,
+        interests: resolvedInterests,
+        isFollowing: followingIdSet.has(user.id),
+        recommendationMeta,
+        stats: {
+          followers: user.followersCount,
+          following: user.followingCount,
+          posts: user.postsCount,
+        },
+      };
     });
 
     const response = NextResponse.json({
