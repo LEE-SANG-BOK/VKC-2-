@@ -261,7 +261,7 @@ export default function CategorySidebar({
           className={
             isMobileVariant
               ? 'mt-4 mx-3 rounded-xl border border-gray-200/70 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 py-4'
-              : 'py-4 border-b border-gray-200/40 dark:border-gray-700/40'
+              : 'pb-4 border-b border-gray-200/40 dark:border-gray-700/40'
           }
         >
           <div className={isMobileVariant ? 'flex items-center justify-between px-4 pb-2' : ''}>
