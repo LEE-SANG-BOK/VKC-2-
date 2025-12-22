@@ -65,7 +65,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
                 />
               </aside>
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetContent side="left" className="p-0 w-full sm:w-[360px]">
+                <SheetContent side="left" className="p-0 w-[360px] max-w-[100vw]">
                   <CategorySidebar
                     variant="mobile"
                     setIsMobileMenuOpen={setIsMobileMenuOpen}
@@ -82,10 +82,15 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
               centerVariant === 'canvas' ? 'bg-transparent' : 'bg-white dark:bg-gray-900'
             } ${hasLeftRail && hasRightRail ? 'lg:max-w-[960px] lg:justify-self-center' : ''}`}
           >
+            {hasRightRail ? (
+              <div className="lg:hidden mb-4">
+                {rightRail}
+              </div>
+            ) : null}
             {children}
           </main>
           {hasRightRail ? (
-            <aside className="w-full lg:w-[320px] shrink-0 lg:justify-self-end">
+            <aside className="hidden lg:block w-full lg:w-[320px] shrink-0 lg:justify-self-end">
               {rightRail}
             </aside>
           ) : null}
