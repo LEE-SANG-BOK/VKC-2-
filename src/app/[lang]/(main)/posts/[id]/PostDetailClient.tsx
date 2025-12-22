@@ -934,7 +934,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const answersRef = useRef<HTMLDivElement | null>(null);
-  const shareCtaRef = useRef<HTMLDivElement | null>(null);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const answersLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const commentsLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const answersHashHandledRef = useRef(false);
@@ -1653,9 +1653,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   };
 
   const handleShare = () => {
-    if (!shareCtaRef.current) return;
-    shareCtaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    shareCtaRef.current.focus({ preventScroll: true });
+    setIsShareDialogOpen(true);
   };
 
   const openReportDialog = (type: 'post' | 'comment' | 'answer', id: string) => {
@@ -2044,6 +2042,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       locale,
       metadata: { channel: 'facebook' },
     });
+    setIsShareDialogOpen(false);
   };
 
   const handleShareX = () => {
@@ -2056,6 +2055,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       locale,
       metadata: { channel: 'x' },
     });
+    setIsShareDialogOpen(false);
   };
 
   const handleShareTelegram = () => {
@@ -2068,6 +2068,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
       locale,
       metadata: { channel: 'telegram' },
     });
+    setIsShareDialogOpen(false);
   };
 
   const handleCopyLink = async () => {
@@ -2085,6 +2086,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
     } catch (error) {
       console.error('Failed to copy link', error);
     } finally {
+      setIsShareDialogOpen(false);
     }
   };
 
@@ -2322,50 +2324,49 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
             </Tooltip>
           </div>
             )}
-            {!isEditingPost && (
-              <div
-                ref={shareCtaRef}
-                tabIndex={-1}
-                className="mt-4 sm:mt-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-4 sm:p-5"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{shareCtaTitle}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{shareCtaDescription}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={handleShareFacebook}
-                      className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      Facebook
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleShareX}
-                      className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      X
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleShareTelegram}
-                      className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      Telegram
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCopyLink}
-                      className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      {copyLinkLabel}
-                    </button>
-                  </div>
+            <Modal
+              isOpen={isShareDialogOpen}
+              onClose={() => setIsShareDialogOpen(false)}
+              title={shareLabel}
+              maxWidth="max-w-md"
+            >
+              <div className="p-5 space-y-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{shareCtaTitle}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{shareCtaDescription}</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={handleShareFacebook}
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Facebook
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShareX}
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    X
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShareTelegram}
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Telegram
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {copyLinkLabel}
+                  </button>
                 </div>
               </div>
-            )}
+            </Modal>
          </div>
         </article>
 
