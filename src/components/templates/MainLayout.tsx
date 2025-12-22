@@ -85,7 +85,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
             {children}
           </main>
           {hasRightRail ? (
-            <aside className="hidden lg:block w-[320px] shrink-0 lg:justify-self-end">
+            <aside className="w-full lg:w-[320px] shrink-0 lg:justify-self-end">
               {rightRail}
             </aside>
           ) : null}

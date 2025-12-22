@@ -197,12 +197,18 @@ export default function RecommendedUsersSection({
           >
             <div className={`flex items-center ${cardGapClass} w-full`}>
               <div className="flex flex-col items-center gap-2">
-                <Avatar
-                  name={displayName}
-                  imageUrl={user.image || undefined}
-                  size={avatarSize}
-                  hoverHighlight
-                />
+                <button
+                  type="button"
+                  onClick={() => router.push(`/${locale}/profile/${userId}`)}
+                  aria-label={displayName}
+                >
+                  <Avatar
+                    name={displayName}
+                    imageUrl={user.image || undefined}
+                    size={avatarSize}
+                    hoverHighlight
+                  />
+                </button>
                 <FollowButton
                   userId={userId}
                   userName={displayName}

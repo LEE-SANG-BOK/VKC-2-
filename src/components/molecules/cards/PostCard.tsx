@@ -637,7 +637,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 </div>
               </div>
             </div>
-            <div ref={hideMenuRef} className="relative shrink-0 ml-auto -mt-1 z-10">
+            <div ref={hideMenuRef} className="relative shrink-0 ml-auto mt-0.5 z-10">
               <button
                 type="button"
                 onClick={handleHideMenuToggle}

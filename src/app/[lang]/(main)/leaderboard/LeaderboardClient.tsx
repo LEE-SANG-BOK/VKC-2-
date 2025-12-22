@@ -233,13 +233,15 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
                         </span>
                       </Tooltip>
                     ) : null}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Avatar name={displayName} imageUrl={avatarSrc} size="lg" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${temperatureTone.chipClassName}`}>
-                          <Flame
+	                  </div>
+	                  <div className="flex items-center gap-3">
+	                    <Link href={`/${lang}/profile/${entry.id}`} className="shrink-0">
+	                      <Avatar name={displayName} imageUrl={avatarSrc} size="lg" hoverHighlight />
+	                    </Link>
+	                    <div className="flex-1 min-w-0">
+	                      <div className="flex flex-wrap items-center gap-2 text-xs">
+	                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${temperatureTone.chipClassName}`}>
+	                          <Flame
                             className={`h-3.5 w-3.5 ${temperatureTone.iconClassName}`}
                             fill={temperatureTone.filled ? 'currentColor' : 'none'}
                           />
@@ -299,15 +301,17 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
 
               return (
                 <div key={entry.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200">
-                      {entry.rank}
-                    </span>
-                    <Avatar name={displayName} imageUrl={avatarSrc} size="md" />
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Link
-                          href={`/${lang}/profile/${entry.id}`}
+	                  <div className="flex items-center gap-3 min-w-0">
+	                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200">
+	                      {entry.rank}
+	                    </span>
+	                    <Link href={`/${lang}/profile/${entry.id}`} className="shrink-0">
+	                      <Avatar name={displayName} imageUrl={avatarSrc} size="md" hoverHighlight />
+	                    </Link>
+	                    <div className="min-w-0">
+	                      <div className="flex flex-wrap items-center gap-2">
+	                        <Link
+	                          href={`/${lang}/profile/${entry.id}`}
                           className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-300 transition truncate"
                         >
                           {displayName}
