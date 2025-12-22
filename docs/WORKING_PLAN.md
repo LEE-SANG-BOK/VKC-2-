@@ -2361,6 +2361,44 @@ $gh-address-comments
   - [x] SKIP_SITEMAP_DB=true npm run build
   - [x] npm run test:e2e
 
+#### (2025-12-22) [P0] Feed/Feedback/Leaderboard 런타임 이슈 정리 + 모바일 정렬 보강
+
+- 작업
+  - PostCard: 숨김/신고(…) 제거 → `×(숨기기)` 단일 액션 + Tooltip(이미지 유무와 무관하게 동일 위치)
+  - PostCard: 제목/요약/태그/액션 인덴트(`pl-12`) 제거로 모바일 공간 확보
+  - PostCard: “인증 답변/댓글” 배지는 border 없이 compact 텍스트로 유지(+ truncate)
+  - 모바일: PostCard 하단 액션은 1열 유지(`globals.css` media query에서 wrap 제거)
+  - 추천 사용자: recommendation meta 최대 3개 노출(온보딩 핵심 정보 강조)
+  - /api/users/recommended: recommendation meta 우선순위 재정렬 + 최대 3개 반환
+  - /api/feedback: DB 컬럼 불일치(title/page_url/contact_email 등)에서도 insert가 깨지지 않게 “missing column 감지 → 해당 컬럼 제거 후 재시도”로 하드닝(추가 마이그레이션 없이 동작)
+  - Leaderboard: trustScore 노출 제거 + 주간 답변 수(최근 7일) 추가, 스코어 산식/정렬 기준 반영
+  - Modal: `createPortal(document.body)`로 렌더링해 헤더(backdrop-filter) 컨텍스트에서 fixed 오프셋 이슈 방지
+  - Rail/레이아웃: 추천 콘텐츠 “더보기” 제거, 모바일 메뉴 Sheet 폭을 w-full로 고정, 페이지 padding 보강
+  - Excerpt: 글쓰기 모더레이션 템플릿 prelude가 피드 excerpt에 노출되지 않게 strip
+- 변경 파일
+  - messages/ko.json
+  - messages/vi.json
+  - src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx
+  - src/app/api/feedback/route.ts
+  - src/app/api/users/leaderboard/route.ts
+  - src/app/api/users/recommended/route.ts
+  - src/app/globals.css
+  - src/components/atoms/Modal.tsx
+  - src/components/molecules/cards/PostCard.tsx
+  - src/components/molecules/modals/SettingsModal.tsx
+  - src/components/molecules/user/UserProfile.tsx
+  - src/components/organisms/AdminPostRail.tsx
+  - src/components/organisms/PostList.tsx
+  - src/components/organisms/RecommendedUsersSection.tsx
+  - src/components/templates/MainLayout.tsx
+  - src/lib/api/post-list.ts
+  - src/repo/users/types.ts
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+
 ---
 
 ## Testing and validation (게이트)
