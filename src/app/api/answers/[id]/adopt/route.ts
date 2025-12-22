@@ -42,6 +42,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return forbiddenResponse('질문 작성자만 답변을 채택할 수 있습니다.');
     }
 
+    if (answer.authorId === user.id) {
+      return forbiddenResponse('본인 답변은 채택할 수 없습니다.');
+    }
+
     // 이미 채택된 답변이 있는지 확인
     const adoptedAnswer = await db.query.answers.findFirst({
       where: and(
