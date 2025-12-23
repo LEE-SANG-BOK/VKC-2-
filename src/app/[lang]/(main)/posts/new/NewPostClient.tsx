@@ -344,7 +344,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
     } catch (error) {
       console.error('Failed to create post:', error);
       if (isAccountRestrictedError(error)) {
-        toast.error(error.message);
+        toast.error(tErrors.ACCOUNT_RESTRICTED || error.message);
       } else if (error instanceof ApiError && error.code && tErrors[error.code]) {
         toast.error(tErrors[error.code]);
       } else {

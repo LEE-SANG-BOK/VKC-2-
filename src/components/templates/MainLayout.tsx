@@ -1,11 +1,11 @@
 'use client';
 
-import { Suspense, useEffect, useState, type ReactNode } from "react";
-import Header from "@/components/organisms/Header";
-import CategorySidebar from "@/components/organisms/CategorySidebar";
-import AccountStatusBanner from "@/components/molecules/banners/AccountStatusBanner";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { onHomeReset } from "@/utils/homeReset";
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
+import Header from '@/components/organisms/Header';
+import CategorySidebar from '@/components/organisms/CategorySidebar';
+import AccountStatusBanner from '@/components/molecules/banners/AccountStatusBanner';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { onHomeReset } from '@/utils/homeReset';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -14,15 +14,27 @@ interface MainLayoutProps {
   hideSidebar?: boolean;
   hideSearch?: boolean;
   rightRail?: ReactNode;
+  mobileRightRail?: ReactNode;
   centerVariant?: 'panel' | 'canvas';
   translations: Record<string, unknown>;
 }
 
-export default function MainLayout({ children, selectedCategory = 'all', onCategoryChange, hideSidebar = false, hideSearch = false, rightRail, centerVariant = 'panel', translations }: MainLayoutProps) {
+export default function MainLayout({
+  children,
+  selectedCategory = 'all',
+  onCategoryChange,
+  hideSidebar = false,
+  hideSearch = false,
+  rightRail,
+  mobileRightRail,
+  centerVariant = 'panel',
+  translations,
+}: MainLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const hasLeftRail = !hideSidebar;
   const hasRightRail = Boolean(rightRail);
+  const hasMobileRightRail = Boolean(mobileRightRail);
   const gridColumns = hasLeftRail && hasRightRail
     ? 'lg:grid-cols-[320px_minmax(0,1fr)_320px] 2xl:grid-cols-[320px_minmax(0,920px)_320px] 2xl:justify-center'
     : hasLeftRail
@@ -39,7 +51,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
   return (
     <div className="min-h-screen min-h-[100dvh] bg-gray-100 dark:bg-gray-950 relative transition-colors duration-300">
       {/* Account Status Banner */}
-      <AccountStatusBanner />
+      <AccountStatusBanner translations={translations} />
 
       <Suspense fallback={<div className="h-[56px] w-full" />}>
         <Header
@@ -62,14 +74,18 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
                   selectedCategory={selectedCategory}
                   onCategoryChange={onCategoryChange}
                   translations={translations}
-                />
+                  />
               </aside>
-	              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-	                <SheetContent side="left" showCloseButton={false} className="p-0 w-[320px] sm:w-[360px] max-w-[85vw]">
-	                  <CategorySidebar
-	                    variant="mobile"
-	                    setIsMobileMenuOpen={setIsMobileMenuOpen}
-	                    selectedCategory={selectedCategory}
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetContent
+                  side="left"
+                  showCloseButton={false}
+                  className="p-0 w-[320px] sm:w-[360px] max-w-[85vw]"
+                >
+                  <CategorySidebar
+                    variant="mobile"
+                    setIsMobileMenuOpen={setIsMobileMenuOpen}
+                    selectedCategory={selectedCategory}
                     onCategoryChange={onCategoryChange}
                     translations={translations}
                   />
@@ -82,11 +98,7 @@ export default function MainLayout({ children, selectedCategory = 'all', onCateg
               centerVariant === 'canvas' ? 'bg-transparent' : 'bg-white dark:bg-gray-900'
             } ${hasLeftRail || hasRightRail ? 'lg:max-w-[920px] lg:justify-self-center' : ''}`}
           >
-            {hasRightRail ? (
-              <div className="lg:hidden mb-4">
-                {rightRail}
-              </div>
-            ) : null}
+            {hasMobileRightRail ? <div className="lg:hidden mb-4">{mobileRightRail}</div> : null}
             {children}
           </main>
           {hasRightRail ? (

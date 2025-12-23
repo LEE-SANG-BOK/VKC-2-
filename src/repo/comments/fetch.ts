@@ -23,8 +23,8 @@ export async function createPostComment(postId: string, data: CreateCommentReque
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    if (res.status === 403) {
-      throw new AccountRestrictedError(error.error || 'Account restricted');
+    if (res.status === 403 && error.code === 'ACCOUNT_RESTRICTED') {
+      throw new AccountRestrictedError(error.error || '');
     }
     throw new ApiError(
       error.error || 'Failed to create comment',
