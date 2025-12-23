@@ -20,6 +20,30 @@ interface PostListProps {
   translations: Record<string, unknown>;
 }
 
+const stripModerationTemplateFromHtml = (html: string) => {
+  const input = html || '';
+  const strippedDataAttribute = input.replace(
+    /^\s*(?:<p[^>]*data-vk-template=(['"])1\1[^>]*>[\s\S]*?<\/p>\s*){1,3}(?:<p[^>]*data-vk-template-spacer=(['"])1\2[^>]*>\s*<\/p>\s*)?/i,
+    ''
+  );
+  const strippedLegacySpacer = strippedDataAttribute.replace(
+    /^\s*(?:<p>\s*<strong>[\s\S]*?<\/strong>\s*<\/p>\s*){1,3}<p>\s*<\/p>\s*/i,
+    ''
+  );
+  if (strippedLegacySpacer !== strippedDataAttribute) return strippedLegacySpacer;
+  return strippedDataAttribute.replace(
+    /^\s*(?:<p>\s*<strong>[\s\S]*?<\/strong>\s*<\/p>\s*){1,3}\s*$/i,
+    ''
+  );
+};
+
+const buildFeedExcerpt = (html: string) =>
+  stripModerationTemplateFromHtml(html)
+    .replace(/<img[^>]*>/gi, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 export default function PostList({ selectedCategory = 'all', isSearchMode = false, searchQuery = '', translations }: PostListProps) {
   const t = (translations?.post || {}) as Record<string, string>;
   const tCommon = (translations?.common || {}) as Record<string, string>;
@@ -422,7 +446,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                       badgeType: post.author?.badgeType || null,
                     }}
                     title={post.title}
-                    excerpt={post.excerpt || (post.content || '').replace(/<img[^>]*>/gi, '').replace(/<[^>]*>/g, '').trim().substring(0, 200)}
+                    excerpt={(post.excerpt || buildFeedExcerpt(post.content || '')).substring(0, 200)}
                     tags={post.tags}
                     stats={{
                       likes: (post as any).likesCount ?? post.likes ?? 0,

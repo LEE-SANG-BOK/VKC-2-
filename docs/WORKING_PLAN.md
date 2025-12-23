@@ -2897,3 +2897,17 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] 피드 템플릿(모더레이션) 텍스트 숨김 + PostCard 숨김(×) 컴팩트 정렬 (P0-2/P0-3)
+
+- 목표: 글쓰기 템플릿(조건/목표/배경) 입력값이 피드 요약(excerpt)에 노출되어 “게시글 위주” 흐름이 깨지는 문제를 줄이고, 모바일에서 PostCard 숨김(×) 버튼이 상단에 떠 보이는 컴팩트함 저하를 개선
+- 변경 내용
+  - `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`: 템플릿 `<p>`에 `data-vk-template="1"` / spacer에 `data-vk-template-spacer="1"`을 추가(피드 요약에서 안정적으로 제거 가능)
+  - `src/components/organisms/PostList.tsx`: 피드 excerpt 생성 시 템플릿 블록을 제거하고 본문만 요약(기존 템플릿 마크업도 제한적으로 호환)
+  - `src/components/molecules/cards/PostCard.tsx`: 숨김(×) 버튼을 카드 우상단 absolute에서 “작성자 헤더 행” 우측으로 이동(위 여백 감소, 위치 일관성 유지)
+  - `src/components/organisms/RecommendedUsersSection.tsx`: 모바일 추천 사용자 카드에서 아바타를 확대하고 팔로우 CTA 높이를 축소(세로/가로 비율 개선)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
