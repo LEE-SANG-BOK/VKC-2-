@@ -2810,3 +2810,16 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] PostDetail/알림 모달 i18n 하드코딩 제거 (P0-2)
+
+- 목표: PostDetailClient/알림 모달에 남아있던 locale 분기 fallback 문자열을 제거하고, ko/vi messages 기반으로 단일화
+- 변경 내용
+  - `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`: locale 분기 fallback 오브젝트 제거 + 신고 사유 라벨을 번역키로 통일
+  - `src/components/molecules/modals/NotificationModal.tsx`: locale 분기 fallback 오브젝트 제거(라우팅은 URL locale 사용) + notifications 번역키로 통일
+  - `messages/ko.json`, `messages/vi.json`: notifications 모달에 필요한 키(`loginRequired`, `login`, `loadError`, `retry`, `justNow`, `minutesAgo`, `hoursAgo`, `daysAgo`) 보강
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`

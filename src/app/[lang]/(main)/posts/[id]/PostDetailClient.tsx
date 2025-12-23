@@ -257,261 +257,66 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   const shareCtaTitle = tPostDetail.shareCtaTitle || '';
   const shareCtaDescription = tPostDetail.shareCtaDescription || '';
 
-  const postDetailFallbacks = resolvedLocale === 'en'
-    ? {
-        contentProhibited: 'You cannot submit content containing banned or low-quality text.',
-        confirmDeletePost: 'Are you sure you want to delete this post?',
-        postDeleted: 'Post deleted.',
-        postDeleteFailed: 'Failed to delete the post.',
-        titleContentRequired: 'Please enter a title and content.',
-        postUpdateFailed: 'Failed to update the post.',
-        bannedWarning: 'Banned words detected. Please revise the content.',
-        spamWarning: 'External links or contact info detected. Only informational posts are allowed.',
-        commentCreateFailed: 'Failed to post the comment.',
-        answerCreateFailed: 'Failed to post the answer.',
-        replyCreateFailed: 'Failed to post the reply.',
-        answerCommentCreateFailed: 'Failed to post the answer comment.',
-        reportReasonRequired: 'Please enter at least 10 characters for the report reason.',
-        reportSubmitted: 'Report submitted. We will review it shortly.',
-        reportFailed: 'Failed to submit the report.',
-        confirmDeleteComment: 'Delete this comment?',
-        commentDeleteFailed: 'Failed to delete the comment.',
-        commentUpdateFailed: 'Failed to update the comment.',
-        confirmDeleteReply: 'Delete this reply?',
-        replyDeleteFailed: 'Failed to delete the reply.',
-        replyUpdateFailed: 'Failed to update the reply.',
-        answerUpdateFailed: 'Failed to update the answer.',
-        confirmDeleteAnswer: 'Delete this answer?',
-        answerDeleteFailed: 'Failed to delete the answer.',
-        onlyAuthorCanAdopt: 'Only the author can adopt an answer.',
-        adoptSuccess: 'Answer adopted.',
-        adoptFailed: 'Failed to adopt the answer.',
-        linkCopied: 'Link copied!',
-        close: 'Close',
-        copyLink: 'Copy link',
-        postLabel: 'Post',
-        replyLabel: 'Reply',
-        commentLabel: 'Comment',
-        reportSpam: 'Spam or advertising',
-        reportHarassment: 'Harassment or hate speech',
-        reportMisinformation: 'Misinformation',
-        reportInappropriate: 'Inappropriate content',
-        reportOther: 'Other',
-        processing: 'Processing...',
-        reportSubmit: 'Report',
-        helpfulToggleFailed: 'Failed to update helpful status.',
-        reportPlaceholder: 'Please describe the reason for the report.',
-        cancel: 'Cancel',
-      }
-    : resolvedLocale === 'vi'
-      ? {
-          contentProhibited: 'Không thể đăng nội dung có từ ngữ bị cấm hoặc chất lượng thấp.',
-          confirmDeletePost: 'Bạn có chắc chắn muốn xóa bài viết này không?',
-          postDeleted: 'Đã xóa bài viết.',
-          postDeleteFailed: 'Không thể xóa bài viết.',
-          titleContentRequired: 'Vui lòng nhập tiêu đề và nội dung.',
-          postUpdateFailed: 'Không thể cập nhật bài viết.',
-          bannedWarning: 'Có từ ngữ bị cấm. Vui lòng chỉnh sửa nội dung.',
-          spamWarning: 'Phát hiện liên kết/địa chỉ liên hệ. Chỉ cho phép nội dung cung cấp thông tin.',
-          commentCreateFailed: 'Không thể đăng bình luận.',
-          answerCreateFailed: 'Không thể đăng câu trả lời.',
-          replyCreateFailed: 'Không thể đăng phản hồi.',
-          answerCommentCreateFailed: 'Không thể đăng bình luận cho câu trả lời.',
-          reportReasonRequired: 'Vui lòng nhập ít nhất 10 ký tự cho lý do báo cáo.',
-          reportSubmitted: 'Đã gửi báo cáo. Chúng tôi sẽ xem xét sớm.',
-          reportFailed: 'Không thể gửi báo cáo.',
-          confirmDeleteComment: 'Xóa bình luận này?',
-          commentDeleteFailed: 'Không thể xóa bình luận.',
-          commentUpdateFailed: 'Không thể cập nhật bình luận.',
-          confirmDeleteReply: 'Xóa phản hồi này?',
-          replyDeleteFailed: 'Không thể xóa phản hồi.',
-        replyUpdateFailed: 'Không thể cập nhật phản hồi.',
-        answerUpdateFailed: 'Không thể cập nhật câu trả lời.',
-        confirmDeleteAnswer: 'Xóa câu trả lời này?',
-        answerDeleteFailed: 'Không thể xóa câu trả lời.',
-        onlyAuthorCanAdopt: 'Chỉ tác giả mới có thể chấp nhận câu trả lời.',
-        adoptSuccess: 'Đã chấp nhận câu trả lời.',
-        adoptFailed: 'Không thể chấp nhận câu trả lời.',
-        linkCopied: 'Đã sao chép liên kết!',
-          close: 'Đóng',
-          copyLink: 'Sao chép liên kết',
-          postLabel: 'Bài viết',
-          replyLabel: 'Phản hồi',
-          commentLabel: 'Bình luận',
-          reportSpam: 'Spam hoặc quảng cáo',
-          reportHarassment: 'Quấy rối hoặc ngôn từ thù ghét',
-          reportMisinformation: 'Thông tin sai lệch',
-          reportInappropriate: 'Nội dung không phù hợp',
-          reportOther: 'Khác',
-          processing: 'Đang xử lý...',
-          reportSubmit: 'Báo cáo',
-          helpfulToggleFailed: 'Không thể cập nhật trạng thái hữu ích.',
-          reportPlaceholder: 'Vui lòng nhập lý do báo cáo.',
-          cancel: 'Hủy',
-        }
-      : {
-          contentProhibited: '금칙어/저품질 콘텐츠로 작성할 수 없습니다.',
-          confirmDeletePost: '정말 이 게시글을 삭제하시겠습니까?',
-          postDeleted: '게시글이 삭제되었습니다.',
-          postDeleteFailed: '게시글 삭제에 실패했습니다.',
-          titleContentRequired: '제목과 내용을 입력해주세요.',
-          postUpdateFailed: '게시글 수정에 실패했습니다.',
-          bannedWarning: '금칙어가 포함되어 있습니다. 내용을 순화해주세요.',
-          spamWarning: '외부 링크/연락처가 감지되었습니다. 정보성 글만 허용됩니다.',
-          commentCreateFailed: '댓글 작성에 실패했습니다.',
-          answerCreateFailed: '답변 작성에 실패했습니다.',
-          replyCreateFailed: '대댓글 작성에 실패했습니다.',
-          answerCommentCreateFailed: '답변 댓글 작성에 실패했습니다.',
-          reportReasonRequired: '신고 사유를 10자 이상 입력해주세요.',
-          reportSubmitted: '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
-          reportFailed: '신고 처리 중 오류가 발생했습니다.',
-          confirmDeleteComment: '댓글을 삭제하시겠습니까?',
-          commentDeleteFailed: '댓글 삭제에 실패했습니다.',
-          commentUpdateFailed: '댓글 수정에 실패했습니다.',
-          confirmDeleteReply: '답글을 삭제하시겠습니까?',
-          replyDeleteFailed: '답글 삭제에 실패했습니다.',
-        replyUpdateFailed: '답글 수정에 실패했습니다.',
-        answerUpdateFailed: '답변 수정에 실패했습니다.',
-        confirmDeleteAnswer: '답변을 삭제하시겠습니까?',
-        answerDeleteFailed: '답변 삭제에 실패했습니다.',
-        onlyAuthorCanAdopt: '질문 작성자만 답변을 채택할 수 있습니다.',
-        adoptSuccess: '채택되었습니다.',
-        adoptFailed: '답변 채택에 실패했습니다.',
-        linkCopied: '링크가 복사되었습니다!',
-          close: '닫기',
-          copyLink: '링크 복사',
-          postLabel: '게시글',
-          replyLabel: '답글',
-          commentLabel: '댓글',
-          reportSpam: '스팸 또는 광고',
-          reportHarassment: '욕설 또는 혐오 발언',
-          reportMisinformation: '허위 정보',
-          reportInappropriate: '부적절한 콘텐츠',
-          reportOther: '기타',
-          processing: '처리중...',
-          reportSubmit: '신고하기',
-          helpfulToggleFailed: '도움됨 처리에 실패했습니다.',
-          reportPlaceholder: '신고 사유를 입력해주세요',
-          cancel: '취소',
-        };
-
-  const ugcProhibitedLabel = postDetailFallbacks.contentProhibited;
-  const confirmDeletePostLabel = tPostDetail.confirmDeletePost || postDetailFallbacks.confirmDeletePost;
-  const postDeletedLabel = tPostDetail.postDeleted || postDetailFallbacks.postDeleted;
-  const postDeleteFailedLabel = tPostDetail.postDeleteFailed || postDetailFallbacks.postDeleteFailed;
-  const titleContentRequiredLabel = tPostDetail.titleContentRequired || postDetailFallbacks.titleContentRequired;
-  const postUpdateFailedLabel = tPostDetail.postUpdateFailed || postDetailFallbacks.postUpdateFailed;
-  const bannedWarningLabel = tPostDetail.bannedWarning || postDetailFallbacks.bannedWarning;
-  const spamWarningLabel = tPostDetail.spamWarning || postDetailFallbacks.spamWarning;
-  const commentCreateFailedLabel = tPostDetail.commentCreateFailed || postDetailFallbacks.commentCreateFailed;
-  const answerCreateFailedLabel = tPostDetail.answerCreateFailed || postDetailFallbacks.answerCreateFailed;
-  const replyCreateFailedLabel = tPostDetail.replyCreateFailed || postDetailFallbacks.replyCreateFailed;
-  const answerCommentCreateFailedLabel = tPostDetail.answerCommentCreateFailed || postDetailFallbacks.answerCommentCreateFailed;
-  const reportReasonRequiredLabel = tPostDetail.reportReasonRequired || postDetailFallbacks.reportReasonRequired;
-  const reportSubmittedLabel = tPostDetail.reportSubmitted || postDetailFallbacks.reportSubmitted;
-  const reportFailedLabel = tPostDetail.reportFailed || postDetailFallbacks.reportFailed;
-  const confirmDeleteCommentLabel = tPostDetail.confirmDeleteComment || postDetailFallbacks.confirmDeleteComment;
-  const commentDeleteFailedLabel = tPostDetail.commentDeleteFailed || postDetailFallbacks.commentDeleteFailed;
-  const commentUpdateFailedLabel = tPostDetail.commentUpdateFailed || postDetailFallbacks.commentUpdateFailed;
-  const confirmDeleteReplyLabel = tPostDetail.confirmDeleteReply || postDetailFallbacks.confirmDeleteReply;
-  const replyDeleteFailedLabel = tPostDetail.replyDeleteFailed || postDetailFallbacks.replyDeleteFailed;
-  const replyUpdateFailedLabel = tPostDetail.replyUpdateFailed || postDetailFallbacks.replyUpdateFailed;
-  const answerUpdateFailedLabel = tPostDetail.answerUpdateFailed || postDetailFallbacks.answerUpdateFailed;
-  const confirmDeleteAnswerLabel = tPostDetail.confirmDeleteAnswer || postDetailFallbacks.confirmDeleteAnswer;
-  const answerDeleteFailedLabel = tPostDetail.answerDeleteFailed || postDetailFallbacks.answerDeleteFailed;
-  const onlyAuthorCanAdoptLabel = tPostDetail.onlyAuthorCanAdopt || postDetailFallbacks.onlyAuthorCanAdopt;
-  const adoptSuccessLabel = tCommon.adopt || postDetailFallbacks.adoptSuccess;
-  const adoptFailedLabel = tPostDetail.adoptFailed || postDetailFallbacks.adoptFailed;
-  const linkCopiedLabel = tPostDetail.linkCopied || postDetailFallbacks.linkCopied;
-  const reportTargetPostLabel = tCommon.post || postDetailFallbacks.postLabel;
-  const reportTargetReplyLabel = tCommon.reply || postDetailFallbacks.replyLabel;
-  const reportTargetCommentLabel = tCommon.comment || postDetailFallbacks.commentLabel;
-  const reportSpamLabel = tCommon.reportSpam || postDetailFallbacks.reportSpam;
-  const reportHarassmentLabel = tCommon.reportHarassment || postDetailFallbacks.reportHarassment;
-  const reportMisinformationLabel = tCommon.reportMisinformation || postDetailFallbacks.reportMisinformation;
-  const reportInappropriateLabel = tCommon.reportInappropriate || postDetailFallbacks.reportInappropriate;
-  const reportOtherLabel = tCommon.reportOther || postDetailFallbacks.reportOther;
-  const processingLabel = tCommon.processing || postDetailFallbacks.processing;
-  const reportSubmitLabel = tCommon.reportSubmit || postDetailFallbacks.reportSubmit;
+  const ugcProhibitedLabel = tErrors.CONTENT_PROHIBITED || '';
+  const confirmDeletePostLabel = tPostDetail.confirmDeletePost || '';
+  const postDeletedLabel = tPostDetail.postDeleted || '';
+  const postDeleteFailedLabel = tPostDetail.postDeleteFailed || '';
+  const titleContentRequiredLabel = tPostDetail.titleContentRequired || '';
+  const postUpdateFailedLabel = tPostDetail.postUpdateFailed || '';
+  const bannedWarningLabel = tPostDetail.bannedWarning || '';
+  const spamWarningLabel = tPostDetail.spamWarning || '';
+  const commentCreateFailedLabel = tPostDetail.commentCreateFailed || '';
+  const answerCreateFailedLabel = tPostDetail.answerCreateFailed || '';
+  const replyCreateFailedLabel = tPostDetail.replyCreateFailed || '';
+  const answerCommentCreateFailedLabel = tPostDetail.answerCommentCreateFailed || '';
+  const reportReasonRequiredLabel = tPostDetail.reportReasonRequired || '';
+  const reportSubmittedLabel = tPostDetail.reportSubmitted || '';
+  const reportFailedLabel = tPostDetail.reportFailed || '';
+  const confirmDeleteCommentLabel = tPostDetail.confirmDeleteComment || '';
+  const commentDeleteFailedLabel = tPostDetail.commentDeleteFailed || '';
+  const commentUpdateFailedLabel = tPostDetail.commentUpdateFailed || '';
+  const confirmDeleteReplyLabel = tPostDetail.confirmDeleteReply || '';
+  const replyDeleteFailedLabel = tPostDetail.replyDeleteFailed || '';
+  const replyUpdateFailedLabel = tPostDetail.replyUpdateFailed || '';
+  const answerUpdateFailedLabel = tPostDetail.answerUpdateFailed || '';
+  const confirmDeleteAnswerLabel = tPostDetail.confirmDeleteAnswer || '';
+  const answerDeleteFailedLabel = tPostDetail.answerDeleteFailed || '';
+  const onlyAuthorCanAdoptLabel = tPostDetail.onlyAuthorCanAdopt || '';
+  const adoptSuccessLabel = tPostDetail.adoptSuccess || '';
+  const adoptFailedLabel = tPostDetail.adoptFailed || '';
+  const linkCopiedLabel = tPostDetail.linkCopied || '';
+  const reportTargetPostLabel = tCommon.post || '';
+  const reportTargetReplyLabel = tCommon.reply || '';
+  const reportTargetCommentLabel = tCommon.comment || '';
+  const reportSpamLabel = tPostDetail.reportSpam || '';
+  const reportHarassmentLabel = tPostDetail.reportHarassment || '';
+  const reportMisinformationLabel = tPostDetail.reportMisinformation || '';
+  const reportInappropriateLabel = tPostDetail.reportInappropriate || '';
+  const reportOtherLabel = tPostDetail.reportOther || '';
+  const processingLabel = tCommon.processing || '';
+  const reportSubmitLabel = tCommon.reportSubmit || '';
   const helpfulPromptLabel = tCommon.helpfulPrompt || '';
   const helpfulCancelLabel = tCommon.helpfulCancel || '';
-  const helpfulToggleFailedLabel = tPostDetail.helpfulToggleFailed || postDetailFallbacks.helpfulToggleFailed;
-  const reportPlaceholderLabel = tPostDetail.reportPlaceholder || postDetailFallbacks.reportPlaceholder;
-  const cancelLabel = tCommon.cancel || postDetailFallbacks.cancel;
+  const helpfulToggleFailedLabel = tPostDetail.helpfulToggleFailed || '';
+  const reportPlaceholderLabel = tPostDetail.reportPlaceholder || '';
+  const cancelLabel = tCommon.cancel || '';
 
-  const postDetailUiFallbacks = resolvedLocale === 'en'
-    ? {
-        editTitle: 'Title',
-        editContent: 'Content',
-        editPlaceholder: 'Enter the content...',
-        save: 'Save',
-        question: 'Question',
-        adoptCompleted: 'Adopted',
-        notAdopted: 'Not adopted',
-        editAnswerPlaceholder: 'Edit your answer...',
-        reply: 'Reply',
-        adopt: 'Adopt',
-        replyPlaceholder: 'Write a reply...',
-        writeReply: 'Write reply',
-        firstAnswer: 'Be the first to answer!',
-        firstComment: 'Be the first to comment!',
-        commentPlaceholder: 'Write a comment...',
-        writeComment: 'Write comment',
-      }
-    : resolvedLocale === 'vi'
-      ? {
-          editTitle: 'Tiêu đề',
-          editContent: 'Nội dung',
-          editPlaceholder: 'Nhập nội dung...',
-          save: 'Lưu',
-          question: 'Câu hỏi',
-          adoptCompleted: 'Đã chọn',
-          notAdopted: 'Chưa chọn',
-          editAnswerPlaceholder: 'Chỉnh sửa câu trả lời...',
-          reply: 'Phản hồi',
-          adopt: 'Chấp nhận',
-          replyPlaceholder: 'Viết phản hồi...',
-          writeReply: 'Viết phản hồi',
-          firstAnswer: 'Hãy là người đầu tiên trả lời!',
-          firstComment: 'Hãy là người đầu tiên bình luận!',
-          commentPlaceholder: 'Viết bình luận...',
-          writeComment: 'Viết bình luận',
-        }
-      : {
-          editTitle: '제목',
-          editContent: '내용',
-          editPlaceholder: '내용을 입력하세요...',
-          save: '저장',
-          question: '질문',
-          adoptCompleted: '채택완료',
-          notAdopted: '미채택',
-          editAnswerPlaceholder: '답변을 수정해주세요...',
-          reply: '답글',
-          adopt: '채택하기',
-          replyPlaceholder: '답글을 작성해주세요...',
-          writeReply: '답글 작성',
-          firstAnswer: '첫 답변을 작성해보세요!',
-          firstComment: '첫 댓글을 작성해보세요!',
-          commentPlaceholder: '댓글을 작성해주세요...',
-          writeComment: '댓글 작성',
-        };
-
-  const editTitleLabel = tPostDetail.editTitle || postDetailUiFallbacks.editTitle;
-  const editContentLabel = tPostDetail.editContent || postDetailUiFallbacks.editContent;
-  const editPlaceholderLabel = tPostDetail.editPlaceholder || postDetailUiFallbacks.editPlaceholder;
-  const saveLabel = tCommon.save || postDetailUiFallbacks.save;
-  const questionLabel = tCommon.question || postDetailUiFallbacks.question;
-  const adoptCompletedLabel = tPostDetail.adoptCompleted || postDetailUiFallbacks.adoptCompleted;
-  const notAdoptedLabel = tPostDetail.notAdopted || postDetailUiFallbacks.notAdopted;
-  const editAnswerPlaceholderLabel = tPostDetail.editAnswerPlaceholder || postDetailUiFallbacks.editAnswerPlaceholder;
-  const replyLabel = tCommon.reply || postDetailUiFallbacks.reply;
-  const adoptLabel = tCommon.adopt || postDetailUiFallbacks.adopt;
-  const replyPlaceholderLabel = tPostDetail.replyPlaceholder || postDetailUiFallbacks.replyPlaceholder;
-  const writeReplyLabel = tCommon.writeReply || tPostDetail.writeReply || postDetailUiFallbacks.writeReply;
-  const firstAnswerLabel = tPostDetail.firstAnswer || postDetailUiFallbacks.firstAnswer;
-  const firstCommentLabel = tPostDetail.firstComment || postDetailUiFallbacks.firstComment;
-  const commentPlaceholderLabel = tPostDetail.commentPlaceholder || postDetailUiFallbacks.commentPlaceholder;
-  const writeCommentLabel = tPostDetail.writeComment || postDetailUiFallbacks.writeComment;
+  const editTitleLabel = tPostDetail.editTitle || '';
+  const editContentLabel = tPostDetail.editContent || '';
+  const editPlaceholderLabel = tPostDetail.editPlaceholder || '';
+  const saveLabel = tCommon.save || '';
+  const questionLabel = tCommon.question || '';
+  const adoptCompletedLabel = tPostDetail.adoptCompleted || '';
+  const notAdoptedLabel = tPostDetail.notAdopted || '';
+  const editAnswerPlaceholderLabel = tPostDetail.editAnswerPlaceholder || '';
+  const replyLabel = tCommon.reply || '';
+  const adoptLabel = tCommon.adopt || '';
+  const replyPlaceholderLabel = tPostDetail.replyPlaceholder || '';
+  const writeReplyLabel = tCommon.writeReply || tPostDetail.writeReply || '';
+  const firstAnswerLabel = tPostDetail.firstAnswer || '';
+  const firstCommentLabel = tPostDetail.firstComment || '';
+  const commentPlaceholderLabel = tPostDetail.commentPlaceholder || '';
+  const writeCommentLabel = tPostDetail.writeComment || '';
 
   const guidelineTooltip = tCommon.guidelineTooltip || '';
   const justNowLabel = getJustNowLabel(locale);
@@ -997,14 +802,6 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
         'expert',
         'community',
         'outdated',
-        'đã xác minh',
-        'chuyên gia',
-        'cộng đồng',
-        'hết hạn',
-        '검증됨',
-        '전문가',
-        '커뮤니티',
-        '오래된 정보',
       ]
         .map((v) => v?.toString().trim())
         .filter(Boolean)
