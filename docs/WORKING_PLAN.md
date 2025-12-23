@@ -2869,3 +2869,17 @@ $gh-address-comments
 - 변경 내용
   - `messages/ko.json`, `messages/vi.json`, `messages/en.json`: `common.loading` 추가
   - `src/app/[lang]/(main)/subscriptions/SubscriptionsClient.tsx`: `copy.loading`을 `common.loading` 기반으로 단일화(영문 fallback 제거)
+
+#### (2025-12-23) [P0] 모바일 PostCard 숨김 버튼 위치 고정 + 미디어 상단 오프셋 제거 + 홈 피드 토글 고정 (P0-3)
+
+- 목표: 모바일에서 카드 액션이 “떠 있는 것처럼” 보이는 현상(숨김 버튼 위치 흔들림/미디어 상단 여백/홈 피드 토글 오버레이)을 제거하고, 게시글 피드의 레이아웃 안정성을 확보
+- 변경 내용
+  - `src/components/molecules/cards/PostCard.tsx`: 숨김 버튼을 카드 우상단 고정 영역(`.question-card-badges`)로 이동해 미디어 유무에 따른 위치 흔들림 제거(작은 `×` + tooltip)
+  - `src/app/globals.css`: `.question-card-media`의 불필요한 상단 오프셋 제거(모바일/데스크톱 동일)
+  - `src/components/organisms/BottomNavigation.tsx`: 홈 피드 토글(`vk-home-feed-toggle`)을 하단 내비 위로 고정(`bottom` anchor)해 중간 영역에 떠 보이는 현상 방지
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+  - PR: https://github.com/LEE-SANG-BOK/VKC-2-/pull/72
