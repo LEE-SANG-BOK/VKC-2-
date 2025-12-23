@@ -179,26 +179,46 @@ export default function RichTextEditor({
     event.target.value = '';
   }, [editor, editorCopy, openLoginPrompt]);
 
+  const normalizeHref = useCallback((value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    const withProtocol = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try {
+      new URL(withProtocol);
+      return withProtocol;
+    } catch {
+      return trimmed;
+    }
+  }, []);
+
   const handleSetLink = useCallback(() => {
     if (!editor) return;
 
-    if (linkUrl) {
+    const normalizedHref = normalizeHref(linkUrl);
+
+    if (normalizedHref) {
       const selection = editor.state.selection;
       if (selection.empty) {
-        const insertFrom = selection.from;
         editor
           .chain()
           .focus()
-          .insertContent(linkUrl)
-          .setTextSelection({ from: insertFrom, to: insertFrom + linkUrl.length })
-          .setLink({ href: linkUrl })
+          .insertContent({
+            type: 'text',
+            text: normalizedHref,
+            marks: [
+              {
+                type: 'link',
+                attrs: { href: normalizedHref },
+              },
+            ],
+          })
           .run();
       } else {
         editor
           .chain()
           .focus()
           .extendMarkRange('link')
-          .setLink({ href: linkUrl })
+          .setLink({ href: normalizedHref })
           .run();
       }
     } else {
@@ -207,7 +227,7 @@ export default function RichTextEditor({
 
     setShowLinkInput(false);
     setLinkUrl('');
-  }, [editor, linkUrl]);
+  }, [editor, linkUrl, normalizeHref]);
 
   const handleLinkButtonClick = useCallback(() => {
     if (!editor) return;

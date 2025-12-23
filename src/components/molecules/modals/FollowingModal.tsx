@@ -342,52 +342,68 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
         className="bg-white dark:bg-gray-800 rounded-xl p-4 hover:shadow-lg transition-all border border-gray-200 dark:border-gray-700"
       >
         <div className="flex items-start gap-3">
-          <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => handleUserClick(userItem.id)}
+            aria-label={displayName}
+            className="shrink-0"
+          >
             <Avatar name={displayName} imageUrl={userItem.avatar || userItem.image} size="xl" hoverHighlight />
-            <FollowButton
-              userId={String(userItem.id)}
-              userName={displayName}
-              isFollowing={isFollowing}
-              size="xs"
-              translations={translations}
-              onToggle={(next) =>
-                setFollowStates((prev) => ({
-                  ...prev,
-                  [userItem.id]: next,
-                }))
-              }
-            />
-          </div>
+          </button>
 
-          <div className="flex-1 min-w-0 pt-0.5">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => handleUserClick(userItem.id)}
+                className="min-w-0 text-left"
+              >
+                {(() => {
+                  const trustBadgePresentation = getTrustBadgePresentation({
+                    locale,
+                    author: {
+                      isVerified: userItem.isVerified,
+                      badgeType: userItem.badgeType,
+                    },
+                    translations: tTrust,
+                  });
+                  return (
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <h4 className="font-semibold text-gray-900 dark:text-white truncate">
+                        {displayName}
+                      </h4>
+                      <UserTrustBadge
+                        presentation={trustBadgePresentation}
+                        labelVariant="text"
+                        badgeClassName="!px-1.5 !py-0.5"
+                        labelClassName="text-[11px] text-gray-500 dark:text-gray-400"
+                      />
+                    </div>
+                  );
+                })()}
+              </button>
+
+              <FollowButton
+                userId={String(userItem.id)}
+                userName={displayName}
+                isFollowing={isFollowing}
+                size="xs"
+                translations={translations}
+                className="shrink-0"
+                onToggle={(next) =>
+                  setFollowStates((prev) => ({
+                    ...prev,
+                    [userItem.id]: next,
+                  }))
+                }
+              />
+            </div>
+
             <button
               type="button"
               onClick={() => handleUserClick(userItem.id)}
-              className="w-full text-left"
+              className="mt-1 w-full text-left"
             >
-              {(() => {
-                const trustBadgePresentation = getTrustBadgePresentation({
-                  locale,
-                  author: {
-                    isVerified: userItem.isVerified,
-                    badgeType: userItem.badgeType,
-                  },
-                  translations: tTrust,
-                });
-                return (
-                  <div className="flex items-center gap-1.5 mb-1">
-                <h4 className="font-semibold text-gray-900 dark:text-white truncate">
-                  {displayName}
-                </h4>
-                    <UserTrustBadge
-                      presentation={trustBadgePresentation}
-                      labelVariant="text"
-                      badgeClassName="!px-1.5 !py-0.5"
-                      labelClassName="text-[11px] text-gray-500 dark:text-gray-400"
-                    />
-                  </div>
-                );
-              })()}
               {userItem.username && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
                   @{userItem.username}
