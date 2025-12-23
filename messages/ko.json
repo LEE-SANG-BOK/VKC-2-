@@ -771,6 +771,7 @@
     "similarDesc": "질문을 작성하기 전에 비슷한 답변을 확인해보세요.",
     "similarSeeAll": "모두 보기",
     "similarTagsLabel": "추천 태그",
+    "similarTagSuggestions": "비자,취업,주거",
     "similarFallbackNotice": "비슷한 질문이 아직 없어서 인기 질문을 보여드려요.",
     "similarFallbackReasonPopular": "최근 많은 조회를 받은 질문을 먼저 확인해보세요.",
     "similarFallbackTokensLabel": "검색 키워드",

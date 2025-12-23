@@ -17,6 +17,7 @@ import CommentCard from '@/components/molecules/cards/CommentCard';
 import { useInfiniteUserPosts, useInfiniteUserAnswers, useInfiniteUserComments, useInfiniteUserBookmarks, useFollowStatus, useUserScore } from '@/repo/users/query';
 import { getTrustBadgePresentation } from '@/lib/utils/trustBadges';
 import { getUserTypeLabel } from '@/utils/userTypeLabel';
+import { getJustNowLabel } from '@/utils/dateTime';
 
 export interface ProfileData {
   id: string;
@@ -378,7 +379,8 @@ export default function ProfileClient({ initialProfile, locale, translations }: 
   }, [t]);
 
   const formatDate = (dateString: string) => {
-    if (!dateString || dateString === '방금 전') return dateString;
+    const justNowLabel = getJustNowLabel(locale);
+    if (!dateString || dateString === justNowLabel) return dateString;
     const date = dayjs(dateString);
     if (!date.isValid()) return dateString;
     return date.format('YYYY.MM.DD HH:mm');

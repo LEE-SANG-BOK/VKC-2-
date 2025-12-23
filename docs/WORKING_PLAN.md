@@ -2823,3 +2823,17 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] Signup/프로필/유사질문 i18n 하드코딩 제거 + signup update API 정합 (P0-2)
+
+- 목표: 회원가입(프로필 완성)에서 하드코딩(`국내/해외`) 제거 + 프로필 날짜 표시의 하드코딩 제거 + 유사질문 추천태그 locale 분기 제거 + 회원가입 프로필 업데이트 API 경로/메서드 정합
+- 변경 내용
+  - `src/app/[lang]/(auth)/signup/SignupClient.tsx`: nationality value를 code(`domestic/overseas`)로 전환 + 프로필 업데이트를 `PUT /api/users/[id]`로 정합
+  - `src/app/[lang]/(main)/profile/[id]/ProfileClient.tsx`: `방금 전` 비교 하드코딩 제거 → `getJustNowLabel(locale)` 사용
+  - `src/components/organisms/SimilarQuestionPrompt.tsx`: 추천 태그를 messages(`newPost.similarTagSuggestions`) 기반으로 파싱(코드 내 locale 분기 제거)
+  - `messages/ko.json`, `messages/vi.json`: `newPost.similarTagSuggestions` 추가
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
