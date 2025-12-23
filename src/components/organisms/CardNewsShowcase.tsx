@@ -138,7 +138,7 @@ export default function CardNewsShowcase({ translations, lang }: CardNewsShowcas
                 </button>
                 <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
                   <button className="hover:text-gray-800 dark:hover:text-gray-200 transition">{saveLabel}</button>
-                  <ShareButton url={card.linkUrl || undefined} title={card.title} label={shareLabel} className="px-2.5 py-1.5" />
+                  <ShareButton url={card.linkUrl || undefined} title={card.title} label={shareLabel} className="px-2.5 py-1.5" translations={translations} />
                 </div>
               </div>
             </article>

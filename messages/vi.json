@@ -167,6 +167,10 @@
       "title": "Bảng xếp hạng cộng đồng - viet kconnect",
       "description": "Khám phá những thành viên đáng tin và hữu ích nhất trong cộng đồng."
     },
+    "trustBadges": {
+      "title": "Huy hiệu tin cậy - viet kconnect",
+      "description": "Tìm hiểu ý nghĩa của từng huy hiệu tin cậy và cách được gán."
+    },
     "about": {
       "title": "Giới thiệu - viet kconnect",
       "description": "Tìm hiểu về viet kconnect và cách hoạt động."
@@ -1051,6 +1055,8 @@
     "updateFailed": "Không thể cập nhật hồ sơ."
   },
   "trustBadges": {
+    "guideTitle": "Huy hiệu tin cậy",
+    "guideSubtitle": "Huy hiệu giúp bạn nhanh chóng đánh giá mức độ tin cậy của thông tin.",
     "verifiedLabel": "Đã xác minh",
     "verifiedTooltip": "Thông tin từ người dùng đã xác minh",
     "verifiedStudentLabel": "Sinh viên đã xác minh",

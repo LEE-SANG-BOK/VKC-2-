@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Share2, Check } from 'lucide-react';
-import { useParams } from 'next/navigation';
 
 interface ShareButtonProps {
   url?: string;
@@ -10,54 +9,31 @@ interface ShareButtonProps {
   text?: string;
   label?: string;
   className?: string;
+  copiedLabel?: string;
+  translations?: Record<string, unknown>;
 }
 
 export default function ShareButton({
   url,
-  title = 'Viet K-Connect',
+  title,
   text,
   label,
   className = '',
+  copiedLabel,
+  translations,
 }: ShareButtonProps) {
-  const params = useParams();
-  const locale = (params?.lang as string) || 'ko';
-  const resolvedLocale = (['ko', 'en', 'vi'] as const).includes(locale as 'ko' | 'en' | 'vi') ? (locale as 'ko' | 'en' | 'vi') : 'ko';
-  const defaultTextByLocale = {
-    ko: '베트남인을 위한 한국 생활 Q&A 커뮤니티',
-    en: 'Korea life Q&A community for Vietnamese users',
-    vi: 'Cộng đồng hỏi đáp cuộc sống Hàn Quốc cho người Việt',
-  } as const;
-  const buttonLabelsByLocale = {
-    ko: {
-      defaultLabel: '공유',
-      copiedLabel: '복사됨',
-      copyTitle: '링크가 복사되었습니다!',
-      shareTitle: '링크 복사 또는 공유',
-    },
-    en: {
-      defaultLabel: 'Share',
-      copiedLabel: 'Copied',
-      copyTitle: 'Link copied!',
-      shareTitle: 'Copy or share link',
-    },
-    vi: {
-      defaultLabel: 'Chia sẻ',
-      copiedLabel: 'Đã sao chép',
-      copyTitle: 'Liên kết đã được sao chép!',
-      shareTitle: 'Sao chép hoặc chia sẻ liên kết',
-    },
-  } as const;
-  const resolvedLabels = buttonLabelsByLocale[resolvedLocale] || buttonLabelsByLocale.ko;
-  const defaultText = defaultTextByLocale[resolvedLocale] || defaultTextByLocale.ko;
-  const defaultLabel = resolvedLabels.defaultLabel;
-  const copiedLabel = resolvedLabels.copiedLabel;
-  const copyTitle = resolvedLabels.copyTitle;
-  const shareTitleLabel = resolvedLabels.shareTitle;
+  const tTooltips = (translations?.tooltips || {}) as Record<string, string>;
+  const tPostDetail = (translations?.postDetail || {}) as Record<string, string>;
+
+  const resolvedLabel = label || tTooltips.share || '';
+  const resolvedCopiedLabel = copiedLabel || resolvedLabel;
+  const copyTitle = tPostDetail.linkCopied || '';
+  const shareTitleLabel = tTooltips.share || '';
 
   const [copied, setCopied] = useState(false);
   const shareUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
-  const shareTitle = title || (typeof document !== 'undefined' ? document.title : 'Viet K-Connect');
-  const shareText = text || defaultText;
+  const shareTitle = title || (typeof document !== 'undefined' ? document.title : '');
+  const shareText = text || '';
 
   const handleShare = async () => {
     try {
@@ -85,7 +61,7 @@ export default function ShareButton({
       title={copied ? copyTitle : shareTitleLabel}
     >
       {copied ? <Check className="h-4 w-4 text-green-600" /> : <Share2 className="h-4 w-4" />}
-      <span className={copied ? 'text-green-600' : ''}>{copied ? copiedLabel : (label || defaultLabel)}</span>
+      <span className={copied ? 'text-green-600' : ''}>{copied ? resolvedCopiedLabel : resolvedLabel}</span>
     </button>
   );
 }

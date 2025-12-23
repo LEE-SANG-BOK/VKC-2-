@@ -138,6 +138,10 @@
       "title": "Community Leaderboard - viet kconnect",
       "description": "Discover the most trusted and helpful community members."
     },
+    "trustBadges": {
+      "title": "Trust Badges - viet kconnect",
+      "description": "Learn what each trust badge means and how it is assigned."
+    },
     "about": {
       "title": "About - viet kconnect",
       "description": "Learn what viet kconnect is and how it works."
@@ -923,6 +927,8 @@
     "updateFailed": "Failed to update profile."
   },
   "trustBadges": {
+    "guideTitle": "Trust Badges",
+    "guideSubtitle": "Badges help you quickly judge how trustworthy information is.",
     "verifiedLabel": "Verified",
     "verifiedTooltip": "From a verified user",
     "verifiedStudentLabel": "Verified Student",
