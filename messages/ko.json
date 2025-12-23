@@ -51,7 +51,8 @@
     "share": "공유",
     "question": "질문",
     "verifiedUser": "인증된 사용자",
-    "guidelineTooltip": "예의·혐오 금지, 광고/연락처 제한, 위반 시 게시 제한/제재"
+    "guidelineTooltip": "예의·혐오 금지, 광고/연락처 제한, 위반 시 게시 제한/제재",
+    "loading": "로딩 중..."
   },
   "postDetail": {
     "confirmDeletePost": "정말 이 게시글을 삭제하시겠습니까?",
