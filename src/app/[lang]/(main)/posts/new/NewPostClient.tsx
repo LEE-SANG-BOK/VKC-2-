@@ -212,14 +212,14 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const templateHtml = useMemo(() => {
     if (templateSections.length === 0) return '';
     return templateSections
-      .map((section) => `<p><strong>${formatTemplateHtml(section)}</strong></p>`)
+      .map((section) => `<p data-vk-template="1"><strong>${formatTemplateHtml(section)}</strong></p>`)
       .join('');
   }, [templateSections]);
 
   const resolvedContent = useMemo(() => {
     const trimmedContent = content.trim();
     if (!templateHtml) return trimmedContent;
-    return trimmedContent ? `${templateHtml}<p></p>${trimmedContent}` : templateHtml;
+    return trimmedContent ? `${templateHtml}<p data-vk-template-spacer="1"></p>${trimmedContent}` : templateHtml;
   }, [content, templateHtml]);
 
   const contentImages = useMemo(() => extractImageSources(content), [content]);
