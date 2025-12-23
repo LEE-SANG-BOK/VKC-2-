@@ -2695,3 +2695,21 @@ $gh-address-comments
   - [x] PR #54 (@codex) → `main` 머지
   - [x] PR #55 (@codex) → `main` 머지
   - [x] PR #56 (@codex) → `main` 머지
+
+#### (2025-12-23) [P0] Account restriction i18n + rail gating (P0-2/P0-3)
+
+- 목표: 계정 제한 문구의 영문 노출 제거 + `ACCOUNT_RESTRICTED` 흐름을 API→repo→UI까지 통일 + 모바일 홈에서 우측 레일이 게시글 위로 올라오는 UX 제거
+- 변경 내용
+  - `src/components/molecules/banners/AccountStatusBanner.tsx`: 계정 상태 배너를 번역키 기반으로 전환(정지/일시정지)
+  - `messages/ko.json`, `messages/vi.json`: `accountStatusBanner.*`, `errors.ACCOUNT_RESTRICTED` 추가
+  - `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`: 계정 제한 에러는 번역키 우선으로 토스트 처리
+  - `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`: 계정 제한 에러는 번역키 우선으로 표시
+  - `src/app/api/posts/route.ts`, `src/app/api/posts/[id]/answers/route.ts`, `src/app/api/posts/[id]/comments/route.ts`, `src/app/api/answers/[id]/comments/route.ts`: 제한 시 `code: ACCOUNT_RESTRICTED` + 403으로 표준화
+  - `src/repo/posts/fetch.ts`, `src/repo/answers/fetch.ts`, `src/repo/comments/fetch.ts`: 403이라도 `code===ACCOUNT_RESTRICTED`일 때만 AccountRestrictedError로 분기
+  - `src/components/templates/MainLayout.tsx`: 모바일에서 `rightRail`을 기본 노출하지 않고 `mobileRightRail`로 opt-in
+  - `src/app/[lang]/(main)/leaderboard/page.tsx`: 이벤트 섹션을 `mobileRightRail`로 제공
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
