@@ -85,9 +85,9 @@ export default function RecommendedUsersSection({
   const cardNameClass = compact ? 'text-[13px]' : 'text-sm';
   const cardMetaClass = compact ? 'text-[10px]' : 'text-[11px]';
   const badgeLabelClass = compact ? 'text-[10px] text-gray-500 dark:text-gray-400' : 'text-[11px] text-gray-500 dark:text-gray-400';
-  const avatarSize = compact ? '2xl' : 'lg';
-  const followButtonSize = compact ? 'xs' : 'sm';
-  const followButtonClassName = compact ? 'min-h-[26px] px-2.5 py-0.5' : '';
+  const avatarSize = compact ? 'xl' : 'lg';
+  const followButtonSize = 'xs';
+  const followButtonClassName = compact ? 'min-h-[36px] px-3 py-1 text-xs' : 'min-h-[36px] px-3 py-1 text-xs';
 
   const mergedMetaLabels = useMemo<Record<string, string>>(() => ({
     followers: followerLabel,
@@ -201,7 +201,7 @@ export default function RecommendedUsersSection({
         return (
           <div
             key={userId}
-            className={`flex items-center ${cardGapClass} rounded-lg border border-gray-200 dark:border-gray-800 ${cardPaddingClass} w-full snap-start`}
+            className={`flex items-center ${cardGapClass} rounded-lg border border-gray-200/80 dark:border-gray-800/80 bg-white/80 dark:bg-gray-950/20 hover:bg-white dark:hover:bg-gray-950/30 transition-colors ${cardPaddingClass} w-full snap-start`}
           >
             <div className={`flex items-center ${cardGapClass} w-full`}>
               <button
