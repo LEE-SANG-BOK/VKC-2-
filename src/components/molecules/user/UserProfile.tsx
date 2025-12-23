@@ -11,18 +11,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import Avatar from '@/components/atoms/Avatar';
 
 const ModalLoadingContext = createContext<(() => void) | null>(null);
-
-const LOADING_TITLE_BY_LOCALE = {
-  ko: '로딩 중...',
-  en: 'Loading...',
-  vi: 'Đang tải...',
-} as const;
+const ModalTranslationsContext = createContext<Record<string, unknown> | null>(null);
 
 function ModalLoadingFallback({ maxWidth }: { maxWidth: string }) {
-  const params = useParams();
-  const locale = params.lang as string || 'ko';
   const onClose = useContext(ModalLoadingContext);
-  const title = LOADING_TITLE_BY_LOCALE[locale as keyof typeof LOADING_TITLE_BY_LOCALE] || LOADING_TITLE_BY_LOCALE.ko;
+  const translations = useContext(ModalTranslationsContext) || {};
+  const title =
+    ((translations.profile as Record<string, string> | undefined)?.loading) ||
+    ((translations.post as Record<string, string> | undefined)?.loading) ||
+    ((translations.leaderboard as Record<string, string> | undefined)?.loading) ||
+    '';
 
   useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
@@ -261,29 +259,39 @@ export default function UserProfile({ name, avatar, isLoggedIn, userId, onLogout
 
       {/* Modals */}
       {activeModal === 'profile' ? (
-        <ModalLoadingContext.Provider value={closeModal}>
-          <ProfileModal isOpen onClose={closeModal} translations={translations} />
-        </ModalLoadingContext.Provider>
+        <ModalTranslationsContext.Provider value={translations}>
+          <ModalLoadingContext.Provider value={closeModal}>
+            <ProfileModal isOpen onClose={closeModal} translations={translations} />
+          </ModalLoadingContext.Provider>
+        </ModalTranslationsContext.Provider>
       ) : null}
       {activeModal === 'myPosts' ? (
-        <ModalLoadingContext.Provider value={closeModal}>
-          <MyPostsModal isOpen onClose={closeModal} translations={translations} />
-        </ModalLoadingContext.Provider>
+        <ModalTranslationsContext.Provider value={translations}>
+          <ModalLoadingContext.Provider value={closeModal}>
+            <MyPostsModal isOpen onClose={closeModal} translations={translations} />
+          </ModalLoadingContext.Provider>
+        </ModalTranslationsContext.Provider>
       ) : null}
       {activeModal === 'following' ? (
-        <ModalLoadingContext.Provider value={closeModal}>
-          <FollowingModal isOpen onClose={closeModal} translations={translations} />
-        </ModalLoadingContext.Provider>
+        <ModalTranslationsContext.Provider value={translations}>
+          <ModalLoadingContext.Provider value={closeModal}>
+            <FollowingModal isOpen onClose={closeModal} translations={translations} />
+          </ModalLoadingContext.Provider>
+        </ModalTranslationsContext.Provider>
       ) : null}
       {activeModal === 'bookmarks' ? (
-        <ModalLoadingContext.Provider value={closeModal}>
-          <BookmarksModal isOpen onClose={closeModal} translations={translations} />
-        </ModalLoadingContext.Provider>
+        <ModalTranslationsContext.Provider value={translations}>
+          <ModalLoadingContext.Provider value={closeModal}>
+            <BookmarksModal isOpen onClose={closeModal} translations={translations} />
+          </ModalLoadingContext.Provider>
+        </ModalTranslationsContext.Provider>
       ) : null}
       {activeModal === 'settings' ? (
-        <ModalLoadingContext.Provider value={closeModal}>
-          <SettingsModal isOpen onClose={closeModal} translations={translations} />
-        </ModalLoadingContext.Provider>
+        <ModalTranslationsContext.Provider value={translations}>
+          <ModalLoadingContext.Provider value={closeModal}>
+            <SettingsModal isOpen onClose={closeModal} translations={translations} />
+          </ModalLoadingContext.Provider>
+        </ModalTranslationsContext.Provider>
       ) : null}
     </div>
   );
