@@ -2730,3 +2730,16 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] 팔로우 추천 카드 정렬 + 에디터 링크 삽입 안정화 + PostCard 컴팩트 (P0-2/P0-3)
+
+- 목표: 모바일에서 “추천 팔로우” 카드의 아바타/팔로우 버튼 비율을 정상화 + 링크 추가 시 에디터에 반영되지 않는 케이스를 줄여 작성 실패 리스크를 낮춤 + PostCard의 숨김/신뢰 라벨이 액션바를 밀지 않게 컴팩트화
+- 변경 내용
+  - `src/components/molecules/modals/FollowingModal.tsx`: 추천/팔로잉 카드에서 팔로우 버튼을 우측으로 분리(아바타 축소/버튼 과대 강조 방지) + 프로필 진입 동선 유지
+  - `src/components/molecules/editor/RichTextEditor.tsx`: 링크 URL 삽입 시 빈 선택 영역에서도 링크 마크가 확실히 적용되도록 삽입 방식을 개선
+  - `src/components/molecules/cards/PostCard.tsx`: hide(×) 터치 타깃/정렬 보정 + 인증 응답 라벨 padding/폭 축소(클립/밀림 완화) + purpose 태그 하드코딩 fallback 제거
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
