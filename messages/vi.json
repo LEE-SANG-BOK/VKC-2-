@@ -293,6 +293,11 @@
     "openExternal": "Mở liên kết",
     "close": "Đóng"
   },
+  "accountStatusBanner": {
+    "banned": "Tài khoản của bạn đã bị cấm vĩnh viễn. Bạn không thể đăng bài hoặc bình luận.",
+    "suspended": "Tài khoản của bạn đang bị tạm khóa. Bạn không thể đăng bài hoặc bình luận.",
+    "suspendedUntil": "Tài khoản của bạn bị tạm khóa đến {until}. Trong thời gian này bạn không thể đăng bài hoặc bình luận."
+  },
   "leaderboard": {
     "title": "Bảng xếp hạng cộng đồng",
     "subtitle": "Khám phá những thành viên đáng tin và hữu ích nhất trong cộng đồng.",
@@ -1066,6 +1071,7 @@
     "COMMENT_PARENT_NOT_FOUND": "Không tìm thấy bình luận gốc.",
     "COMMENT_PARENT_MISMATCH": "Yêu cầu không hợp lệ.",
     "CONTENT_PROHIBITED": "Phát hiện từ ngữ cấm, quảng cáo hoặc thông tin liên hệ. Vui lòng chỉnh sửa.",
+    "ACCOUNT_RESTRICTED": "Tài khoản của bạn bị hạn chế nên không thể thực hiện yêu cầu.",
     "UPLOAD_FILE_REQUIRED": "Vui lòng đính kèm tệp.",
     "UPLOAD_FAILED": "Tải tệp thất bại.",
     "RATE_LIMITED": "Bạn gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",

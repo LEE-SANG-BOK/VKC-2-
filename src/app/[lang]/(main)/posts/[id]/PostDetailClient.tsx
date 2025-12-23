@@ -535,7 +535,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   };
 
   const resolveErrorMessage = (error: unknown, fallback: string) => {
-    if (isAccountRestrictedError(error)) return error.message;
+    if (isAccountRestrictedError(error)) return tErrors.ACCOUNT_RESTRICTED || error.message;
     if (error instanceof ApiError && error.code && tErrors[error.code]) return tErrors[error.code];
     if (error instanceof Error && error.message) return error.message;
     return fallback;

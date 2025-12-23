@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { userPublicColumns } from '@/lib/db/columns';
 import { comments, posts, likes } from '@/lib/db/schema';
-import { setPrivateNoStore, successResponse, errorResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse, serverErrorResponse, paginatedResponse, rateLimitResponse } from '@/lib/api/response';
+import { setPrivateNoStore, successResponse, errorResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse, paginatedResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { checkRateLimit } from '@/lib/api/rateLimit';
 import { checkUserStatus } from '@/lib/user-status';
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     const userStatus = await checkUserStatus(user.id);
     if (!userStatus.isActive) {
-      return forbiddenResponse(userStatus.message || 'Account restricted');
+      return errorResponse('권한이 없습니다.', 'ACCOUNT_RESTRICTED', 403);
     }
 
     const rateLimit = await checkRateLimit({
