@@ -590,7 +590,21 @@
   "subscription": {
     "title": "카테고리 구독",
     "description": "관심있는 카테고리를 구독하면 해당 카테고리의 게시글만 모아볼 수 있습니다.",
-    "subscribedCount": "{count}개의 카테고리를 구독 중입니다."
+    "subscribedCount": "{count}개의 카테고리를 구독 중입니다.",
+    "manageDesc": "관심 있는 카테고리와 토픽을 구독해 피드를 개인화하세요.",
+    "settingsTitle": "알림 설정",
+    "settingsDesc": "구독별로 알림 채널과 빈도를 설정할 수 있습니다.",
+    "topicsLabel": "토픽",
+    "channelLabel": "채널",
+    "frequencyLabel": "빈도",
+    "channelInApp": "앱 내",
+    "channelEmail": "이메일",
+    "channelPush": "푸시",
+    "frequencyInstant": "즉시",
+    "frequencyDaily": "매일",
+    "frequencyWeekly": "매주",
+    "frequencyOff": "끄기",
+    "updateError": "구독 알림 설정 업데이트에 실패했습니다."
   },
   "userMenu": {
     "profile": "프로필",

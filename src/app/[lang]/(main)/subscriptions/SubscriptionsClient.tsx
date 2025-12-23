@@ -34,32 +34,32 @@ export default function SubscriptionsClient({ translations, lang }: Subscription
 
   const copy = useMemo(() => {
     return {
-      title: tSubscription.title || 'Subscription settings',
-      description: tSubscription.description || 'Manage the categories and topics you follow.',
+      title: tSubscription.title || '',
+      description: tSubscription.description || '',
       subscribedCount: tSubscription.subscribedCount || 'You are subscribed to {count} categories.',
       manageTitle: tSidebar.mySubscriptions || 'My subscriptions',
-      manageDesc: 'Follow categories and topics to personalize your feed.',
-      settingsTitle: 'Notification preferences',
-      settingsDesc: 'Choose how often to receive updates per subscription.',
+      manageDesc: tSubscription.manageDesc || tSubscription.description || '',
+      settingsTitle: tSubscription.settingsTitle || '',
+      settingsDesc: tSubscription.settingsDesc || '',
       categoriesLabel: tSidebar.categories || 'Categories',
-      topicsLabel: 'Topics',
+      topicsLabel: tSubscription.topicsLabel || '',
       subscribeLabel: tSidebar.subscribe || 'Subscribe',
       subscribedLabel: tSidebar.subscribedLabel || tSidebar.subscribed || 'Subscribed',
       subscribedToast: tSidebar.subscribedToast || 'Subscribed.',
       unsubscribedToast: tSidebar.unsubscribedToast || 'Unsubscribed.',
       subscribeError: tSidebar.subscribeError || 'Failed to update subscription.',
       noSubscriptions: tSidebar.noSubscriptions || 'No subscriptions yet.',
-      channelLabel: 'Channel',
-      frequencyLabel: 'Frequency',
-      channelInApp: 'In-app',
-      channelEmail: 'Email',
-      channelPush: 'Push',
-      frequencyInstant: 'Instant',
-      frequencyDaily: 'Daily',
-      frequencyWeekly: 'Weekly',
-      frequencyOff: 'Off',
+      channelLabel: tSubscription.channelLabel || '',
+      frequencyLabel: tSubscription.frequencyLabel || '',
+      channelInApp: tSubscription.channelInApp || '',
+      channelEmail: tSubscription.channelEmail || '',
+      channelPush: tSubscription.channelPush || '',
+      frequencyInstant: tSubscription.frequencyInstant || '',
+      frequencyDaily: tSubscription.frequencyDaily || '',
+      frequencyWeekly: tSubscription.frequencyWeekly || '',
+      frequencyOff: tSubscription.frequencyOff || '',
       loading: tCommon.loading || 'Loading...',
-      updateError: 'Failed to update subscription settings.',
+      updateError: tSubscription.updateError || '',
       unknownCategory: tCommon.uncategorized || '',
     };
   }, [tSubscription, tSidebar, tCommon]);
@@ -236,13 +236,15 @@ export default function SubscriptionsClient({ translations, lang }: Subscription
                                   type="button"
                                   onClick={() => handleToggleSubscription(child.id)}
                                   disabled={pendingToggleId === child.id}
-                                  className={`shrink-0 self-end whitespace-nowrap text-xs font-semibold px-2.5 py-1 rounded-full border transition sm:self-auto ${
+                                  className={`shrink-0 self-end text-center whitespace-normal break-words text-xs font-semibold px-2.5 py-1.5 rounded-full border transition sm:self-auto sm:whitespace-nowrap sm:py-1 max-w-[140px] sm:max-w-none min-h-[32px] sm:min-h-0 ${
                                     childSubscribed
                                       ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-200'
                                       : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:text-gray-300'
                                   } ${pendingToggleId === child.id ? 'opacity-60 cursor-not-allowed' : ''}`}
                                 >
-                                  {childSubscribed ? copy.subscribedLabel : copy.subscribeLabel}
+                                  <span className="block leading-snug">
+                                    {childSubscribed ? copy.subscribedLabel : copy.subscribeLabel}
+                                  </span>
                                 </button>
                               </div>
                             );
