@@ -2911,3 +2911,26 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] 홈 피드 토글 오버레이 제거 (P0-3)
+
+- 목표: 모바일에서 홈 피드 토글(🔥 인기/🕒 최신) 오버레이가 콘텐츠를 가리거나 깜빡이는 현상을 제거하고 “게시글 위주” 첫 화면을 유지
+- 변경 내용
+  - `src/components/organisms/BottomNavigation.tsx`: 홈 토글 오버레이 제거(하단 탭 홈은 `/${lang}`로만 이동)
+  - `src/app/globals.css`: `.vk-home-feed-toggle` 스타일 제거
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] Feedback 저장 스키마 드리프트 대응(호환 insert) (P0-3)
+
+- 목표: 환경별 feedbacks 테이블 컬럼 드리프트(`content` vs `title/description/steps`)가 있어도 제출이 실패하지 않게 서버에서 insert를 자동 호환
+- 변경 내용
+  - `src/app/api/feedback/route.ts`: information_schema 기반으로 존재 컬럼을 감지하고, 해당 스키마에 맞춰 insert payload를 구성해 저장
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`

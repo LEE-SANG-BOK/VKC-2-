@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { db, getQueryClient } from '@/lib/db';
 import { feedbacks } from '@/lib/db/schema';
 import { successResponse, errorResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
@@ -9,6 +9,99 @@ import { and, eq, gte, sql } from 'drizzle-orm';
 const feedbackRateLimitWindowMs = 60 * 60 * 1000;
 const feedbackRateLimitMax = 3;
 const feedbackContentMax = 2000;
+
+const feedbackColumnsCacheTtlMs = 5 * 60 * 1000;
+let cachedFeedbackColumns:
+  | {
+      fetchedAt: number;
+      columns: Set<string>;
+    }
+  | undefined;
+
+const getFeedbackColumns = async () => {
+  if (cachedFeedbackColumns && Date.now() - cachedFeedbackColumns.fetchedAt < feedbackColumnsCacheTtlMs) {
+    return cachedFeedbackColumns.columns;
+  }
+
+  const client = getQueryClient();
+  const result = await client`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'feedbacks'
+  `;
+  const columns = new Set(
+    (result as Array<{ column_name?: unknown }>)
+      .map((row) => String(row?.column_name || '').trim())
+      .filter(Boolean)
+  );
+
+  cachedFeedbackColumns = { fetchedAt: Date.now(), columns };
+  return columns;
+};
+
+const buildInsertPayload = (
+  columns: Set<string>,
+  input: {
+    userId: string | null;
+    type: string;
+    title: string;
+    description: string;
+    steps: string;
+    content: string;
+    pageUrl: string | null;
+    contactEmail: string | null;
+    ipAddress: string;
+    userAgent: string;
+  }
+) => {
+  const payload: Record<string, unknown> = {};
+  if (columns.has('user_id')) payload.user_id = input.userId;
+  if (columns.has('type')) payload.type = input.type;
+  if (columns.has('page_url')) payload.page_url = input.pageUrl;
+  if (columns.has('contact_email')) payload.contact_email = input.contactEmail;
+  if (columns.has('ip_address')) payload.ip_address = input.ipAddress;
+  if (columns.has('user_agent')) payload.user_agent = input.userAgent;
+
+  if (columns.has('content')) {
+    payload.content = input.content;
+    return payload;
+  }
+
+  if (columns.has('title')) {
+    payload.title = input.title || input.type;
+  }
+  if (columns.has('description')) {
+    payload.description = input.description || input.content;
+  }
+  if (columns.has('steps') && input.steps) {
+    payload.steps = input.steps;
+  }
+
+  return payload;
+};
+
+const insertFeedback = async (payload: Record<string, unknown>) => {
+  const client = getQueryClient();
+  const columns = Object.keys(payload);
+  const values = Object.values(payload);
+  if (columns.length === 0) {
+    throw new Error('Feedback insert payload is empty');
+  }
+
+  const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+  const escapedColumns = columns.map((name) => `"${name}"`).join(', ');
+
+  const [row] = await client.unsafe<Array<{ created_at?: unknown }>>(
+    `
+      INSERT INTO feedbacks (${escapedColumns})
+      VALUES (${placeholders})
+      RETURNING created_at
+    `,
+    values as any[]
+  );
+  return row?.created_at;
+};
 
 const resolveClientIp = (request: NextRequest) => {
   const forwarded = request.headers.get('x-forwarded-for');
@@ -85,20 +178,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const [createdRow] = await db
-      .insert(feedbacks)
-      .values({
-        userId: user?.id || null,
-        type,
-        content,
-        pageUrl: pageUrl || null,
-        contactEmail: contactEmail || null,
-        ipAddress,
-        userAgent,
-      })
-      .returning({ createdAt: feedbacks.createdAt });
-
-    const receivedAt = createdRow?.createdAt ? createdRow.createdAt.toISOString() : new Date().toISOString();
+    const columns = await getFeedbackColumns();
+    const insertPayload = buildInsertPayload(columns, {
+      userId: user?.id || null,
+      type,
+      title,
+      description,
+      steps,
+      content,
+      pageUrl: pageUrl || null,
+      contactEmail: contactEmail || null,
+      ipAddress,
+      userAgent,
+    });
+    const createdAt = await insertFeedback(insertPayload);
+    const receivedAt = createdAt instanceof Date ? createdAt.toISOString() : createdAt ? String(createdAt) : new Date().toISOString();
 
     return successResponse({ receivedAt }, '피드백이 접수되었습니다.');
   } catch (error) {
