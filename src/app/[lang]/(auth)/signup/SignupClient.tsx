@@ -21,7 +21,7 @@ export default function SignupClient({ lang, translations }: SignupClientProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     nickname: session?.user?.name || '',
-    nationality: '국내',
+    nationality: 'domestic',
     gender: '',
     ageGroup: '',
     userType: '',
@@ -69,10 +69,10 @@ export default function SignupClient({ lang, translations }: SignupClientProps) 
     setIsSubmitting(true);
 
     try {
-      const nationalityLabel = formData.nationality === '해외' ? t.nationalityOverseas || '' : t.nationalityDomestic || '';
+      const nationalityLabel = formData.nationality === 'overseas' ? t.nationalityOverseas || '' : t.nationalityDomestic || '';
 
-      const response = await fetch(`/api/users/${session.user.id}/update`, {
-        method: 'POST',
+      const response = await fetch(`/api/users/${session.user.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -148,8 +148,8 @@ export default function SignupClient({ lang, translations }: SignupClientProps) 
                   <input
                     type="radio"
                     name="nationality"
-                    value="국내"
-                    checked={formData.nationality === '국내'}
+                    value="domestic"
+                    checked={formData.nationality === 'domestic'}
                     onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
                     className="w-4 h-4 text-red-600 focus:ring-red-500"
                   />
@@ -159,8 +159,8 @@ export default function SignupClient({ lang, translations }: SignupClientProps) 
                   <input
                     type="radio"
                     name="nationality"
-                    value="해외"
-                    checked={formData.nationality === '해외'}
+                    value="overseas"
+                    checked={formData.nationality === 'overseas'}
                     onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
                     className="w-4 h-4 text-red-600 focus:ring-red-500"
                   />

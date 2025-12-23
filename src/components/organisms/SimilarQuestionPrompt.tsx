@@ -8,17 +8,18 @@ interface SimilarQuestionPromptProps {
   translations?: Record<string, string>;
 }
 
-const tagSuggestionsByLocale: Record<string, string[]> = {
-  ko: ['비자', '취업', '주거'],
-  vi: ['Visa', 'Việc làm', 'Nhà ở'],
-  en: ['Visa', 'Jobs', 'Housing'],
-};
-
 export default function SimilarQuestionPrompt({ query, translations }: SimilarQuestionPromptProps) {
   const t = translations || {};
   const params = useParams();
   const locale = (params?.lang as string) || 'ko';
-  const tagSuggestions = tagSuggestionsByLocale[locale] || tagSuggestionsByLocale.ko;
+  const tagSuggestions = useMemo(() => {
+    const raw = (t.similarTagSuggestions || '').trim();
+    if (!raw) return [];
+    return raw
+      .split(',')
+      .map((token) => token.trim())
+      .filter((token) => token.length > 0);
+  }, [t.similarTagSuggestions]);
   const visible = (query || '').trim().length >= 3;
   const [results, setResults] = useState<Array<{ id: string; title: string }>>([]);
   const [loading, setLoading] = useState(false);
