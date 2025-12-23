@@ -163,11 +163,12 @@ $gh-address-comments
 
 #### 0.5.3 MCP (Model Context Protocol) 활용 (반복 최소화용)
 
-- 현황: 현재 Codex 환경에 연결된 MCP 서버/리소스가 0개(= 자동 컨텍스트 주입 없음)
+- 현황: `repo-fs`(filesystem) MCP는 활성화되어 있으나, `list_mcp_resources == []`는 “tools-only 서버” 케이스로 정상일 수 있음(= 리소스 자동 주입 없음). GitHub/DB/Deploy 등 외부 컨텍스트 MCP는 아직 미연결.
 - 목적: PR/DB/배포 로그 같은 “외부 컨텍스트”를 리소스로 연결해, 리서치·재확인·복붙 비용을 구조적으로 제거
 - 운용 원칙
   - MCP 리소스는 “근거 입력(SoT)”로만 사용하고, 실제 변경은 레포 규칙/게이트(Playwright 포함)로 검증한다.
   - MCP에 없는 정보는 문서/코드/로그를 기준으로 판단하고, MCP는 “있으면 쓰는 가속기”로 취급한다.
+  - MCP 신규 연결/토큰 설정/DB 접근이 필요해지면, 연결·사용 전에 반드시 사용자에게 보고 후 진행한다.
 - 권장 연결(우선순위)
   - GitHub(PR/Checks): PR 상태/실패 로그를 MCP 리소스로 제공(gh CLI 보완)
   - DB/Schema: Drizzle 마이그레이션 상태/실 스키마를 리소스로 제공(피드백/추천 사용자 등 DB 불일치 예방)
@@ -2708,6 +2709,22 @@ $gh-address-comments
   - `src/repo/posts/fetch.ts`, `src/repo/answers/fetch.ts`, `src/repo/comments/fetch.ts`: 403이라도 `code===ACCOUNT_RESTRICTED`일 때만 AccountRestrictedError로 분기
   - `src/components/templates/MainLayout.tsx`: 모바일에서 `rightRail`을 기본 노출하지 않고 `mobileRightRail`로 opt-in
   - `src/app/[lang]/(main)/leaderboard/page.tsx`: 이벤트 섹션을 `mobileRightRail`로 제공
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] Feedback/Recommended 안정화 + Subscriptions i18n/클립 + E2E 재사용 (P0-2/P0-3)
+
+- 목표: `/api/feedback` DB 스키마 불일치로 인한 제출 실패 해소 + 추천 사용자 쿼리의 타입/배열 안전성 강화 + 구독 페이지의 버튼 클립과 영문 하드코딩 제거 + 로컬에서 Playwright 게이트가 “이미 실행 중인 서버” 때문에 실패하지 않게 안정화
+- 변경 내용
+  - `docs/WORKING_PLAN.md`: MCP 신규 연결/사용 전 사용자 보고 규칙 추가 + filesystem MCP의 tools-only 케이스 설명 보강
+  - `src/app/api/feedback/route.ts`: `feedbacks.content` 단일 컬럼에 맞춰 저장(제목/내용/재현을 합쳐 저장) + rate limit 유지
+  - `src/app/api/users/recommended/route.ts`: `userType/visaType/koreanLevel/interests` 비교값을 `::text` 캐스팅해 Postgres 파라미터 타입 이슈 방지
+  - `src/app/[lang]/(main)/subscriptions/SubscriptionsClient.tsx`: 토픽 구독 버튼 줄바꿈(클립 방지) + 채널/빈도 라벨을 i18n 키로 전환
+  - `messages/ko.json`, `messages/vi.json`: `subscription.*`(채널/빈도/설명) 키 보강
+  - `playwright.config.ts`: `reuseExistingServer: true`로 로컬 3000 포트 점유 시에도 `npm run test:e2e`가 안정적으로 동작
 - 검증
   - [x] `npm run lint`
   - [x] `npm run type-check`
