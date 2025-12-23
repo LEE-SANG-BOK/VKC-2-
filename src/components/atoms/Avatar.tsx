@@ -37,24 +37,35 @@ export default function Avatar({ name, size = 'md', imageUrl, showVerifiedOverla
   const displayName = name || '?';
 
   const hasValidImage = imageUrl && imageUrl.trim() !== '' && !imgError;
-  const resolvedImageUrl = (() => {
+  const normalizedImageUrl = (() => {
     if (!hasValidImage || !imageUrl) return '';
+    const trimmed = imageUrl.trim();
+    if (trimmed.startsWith('//')) return `https:${trimmed}`;
+    if (!trimmed.startsWith('http') && trimmed.includes('ui-avatars.com')) {
+      const cleaned = trimmed.replace(/^\/+/, '');
+      return `https://${cleaned}`;
+    }
+    return trimmed;
+  })();
+  const isUiAvatars = (() => {
+    if (!normalizedImageUrl) return false;
+    if (!normalizedImageUrl.includes('ui-avatars.com')) return false;
     try {
-      const parsed = new URL(imageUrl);
-      if (parsed.hostname !== 'ui-avatars.com') return imageUrl;
+      return new URL(normalizedImageUrl).hostname === 'ui-avatars.com';
+    } catch {
+      return true;
+    }
+  })();
+  const resolvedImageUrl = (() => {
+    if (!normalizedImageUrl) return '';
+    if (!isUiAvatars) return normalizedImageUrl;
+    try {
+      const parsed = new URL(normalizedImageUrl);
       if (!parsed.searchParams.has('format')) parsed.searchParams.set('format', 'png');
       if (!parsed.searchParams.has('size')) parsed.searchParams.set('size', String(sizePixels[size]));
       return parsed.toString();
     } catch {
-      return imageUrl;
-    }
-  })();
-  const isUiAvatars = (() => {
-    if (!hasValidImage || !imageUrl) return false;
-    try {
-      return new URL(imageUrl).hostname === 'ui-avatars.com';
-    } catch {
-      return false;
+      return normalizedImageUrl;
     }
   })();
 

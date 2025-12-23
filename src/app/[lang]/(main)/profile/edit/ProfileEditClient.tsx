@@ -362,24 +362,35 @@ export default function ProfileEditClient({ lang, translations }: ProfileEditCli
 
   const profileImage = (profile as { image?: string | null } | null)?.image;
   const rawAvatarPreview = avatarPreviewOverride || profile?.avatar || profileImage || user?.image || '/avatar-default.jpg';
+  const normalizedAvatarPreview = (() => {
+    if (typeof rawAvatarPreview !== 'string') return rawAvatarPreview;
+    const trimmed = rawAvatarPreview.trim();
+    if (trimmed.startsWith('//')) return `https:${trimmed}`;
+    if (!trimmed.startsWith('http') && trimmed.includes('ui-avatars.com')) {
+      const cleaned = trimmed.replace(/^\/+/, '');
+      return `https://${cleaned}`;
+    }
+    return trimmed;
+  })();
   const isUiAvatars = (() => {
-    if (typeof rawAvatarPreview !== 'string') return false;
-    if (!rawAvatarPreview.startsWith('http')) return false;
+    if (typeof normalizedAvatarPreview !== 'string') return false;
+    if (!normalizedAvatarPreview.includes('ui-avatars.com')) return false;
     try {
-      return new URL(rawAvatarPreview).hostname === 'ui-avatars.com';
+      return new URL(normalizedAvatarPreview).hostname === 'ui-avatars.com';
     } catch {
-      return false;
+      return true;
     }
   })();
   const avatarPreview = (() => {
-    if (!isUiAvatars || typeof rawAvatarPreview !== 'string') return rawAvatarPreview;
+    if (typeof normalizedAvatarPreview !== 'string') return normalizedAvatarPreview;
+    if (!isUiAvatars) return normalizedAvatarPreview;
     try {
-      const parsed = new URL(rawAvatarPreview);
+      const parsed = new URL(normalizedAvatarPreview);
       if (!parsed.searchParams.has('format')) parsed.searchParams.set('format', 'png');
       if (!parsed.searchParams.has('size')) parsed.searchParams.set('size', '256');
       return parsed.toString();
     } catch {
-      return rawAvatarPreview;
+      return normalizedAvatarPreview;
     }
   })();
   const avatarUnoptimized = avatarPreview.startsWith('blob:') || avatarPreview.startsWith('data:') || isUiAvatars;

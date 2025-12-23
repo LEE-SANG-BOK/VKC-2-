@@ -2934,3 +2934,10 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] ui-avatars URL 정규화(포맷/프로토콜)로 SVG/호스트 이슈 방지 (P0-3)
+
+- 목표: `ui-avatars.com`가 기본 SVG를 반환하는 특성 때문에(Next/Image SVG 제한) URL이 프로토콜 누락/format 누락 상태로 들어와도 렌더 단계에서 PNG로 정규화해 에러를 방지
+- 변경 내용
+  - `src/components/atoms/Avatar.tsx`: `ui-avatars.com` URL을 `https://` + `format=png` + `size`로 정규화하고, 파싱 실패 케이스에서도 안전하게 `<img>` 경로로 처리
+  - `src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`: 프로필 이미지 프리뷰에서도 동일한 URL 정규화/`unoptimized` 분기 적용
