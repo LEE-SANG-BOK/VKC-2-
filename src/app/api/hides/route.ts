@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const typeParam = request.nextUrl.searchParams.get('type');
     const targetType = parseTargetType(typeParam);
     if (typeParam && !targetType) {
-      return errorResponse('올바르지 않은 대상입니다.');
+      return errorResponse('올바르지 않은 대상입니다.', 'HIDE_INVALID_TARGET_TYPE');
     }
 
     const rows = await db
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const targetId = typeof body?.targetId === 'string' ? body.targetId : '';
 
     if (!targetType || !targetId) {
-      return errorResponse('필수 필드가 누락되었습니다.');
+      return errorResponse('필수 필드가 누락되었습니다.', 'HIDE_REQUIRED_FIELDS');
     }
 
     let exists = false;
@@ -108,7 +108,7 @@ export async function DELETE(request: NextRequest) {
     const targetId = typeof body?.targetId === 'string' ? body.targetId : '';
 
     if (!targetType || !targetId) {
-      return errorResponse('필수 필드가 누락되었습니다.');
+      return errorResponse('필수 필드가 누락되었습니다.', 'HIDE_REQUIRED_FIELDS');
     }
 
     await db.delete(contentReports).where(

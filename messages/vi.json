@@ -1064,6 +1064,10 @@
     "outdatedTooltip": "Thông tin hơn 12 tháng trước"
   },
   "errors": {
+    "UNAUTHORIZED": "Vui lòng đăng nhập.",
+    "FORBIDDEN": "Bạn không có quyền thực hiện thao tác này.",
+    "NOT_FOUND": "Không tìm thấy dữ liệu yêu cầu.",
+    "SERVER_ERROR": "Đã xảy ra lỗi máy chủ.",
     "POST_REQUIRED_FIELDS": "Vui lòng nhập tiêu đề, danh mục (chính/phụ) và nội dung.",
     "POST_INVALID_CATEGORY": "Vui lòng chọn lại danh mục chính.",
     "POST_SUBCATEGORY_REQUIRED": "Vui lòng chọn danh mục phụ.",
@@ -1094,6 +1098,7 @@
     "COMMENT_RATE_LIMITED": "Bạn bình luận quá nhiều lần. Vui lòng thử lại sau.",
     "REPORT_TYPE_REQUIRED": "Vui lòng chọn loại báo cáo.",
     "REPORT_INVALID_TYPE": "Loại báo cáo không hợp lệ.",
+    "REPORT_REQUIRED_FIELDS": "Thiếu thông tin bắt buộc.",
     "REPORT_REASON_TOO_SHORT": "Vui lòng nhập lý do ít nhất 10 ký tự.",
     "REPORT_TARGET_NOT_FOUND": "Không tìm thấy nội dung.",
     "REPORT_SELF_FORBIDDEN": "Bạn không thể báo cáo nội dung của chính mình.",
@@ -1102,6 +1107,9 @@
     "REPORT_FAILED": "Không thể gửi báo cáo.",
     "FEEDBACK_FAILED": "Gửi phản hồi thất bại.",
     "FEEDBACK_RATE_LIMITED": "Bạn gửi phản hồi quá nhiều lần. Vui lòng thử lại sau.",
+    "HIDE_INVALID_TARGET_TYPE": "Đối tượng không hợp lệ.",
+    "HIDE_REQUIRED_FIELDS": "Thiếu thông tin bắt buộc.",
+    "PROFILE_DISPLAY_NAME_TOO_SHORT": "Biệt danh phải có ít nhất 2 ký tự.",
     "VERIFICATION_RATE_LIMITED": "Bạn gửi yêu cầu xác minh quá nhiều lần. Vui lòng thử lại sau.",
     "PROBE_RATE_LIMITED": "Bạn gửi quá nhiều yêu cầu. Vui lòng thử lại sau."
   }

@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!targetType || !targetId || !type || !reason) {
-      return errorResponse('필수 필드가 누락되었습니다.');
+      return errorResponse('필수 필드가 누락되었습니다.', 'REPORT_REQUIRED_FIELDS');
     }
 
     const rateLimit = await checkRateLimit({
@@ -43,11 +43,11 @@ export async function POST(request: NextRequest) {
 
     const validTypes = ['spam', 'harassment', 'inappropriate', 'misinformation', 'other'] as const;
     if (!validTypes.includes(type)) {
-      return errorResponse('올바르지 않은 신고 유형입니다.');
+      return errorResponse('올바르지 않은 신고 유형입니다.', 'REPORT_INVALID_TYPE');
     }
 
     if (type === 'other' && reason.trim().length < 10) {
-      return errorResponse('기타 신고 시 사유를 10자 이상 입력해주세요.');
+      return errorResponse('기타 신고 시 사유를 10자 이상 입력해주세요.', 'REPORT_REASON_TOO_SHORT');
     }
 
     const trimmedReason = reason.trim();
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (exists.authorId === user.id) {
-      return errorResponse('본인의 콘텐츠는 신고할 수 없습니다.');
+      return errorResponse('본인의 콘텐츠는 신고할 수 없습니다.', 'REPORT_SELF_FORBIDDEN');
     }
 
     const dup =

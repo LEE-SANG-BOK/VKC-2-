@@ -168,7 +168,7 @@ export async function PUT(request: NextRequest) {
     if (displayName !== undefined) {
       const normalized = normalizeDisplayName(displayName);
       if (normalized.length < DISPLAY_NAME_MIN_LENGTH) {
-        return errorResponse('닉네임은 2자 이상이어야 합니다.');
+        return errorResponse('닉네임은 2자 이상이어야 합니다.', 'PROFILE_DISPLAY_NAME_TOO_SHORT');
       }
       updateData.displayName = normalized;
       updateData.name = normalized;
