@@ -2869,3 +2869,31 @@ $gh-address-comments
 - 변경 내용
   - `messages/ko.json`, `messages/vi.json`, `messages/en.json`: `common.loading` 추가
   - `src/app/[lang]/(main)/subscriptions/SubscriptionsClient.tsx`: `copy.loading`을 `common.loading` 기반으로 단일화(영문 fallback 제거)
+
+#### (2025-12-23) [P0] 모바일 PostCard 숨김 버튼 위치 고정 + 미디어 상단 오프셋 제거 + 홈 피드 토글 고정 (P0-3)
+
+- 목표: 모바일에서 카드 액션이 “떠 있는 것처럼” 보이는 현상(숨김 버튼 위치 흔들림/미디어 상단 여백/홈 피드 토글 오버레이)을 제거하고, 게시글 피드의 레이아웃 안정성을 확보
+- 변경 내용
+  - `src/components/molecules/cards/PostCard.tsx`: 숨김 버튼을 카드 우상단 고정 영역(`.question-card-badges`)로 이동해 미디어 유무에 따른 위치 흔들림 제거(작은 `×` + tooltip)
+  - `src/app/globals.css`: `.question-card-media`의 불필요한 상단 오프셋 제거(모바일/데스크톱 동일)
+  - `src/components/organisms/BottomNavigation.tsx`: 홈 피드 토글(`vk-home-feed-toggle`)을 하단 내비 위로 고정(`bottom` anchor)해 중간 영역에 떠 보이는 현상 방지
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+  - PR: https://github.com/LEE-SANG-BOK/VKC-2-/pull/72
+
+#### (2025-12-23) [P0] 추천 사용자/피드 액션 UI 일관화 + 우측 레일 정렬 (P0-3)
+
+- 목표: 모바일에서 추천 사용자 카드가 “팔로우 CTA 과대/정보 구분 약함”으로 보이는 문제와, 피드 액션(댓글/좋아요 등) 숫자 폭에 따라 아이콘 위치가 흔들리는 문제를 줄이고, 3열 레이아웃(좌/중/우) 시작점 정렬을 강화
+- 변경 내용
+  - `src/components/organisms/RecommendedUsersSection.tsx`: 추천 사용자 카드의 아바타/팔로우 버튼을 컴팩트하게 조정 + 카드 배경을 분리해 게시글 카드와 시각적으로 구분
+  - `src/components/atoms/ActionIconButton.tsx`: icon+count 버튼 폭을 고정(`tabular-nums`, `min-w`)해 동일 행에서 아이콘 위치가 흔들리지 않도록 정렬 안정화
+  - `src/components/molecules/cards/PostCard.tsx`: 숨김 버튼을 본문 영역(`question-card-body`) 기준으로 배치해 미디어(썸네일) 위로 겹쳐 보이는 케이스를 최소화
+  - `src/components/templates/MainLayout.tsx`: 우측 레일을 sticky로 전환해 좌측 레일과 동일한 시작점/스크롤 UX 확보
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`

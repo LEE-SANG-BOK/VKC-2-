@@ -815,7 +815,7 @@
   margin-right: 0 !important;
   min-height: 0;
   align-self: flex-start;
-  margin-top: 32px !important;
+  margin-top: 0 !important;
   flex-shrink: 0;
 }
 
@@ -868,7 +868,7 @@
     width: 9.75rem !important;
     max-width: 9.75rem !important;
     margin-left: 0 !important;
-    margin-top: 52px !important;
+    margin-top: 0 !important;
     align-self: flex-start;
   }
   .question-card-thumb__inner {

@@ -547,11 +547,23 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         className={`question-card group relative ${isQuestion ? 'question-card--question' : ''} ${hasMedia ? 'question-card--with-media' : ''} ${isAdopted ? 'border-green-400 ring-1 ring-green-200 dark:ring-emerald-600/50' : ''
           }`}
       >
-		        <div className="question-card-main">
-			          <div className="question-card-body relative">
-			          <div className="flex items-start gap-2 mb-3 min-w-0">
-			            <div className="flex items-start gap-2 min-w-0 flex-1">
-	              <button
+			        <div className="question-card-main">
+				          <div className="question-card-body relative">
+        <div className="question-card-badges">
+          <Tooltip content={hideLabel} position="left" touchBehavior="longPress">
+            <button
+              type="button"
+              onClick={handleToggleHide}
+              aria-label={hideLabel}
+              className="flex h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              <span aria-hidden className="text-[14px] leading-none">×</span>
+            </button>
+          </Tooltip>
+        </div>
+				          <div className="flex items-start gap-2 mb-3 min-w-0">
+				            <div className="flex items-start gap-2 min-w-0 flex-1">
+		              <button
 	                type="button"
 	                className="shrink-0"
                 onClick={handleAuthorClick}
@@ -602,16 +614,6 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 	                </div>
 			              </div>
 			            </div>
-			            <Tooltip content={hideLabel} position="left" touchBehavior="longPress">
-			              <button
-			                type="button"
-			                onClick={handleToggleHide}
-			                aria-label={hideLabel}
-			                className="flex shrink-0 self-center h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-			              >
-			                <span aria-hidden className="text-[14px] leading-none">×</span>
-			              </button>
-			            </Tooltip>
 				          </div>
 			
 			          <div className="min-w-0">

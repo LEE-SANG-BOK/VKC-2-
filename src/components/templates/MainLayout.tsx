@@ -102,7 +102,7 @@ export default function MainLayout({
             {children}
           </main>
           {hasRightRail ? (
-            <aside className="hidden lg:block w-full lg:w-[320px] shrink-0 lg:justify-self-end">
+            <aside className="hidden lg:block w-full lg:w-[320px] shrink-0 lg:justify-self-end sticky top-[var(--vk-header-height)] h-[calc(100vh-var(--vk-header-height))] h-[calc(100dvh-var(--vk-header-height))] overflow-y-auto overscroll-contain">
               {rightRail}
             </aside>
           ) : null}

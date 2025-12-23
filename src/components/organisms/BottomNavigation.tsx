@@ -171,7 +171,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
     <>
       {showHomeFeedToggle && !isKeyboardOpen ? (
         <div
-          className={`vk-home-feed-toggle md:hidden pointer-events-none fixed inset-x-0 z-40 flex justify-center transition-all duration-200 ease-out ${
+          className={`vk-home-feed-toggle md:hidden pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+72px+12px)] z-40 flex justify-center transition-all duration-200 ease-out ${
             isFeedToggleReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
           }`}
         >
