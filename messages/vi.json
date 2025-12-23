@@ -590,7 +590,21 @@
   "subscription": {
     "title": "Đăng ký danh mục",
     "description": "Đăng ký các danh mục bạn quan tâm để chỉ xem bài viết từ các danh mục đó.",
-    "subscribedCount": "Bạn đã đăng ký {count} danh mục."
+    "subscribedCount": "Bạn đã đăng ký {count} danh mục.",
+    "manageDesc": "Theo dõi danh mục và chủ đề để cá nhân hóa bảng tin của bạn.",
+    "settingsTitle": "Tùy chọn thông báo",
+    "settingsDesc": "Chọn kênh và tần suất nhận thông báo cho từng đăng ký.",
+    "topicsLabel": "Chủ đề",
+    "channelLabel": "Kênh",
+    "frequencyLabel": "Tần suất",
+    "channelInApp": "Trong ứng dụng",
+    "channelEmail": "Email",
+    "channelPush": "Thông báo đẩy",
+    "frequencyInstant": "Ngay lập tức",
+    "frequencyDaily": "Hàng ngày",
+    "frequencyWeekly": "Hàng tuần",
+    "frequencyOff": "Tắt",
+    "updateError": "Không thể cập nhật cài đặt thông báo đăng ký."
   },
   "userMenu": {
     "profile": "Hồ sơ",
