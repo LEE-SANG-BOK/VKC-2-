@@ -2757,3 +2757,15 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] 모바일 홈 추천 콘텐츠 복구 + 팔로우 탭 상단 배너 완화 (P0-3)
+
+- 목표: 모바일 홈에서 추천 콘텐츠가 사이드바로 “이동/누락”되는 체감 문제를 줄이고(홈 진입 시 컨텐츠 노출), 팔로우 탭에서 추천 사용자 섹션이 피드를 과점유하는 경우를 방지해 “게시글 우선” 흐름을 유지
+- 변경 내용
+  - `src/app/[lang]/(main)/HomeClient.tsx`: 모바일에서도 홈 추천 콘텐츠가 보이도록 `mobileRightRail`에 `AdminPostRail` 제공(데스크톱은 기존 `rightRail` 유지)
+  - `src/components/organisms/PostList.tsx`: `following` 탭에서 추천 사용자 섹션을 “팔로우 글이 0개일 때만” 상단에 노출(피드가 있는 경우 상단 배너로 피드가 밀리는 현상 방지)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`

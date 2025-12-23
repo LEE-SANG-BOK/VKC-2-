@@ -76,6 +76,7 @@ export default function HomeClient({ dict, lang }: HomeClientProps) {
     <MainLayout
       selectedCategory={resolvedCategory}
       onCategoryChange={handleCategoryChange}
+      mobileRightRail={<AdminPostRail translations={dict} lang={lang} />}
       rightRail={(
         <div className="space-y-4">
           <div className="hidden lg:block">
