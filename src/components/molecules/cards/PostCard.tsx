@@ -243,7 +243,16 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     );
     const seen = new Set<string>();
 
-    const candidates = [categoryLabel, subcategoryLabel, ...displayTags]
+    const purposeLabel = isQuestion
+      ? (tCommon.question || questionPostLabel || '질문')
+      : (tCommon.share || '공유');
+
+    const candidates = [
+      ...(displayTags.length > 0 ? displayTags : []),
+      categoryLabel,
+      subcategoryLabel,
+      purposeLabel,
+    ]
       .map((v) => v?.trim())
       .filter(Boolean) as string[];
 
@@ -257,7 +266,25 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         return true;
       })
       .slice(0, 3);
-  }, [categoryLabel, subcategoryLabel, displayTags, tTrust.communityLabel, tTrust.expertEmploymentLabel, tTrust.expertLabel, tTrust.expertVisaLabel, tTrust.outdatedLabel, tTrust.trustedAnswererLabel, tTrust.verifiedLabel, tTrust.verifiedStudentLabel, tTrust.verifiedUserLabel, tTrust.verifiedWorkerLabel]);
+  }, [
+    categoryLabel,
+    displayTags,
+    isQuestion,
+    questionPostLabel,
+    subcategoryLabel,
+    tCommon.question,
+    tCommon.share,
+    tTrust.communityLabel,
+    tTrust.expertEmploymentLabel,
+    tTrust.expertLabel,
+    tTrust.expertVisaLabel,
+    tTrust.outdatedLabel,
+    tTrust.trustedAnswererLabel,
+    tTrust.verifiedLabel,
+    tTrust.verifiedStudentLabel,
+    tTrust.verifiedUserLabel,
+    tTrust.verifiedWorkerLabel,
+  ]);
 
   const displayImages = useMemo(() => {
     const candidates: unknown[] = Array.isArray(thumbnails) && thumbnails.length > 0 ? thumbnails : thumbnail ? [thumbnail] : [];

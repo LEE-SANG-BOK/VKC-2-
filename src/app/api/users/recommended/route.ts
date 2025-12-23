@@ -62,10 +62,12 @@ export async function GET(req: NextRequest) {
     const total = Number(totalResult[0]?.count || 0);
 
     const matchScoreParts = [
-      sql`(CASE WHEN ${users.userType} = ${viewerUserType} THEN 4 ELSE 0 END)`,
-      sql`(CASE WHEN ${users.visaType} = ${viewerVisaType} THEN 3 ELSE 0 END)`,
-      sql`(CASE WHEN ${users.koreanLevel} = ${viewerKoreanLevel} THEN 1 ELSE 0 END)`,
-      sql`(CASE WHEN COALESCE(${users.interests} && ${viewerInterestsArray}, false) THEN 3 ELSE 0 END)`,
+      viewerUserType ? sql`(CASE WHEN ${users.userType} = ${viewerUserType} THEN 4 ELSE 0 END)` : sql`0`,
+      viewerVisaType ? sql`(CASE WHEN ${users.visaType} = ${viewerVisaType} THEN 3 ELSE 0 END)` : sql`0`,
+      viewerKoreanLevel ? sql`(CASE WHEN ${users.koreanLevel} = ${viewerKoreanLevel} THEN 1 ELSE 0 END)` : sql`0`,
+      viewerInterests.length > 0
+        ? sql`(CASE WHEN COALESCE(${users.interests} && ${viewerInterestsArray}, false) THEN 3 ELSE 0 END)`
+        : sql`0`,
       sql`(CASE WHEN ${users.isVerified} THEN 1 ELSE 0 END)`,
       sql`(CASE WHEN ${users.isExpert} THEN 1 ELSE 0 END)`,
       sql`(CASE WHEN ${users.badgeType} IS NOT NULL THEN 1 ELSE 0 END)`,
