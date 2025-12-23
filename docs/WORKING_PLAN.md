@@ -2514,6 +2514,47 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [LEAD] P0-9 수동 QA 리포트 템플릿(기록용)
+
+- 목적: 크로스브라우징/반응형 수동 QA 결과를 1곳에 기록해 “Blocker/Major 0”를 확인한다(실행은 로컬 실기기/브라우저 전제).
+- 범위(필수 플로우): 홈(피드) → 카테고리 전환 → 검색 → 상세, 로그인/게이팅, 글쓰기(키보드), 답변/댓글(키보드), 프로필/구독/알림/인증
+- 매트릭스(필수): iOS Safari(iPhone SE/일반/iPad), Android Chrome(중저가/대화면), Desktop(Chrome/Edge/Safari 가능 시)
+
+리포트(채우기)
+
+| 환경(기기/OS/브라우저) | 홈/피드 | 검색 | 상세 | 글쓰기(키보드) | 답변/댓글(키보드) | 프로필 | 구독 | 알림 | 인증 | 결과/메모 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| iPhone SE / iOS __ / Safari |  |  |  |  |  |  |  |  |  |  |
+| iPhone 14/15 / iOS __ / Safari |  |  |  |  |  |  |  |  |  |  |
+| iPad / iPadOS __ / Safari |  |  |  |  |  |  |  |  |  |  |
+| Android(중저가) / Android __ / Chrome |  |  |  |  |  |  |  |  |  |  |
+| Android(대화면) / Android __ / Chrome |  |  |  |  |  |  |  |  |  |  |
+| Desktop / macOS __ / Chrome |  |  |  | N/A | N/A |  |  |  |  |  |
+| Desktop / macOS __ / Safari |  |  |  | N/A | N/A |  |  |  |  |  |
+| Desktop / Windows __ / Edge |  |  |  | N/A | N/A |  |  |  |  |  |
+
+이슈 로그(채우기)
+
+- 포맷: `ID` / `Severity(Blocker|Major|Minor)` / `Env` / `URL` / `Steps` / `Expected` / `Actual` / `Screenshot` / `Status(Open|Fixed|Wontfix)`
+
+최종 서명(DoD)
+
+- [ ] Blocker 0
+- [ ] Major 0
+- [ ] Minor는 P1로 이월 목록화
+
+#### (2025-12-23) [P0] 알림 컨텐츠 i18n(ko/vi) + 모바일 키보드 UI 하드닝 (P0-2/P0-3)
+
+- 목표: 알림 본문이 한국어로만 저장되는 문제를 제거(ko/vi) + 모바일에서 키보드가 열릴 때 하단 내비가 폼 제출을 가리지 않게 한다
+- 변경 내용
+  - `src/lib/notifications/create.ts`: 수신자 `preferredLanguage` 기반으로 알림 본문 템플릿을 ko/vi로 생성(`en` 등은 `ko`로 fallback, 기본은 `vi`)
+  - `src/components/organisms/BottomNavigation.tsx`: `visualViewport` 기반으로 키보드 열림을 감지해 BottomNavigation(및 홈 피드 토글)을 자동 숨김 처리
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
 - PR/머지
   - [x] PR #39 (@codex) → `main` 머지
 

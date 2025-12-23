@@ -3,18 +3,51 @@ import { notifications, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 type NotificationType = 'answer' | 'comment' | 'reply' | 'adoption' | 'like' | 'follow';
+type NotificationLocale = 'ko' | 'vi';
 
 interface CreateNotificationParams {
   userId: string;
   senderId: string;
   type: NotificationType;
-  content: string;
+  content: string | ((locale: NotificationLocale) => string);
   postId?: string;
   answerId?: string;
   commentId?: string;
 }
 
-async function shouldNotify(userId: string, type: NotificationType): Promise<boolean> {
+const resolveNotificationLocale = (preferredLanguage: string | null | undefined): NotificationLocale => {
+  if (preferredLanguage === 'vi') return 'vi';
+  return 'ko';
+};
+
+const notificationTemplates = {
+  ko: {
+    answer: ({ authorName, postTitle }: { authorName: string; postTitle: string }) =>
+      `${authorName}님이 "${postTitle}" 질문에 답변을 작성했습니다.`,
+    comment: ({ authorName, postTitle }: { authorName: string; postTitle: string }) =>
+      `${authorName}님이 "${postTitle}" 게시글에 댓글을 남겼습니다.`,
+    reply: ({ authorName, postTitle }: { authorName: string; postTitle: string }) =>
+      `${authorName}님이 회원님의 댓글에 답글을 남겼습니다. (${postTitle})`,
+    adoption: ({ authorName, postTitle }: { authorName: string; postTitle: string }) =>
+      `${authorName}님이 "${postTitle}" 질문에서 회원님의 답변을 채택했습니다.`,
+    follow: ({ authorName }: { authorName: string }) =>
+      `${authorName}님이 회원님을 팔로우했습니다.`,
+  },
+  vi: {
+    answer: ({ authorName, postTitle }: { authorName: string; postTitle: string }) =>
+      `${authorName} đã trả lời câu hỏi “${postTitle}”.`,
+    comment: ({ authorName, postTitle }: { authorName: string; postTitle: string }) =>
+      `${authorName} đã bình luận về bài viết “${postTitle}”.`,
+    reply: ({ authorName, postTitle }: { authorName: string; postTitle: string }) =>
+      `${authorName} đã trả lời bình luận của bạn. (${postTitle})`,
+    adoption: ({ authorName, postTitle }: { authorName: string; postTitle: string }) =>
+      `${authorName} đã chọn câu trả lời của bạn cho câu hỏi “${postTitle}”.`,
+    follow: ({ authorName }: { authorName: string }) =>
+      `${authorName} đã theo dõi bạn.`,
+  },
+} as const;
+
+async function getNotificationPreferences(userId: string, type: NotificationType): Promise<{ canNotify: boolean; locale: NotificationLocale }> {
   try {
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
@@ -24,27 +57,35 @@ async function shouldNotify(userId: string, type: NotificationType): Promise<boo
         notifyReplies: true,
         notifyAdoptions: true,
         notifyFollows: true,
+        preferredLanguage: true,
       },
     });
 
-    if (!user) return false;
-
-    switch (type) {
-      case 'answer':
-        return user.notifyAnswers;
-      case 'comment':
-        return user.notifyComments;
-      case 'reply':
-        return user.notifyReplies;
-      case 'adoption':
-        return user.notifyAdoptions;
-      case 'follow':
-        return user.notifyFollows;
-      default:
-        return true;
+    if (!user) {
+      return { canNotify: false, locale: 'vi' };
     }
+
+    const locale = resolveNotificationLocale(user.preferredLanguage || null);
+    const canNotify = (() => {
+      switch (type) {
+      case 'answer':
+          return user.notifyAnswers;
+      case 'comment':
+          return user.notifyComments;
+      case 'reply':
+          return user.notifyReplies;
+      case 'adoption':
+          return user.notifyAdoptions;
+      case 'follow':
+          return user.notifyFollows;
+      default:
+          return true;
+      }
+    })();
+
+    return { canNotify, locale };
   } catch {
-    return true;
+    return { canNotify: true, locale: 'vi' };
   }
 }
 
@@ -55,17 +96,18 @@ export async function createNotification(params: CreateNotificationParams) {
     return null;
   }
 
-  const canNotify = await shouldNotify(userId, type);
-  if (!canNotify) {
+  const preferences = await getNotificationPreferences(userId, type);
+  if (!preferences.canNotify) {
     return null;
   }
 
   try {
+    const resolvedContent = typeof content === 'function' ? content(preferences.locale) : content;
     const [notification] = await db.insert(notifications).values({
       userId,
       senderId,
       type,
-      content,
+      content: resolvedContent,
       postId: postId || null,
       answerId: answerId || null,
       commentId: commentId || null,
@@ -90,7 +132,7 @@ export async function createAnswerNotification(
     userId: postAuthorId,
     senderId: answerAuthorId,
     type: 'answer',
-    content: `${answerAuthorName}님이 "${postTitle}" 질문에 답변을 작성했습니다.`,
+    content: (locale) => notificationTemplates[locale].answer({ authorName: answerAuthorName, postTitle }),
     postId,
     answerId,
   });
@@ -108,7 +150,7 @@ export async function createCommentNotification(
     userId: postAuthorId,
     senderId: commentAuthorId,
     type: 'comment',
-    content: `${commentAuthorName}님이 "${postTitle}" 게시글에 댓글을 남겼습니다.`,
+    content: (locale) => notificationTemplates[locale].comment({ authorName: commentAuthorName, postTitle }),
     postId,
     commentId,
   });
@@ -126,7 +168,7 @@ export async function createReplyNotification(
     userId: parentCommentAuthorId,
     senderId: replyAuthorId,
     type: 'reply',
-    content: `${replyAuthorName}님이 회원님의 댓글에 답글을 남겼습니다. (${postTitle})`,
+    content: (locale) => notificationTemplates[locale].reply({ authorName: replyAuthorName, postTitle }),
     postId,
     commentId,
   });
@@ -144,7 +186,7 @@ export async function createAdoptionNotification(
     userId: answerAuthorId,
     senderId: postAuthorId,
     type: 'adoption',
-    content: `${postAuthorName}님이 "${postTitle}" 질문에서 회원님의 답변을 채택했습니다.`,
+    content: (locale) => notificationTemplates[locale].adoption({ authorName: postAuthorName, postTitle }),
     postId,
     answerId,
   });
@@ -159,6 +201,6 @@ export async function createFollowNotification(
     userId: targetUserId,
     senderId: followerId,
     type: 'follow',
-    content: `${followerName}님이 회원님을 팔로우했습니다.`,
+    content: (locale) => notificationTemplates[locale].follow({ authorName: followerName }),
   });
 }
