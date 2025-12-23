@@ -244,8 +244,8 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
     const seen = new Set<string>();
 
     const purposeLabel = isQuestion
-      ? (tCommon.question || questionPostLabel || '질문')
-      : (tCommon.share || '공유');
+      ? (tCommon.question || questionPostLabel || '')
+      : (tCommon.share || '');
 
     const candidates = [
       ...(displayTags.length > 0 ? displayTags : []),
@@ -593,9 +593,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 			                type="button"
 			                onClick={handleToggleHide}
 			                aria-label={hideLabel}
-			                className="flex shrink-0 mt-0.5 h-7 w-7 sm:h-6 sm:w-6 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+			                className="flex shrink-0 self-center h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
 			              >
-			                <span aria-hidden className="text-base leading-none">×</span>
+			                <span aria-hidden className="text-[14px] leading-none">×</span>
 			              </button>
 			            </Tooltip>
 				          </div>
@@ -681,20 +681,20 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               variant="icon"
               className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             />
-            {certifiedDisplayLabel ? (
-              <Tooltip content={certifiedTooltipContent} position="top">
-                <button
-                  type="button"
-                  onClick={handleAnswerCountClick}
-                  aria-label={certifiedTooltipContent || certifiedDisplayLabel}
-                  title={certifiedTooltipContent || certifiedDisplayLabel}
-                  className="group inline-flex items-center gap-1.5 px-1 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200 hover:text-emerald-800 dark:hover:text-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[160px] sm:max-w-none"
-                >
-                  <ShieldCheck className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{certifiedDisplayLabel}</span>
-                </button>
-              </Tooltip>
-            ) : null}
+	            {certifiedDisplayLabel ? (
+	              <Tooltip content={certifiedTooltipContent} position="top">
+	                <button
+	                  type="button"
+	                  onClick={handleAnswerCountClick}
+	                  aria-label={certifiedTooltipContent || certifiedDisplayLabel}
+	                  title={certifiedTooltipContent || certifiedDisplayLabel}
+	                  className="group inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200 hover:text-emerald-800 dark:hover:text-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[140px] sm:max-w-none"
+	                >
+	                  <ShieldCheck className="h-3 w-3 shrink-0" />
+	                  <span className="truncate">{certifiedDisplayLabel}</span>
+	                </button>
+	              </Tooltip>
+	            ) : null}
           </div>
           <div className="question-card-actions-row shrink-0">
 	            <Tooltip content={likeLabel} position="top">
