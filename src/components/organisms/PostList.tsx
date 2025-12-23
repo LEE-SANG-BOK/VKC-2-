@@ -361,7 +361,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
           </div>
         )}
 
-      {selectedCategory === 'following' && (recommendedLoading || sortedRecommendations.length) ? (
+      {selectedCategory === 'following' && !isLoading && allPosts.length === 0 && (recommendedLoading || sortedRecommendations.length) ? (
         <div className="mb-4">
           <RecommendedUsersSection
             title={recommendedUsersLabel}
