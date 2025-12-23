@@ -167,6 +167,10 @@
       "title": "커뮤니티 랭킹 - viet kconnect",
       "description": "신뢰도와 기여도가 높은 커뮤니티 멤버를 확인하세요."
     },
+    "trustBadges": {
+      "title": "신뢰 배지 안내 - viet kconnect",
+      "description": "각 신뢰 배지의 의미와 부여 기준을 확인하세요."
+    },
     "about": {
       "title": "소개 - viet kconnect",
       "description": "viet kconnect 소개 및 운영 방식."
@@ -1051,6 +1055,8 @@
     "updateFailed": "프로필 업데이트에 실패했습니다."
   },
   "trustBadges": {
+    "guideTitle": "신뢰 배지 안내",
+    "guideSubtitle": "배지는 정보의 신뢰도를 빠르게 판단하는 데 도움을 줍니다.",
     "verifiedLabel": "검증됨",
     "verifiedTooltip": "인증된 사용자 기반 정보",
     "verifiedStudentLabel": "학생 인증",

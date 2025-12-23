@@ -21,24 +21,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const dict = await getDictionary(locale);
   const meta = (dict?.metadata as Record<string, any>) || {};
 
-  const fallbackMetaByLocale = {
-    ko: {
-      title: '신뢰 배지 안내 - viet kconnect',
-      description: '각 신뢰 배지의 의미와 부여 기준을 확인하세요.',
-    },
-    en: {
-      title: 'Trust Badges - viet kconnect',
-      description: 'Learn what each trust badge means and how it is assigned.',
-    },
-    vi: {
-      title: 'Huy hiệu tin cậy - viet kconnect',
-      description: 'Tìm hiểu ý nghĩa của từng huy hiệu tin cậy và cách được gán.',
-    },
-  } as const;
-  const fallbackMeta = fallbackMetaByLocale[locale] || fallbackMetaByLocale.ko;
-
-  const title = meta?.trustBadges?.title || fallbackMeta.title;
-  const description = meta?.trustBadges?.description || fallbackMeta.description;
+  const title = (meta?.trustBadges as Record<string, string> | undefined)?.title || '';
+  const description = (meta?.trustBadges as Record<string, string> | undefined)?.description || '';
 
   const keywords = flattenKeywords(buildKeywords({ title, content: description }));
 
@@ -65,18 +49,8 @@ export default async function TrustBadgesGuidePage({ params }: PageProps) {
   const tBottomNav = (dict?.bottomNav || {}) as Record<string, string>;
   const tSidebar = (dict?.sidebar || {}) as Record<string, string>;
 
-  const headingByLocale = {
-    ko: '신뢰 배지 안내',
-    en: 'Trust Badges',
-    vi: 'Huy hiệu tin cậy',
-  } as const;
-  const subheadingByLocale = {
-    ko: '배지는 정보의 신뢰도를 빠르게 판단하는 데 도움을 줍니다.',
-    en: 'Badges help you quickly judge how trustworthy information is.',
-    vi: 'Huy hiệu giúp bạn nhanh chóng đánh giá mức độ tin cậy của thông tin.',
-  } as const;
-  const heading = headingByLocale[locale] || headingByLocale.ko;
-  const subheading = subheadingByLocale[locale] || subheadingByLocale.ko;
+  const heading = tTrust.guideTitle || '';
+  const subheading = tTrust.guideSubtitle || '';
 
   const homeLabel = tBottomNav.home || '';
   const verifyLabel = tSidebar.verificationRequest || '';
@@ -151,7 +125,6 @@ export default async function TrustBadgesGuidePage({ params }: PageProps) {
       <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Trust</p>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{heading}</h1>
             <p className="mt-2 text-sm text-gray-700 dark:text-gray-200 leading-relaxed">{subheading}</p>
           </div>

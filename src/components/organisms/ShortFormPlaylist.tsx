@@ -122,7 +122,7 @@ export default function ShortFormPlaylist({ translations, lang }: ShortFormPlayl
                   {watch}
                 </button>
                 <button className="hover:text-gray-700 dark:hover:text-gray-200 transition">{save}</button>
-                <ShareButton url={clip.linkUrl || undefined} title={clip.title} label={share} className="px-2.5 py-1.5" />
+                <ShareButton url={clip.linkUrl || undefined} title={clip.title} label={share} className="px-2.5 py-1.5" translations={translations} />
               </div>
             </div>
           </article>

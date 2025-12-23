@@ -2837,3 +2837,17 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] Trust badges/ShareButton 하드코딩 제거 (P0-2)
+
+- 목표: Trust badges 가이드/ShareButton에 남아있던 locale 분기 하드코딩을 제거하고 messages 기반으로 단일화
+- 변경 내용
+  - `src/app/[lang]/guide/trust-badges/page.tsx`: 메타(title/description) 및 헤딩/서브헤딩을 messages 기반으로 통일
+  - `messages/ko.json`, `messages/vi.json`, `messages/en.json`: `metadata.trustBadges` + `trustBadges.guideTitle/guideSubtitle` 추가
+  - `src/components/molecules/actions/ShareButton.tsx`: locale 하드코딩 제거 + `translations` 기반 tooltip/linkCopied 사용
+  - `src/components/organisms/CardNewsShowcase.tsx`, `src/components/organisms/ShortFormPlaylist.tsx`: ShareButton에 `translations` 전달
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
