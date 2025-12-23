@@ -2450,6 +2450,26 @@ $gh-address-comments
   - [x] SKIP_SITEMAP_DB=true npm run build
   - [x] npm run test:e2e
 
+#### (2025-12-23) [P0] E2E 서버 재사용 방지 + 추천 유저/피드백 런타임 오류 제거
+
+- 작업
+  - Playwright: `reuseExistingServer` 기본값을 `false`로 고정(환경 불일치로 인한 robots/sitemap/health 500 플레키 방지)
+  - 추천 사용자: `/api/users/recommended`에서 viewer 프로필 값이 null/empty일 때 score 계산 쿼리 오류 방지
+  - Feedback: `feedbacks` Drizzle schema를 실제 DB 컬럼(`content`)과 정합
+  - PostCard: 해시태그 칩 3개 규칙 안정화(태그가 비거나 필터링되면 `대분류/세부분류/작성 목적`으로 fallback)
+- 변경 파일
+  - playwright.config.ts
+  - src/app/api/users/recommended/route.ts
+  - src/lib/db/schema.ts
+  - src/components/molecules/cards/PostCard.tsx
+- 검증
+  - [x] npm run lint
+  - [x] npm run type-check
+  - [x] SKIP_SITEMAP_DB=true npm run build
+  - [x] npm run test:e2e
+- PR/머지
+  - [x] PR #58 (@codex) → `main` 머지
+
 ---
 
 ## Testing and validation (게이트)
