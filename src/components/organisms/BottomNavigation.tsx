@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -52,6 +52,8 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
 
   const showHomeFeedToggle = isHomePath && homeFeed !== null;
   const [isFeedToggleReady, setIsFeedToggleReady] = useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const maxViewportHeightRef = useRef(0);
 
   useEffect(() => {
     if (!showHomeFeedToggle) {
@@ -67,6 +69,26 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
       window.cancelAnimationFrame(raf);
     };
   }, [showHomeFeedToggle]);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const updateKeyboardState = () => {
+      maxViewportHeightRef.current = Math.max(maxViewportHeightRef.current, viewport.height);
+      const heightDiff = maxViewportHeightRef.current - viewport.height;
+      setIsKeyboardOpen(heightDiff > 150);
+    };
+
+    updateKeyboardState();
+    viewport.addEventListener('resize', updateKeyboardState);
+    viewport.addEventListener('scroll', updateKeyboardState);
+
+    return () => {
+      viewport.removeEventListener('resize', updateKeyboardState);
+      viewport.removeEventListener('scroll', updateKeyboardState);
+    };
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -147,7 +169,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
 
   return (
     <>
-      {showHomeFeedToggle ? (
+      {showHomeFeedToggle && !isKeyboardOpen ? (
         <div
           className={`vk-home-feed-toggle md:hidden pointer-events-none fixed inset-x-0 z-40 flex justify-center transition-all duration-200 ease-out ${
             isFeedToggleReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
@@ -185,7 +207,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
           </div>
         </div>
       ) : null}
-      <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 dark:border-gray-800/80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg">
+      <nav className={`md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 dark:border-gray-800/80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg ${isKeyboardOpen ? 'hidden' : ''}`}>
         <div className="pb-[env(safe-area-inset-bottom,0px)]">
           <div className="grid grid-cols-5 h-14 px-2">
             {navItems.map((item) => {
