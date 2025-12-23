@@ -233,9 +233,23 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
         '전문가',
         '커뮤니티',
         '오래된 정보',
+        'recommend',
+        'recommendation',
+        'info',
+        'information',
+        'guide',
+        'guides',
         'tip',
+        'tips',
         '추천',
         '정보',
+        '가이드',
+        'gợi ý',
+        'thông tin',
+        'hướng dẫn',
+        'goi y',
+        'thong tin',
+        'huong dan',
       ]
         .map((v) => v?.toString().trim())
         .filter(Boolean)

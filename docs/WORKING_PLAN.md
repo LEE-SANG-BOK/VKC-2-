@@ -2743,3 +2743,17 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] 해시태그 자동 생성 규칙 고정(3개) + 로컬 E2E 포트 분리
+
+- 목표: 의미 없는 해시태그 도배(#정보/#Tip/#추천 등) 제거 + “모더레이션 입력값 → 해시태그”를 단일 소스로 고정(3개) + dev(3000) 실행 중에도 `npm run test:e2e`가 안정적으로 동작하도록 E2E 포트 분리
+- 변경 내용
+  - `src/lib/seo/postTags.ts`: 자동 태그를 3개로 고정하고, 제목/본문 기반 키워드 추출 fallback 제거(분류/모더레이션 값만 사용) + stop-keys(ko/en/vi) 확장
+  - `src/components/molecules/cards/PostCard.tsx`: 금칙/범용 태그(ko/en/vi) 렌더링 차단 강화(의미 없는 칩 노출 방지)
+  - `src/app/api/users/recommended/route.ts`: 추천 사용자 메타 칩 우선순위를 `userType → visaType → interest → nationality → koreanLevel`로 재정렬(최대 3개 노출 전제)
+  - `playwright.config.ts`: 기본 포트를 `3100`으로 변경(E2E는 3100, dev는 3000 고정) + 필요 시 `E2E_PORT`로 오버라이드
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`

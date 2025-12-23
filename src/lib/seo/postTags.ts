@@ -25,10 +25,26 @@ const STOP_KEYS = new Set([
   'vietnam',
   'viet',
   'tip',
+  'tips',
+  'recommend',
+  'recommendation',
+  'info',
+  'information',
+  'guide',
+  'guides',
   '추천',
   '정보',
   '가이드',
-]);
+  '팁',
+  '도움',
+  '고려',
+  'gợi ý',
+  'thông tin',
+  'hướng dẫn',
+  'goi y',
+  'thong tin',
+  'huong dan',
+].map((value) => normalizeKey(value)));
 
 const isMeaningful = (value: string) => {
   const trimmed = value.trim();
@@ -70,8 +86,6 @@ const normalizeText = (value: string) =>
 export const generatePostTags = ({
   locale,
   postType,
-  title,
-  content,
   categorySlug,
   subcategorySlug,
   moderation,
@@ -114,27 +128,6 @@ export const generatePostTags = ({
         pushUnique(result, value, seen);
       });
     }
-  }
-
-  if (result.length < 3) {
-    const extraKeywords = flattenKeywords(
-      buildKeywords({
-        title: normalizeText(title || ''),
-        content: content || '',
-      }),
-      24,
-    );
-    extraKeywords.forEach((value) => {
-      if (result.length >= 3) return;
-      pushUnique(result, value, seen);
-    });
-  }
-
-  if (result.length < 3) {
-    ['질문', '공유'].forEach((value) => {
-      if (result.length >= 3) return;
-      pushUnique(result, value, seen);
-    });
   }
 
   const localized = result
