@@ -34,7 +34,8 @@
     "share": "Share",
     "question": "Question",
     "verifiedUser": "Verified user",
-    "guidelineTooltip": "Be respectful, no hate; ads/contact links may be restricted; violations can be limited or penalized"
+    "guidelineTooltip": "Be respectful, no hate; ads/contact links may be restricted; violations can be limited or penalized",
+    "loading": "Loading..."
   },
   "postDetail": {
     "confirmDeletePost": "Are you sure you want to delete this post?",

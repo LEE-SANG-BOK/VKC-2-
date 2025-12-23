@@ -2862,3 +2862,10 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] Subscriptions 로딩 문구 i18n 누락 제거 (P0-2)
+
+- 목표: 구독 페이지 로딩 상태에서 공통 `loading` 라벨이 없어 영어 fallback(`Loading...`)이 노출될 수 있는 케이스를 제거
+- 변경 내용
+  - `messages/ko.json`, `messages/vi.json`, `messages/en.json`: `common.loading` 추가
+  - `src/app/[lang]/(main)/subscriptions/SubscriptionsClient.tsx`: `copy.loading`을 `common.loading` 기반으로 단일화(영문 fallback 제거)

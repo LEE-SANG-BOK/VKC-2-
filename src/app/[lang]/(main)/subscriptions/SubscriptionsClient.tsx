@@ -58,7 +58,7 @@ export default function SubscriptionsClient({ translations, lang }: Subscription
       frequencyDaily: tSubscription.frequencyDaily || '',
       frequencyWeekly: tSubscription.frequencyWeekly || '',
       frequencyOff: tSubscription.frequencyOff || '',
-      loading: tCommon.loading || 'Loading...',
+      loading: tCommon.loading || '',
       updateError: tSubscription.updateError || '',
       unknownCategory: tCommon.uncategorized || '',
     };

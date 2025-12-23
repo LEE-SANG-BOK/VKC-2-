@@ -51,7 +51,8 @@
     "share": "Chia sẻ",
     "question": "Câu hỏi",
     "verifiedUser": "Người dùng đã xác minh",
-    "guidelineTooltip": "Tôn trọng, không lăng mạ/hận thù; bài có quảng cáo/liên hệ/liên kết có thể bị hạn chế; vi phạm có thể bị giới hạn/xử lý"
+    "guidelineTooltip": "Tôn trọng, không lăng mạ/hận thù; bài có quảng cáo/liên hệ/liên kết có thể bị hạn chế; vi phạm có thể bị giới hạn/xử lý",
+    "loading": "Đang tải..."
   },
   "postDetail": {
     "confirmDeletePost": "Bạn có chắc chắn muốn xóa bài viết này?",
