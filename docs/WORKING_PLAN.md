@@ -2851,3 +2851,14 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-23) [P0] UserProfile 모달 로딩 타이틀 i18n 하드코딩 제거 (P0-2)
+
+- 목표: 헤더 유저 메뉴 모달(Profile/MyPosts/Following/Bookmarks/Settings) 로딩 UI에서 ko/en/vi 하드코딩을 제거하고 messages 기반으로 단일화
+- 변경 내용
+  - `src/components/molecules/user/UserProfile.tsx`: dynamic 모달 로딩 fallback의 타이틀/aria-label을 `translations.*.loading` 기반으로 표시(하드코딩 제거)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
