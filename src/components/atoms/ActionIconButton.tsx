@@ -21,9 +21,13 @@ export default function ActionIconButton({
 }: ActionIconButtonProps) {
   const resolvedVariant = variant || (typeof count === 'number' ? 'pill' : 'icon');
   const baseClasses = 'inline-flex items-center justify-center gap-1 rounded-full transition-colors';
+  const hasCount = typeof count === 'number';
   const sizeClasses = resolvedVariant === 'pill'
     ? 'gap-1 px-3 py-2 min-h-[44px] text-xs font-semibold sm:px-2 sm:py-1 sm:min-h-[32px]'
-    : 'p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px]';
+    : cn(
+        'p-2.5 min-h-[44px] min-w-[44px] sm:p-1.5 sm:min-h-[32px] sm:min-w-[32px]',
+        hasCount ? 'min-w-[56px] sm:min-w-[48px]' : undefined
+      );
 
   return (
     <button
@@ -33,7 +37,11 @@ export default function ActionIconButton({
       {...props}
     >
       {icon}
-      {typeof count === 'number' ? <span>{count}</span> : null}
+      {hasCount ? (
+        <span className={resolvedVariant === 'icon' ? 'tabular-nums min-w-[1.25rem] text-right' : 'tabular-nums'}>
+          {count}
+        </span>
+      ) : null}
     </button>
   );
 }
