@@ -348,7 +348,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
             aria-label={displayName}
             className="shrink-0"
           >
-            <Avatar name={displayName} imageUrl={userItem.avatar || userItem.image} size="xl" hoverHighlight />
+            <Avatar name={displayName} imageUrl={userItem.avatar || userItem.image} size="2xl" hoverHighlight />
           </button>
 
           <div className="flex-1 min-w-0">
@@ -389,7 +389,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
                 isFollowing={isFollowing}
                 size="xs"
                 translations={translations}
-                className="shrink-0"
+                className="shrink-0 min-h-[28px] px-3 py-0.5 text-[11px] whitespace-nowrap"
                 onToggle={(next) =>
                   setFollowStates((prev) => ({
                     ...prev,

@@ -108,6 +108,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="lg:hidden inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-xl border-2 border-blue-300/90 dark:border-blue-900/60 bg-white/70 dark:bg-gray-900/40 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 group"
               aria-label={sidebarToggleLabel}
+              data-testid="mobile-sidebar-toggle"
             >
               {isMobileMenuOpen ? (
                 <X className="h-5 w-5 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
