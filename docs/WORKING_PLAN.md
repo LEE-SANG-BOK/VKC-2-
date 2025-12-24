@@ -3026,3 +3026,18 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-24) [P0] PostCard 모바일 헤더 컴팩트 + 팔로우 탭(비로그인) 추천유저 노출 (P0-3)
+
+- 목표: 모바일에서 PostCard 헤더의 불필요한 상단 여백/정렬 흔들림을 줄이고, 팔로우 탭에서 비로그인 상태여도 추천 유저가 노출되도록(팔로우 액션은 로그인 게이트 유지) 복구
+- 변경 내용
+  - `src/components/molecules/cards/PostCard.tsx`
+    - 작성자 헤더 정렬을 `items-center`로 통일해 “× 버튼이 과도하게 위로 뜨는” 인상 완화
+    - 팔로우 텍스트/숨김(×) 크기를 모바일 기준으로 컴팩트하게 조정
+  - `src/app/api/users/recommended/route.ts`: 비로그인 요청은 viewer/following 기반 가중치 없이 fallback 정렬로 추천 유저 반환(로그인 상태는 기존 개인화 유지)
+  - `src/components/organisms/PostList.tsx`: 팔로우 탭은 비로그인 상태에서도 추천 유저를 fetch/렌더(팔로우 액션은 로그인 페이지로 유도)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`

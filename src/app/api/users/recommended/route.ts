@@ -8,10 +8,7 @@ import { setPrivateNoStore, errorResponse } from '@/lib/api/response';
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
-
-    if (!session?.user?.id) {
-      return errorResponse('인증이 필요합니다.', 'UNAUTHORIZED', 401);
-    }
+    const viewerId = session?.user?.id || null;
 
     const { searchParams } = new URL(req.url);
     const pageCandidate = Number.parseInt(searchParams.get('page') || '1', 10);
@@ -20,15 +17,17 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(12, Math.max(1, limitCandidate));
     const offset = (page - 1) * limit;
 
-    const viewer = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-      columns: {
-        userType: true,
-        visaType: true,
-        koreanLevel: true,
-        interests: true,
-      },
-    });
+    const viewer = viewerId
+      ? await db.query.users.findFirst({
+          where: eq(users.id, viewerId),
+          columns: {
+            userType: true,
+            visaType: true,
+            koreanLevel: true,
+            interests: true,
+          },
+        })
+      : undefined;
 
     const viewerUserType = typeof viewer?.userType === 'string' && viewer.userType.trim() ? viewer.userType.trim() : null;
     const viewerVisaType = typeof viewer?.visaType === 'string' && viewer.visaType.trim() ? viewer.visaType.trim() : null;
@@ -41,17 +40,21 @@ export async function GET(req: NextRequest) {
       ? sql`ARRAY[${sql.join(viewerInterests.map((value) => sql`${value}::text`), sql`, `)}]::text[]`
       : sql`ARRAY[]::text[]`;
 
-    const followingUsers = await db
-      .select({ followingId: follows.followingId })
-      .from(follows)
-      .where(eq(follows.followerId, session.user.id));
+    const followingUsers = viewerId
+      ? await db
+          .select({ followingId: follows.followingId })
+          .from(follows)
+          .where(eq(follows.followerId, viewerId))
+      : [];
 
     const followingIds = followingUsers.map((row) => row.followingId).filter(Boolean) as string[];
     const followingIdSet = new Set(followingIds);
 
-    const whereConditions = [
-      ne(users.id, session.user.id),
-    ];
+    const whereConditions = [];
+
+    if (viewerId) {
+      whereConditions.push(ne(users.id, viewerId));
+    }
 
     if (followingIds.length > 0) {
       whereConditions.push(notInArray(users.id, followingIds));
@@ -187,7 +190,7 @@ export async function GET(req: NextRequest) {
         visaType: user.visaType,
         koreanLevel: user.koreanLevel,
         interests: resolvedInterests,
-        isFollowing: followingIdSet.has(user.id),
+        isFollowing: viewerId ? followingIdSet.has(user.id) : false,
         recommendationMeta,
         stats: {
           followers: user.followersCount,
