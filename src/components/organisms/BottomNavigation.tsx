@@ -45,7 +45,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
 
   useEffect(() => {
     const root = document.documentElement;
-    const baseOffset = 72;
+    const baseOffset = 84;
     root.style.setProperty('--vk-bottom-safe-offset', `${baseOffset}px`);
     return () => {
       root.style.setProperty('--vk-bottom-safe-offset', `${baseOffset}px`);
