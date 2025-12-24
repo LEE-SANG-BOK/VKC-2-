@@ -611,9 +611,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                       type="button"
                       onClick={handleToggleHide}
                       aria-label={hideLabel}
-                      className="shrink-0 flex h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                      className="shrink-0 flex h-8 w-8 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                     >
-                      <span aria-hidden className="text-[13px] leading-none">×</span>
+                      <span aria-hidden className="text-[12px] leading-none">×</span>
                     </button>
                   </Tooltip>
                 </div>

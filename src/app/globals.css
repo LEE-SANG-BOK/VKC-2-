@@ -855,6 +855,9 @@
 }
 
 @media (max-width: 640px) {
+  .question-card {
+    padding: 12px;
+  }
   .question-card-main {
     flex-direction: row !important;
     gap: 0.75rem !important;

@@ -88,7 +88,7 @@ export default function RecommendedUsersSection({
   const avatarSize = compact ? '2xl' : 'xl';
   const followButtonSize = 'xs';
   const followButtonClassName = compact
-    ? '!min-h-[24px] !px-2 !py-0.5 text-[11px] whitespace-nowrap'
+    ? '!min-h-[22px] !px-2 !py-0.5 text-[11px] whitespace-nowrap'
     : 'min-h-[28px] px-2.5 py-0.5 text-[11px] whitespace-nowrap sm:min-h-[36px] sm:px-3 sm:py-1 sm:text-xs';
 
   const mergedMetaLabels = useMemo<Record<string, string>>(() => ({
@@ -320,7 +320,7 @@ export default function RecommendedUsersSection({
         onScroll={markInteracted}
         className={`grid grid-flow-col ${
           compact
-            ? 'auto-cols-[minmax(320px,calc(100vw-2.75rem))] sm:auto-cols-[minmax(420px,1fr)]'
+            ? 'auto-cols-[minmax(260px,calc(100vw-2.75rem))] sm:auto-cols-[minmax(360px,1fr)]'
             : 'auto-cols-[minmax(260px,1fr)] sm:auto-cols-[minmax(320px,1fr)]'
         } lg:auto-cols-[minmax(280px,1fr)] ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 pr-3 scroll-px-3`}
       >

@@ -3041,3 +3041,18 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-25) [P0] 모바일 피드 터치 여유/겹침 완화 + 추천 유저 메타 노이즈 제거 (P0-3)
+
+- 목표: 모바일에서 상단 숨김(×) 터치 여유를 확보하면서 시각적 밀도를 유지하고, 하단탭 겹침/가려짐 체감을 줄인다. 추천 유저 카드의 “저신호 메타(예: 한국어 레벨)” 노출을 제거해 핵심 정보(상황/비자/관심 주제) 중심으로 정리한다.
+- 변경 내용
+  - `src/components/molecules/cards/PostCard.tsx`: 숨김(×) 버튼 hit area 확장(시각 크기는 축소)으로 오탭 감소
+  - `src/app/globals.css`: 모바일(`<=640px`) PostCard padding 소폭 축소로 세로 팽창 억제
+  - `src/components/organisms/BottomNavigation.tsx`: `--vk-bottom-safe-offset` 84px로 상향(하단탭 높이+safe-area 여유)
+  - `src/app/api/users/recommended/route.ts`: 추천 유저 `recommendationMeta`에서 `koreanLevel` 제외(상황/비자/관심 주제 우선)
+  - `src/components/organisms/RecommendedUsersSection.tsx`: compact 카드 폭 계산(min/max) 안정화(초소형 뷰포트에서 잘림/비율 깨짐 방지)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
