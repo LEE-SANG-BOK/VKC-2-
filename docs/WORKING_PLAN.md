@@ -3012,3 +3012,17 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-24) [FE] 추천 사용자 카드 비율 개선 + 하단탭 시각 분리(불투명) (P0-2/P0-3)
+
+- 목표: 추천 사용자 카드에서 “아바타/팔로우 버튼 비율”과 “가로 카드 폭”을 모바일에 맞게 안정화하고, 하단 고정 탭이 콘텐츠 위에 겹쳐 보이는 인상을 줄인다.
+- 변경 내용
+  - `src/components/organisms/RecommendedUsersSection.tsx`
+    - compact 모드 카드 폭 확대(auto-cols)로 텍스트 잘림/겹침 완화
+    - 아바타 크기 상향(`2xl`) + 팔로우 버튼 높이/패딩 축소(`min-h` 24px)
+  - `src/components/organisms/BottomNavigation.tsx`: 배경을 불투명(`bg-white`/`dark:bg-gray-900`)으로 고정해 콘텐츠가 비쳐 보이는 겹침 인상을 완화
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
