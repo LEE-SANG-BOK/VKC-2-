@@ -2988,3 +2988,14 @@ $gh-address-comments
 
 - PR/머지
   - [x] PR #82 (@codex) → `main` 머지: https://github.com/LEE-SANG-BOK/VKC-2-/pull/82
+
+#### (2025-12-24) [P0] PostCard 숨김(×) 버튼을 작성자 헤더로 이동 (P0-3)
+
+- 목표: 모바일에서 카드 우상단 오버레이로 인해 작성자/팔로우 영역이 눌리거나 겹치는 문제를 줄이고, PostCard 헤더 라인에서 컨트롤을 끝내도록 컴팩트화
+- 변경 내용
+  - `src/components/molecules/cards/PostCard.tsx`: 숨김(×)을 카드 absolute 영역에서 제거하고 작성자 헤더 우측 컨트롤로 이동(툴팁 유지) + 헤더 불필요 패딩(`pr-8`) 제거
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
