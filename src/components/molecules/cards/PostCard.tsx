@@ -574,7 +574,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               </button>
               <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
+                  <div className="flex flex-nowrap sm:flex-wrap items-center gap-2 min-w-0 flex-1">
                     <button
                       type="button"
                       className="text-left min-w-0"
@@ -595,7 +595,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                     {!isSelf && authorId ? (
                       <button
                         type="button"
-                        className={`shrink-0 text-[13px] font-medium transition-colors ${followTextClassName} ${toggleFollowMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        className={`shrink-0 whitespace-nowrap text-[13px] font-medium transition-colors ${followTextClassName} ${toggleFollowMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
                         onClick={handleFollowClick}
                         aria-pressed={localIsFollowing}
                         aria-label={followText}
@@ -670,7 +670,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       </div>
 
       {tagChips.length > 0 ? (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 min-w-0">
+        <div className="mt-2 flex items-center gap-1.5 min-w-0 overflow-x-auto scrollbar-hide pb-1 sm:pb-0 sm:flex-wrap sm:overflow-visible">
           {tagChips.map((tag) => {
             const isCategoryTag = !!categoryLabel && tag === categoryLabel;
             const isSubcategoryTag = !!subcategoryLabel && tag === subcategoryLabel;
@@ -684,7 +684,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
               <span
                 key={tag}
                 title={`#${tag}`}
-                className={`min-w-0 max-w-full truncate px-2 py-0.5 text-xs rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${pillClass}`}
+                className={`shrink-0 min-w-0 max-w-[200px] truncate px-2 py-0.5 text-xs rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${pillClass}`}
               >
                 #{tag}
               </span>
