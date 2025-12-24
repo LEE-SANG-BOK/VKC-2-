@@ -30,13 +30,13 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const viewerUserType = viewer?.userType || null;
-    const viewerVisaType = viewer?.visaType || null;
-    const viewerKoreanLevel = viewer?.koreanLevel || null;
-    const viewerInterests = (viewer?.interests || []).filter((value) => typeof value === 'string' && value.trim().length > 0);
-    const viewerUserTypeSql = viewerUserType ? sql`${viewerUserType}::text` : null;
-    const viewerVisaTypeSql = viewerVisaType ? sql`${viewerVisaType}::text` : null;
-    const viewerKoreanLevelSql = viewerKoreanLevel ? sql`${viewerKoreanLevel}::text` : null;
+    const viewerUserType = typeof viewer?.userType === 'string' && viewer.userType.trim() ? viewer.userType.trim() : null;
+    const viewerVisaType = typeof viewer?.visaType === 'string' && viewer.visaType.trim() ? viewer.visaType.trim() : null;
+    const viewerKoreanLevel =
+      typeof viewer?.koreanLevel === 'string' && viewer.koreanLevel.trim() ? viewer.koreanLevel.trim() : null;
+    const viewerInterests = (viewer?.interests || []).filter(
+      (value) => typeof value === 'string' && value.trim().length > 0
+    );
     const viewerInterestsArray = viewerInterests.length > 0
       ? sql`ARRAY[${sql.join(viewerInterests.map((value) => sql`${value}::text`), sql`, `)}]::text[]`
       : sql`ARRAY[]::text[]`;
@@ -65,9 +65,9 @@ export async function GET(req: NextRequest) {
     const total = Number(totalResult[0]?.count || 0);
 
     const matchScoreParts = [
-      viewerUserTypeSql ? sql`(CASE WHEN ${users.userType} = ${viewerUserTypeSql} THEN 4 ELSE 0 END)` : sql`0`,
-      viewerVisaTypeSql ? sql`(CASE WHEN ${users.visaType} = ${viewerVisaTypeSql} THEN 3 ELSE 0 END)` : sql`0`,
-      viewerKoreanLevelSql ? sql`(CASE WHEN ${users.koreanLevel} = ${viewerKoreanLevelSql} THEN 1 ELSE 0 END)` : sql`0`,
+      viewerUserType ? sql`(CASE WHEN ${users.userType} = ${viewerUserType} THEN 4 ELSE 0 END)` : sql`0`,
+      viewerVisaType ? sql`(CASE WHEN ${users.visaType} = ${viewerVisaType} THEN 3 ELSE 0 END)` : sql`0`,
+      viewerKoreanLevel ? sql`(CASE WHEN ${users.koreanLevel} = ${viewerKoreanLevel} THEN 1 ELSE 0 END)` : sql`0`,
       viewerInterests.length > 0
         ? sql`(CASE WHEN COALESCE(${users.interests} && ${viewerInterestsArray}, false) THEN 3 ELSE 0 END)`
         : sql`0`,
@@ -150,7 +150,7 @@ export async function GET(req: NextRequest) {
       return interestList[0] || '';
     };
 
-      const formattedUsers = recommendedUsers.map((user) => {
+    const formattedUsers = recommendedUsers.map((user) => {
       const resolvedInterests = (user.interests || [])
         .map((value) => (typeof value === 'string' ? resolveInterest(value) : ''))
         .filter((value) => value.length > 0);
