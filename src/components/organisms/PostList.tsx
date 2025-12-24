@@ -223,7 +223,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
   const shouldInsertFollowingRecommended = selectedCategory === 'following'
     && !isSearchMode
     && allPosts.length > 0;
-  const shouldFetchRecommended = Boolean(session?.user) && (selectedCategory === 'following' || shouldInsertRecommended);
+  const shouldFetchRecommended = !isSearchMode && (selectedCategory === 'following' || shouldInsertRecommended);
   const {
     data: recommended,
     isLoading: recommendedLoading,
