@@ -220,6 +220,9 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
     data?.pages.flatMap((page: PaginatedResponse<PostListItem>) => page.data) || [];
 
   const shouldInsertRecommended = Boolean(session?.user) && !isSearchMode && (selectedCategory === 'popular' || selectedCategory === 'latest') && allPosts.length >= 5;
+  const shouldInsertFollowingRecommended = selectedCategory === 'following'
+    && !isSearchMode
+    && allPosts.length > 0;
   const shouldFetchRecommended = Boolean(session?.user) && (selectedCategory === 'following' || shouldInsertRecommended);
   const {
     data: recommended,
@@ -385,7 +388,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
           </div>
         )}
 
-      {selectedCategory === 'following' && !isLoading && allPosts.length === 0 && (recommendedLoading || sortedRecommendations.length) ? (
+  {selectedCategory === 'following' && !isLoading && allPosts.length === 0 && (recommendedLoading || sortedRecommendations.length) ? (
         <div className="mb-4">
           <RecommendedUsersSection
             title={recommendedUsersLabel}
@@ -472,6 +475,36 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                     translations={translations}
                   />
                 </div>
+                {shouldInsertFollowingRecommended && idx === 0 && (recommendedLoading || sortedRecommendations.length > 0) ? (
+                  <div className="mt-1">
+                    <RecommendedUsersSection
+                      title={recommendedUsersLabel}
+                      locale={locale}
+                      users={sortedRecommendations}
+                      isLoading={recommendedLoading}
+                      translations={translations}
+                      hasNextPage={hasNextRecommendedPage}
+                      isFetchingNextPage={isFetchingNextRecommendedPage}
+                      onLoadMore={() => {
+                        if (hasNextRecommendedPage && !isFetchingNextRecommendedPage) {
+                          fetchNextRecommendedPage();
+                        }
+                      }}
+                      followerLabel={followerLabel}
+                      postsLabel={postsLabel}
+                      followingLabel={followingLabel}
+                      metaLabels={metaLabels}
+                      verifiedLabel={verifiedLabel}
+                      trustBadgeTranslations={tTrust}
+                      badgeLabels={badgeLabels}
+                      previousLabel={previousLabel}
+                      nextLabel={nextLabel}
+                      anonymousLabel={anonymousLabel}
+                      onboardingLabels={tOnboarding}
+                      compact
+                    />
+                  </div>
+                ) : null}
                 {shouldInsertRecommended && idx === 4 && (recommendedLoading || sortedRecommendations.length > 0) ? (
                   <div className="mt-1">
                     <RecommendedUsersSection

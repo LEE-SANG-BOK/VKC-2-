@@ -549,7 +549,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       >
         <div className="question-card-main">
           <div className="question-card-body relative">
-            <div className="flex items-start gap-2 mb-3 min-w-0">
+            <div className="flex items-start gap-2 mb-2 min-w-0">
               <div className="flex items-start gap-2 min-w-0 flex-1">
 		              <button
 	                type="button"
@@ -607,7 +607,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   type="button"
                   onClick={handleToggleHide}
                   aria-label={hideLabel}
-                  className="shrink-0 flex h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  className="shrink-0 mt-1 flex h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                 >
                   <span aria-hidden className="text-[14px] leading-none">×</span>
                 </button>
@@ -702,7 +702,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
 	                  onClick={handleAnswerCountClick}
 	                  aria-label={certifiedTooltipContent || certifiedDisplayLabel}
 	                  title={certifiedTooltipContent || certifiedDisplayLabel}
-	                  className="group inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200 hover:text-emerald-800 dark:hover:text-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[140px] sm:max-w-none"
+	                  className="group inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200 hover:text-emerald-800 dark:hover:text-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 min-w-0 max-w-[120px] sm:max-w-none"
 	                >
 	                  <ShieldCheck className="h-3 w-3 shrink-0" />
 	                  <span className="truncate">{certifiedDisplayLabel}</span>
