@@ -85,9 +85,11 @@ export default function RecommendedUsersSection({
   const cardNameClass = compact ? 'text-[13px]' : 'text-sm';
   const cardMetaClass = compact ? 'text-[10px]' : 'text-[11px]';
   const badgeLabelClass = compact ? 'text-[10px] text-gray-500 dark:text-gray-400' : 'text-[11px] text-gray-500 dark:text-gray-400';
-  const avatarSize = compact ? '2xl' : 'lg';
+  const avatarSize = compact ? 'xl' : 'xl';
   const followButtonSize = 'xs';
-  const followButtonClassName = compact ? 'min-h-[28px] px-2.5 py-0.5 text-[11px] whitespace-nowrap' : 'min-h-[36px] px-3 py-1 text-xs';
+  const followButtonClassName = compact
+    ? 'min-h-[28px] px-2.5 py-0.5 text-[11px] whitespace-nowrap'
+    : 'min-h-[28px] px-2.5 py-0.5 text-[11px] whitespace-nowrap sm:min-h-[36px] sm:px-3 sm:py-1 sm:text-xs';
 
   const mergedMetaLabels = useMemo<Record<string, string>>(() => ({
     followers: followerLabel,

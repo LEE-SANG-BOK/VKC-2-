@@ -127,6 +127,7 @@ export async function GET(req: NextRequest) {
         recommendedUsers
           .flatMap((user) => user.interests || [])
           .filter((value): value is string => typeof value === 'string' && uuidRegex.test(value))
+          .concat(viewerInterests.filter((value): value is string => typeof value === 'string' && uuidRegex.test(value)))
       )
     );
 
@@ -145,9 +146,14 @@ export async function GET(req: NextRequest) {
       return trimmed;
     };
 
+    const resolvedViewerInterests = viewerInterests
+      .map((value) => resolveInterest(value))
+      .filter((value) => value.length > 0);
+
     const pickInterest = (interestList: string[]) => {
       if (interestList.length === 0) return '';
-      return interestList[0] || '';
+      const matched = interestList.find((value) => resolvedViewerInterests.includes(value));
+      return matched || interestList[0] || '';
     };
 
     const formattedUsers = recommendedUsers.map((user) => {
