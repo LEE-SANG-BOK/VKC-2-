@@ -2951,3 +2951,22 @@ $gh-address-comments
   - [x] PR #77 (@codex) → `main` 머지: https://github.com/LEE-SANG-BOK/VKC-2-/pull/77
 - 비고
   - Vercel preview는 `build-rate-limit`로 실패할 수 있음 → GH CI(`build`) 통과 시 admin override로 머지
+
+#### (2025-12-24) [P0] Feedback/Sidebar 안정화 + Leaderboard 모바일 중복 제거 (PR #80) (P0-3)
+
+- 목표: 피드백 제출이 DB 스키마 드리프트로 실패하지 않게 하고, 모바일에서 사이드바 토글/닫기 회귀를 Playwright로 고정하며, 커뮤니티 랭킹(leaderboard) 모바일 상단 Event 블록 중복을 제거
+- 변경 내용
+  - `src/app/api/feedback/route.ts`: `feedbacks` 테이블 컬럼 드리프트가 있어도 insert가 실패하지 않도록 “존재하지 않는 컬럼 제거 후 재시도” + `public.feedbacks` 고정 insert
+  - `src/app/api/admin/feedback/route.ts`: admin 목록 조회도 `public.feedbacks`/`public.users`로 고정(검색/리스트 쿼리 안정화)
+  - `src/components/molecules/cards/PostCard.tsx`: 숨김(×) 버튼을 카드 우상단 absolute로 고정해 미디어/비미디어 카드에서 위치가 흔들리지 않도록 안정화 + 작성자 헤더 라인 정리
+  - `src/components/molecules/modals/FollowingModal.tsx`: 추천 유저 카드에서 아바타 확대 + 팔로우 버튼 높이/패딩 축소(모바일 시야성 개선)
+  - `src/app/[lang]/(main)/leaderboard/page.tsx`: `mobileRightRail` 제거로 모바일 Event 섹션 중복 노출 제거(모바일은 LeaderboardClient 내 Event만 유지)
+  - `src/components/organisms/Header.tsx`, `src/components/organisms/CategorySidebar.tsx`: 모바일 사이드바 토글/닫기용 `data-testid` 추가
+  - `e2e/smoke.spec.ts`: `/ko/leaderboard`에서 모바일 사이드바 open/close 스모크 추가(mobile-chromium만)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+- PR/머지
+  - [x] PR #80 (@codex) → `main` 머지: https://github.com/LEE-SANG-BOK/VKC-2-/pull/80
