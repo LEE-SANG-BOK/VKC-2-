@@ -81,26 +81,55 @@ const buildInsertPayload = (
   return payload;
 };
 
+const missingFeedbackColumnName = (error: unknown) => {
+  if (!error || typeof error !== 'object') return null;
+  const maybe = error as { code?: unknown; message?: unknown };
+  const code = typeof maybe.code === 'string' ? maybe.code : '';
+  const message = typeof maybe.message === 'string' ? maybe.message : '';
+  if (code !== '42703' || !message) return null;
+  const match = message.match(/column "([^"]+)" of relation "feedbacks" does not exist/i);
+  return match?.[1] || null;
+};
+
 const insertFeedback = async (payload: Record<string, unknown>) => {
   const client = getQueryClient();
-  const columns = Object.keys(payload);
-  const values = Object.values(payload);
-  if (columns.length === 0) {
-    throw new Error('Feedback insert payload is empty');
+  let insertPayload = { ...payload };
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const columns = Object.keys(insertPayload);
+    const values = Object.values(insertPayload);
+    if (columns.length === 0) {
+      throw new Error('Feedback insert payload is empty');
+    }
+
+    const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+    const escapedColumns = columns.map((name) => `"${name}"`).join(', ');
+
+    try {
+      const [row] = await client.unsafe<Array<{ created_at?: unknown }>>(
+        `
+          INSERT INTO public.feedbacks (${escapedColumns})
+          VALUES (${placeholders})
+          RETURNING created_at
+        `,
+        values as any[]
+      );
+      return row?.created_at;
+    } catch (error) {
+      lastError = error;
+      const columnName = missingFeedbackColumnName(error);
+      if (!columnName || !(columnName in insertPayload)) {
+        throw error;
+      }
+      const nextPayload = { ...insertPayload };
+      delete nextPayload[columnName];
+      insertPayload = nextPayload;
+      cachedFeedbackColumns = undefined;
+    }
   }
 
-  const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
-  const escapedColumns = columns.map((name) => `"${name}"`).join(', ');
-
-  const [row] = await client.unsafe<Array<{ created_at?: unknown }>>(
-    `
-      INSERT INTO feedbacks (${escapedColumns})
-      VALUES (${placeholders})
-      RETURNING created_at
-    `,
-    values as any[]
-  );
-  return row?.created_at;
+  throw lastError instanceof Error ? lastError : new Error('Failed to insert feedback');
 };
 
 const resolveClientIp = (request: NextRequest) => {

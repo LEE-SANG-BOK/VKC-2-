@@ -264,6 +264,7 @@ export default function CategorySidebar({
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
                 aria-label={closeLabel}
+                data-testid="mobile-sidebar-close"
                 className="shrink-0 flex h-9 w-9 items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition-colors"
               >
                 <span aria-hidden className="text-base leading-none">×</span>

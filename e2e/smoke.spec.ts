@@ -58,6 +58,16 @@ test('renders leaderboard page (ko)', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
+test('mobile sidebar opens and closes (ko leaderboard)', async ({ page }) => {
+  test.skip(test.info().project.name !== 'mobile-chromium', 'mobile only');
+
+  await page.goto('/ko/leaderboard');
+  await page.getByTestId('mobile-sidebar-toggle').click();
+  await expect(page.getByTestId('mobile-sidebar-close')).toBeVisible();
+  await page.getByTestId('mobile-sidebar-close').click();
+  await expect(page.getByTestId('mobile-sidebar-close')).toHaveCount(0);
+});
+
 test('language switcher hides en and can switch ko↔vi', async ({ page }) => {
   await page.goto('/ko/about');
   await page.waitForLoadState('networkidle');

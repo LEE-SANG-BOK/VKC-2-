@@ -99,7 +99,7 @@ export default async function LeaderboardPage({ params, searchParams }: PageProp
     <HydrationBoundary state={dehydrate(queryClient)}>
       <MainLayout
         rightRail={
-          <div className="sticky top-[var(--vk-header-height)] py-6">
+          <div className="py-6">
             <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
                 {eventCopy.title}
@@ -109,12 +109,6 @@ export default async function LeaderboardPage({ params, searchParams }: PageProp
               </p>
             </section>
           </div>
-        }
-        mobileRightRail={
-          <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900 shadow-sm p-4">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{eventCopy.title}</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{eventCopy.description}</p>
-          </section>
         }
         translations={dict}
       >
