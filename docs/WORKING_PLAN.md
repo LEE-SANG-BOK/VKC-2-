@@ -2941,3 +2941,13 @@ $gh-address-comments
 - 변경 내용
   - `src/components/atoms/Avatar.tsx`: `ui-avatars.com` URL을 `https://` + `format=png` + `size`로 정규화하고, 파싱 실패 케이스에서도 안전하게 `<img>` 경로로 처리
   - `src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`: 프로필 이미지 프리뷰에서도 동일한 URL 정규화/`unoptimized` 분기 적용
+
+#### (2025-12-24) [P0] PR 머지 로그(74~77) (P0-3)
+
+- PR/머지
+  - [x] PR #74 (@codex) → `main` 머지: https://github.com/LEE-SANG-BOK/VKC-2-/pull/74
+  - [x] PR #75 (@codex) → `main` 머지: https://github.com/LEE-SANG-BOK/VKC-2-/pull/75
+  - [x] PR #76 (@codex) → `main` 머지: https://github.com/LEE-SANG-BOK/VKC-2-/pull/76
+  - [x] PR #77 (@codex) → `main` 머지: https://github.com/LEE-SANG-BOK/VKC-2-/pull/77
+- 비고
+  - Vercel preview는 `build-rate-limit`로 실패할 수 있음 → GH CI(`build`) 통과 시 admin override로 머지
