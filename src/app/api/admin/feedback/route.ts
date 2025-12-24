@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     const [countRow] = await client.unsafe<Array<{ count?: unknown }>>(
       `
         SELECT COUNT(*)::int AS count
-        FROM feedbacks f
+        FROM public.feedbacks f
         ${whereClause}
       `,
       params as any[]
@@ -111,8 +111,8 @@ export async function GET(request: NextRequest) {
           u.display_name AS user_display_name,
           u.email AS user_email,
           u.image AS user_image
-        FROM feedbacks f
-        LEFT JOIN users u ON f.user_id = u.id
+        FROM public.feedbacks f
+        LEFT JOIN public.users u ON f.user_id = u.id
         ${whereClause}
         ORDER BY f.created_at DESC
         LIMIT ${limitPlaceholder}
