@@ -2999,3 +2999,16 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-24) [P0] PostCard 모바일 클립/세로 팽창 최소화(헤더/태그) (P0-2)
+
+- 목표: `ko/vi` 텍스트 길이와 아이콘/버튼 조합 때문에 PostCard 상단/태그 라인이 줄바꿈되며 카드가 불필요하게 세로로 길어지는 문제를 완화
+- 변경 내용
+  - `src/components/molecules/cards/PostCard.tsx`
+    - 작성자 헤더: 모바일은 `flex-nowrap`로 고정(`sm`부터 wrap 허용) + 팔로우 버튼 `whitespace-nowrap`로 고정
+    - 태그 칩: 모바일은 1줄 유지 + 가로 스크롤(`scrollbar-hide`)로 처리(`sm`부터 wrap/overflow-visible)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
