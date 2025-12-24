@@ -169,7 +169,6 @@ export async function GET(req: NextRequest) {
         { key: 'visaType', value: user.visaType || '' },
         { key: 'interest', value: pickInterest(resolvedInterests) },
         { key: 'nationality', value: user.nationality || '' },
-        { key: 'koreanLevel', value: user.koreanLevel || '' },
       ]
         .filter((item) => typeof item.value === 'string' && item.value.trim().length > 0)
         .slice(0, 3);
