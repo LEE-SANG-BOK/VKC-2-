@@ -2970,3 +2970,16 @@ $gh-address-comments
   - [x] `npm run test:e2e`
 - PR/머지
   - [x] PR #80 (@codex) → `main` 머지: https://github.com/LEE-SANG-BOK/VKC-2-/pull/80
+
+#### (2025-12-24) [P0] 추천 사용자 메타(온보딩) 우선순위 보강 + 모바일 카드 컴팩트화 (P0-2/P0-3)
+
+- 목표: 추천 사용자 카드가 모바일에서 “아바타는 작고 팔로우 버튼은 큰” 비율로 보이는 문제를 줄이고, 추천 메타(온보딩 기반)에서 실제로 “겹치는 관심사”가 우선 노출되도록 개선
+- 변경 내용
+  - `src/app/api/users/recommended/route.ts`: viewer 관심사도 slug resolve 대상에 포함 + interest 메타는 viewer와 겹치는 값을 우선 선택(없으면 fallback) + 메타 표시는 3개 유지
+  - `src/components/organisms/RecommendedUsersSection.tsx`: 모바일에서 아바타 확대(`xl`) + 팔로우 버튼 높이/패딩 축소(텍스트 잘림/비율 개선)
+  - `src/components/organisms/BottomNavigation.tsx`: 하단 고정바 배경을 `bg-white/95`, `dark:bg-gray-900/95`로 조정(콘텐츠와의 시각적 분리 강화)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
