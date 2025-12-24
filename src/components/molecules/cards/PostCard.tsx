@@ -558,7 +558,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       >
         <div className="question-card-main">
           <div className="question-card-body relative">
-            <div className="flex items-start gap-2 mb-2 min-w-0">
+            <div className="flex items-center gap-2 mb-2 min-w-0">
               <button
                 type="button"
                 className="shrink-0"
@@ -573,7 +573,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                 />
               </button>
               <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2 min-w-0">
+                <div className="flex items-center justify-between gap-2 min-w-0">
                   <div className="flex flex-nowrap sm:flex-wrap items-center gap-2 min-w-0 flex-1">
                     <button
                       type="button"
@@ -595,7 +595,7 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                     {!isSelf && authorId ? (
                       <button
                         type="button"
-                        className={`shrink-0 whitespace-nowrap text-[13px] font-medium transition-colors ${followTextClassName} ${toggleFollowMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        className={`shrink-0 whitespace-nowrap text-xs font-medium transition-colors ${followTextClassName} ${toggleFollowMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
                         onClick={handleFollowClick}
                         aria-pressed={localIsFollowing}
                         aria-label={followText}
@@ -611,9 +611,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                       type="button"
                       onClick={handleToggleHide}
                       aria-label={hideLabel}
-                      className="shrink-0 flex h-7 w-7 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                      className="shrink-0 flex h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                     >
-                      <span aria-hidden className="text-[14px] leading-none">×</span>
+                      <span aria-hidden className="text-[13px] leading-none">×</span>
                     </button>
                   </Tooltip>
                 </div>
