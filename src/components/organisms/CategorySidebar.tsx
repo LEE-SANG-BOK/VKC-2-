@@ -380,7 +380,10 @@ export default function CategorySidebar({
                       const apiChild = apiBySlug.get(child.slug);
                       const subscribed = apiChild ? subscribedIds.has(apiChild.id) : false;
                       return (
-                        <div key={child.slug} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 pr-4 py-1 min-w-0">
+                        <div
+                          key={child.slug}
+                          className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] items-start sm:items-center gap-2 pr-4 py-1 min-w-0"
+                        >
                           <CategoryItem
                             id={child.slug}
                             name={getCategoryName(child, locale)}
@@ -391,20 +394,16 @@ export default function CategorySidebar({
                             className="!px-2 !py-2 flex-1 text-sm"
                           />
                           {apiChild ? (
-                          <button
-                            onClick={() => handleSubscribe(apiChild.id)}
-                            className={`shrink-0 text-center whitespace-normal break-words text-[11px] min-h-[32px] px-2.5 sm:px-3 py-1.5 rounded-full transition-colors max-w-[140px] ${
-                              subscribed
-                                ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
-                                : 'border border-transparent bg-blue-600 text-white shadow-sm hover:bg-blue-700'
-                            }`}
-                          >
-                            <span className="block leading-snug">
-                              {subscribed
-                                ? subscribedLabel
-                                : subscribeLabel}
-                            </span>
-                          </button>
+                            <button
+                              onClick={() => handleSubscribe(apiChild.id)}
+                              className={`shrink-0 justify-self-end text-center whitespace-normal break-words text-[11px] min-h-[32px] px-2.5 sm:px-3 py-1.5 rounded-full transition-colors max-w-[140px] ${
+                                subscribed
+                                  ? 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
+                                  : 'border border-transparent bg-blue-600 text-white shadow-sm hover:bg-blue-700'
+                              }`}
+                            >
+                              <span className="block leading-snug">{subscribed ? subscribedLabel : subscribeLabel}</span>
+                            </button>
                           ) : null}
                         </div>
                       );
@@ -423,7 +422,10 @@ export default function CategorySidebar({
           {topicSubscriptions.length > 0 ? (
             <div className="space-y-1">
               {topicSubscriptions.map((cat) => (
-                <div key={cat.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 pr-3 pl-0 py-1.5 min-w-0">
+                <div
+                  key={cat.id}
+                  className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] items-start sm:items-center gap-2 pr-3 pl-0 py-1.5 min-w-0"
+                >
                   <CategoryItem
                     id={cat.slug}
                     name={getTranslatedCategoryName(cat)}
@@ -435,7 +437,7 @@ export default function CategorySidebar({
                   />
                   <button
                     onClick={() => handleSubscribe(cat.id)}
-                    className="shrink-0 text-center whitespace-normal break-words text-[11px] min-h-[32px] px-2.5 sm:px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors max-w-[140px]"
+                    className="shrink-0 justify-self-end text-center whitespace-normal break-words text-[11px] min-h-[32px] px-2.5 sm:px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors max-w-[140px]"
                   >
                     <span className="block leading-snug">
                       {subscribedLabel}

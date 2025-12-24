@@ -261,25 +261,34 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
       ? (tCommon.question || questionPostLabel || '')
       : (tCommon.share || '');
 
-    const candidates = [
-      ...(displayTags.length > 0 ? displayTags : []),
-      categoryLabel,
-      subcategoryLabel,
-      purposeLabel,
-    ]
+    const moderationCandidates = (displayTags.length > 0 ? displayTags : [])
+      .map((v) => v?.trim())
+      .filter(Boolean) as string[];
+    const contextCandidates = [categoryLabel, subcategoryLabel, purposeLabel]
       .map((v) => v?.trim())
       .filter(Boolean) as string[];
 
-    return candidates
-      .filter((v) => {
-        const key = normalizeKey(v);
-        if (!key) return false;
-        if (reserved.has(key)) return false;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .slice(0, 3);
+    const isSelectable = (value: string) => {
+      const key = normalizeKey(value);
+      if (!key) return false;
+      if (reserved.has(key)) return false;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    };
+
+    const selected: string[] = [];
+    for (const candidate of moderationCandidates) {
+      if (selected.length >= 2) break;
+      if (!isSelectable(candidate)) continue;
+      selected.push(candidate);
+    }
+    for (const candidate of contextCandidates) {
+      if (selected.length >= 3) break;
+      if (!isSelectable(candidate)) continue;
+      selected.push(candidate);
+    }
+    return selected;
   }, [
     categoryLabel,
     displayTags,
@@ -607,9 +616,9 @@ export default function PostCard({ id, author, title, excerpt, tags, stats, cate
                   type="button"
                   onClick={handleToggleHide}
                   aria-label={hideLabel}
-                  className="shrink-0 mt-1 flex h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  className="shrink-0 self-start mt-0.5 flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                 >
-                  <span aria-hidden className="text-[14px] leading-none">×</span>
+                  <span aria-hidden className="text-[13px] leading-none">×</span>
                 </button>
               </Tooltip>
             </div>

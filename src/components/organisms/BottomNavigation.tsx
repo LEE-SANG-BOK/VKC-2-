@@ -121,7 +121,11 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
 
   return (
     <>
-      <nav className={`md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 dark:border-gray-800/80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg ${isKeyboardOpen ? 'hidden' : ''}`}>
+      <nav
+        className={`md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 dark:border-gray-800/80 bg-white dark:bg-gray-900 backdrop-blur-lg shadow-lg ${
+          isKeyboardOpen ? 'hidden' : ''
+        }`}
+      >
         <div className="pb-[env(safe-area-inset-bottom,0px)]">
           <div className="grid grid-cols-5 h-14 px-2">
             {navItems.map((item) => {
