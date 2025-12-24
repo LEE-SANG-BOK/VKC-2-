@@ -2983,3 +2983,8 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-24) [P0] PR 머지 로그 (PR #82) (P0-2/P0-3)
+
+- PR/머지
+  - [x] PR #82 (@codex) → `main` 머지: https://github.com/LEE-SANG-BOK/VKC-2-/pull/82
