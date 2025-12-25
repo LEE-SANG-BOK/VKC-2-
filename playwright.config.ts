@@ -43,6 +43,7 @@ export default defineConfig({
         env: {
           ...process.env,
           PORT: String(port),
+          E2E_TEST_MODE: process.env.E2E_TEST_MODE || '1',
           NEXTAUTH_URL: process.env.NEXTAUTH_URL || baseURL,
           AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST || 'true',
           NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'dummy-nextauth-secret',
