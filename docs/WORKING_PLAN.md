@@ -536,6 +536,10 @@ $gh-address-comments
 - i18n 키 추가 담당 1인 지정(권장: Lead): `ko/vi`만 의무, `en`은 신규 작업에서 추가하지 않음
 - 통합 윈도우 고정(권장: 하루 1회): 게이트 통과 후만 머지
 - 머지 게이트(필수): `npm run lint` → `npm run type-check` → `SKIP_SITEMAP_DB=true npm run build` → Playwright 스모크 통과 → (Lead) 수동 QA 체크리스트 OK
+  - Playwright 운영 원칙(항상):
+    - 모든 PR: `npm run test:e2e` 통과
+    - UI 영향(PRD/레이아웃/피드/카드/헤더 등): `npm run test:e2e:ui` 실행 → 생성된 `test-results/**/home-*.png`/`postcard-*.png`로 시각 확인(필요 시 PR에 스크린샷 첨부)
+    - 기능/버그 수정은 “변경 지점”을 1개 이상 Playwright로 재현/검증 가능한 형태로 남긴다(테스트 추가/확장 또는 최소 스모크/리퀘스트 검증 추가)
 
 ## 소유권(역할)
 
