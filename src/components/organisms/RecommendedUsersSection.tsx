@@ -87,8 +87,9 @@ export default function RecommendedUsersSection({
   const badgeLabelClass = compact ? 'text-[10px] text-gray-500 dark:text-gray-400' : 'text-[11px] text-gray-500 dark:text-gray-400';
   const avatarSize = compact ? '2xl' : 'xl';
   const followButtonSize = 'xs';
+  const followButtonVariant = compact ? 'text' : 'pill';
   const followButtonClassName = compact
-    ? '!min-h-[22px] !px-2 !py-0.5 text-[11px] whitespace-nowrap'
+    ? 'px-1.5 py-0.5 whitespace-nowrap'
     : 'min-h-[28px] px-2.5 py-0.5 text-[11px] whitespace-nowrap sm:min-h-[36px] sm:px-3 sm:py-1 sm:text-xs';
 
   const mergedMetaLabels = useMemo<Record<string, string>>(() => ({
@@ -261,6 +262,7 @@ export default function RecommendedUsersSection({
                   userName={displayName}
                   isFollowing={followStates[userId] ?? user.isFollowing ?? false}
                   size={followButtonSize}
+                  variant={followButtonVariant}
                   translations={translations}
                   className={followButtonClassName}
                   onToggle={(next) =>

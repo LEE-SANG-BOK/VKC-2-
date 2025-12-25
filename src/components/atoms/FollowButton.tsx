@@ -21,6 +21,7 @@ interface FollowButtonProps {
   userName?: string;
   isFollowing?: boolean;
   size?: 'xs' | 'sm' | 'md';
+  variant?: 'pill' | 'text';
   className?: string;
   onToggle?: (next: boolean) => void;
   translations?: Record<string, unknown>;
@@ -31,6 +32,7 @@ export default function FollowButton({
   userName,
   isFollowing = false,
   size = 'md',
+  variant = 'pill',
   className = '',
   onToggle,
   translations,
@@ -106,6 +108,10 @@ export default function FollowButton({
     ? 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'
     : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700';
 
+  const textVariantClasses = following
+    ? 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+    : 'text-blue-600 dark:text-blue-400 hover:underline';
+
   return (
     <>
       <button
@@ -113,7 +119,11 @@ export default function FollowButton({
         onClick={handleClick}
         disabled={loading}
         aria-pressed={following}
-        className={`inline-flex items-center justify-center rounded-full border font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${sizeClasses} ${activeClasses} ${loading ? 'opacity-70 cursor-not-allowed' : ''} ${className}`}
+        className={
+          variant === 'text'
+            ? `inline-flex items-center justify-center rounded-md px-2 py-1 text-[11px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${textVariantClasses} ${loading ? 'opacity-70 cursor-not-allowed' : ''} ${className}`
+            : `inline-flex items-center justify-center rounded-full border font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${sizeClasses} ${activeClasses} ${loading ? 'opacity-70 cursor-not-allowed' : ''} ${className}`
+        }
       >
         {loading ? processingLabel : following ? followingLabel : followLabel}
       </button>
