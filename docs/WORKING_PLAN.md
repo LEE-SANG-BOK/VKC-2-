@@ -3112,3 +3112,11 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-25) [P0-9] 자동 스모크(Playwright) 결과 기록 (기록용)
+
+- 목적: 수동 QA(P0-9) 수행 전, 자동 스모크에서 “기본 페이지 로드/정책”이 깨지지 않았음을 기준선으로 남긴다(실기기 QA를 대체하지 않음).
+- 자동 스모크 커버리지(현재 테스트 기준)
+  - 페이지 로드: about/privacy/terms/faq/feedback/leaderboard/posts/new(ko/vi/en)
+  - 정책: 언어 스위치(UI에서 en 숨김 + ko↔vi 전환), robots.txt/sitemap.xml, rate limit probe 429
+- 결과(최근 실행): `npm run test:e2e` → `43 passed, 2 skipped` (chromium/mobile-chromium/webkit)
