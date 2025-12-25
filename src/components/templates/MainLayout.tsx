@@ -12,6 +12,7 @@ interface MainLayoutProps {
   selectedCategory?: string;
   onCategoryChange?: (category: string) => void;
   hideSidebar?: boolean;
+  hideDesktopSidebar?: boolean;
   hideSearch?: boolean;
   rightRail?: ReactNode;
   mobileRightRail?: ReactNode;
@@ -24,6 +25,7 @@ export default function MainLayout({
   selectedCategory = 'all',
   onCategoryChange,
   hideSidebar = false,
+  hideDesktopSidebar = false,
   hideSearch = false,
   rightRail,
   mobileRightRail,
@@ -32,7 +34,9 @@ export default function MainLayout({
 }: MainLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const hasLeftRail = !hideSidebar;
+  const hasMobileLeftRail = !hideSidebar;
+  const hasDesktopLeftRail = !hideSidebar && !hideDesktopSidebar;
+  const hasLeftRail = hasDesktopLeftRail;
   const hasRightRail = Boolean(rightRail);
   const hasMobileRightRail = Boolean(mobileRightRail);
   const gridColumns = hasLeftRail && hasRightRail
@@ -65,33 +69,33 @@ export default function MainLayout({
       <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-x-0 top-0 h-[300px] bg-gradient-to-b from-blue-500/5 dark:from-blue-500/10 to-transparent pointer-events-none z-0" />
         <div className={`relative z-10 mx-auto max-w-[1680px] grid grid-cols-1 items-start ${gridColumns} gap-4 lg:gap-6`}>
-          {hasLeftRail ? (
-            <>
-              <aside className="hidden lg:block lg:justify-self-start sticky top-[var(--vk-header-height)] h-[calc(100vh-var(--vk-header-height))] h-[calc(100dvh-var(--vk-header-height))]">
+          {hasDesktopLeftRail ? (
+            <aside className="hidden lg:block lg:justify-self-start sticky top-[var(--vk-header-height)] h-[calc(100vh-var(--vk-header-height))] h-[calc(100dvh-var(--vk-header-height))]">
+              <CategorySidebar
+                variant="desktop"
+                setIsMobileMenuOpen={setIsMobileMenuOpen}
+                selectedCategory={selectedCategory}
+                onCategoryChange={onCategoryChange}
+                translations={translations}
+              />
+            </aside>
+          ) : null}
+          {hasMobileLeftRail ? (
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetContent
+                side="left"
+                showCloseButton={false}
+                className="p-0 w-[320px] sm:w-[360px] max-w-[85vw]"
+              >
                 <CategorySidebar
-                  variant="desktop"
+                  variant="mobile"
                   setIsMobileMenuOpen={setIsMobileMenuOpen}
                   selectedCategory={selectedCategory}
                   onCategoryChange={onCategoryChange}
                   translations={translations}
-                  />
-              </aside>
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetContent
-                  side="left"
-                  showCloseButton={false}
-                  className="p-0 w-[320px] sm:w-[360px] max-w-[85vw]"
-                >
-                  <CategorySidebar
-                    variant="mobile"
-                    setIsMobileMenuOpen={setIsMobileMenuOpen}
-                    selectedCategory={selectedCategory}
-                    onCategoryChange={onCategoryChange}
-                    translations={translations}
-                  />
-                </SheetContent>
-              </Sheet>
-            </>
+                />
+              </SheetContent>
+            </Sheet>
           ) : null}
           <main
             className={`min-w-0 w-full ${
