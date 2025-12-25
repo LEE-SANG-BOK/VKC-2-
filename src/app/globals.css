@@ -1055,10 +1055,14 @@
 
 @media (max-width: 1024px) {
   .vk-safe-bottom {
-    padding-bottom: calc(var(--vk-bottom-safe-offset, 72px) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(
+      var(--vk-bottom-safe-offset, 72px) + var(--vk-keyboard-offset, 0px) + env(safe-area-inset-bottom, 0px)
+    );
   }
 
   .vk-safe-bottom :where(input, textarea, [contenteditable='true']) {
-    scroll-margin-bottom: calc(var(--vk-bottom-safe-offset, 72px) + env(safe-area-inset-bottom, 0px) + 24px);
+    scroll-margin-bottom: calc(
+      var(--vk-bottom-safe-offset, 72px) + var(--vk-keyboard-offset, 0px) + env(safe-area-inset-bottom, 0px) + 24px
+    );
   }
 }
