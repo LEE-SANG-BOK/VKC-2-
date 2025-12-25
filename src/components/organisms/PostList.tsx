@@ -336,13 +336,14 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
             <button
               type="button"
               onClick={() => handleSubscribedCategoryChange('all')}
-              className={`shrink-0 inline-flex items-center rounded-full border px-3.5 py-1.5 text-[12px] font-semibold leading-none transition-colors ${
+              className={`shrink-0 inline-flex items-center rounded-full border px-3.5 py-1.5 text-[12px] font-semibold leading-none transition-colors max-w-[200px] ${
                 selectedSubscribedCategory === 'all'
                   ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
                   : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
               }`}
+              title={allSubscriptionsLabel}
             >
-              {allSubscriptionsLabel}
+              <span className="min-w-0 flex-1 truncate">{allSubscriptionsLabel}</span>
             </button>
             {topicSubscriptions.map((cat) => {
               const legacy = LEGACY_CATEGORIES.find((c) => c.slug === cat.slug);
@@ -353,13 +354,14 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
                   key={cat.id}
                   type="button"
                   onClick={() => handleSubscribedCategoryChange(cat.slug)}
-                  className={`shrink-0 inline-flex items-center rounded-full border px-3.5 py-1.5 text-[12px] font-semibold leading-none transition-colors ${
+                  className={`shrink-0 inline-flex items-center rounded-full border px-3.5 py-1.5 text-[12px] font-semibold leading-none transition-colors max-w-[200px] ${
                     active
                       ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
                       : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200 dark:hover:bg-gray-800'
                   }`}
+                  title={label}
                 >
-                  {label}
+                  <span className="min-w-0 flex-1 truncate">{label}</span>
                 </button>
               );
             })}
