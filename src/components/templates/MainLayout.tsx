@@ -98,7 +98,9 @@ export default function MainLayout({
               centerVariant === 'canvas' ? 'bg-transparent' : 'bg-white dark:bg-gray-900'
             } ${hasLeftRail || hasRightRail ? 'lg:max-w-[920px] lg:justify-self-center' : ''}`}
           >
-            {hasMobileRightRail ? <div className="lg:hidden mb-4">{mobileRightRail}</div> : null}
+            {hasMobileRightRail && !isMobileMenuOpen ? (
+              <div className="lg:hidden mb-4">{mobileRightRail}</div>
+            ) : null}
             {children}
           </main>
           {hasRightRail ? (

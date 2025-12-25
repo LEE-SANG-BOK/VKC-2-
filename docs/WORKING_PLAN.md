@@ -3074,3 +3074,16 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-25) [P0] 모바일 메뉴 오픈 시 추천 콘텐츠 숨김 + 추천유저 where 절 안정화 + 설정 모달 버튼 클립 방지 (P0-2/P0-3)
+
+- 목표: 모바일에서 사이드바(시트) 오픈 상태일 때 메인 상단 “추천 콘텐츠”가 뒤에서 보여 혼동되는 케이스를 방지하고, 추천유저 API의 where 절 생성이 빈 배열일 때도 안정적으로 동작하도록 보강한다. 또한 설정 모달의 “구독 관리” 버튼이 텍스트 길이(ko/vi)에서 잘리거나 정렬이 흔들리는 문제를 완화한다.
+- 변경 내용
+  - `src/components/templates/MainLayout.tsx`: 모바일 메뉴 오픈 시 `mobileRightRail` 렌더를 중지(메뉴 닫힘 상태에서만 노출)
+  - `src/app/api/users/recommended/route.ts`: where 조건이 없는 경우 `.where(undefined)`로 안전하게 처리(빈 `and()` 호출 방지)
+  - `src/components/molecules/modals/SettingsModal.tsx`: “구독 관리” 버튼 `break-words/whitespace-normal` 적용 + `self-end` 정렬로 클립/줄바꿈 대응
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`

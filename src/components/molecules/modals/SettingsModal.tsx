@@ -300,13 +300,13 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
 
               <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-2 min-w-0 flex-1">
                     <Rss className="w-5 h-5 text-blue-500 mt-0.5" />
-                    <div>
+                    <div className="min-w-0">
                       <h3 className="font-medium text-gray-900 dark:text-white">
                         {settingsLabels.subscriptionSettings}
                       </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 break-words">
                         {settingsLabels.subscriptionSettingsDesc}
                       </p>
                     </div>
@@ -317,7 +317,7 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
                       onClose();
                       router.push(`/${locale}/subscriptions`);
                     }}
-                    className="self-start sm:self-auto px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                    className="shrink-0 self-end sm:self-auto max-w-full px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition whitespace-normal break-words text-center leading-snug"
                   >
                     {settingsLabels.manageSubscriptions}
                   </button>
