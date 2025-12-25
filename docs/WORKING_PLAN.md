@@ -3087,3 +3087,16 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-25) [P0] 추천 유저 카드 팔로우 CTA 컴팩트화 + 구독 토픽 칩 잘림 방지 (P0-2)
+
+- 목표: 모바일에서 추천 유저 카드가 “팔로우 버튼 과대”로 보이며 콘텐츠 대비 UI가 무거워지는 문제를 완화하고, 구독 탭 상단 토픽 칩이 긴 라벨(ko/vi)에서 화면 끝이 잘려 보이는 케이스를 줄인다.
+- 변경 내용
+  - `src/components/atoms/FollowButton.tsx`: `variant="text"` 추가(텍스트형 팔로우 CTA 지원)
+  - `src/components/organisms/RecommendedUsersSection.tsx`: compact 모드에서 팔로우 CTA를 텍스트형으로 전환(카드 내 시각적 무게/세로 팽창 완화)
+  - `src/components/organisms/PostList.tsx`: 구독 토픽 필터 칩에 `max-w + truncate` 적용(오른쪽 잘림/과도한 가로 확장 방지)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
