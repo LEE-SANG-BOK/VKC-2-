@@ -3100,3 +3100,15 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-25) [P0] 모바일 폼(회원가입/피드백) 스크롤 여유 확보 (P0-3)
+
+- 목표: 모바일에서 키보드/주소창 변화로 레이아웃이 흔들릴 때 폼이 중앙 고정되어 “입력/제출” 동선이 불편해지는 케이스를 줄인다.
+- 변경 내용
+  - `src/app/[lang]/(auth)/signup/SignupClient.tsx`: 모바일에서는 `items-start`로 상단 정렬, `sm` 이상에서만 중앙 정렬(폼이 긴 경우 스크롤 접근성 개선)
+  - `src/app/[lang]/(main)/feedback/FeedbackClient.tsx`: `min-h-[100dvh]` 추가로 뷰포트 단위 변화(iOS 등) 대응
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
