@@ -119,7 +119,7 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen min-h-[100dvh] bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-10">
         <div className="max-w-3xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200/60 dark:border-gray-700/60 p-6 sm:p-8 space-y-6">
