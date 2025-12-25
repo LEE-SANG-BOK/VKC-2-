@@ -199,19 +199,13 @@ export default function RichTextEditor({
     if (normalizedHref) {
       const selection = editor.state.selection;
       if (selection.empty) {
+        const startPos = selection.from;
         editor
           .chain()
           .focus()
-          .insertContent({
-            type: 'text',
-            text: normalizedHref,
-            marks: [
-              {
-                type: 'link',
-                attrs: { href: normalizedHref },
-              },
-            ],
-          })
+          .insertContentAt({ from: startPos, to: startPos }, normalizedHref)
+          .setTextSelection({ from: startPos, to: startPos + normalizedHref.length })
+          .setLink({ href: normalizedHref })
           .run();
       } else {
         editor
