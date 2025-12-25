@@ -1888,7 +1888,7 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   };
 
   return (
-    <MainLayout translations={translations || {}} centerVariant="canvas">
+    <MainLayout translations={translations || {}} centerVariant="canvas" hideDesktopSidebar>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Article */}
         <article className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-4 sm:mb-6">
