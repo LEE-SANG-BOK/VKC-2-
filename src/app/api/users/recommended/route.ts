@@ -60,10 +60,12 @@ export async function GET(req: NextRequest) {
       whereConditions.push(notInArray(users.id, followingIds));
     }
 
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
     const totalResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(users)
-      .where(and(...whereConditions));
+      .where(whereClause);
 
     const total = Number(totalResult[0]?.count || 0);
 
@@ -114,7 +116,7 @@ export async function GET(req: NextRequest) {
         )`,
       })
       .from(users)
-      .where(and(...whereConditions))
+      .where(whereClause)
       .orderBy(
         desc(matchScore),
         desc(sql`COALESCE(${users.lastLoginAt}, ${users.createdAt})`),
