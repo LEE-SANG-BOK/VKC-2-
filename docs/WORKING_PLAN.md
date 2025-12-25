@@ -3056,3 +3056,21 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-25) [P0] 모바일 키보드 오버레이 완화 + 에디터 링크 삽입 안정화 (P0-3)
+
+- 목표: iOS/Android에서 키보드가 올라와도 입력/제출 UI가 가려지지 않게 “추가 스크롤 여유”를 확보하고, 글쓰기 에디터에서 링크 추가가 빈 선택(커서만 있는 상태)에서도 항상 반영되도록 한다.
+- 변경 내용
+  - `src/components/organisms/BottomNavigation.tsx`
+    - `visualViewport` 기반으로 `--vk-keyboard-offset`을 설정하고, 키보드 open 시 `--vk-bottom-safe-offset`을 축소(하단탭 숨김 전제)하여 과도한 패딩/겹침을 완화
+  - `src/app/globals.css`
+    - `.vk-safe-bottom`의 `padding-bottom` / 입력 `scroll-margin-bottom` 계산에 `--vk-keyboard-offset` 포함
+  - `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`, `src/app/[lang]/(main)/posts/[id]/PostDetailClient.tsx`
+    - 포커스 시 `scrollMarginBottom` 계산에 `--vk-keyboard-offset` 포함
+  - `src/components/molecules/editor/RichTextEditor.tsx`
+    - 링크 추가 시 선택이 비어있으면 URL 텍스트 삽입 → 해당 범위 선택 → 링크 마크 적용으로 “삽입 누락” 케이스 방지
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`

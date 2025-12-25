@@ -577,7 +577,8 @@ export default function PostDetailClient({ initialPost, locale, translations }: 
   }, []);
 
   const scrollComposerIntoView = useCallback((element: HTMLElement) => {
-    element.style.scrollMarginBottom = 'calc(var(--vk-bottom-safe-offset, 72px) + env(safe-area-inset-bottom, 0px) + 24px)';
+    element.style.scrollMarginBottom =
+      'calc(var(--vk-bottom-safe-offset, 72px) + var(--vk-keyboard-offset, 0px) + env(safe-area-inset-bottom, 0px) + 24px)';
     requestAnimationFrame(() => {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
