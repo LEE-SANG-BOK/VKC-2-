@@ -3120,3 +3120,21 @@ $gh-address-comments
   - 페이지 로드: about/privacy/terms/faq/feedback/leaderboard/posts/new(ko/vi/en)
   - 정책: 언어 스위치(UI에서 en 숨김 + ko↔vi 전환), robots.txt/sitemap.xml, rate limit probe 429
 - 결과(최근 실행): `npm run test:e2e` → `43 passed, 2 skipped` (chromium/mobile-chromium/webkit)
+
+#### (2025-12-25) [P0-2] i18n/클립 최종 스윕 (서명용 체크리스트)
+
+- 목표: `ko/vi` 기준 “텍스트 잘림/겹침/오버플로로 인한 의미 훼손” 0 (의도된 `truncate` 제외)
+- 원칙
+  - 의도된 `truncate`: 제목/닉네임/태그처럼 “길이 무제한” 콘텐츠는 1~2줄 `line-clamp`/`truncate` 허용(단, `title`/tooltip 등으로 전체값 확인 가능해야 함)
+  - 비의도 클립: 버튼/칩/CTA/배지/폼 라벨이 잘려서 “무슨 행동인지” 이해가 깨지면 Blocker/Major로 분류
+- 점검 범위(필수, ko→vi 순)
+  - 홈(피드): 카테고리 전환(인기/최신/팔로우/구독), 추천 콘텐츠(모바일), PostCard 헤더/태그/액션바
+  - 검색: 검색창/자동완성/필터/결과 리스트
+  - 상세: 제목/메타/배지/답변/댓글 입력 + 더보기/공유 UI
+  - 글쓰기: 템플릿(선택/미선택), 에디터 툴바/링크 삽입, 제출 CTA
+  - 프로필: 헤더(닉네임/배지/버튼), 탭, 빈 상태
+  - 구독: 토픽/카테고리 라벨 + 구독 버튼(1~2줄 허용)
+  - 알림/인증/팔로우: 리스트 아이템/버튼/배지/모달
+- 종료 조건(DoD)
+  - [ ] 핵심 플로우에서 `ko/vi` 기준 비의도 클립 0
+  - [ ] Minor(의미 훼손 없는 시각적 어색함)만 P1로 이월 목록화
