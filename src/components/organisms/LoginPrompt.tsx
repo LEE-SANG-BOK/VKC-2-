@@ -46,7 +46,7 @@ export default function LoginPrompt({ onClose, variant = 'inline', translations 
       : 'bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 max-w-md mx-auto mt-8';
 
   return (
-    <div className={containerClassName}>
+    <div className={containerClassName} data-testid="login-prompt">
       <div className="text-center mb-6">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <LogIn className="h-8 w-8 text-red-600" />
