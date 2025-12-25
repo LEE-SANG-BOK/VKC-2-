@@ -3121,6 +3121,12 @@ $gh-address-comments
   - 정책: 언어 스위치(UI에서 en 숨김 + ko↔vi 전환), robots.txt/sitemap.xml, rate limit probe 429
 - 결과(최근 실행): `npm run test:e2e` → `43 passed, 2 skipped` (chromium/mobile-chromium/webkit)
 
+#### (2025-12-26) [P0] UI 스냅샷 캡처(Playwright, opt-in)
+
+- 목적: 홈 피드/카드 UI를 “실데이터 없이” 재현 가능한 목 데이터로 렌더링하고 스크린샷을 자동 생성한다(시각 회귀 확인용).
+- 실행: `npm run test:e2e:ui`
+- 산출물: `test-results/**/home-*.png`, `test-results/**/postcard-*.png`, `playwright-report/index.html`
+
 #### (2025-12-25) [P0-2] i18n/클립 최종 스윕 (서명용 체크리스트)
 
 - 목표: `ko/vi` 기준 “텍스트 잘림/겹침/오버플로로 인한 의미 훼손” 0 (의도된 `truncate` 제외)
