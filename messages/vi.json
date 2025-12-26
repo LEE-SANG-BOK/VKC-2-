@@ -295,6 +295,7 @@
   },
   "noticeBanner": {
     "badge": "Thông báo",
+    "noticeCategoryAliases": ["공지", "thông báo"],
     "openExternal": "Mở liên kết",
     "close": "Đóng"
   },
