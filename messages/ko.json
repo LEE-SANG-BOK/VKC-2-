@@ -172,6 +172,10 @@
       "title": "신뢰 배지 안내 - viet kconnect",
       "description": "각 신뢰 배지의 의미와 부여 기준을 확인하세요."
     },
+    "visaRoadmap": {
+      "title": "비자 로드맵 - viet kconnect",
+      "description": "D2 → D10 → E7 → F2 단계별 체크리스트와 질문 바로가기"
+    },
     "about": {
       "title": "소개 - viet kconnect",
       "description": "viet kconnect 소개 및 운영 방식."
@@ -1079,6 +1083,25 @@
     "trustedAnswererTooltip": "커뮤니티 활동 기반 신뢰 답변자",
     "outdatedLabel": "오래된 정보",
     "outdatedTooltip": "12개월 이상 지난 정보"
+  },
+  "visaRoadmap": {
+    "label": "Visa Roadmap",
+    "title": "D2 → D10 → E7 → F2 단계별 체크리스트",
+    "subtitle": "모국어 가이드로 비자/취업 준비를 한눈에 관리하세요.",
+    "askQuestion": "질문 올리기",
+    "relatedQuestions": "관련 질문 보기",
+    "quickLinksTitle": "바로가기",
+    "quickLinks": {
+      "visaQa": "비자 Q&A 보기",
+      "askQuestion": "질문 등록",
+      "searchE7": "E-7 검색"
+    },
+    "steps": [
+      { "badge": "1/4", "title": "D-2 유학", "desc": "재학/연수 중 준비 사항 체크", "query": "D-2" },
+      { "badge": "2/4", "title": "D-10 구직", "desc": "졸업 후 구직·인턴 보고 흐름", "query": "D-10" },
+      { "badge": "3/4", "title": "E-7 취업", "desc": "직군/연봉/서류 요구사항 점검", "query": "E-7" },
+      { "badge": "4/4", "title": "F-2 점수제", "desc": "가점 요소·타임라인 관리", "query": "F-2" }
+    ]
   },
   "errors": {
     "UNAUTHORIZED": "로그인이 필요합니다.",
