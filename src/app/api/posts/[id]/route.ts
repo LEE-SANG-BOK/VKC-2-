@@ -13,6 +13,10 @@ import { getChildrenForParent, isGroupParentSlug } from '@/lib/constants/categor
 import dayjs from 'dayjs';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
 import { isExpertBadgeType } from '@/lib/constants/badges';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { buildPostDetail } from '@/lib/e2e/posts';
+import { deletePost as deleteE2EPost, updatePost as updateE2EPost } from '@/lib/e2e/actions';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -33,6 +37,15 @@ const resolveTrust = (author: any, createdAt: Date | string) => {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
+    if (isE2ETestMode()) {
+      const { store, userId } = getE2ERequestState(request);
+      const post = store.posts.get(id);
+      if (!post) {
+        return notFoundResponse('게시글을 찾을 수 없습니다.');
+      }
+      return successResponse(buildPostDetail(store, post, userId));
+    }
+
     const user = await getSession(request);
 
     const post = await db.query.posts.findFirst({
@@ -175,6 +188,35 @@ export async function GET(request: NextRequest, context: RouteContext) {
  */
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
+    if (isE2ETestMode()) {
+      const { id } = await context.params;
+      const { store, userId } = getE2ERequestState(request);
+      if (!userId) {
+        return unauthorizedResponse();
+      }
+      const post = store.posts.get(id);
+      if (!post) {
+        return notFoundResponse('게시글을 찾을 수 없습니다.');
+      }
+      if (post.authorId !== userId) {
+        return forbiddenResponse('게시글을 수정할 권한이 없습니다.');
+      }
+      const body = await request.json().catch(() => ({}));
+      const updated = updateE2EPost(store, id, {
+        title: typeof body.title === 'string' ? body.title.trim() : undefined,
+        content: typeof body.content === 'string' ? body.content : undefined,
+        category: typeof body.category === 'string' ? body.category : undefined,
+        subcategory: typeof body.subcategory === 'string' ? body.subcategory : undefined,
+        tags: Array.isArray(body.tags) ? body.tags.filter((v: unknown) => typeof v === 'string') : undefined,
+      });
+
+      if (!updated) {
+        return notFoundResponse('게시글을 찾을 수 없습니다.');
+      }
+
+      return successResponse(buildPostDetail(store, updated, userId));
+    }
+
     const user = await getSession(request);
 
     if (!user) {
@@ -291,6 +333,26 @@ export async function PUT(request: NextRequest, context: RouteContext) {
  */
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
+    if (isE2ETestMode()) {
+      const { id } = await context.params;
+      const { store, userId } = getE2ERequestState(request);
+      if (!userId) {
+        return unauthorizedResponse();
+      }
+      const post = store.posts.get(id);
+      if (!post) {
+        return notFoundResponse('게시글을 찾을 수 없습니다.');
+      }
+      if (post.authorId !== userId) {
+        return forbiddenResponse('게시글을 삭제할 권한이 없습니다.');
+      }
+      const deleted = deleteE2EPost(store, id);
+      if (!deleted) {
+        return notFoundResponse('게시글을 찾을 수 없습니다.');
+      }
+      return successResponse(null, '게시글이 삭제되었습니다.');
+    }
+
     const user = await getSession(request);
 
     if (!user) {

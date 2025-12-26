@@ -4,6 +4,9 @@ import { posts, likes } from '@/lib/db/schema';
 import { successResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, and, sql } from 'drizzle-orm';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { togglePostLike as toggleE2EPostLike } from '@/lib/e2e/actions';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -15,6 +18,17 @@ interface RouteContext {
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
+    if (isE2ETestMode()) {
+      const { id: postId } = await context.params;
+      const { store, userId } = getE2ERequestState(request);
+      if (!userId) return unauthorizedResponse();
+      const result = toggleE2EPostLike(store, userId, postId);
+      if (!result) {
+        return notFoundResponse('게시글을 찾을 수 없습니다.');
+      }
+      return successResponse({ isLiked: result.isLiked });
+    }
+
     const user = await getSession(request);
 
     if (!user) {

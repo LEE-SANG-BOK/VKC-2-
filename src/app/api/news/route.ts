@@ -3,9 +3,16 @@ import { db } from '@/lib/db';
 import { news } from '@/lib/db/schema';
 import { desc, eq, asc, and, or, isNull, lte, gte } from 'drizzle-orm';
 import { setPublicSWR, successResponse, serverErrorResponse } from '@/lib/api/response';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 
 export async function GET(request: Request) {
   try {
+    if (isE2ETestMode()) {
+      const response = successResponse([]);
+      setPublicSWR(response, 300, 600);
+      return response;
+    }
+
     const { searchParams } = new URL(request.url);
     const lang = searchParams.get('lang') || 'vi';
 

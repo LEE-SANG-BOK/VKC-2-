@@ -5,6 +5,9 @@ import { successResponse, unauthorizedResponse, notFoundResponse, serverErrorRes
 import { getSession } from '@/lib/api/auth';
 import { eq, and } from 'drizzle-orm';
 import { createFollowNotification } from '@/lib/notifications/create';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { toggleFollow as toggleE2EFollow } from '@/lib/e2e/actions';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -16,6 +19,22 @@ interface RouteContext {
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
+    if (isE2ETestMode()) {
+      const { id: targetUserId } = await context.params;
+      const { store, userId } = getE2ERequestState(request);
+      if (!userId) {
+        return unauthorizedResponse();
+      }
+      if (userId === targetUserId) {
+        return serverErrorResponse('자기 자신을 팔로우할 수 없습니다.');
+      }
+      if (!store.users.has(targetUserId)) {
+        return notFoundResponse('사용자를 찾을 수 없습니다.');
+      }
+      const isFollowing = toggleE2EFollow(store, userId, targetUserId);
+      return successResponse({ isFollowing });
+    }
+
     const user = await getSession(request);
     if (!user) {
       return unauthorizedResponse();

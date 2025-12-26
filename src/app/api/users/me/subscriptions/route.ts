@@ -4,6 +4,7 @@ import { categorySubscriptions, categories, topicSubscriptions } from '@/lib/db/
 import { successResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, inArray } from 'drizzle-orm';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 
 const MAIN_GROUP_SLUGS = new Set(['visa', 'students', 'career', 'living']);
 
@@ -13,6 +14,10 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       return unauthorizedResponse();
+    }
+
+    if (isE2ETestMode()) {
+      return successResponse([]);
     }
 
     const [subscriptions, topicSubs] = await Promise.all([

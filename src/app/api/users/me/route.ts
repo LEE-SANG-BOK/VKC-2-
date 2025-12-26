@@ -6,11 +6,44 @@ import { setPrivateNoStore, successResponse, unauthorizedResponse, serverErrorRe
 import { getSession } from '@/lib/api/auth';
 import { eq, sql, and, inArray } from 'drizzle-orm';
 import { DISPLAY_NAME_MIN_LENGTH, normalizeDisplayName } from '@/lib/utils/profile';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { countFollowers } from '@/lib/e2e/posts';
 
 const MAX_POST_IDS = 100;
 
 export async function GET(request: NextRequest) {
   try {
+    if (isE2ETestMode()) {
+      const { store, userId } = getE2ERequestState(request);
+      if (!userId) {
+        return unauthorizedResponse();
+      }
+      const currentUser = store.users.get(userId);
+      if (!currentUser) {
+        return unauthorizedResponse('사용자 정보를 찾을 수 없습니다.');
+      }
+
+      const postsCount = Array.from(store.posts.values()).filter((post) => post.authorId === userId).length;
+      const bookmarksCount = store.bookmarksByUserId.get(userId)?.size || 0;
+      const followingCount = store.followsByUserId.get(userId)?.size || 0;
+      const followersCount = countFollowers(store, userId);
+
+      const response = successResponse({
+        ...currentUser,
+        _count: {
+          posts: postsCount,
+          accepted: 0,
+          followers: followersCount,
+          following: followingCount,
+          comments: 0,
+          bookmarks: bookmarksCount,
+        },
+      });
+      setPrivateNoStore(response);
+      return response;
+    }
+
     const user = await getSession(request);
     if (!user) {
       return unauthorizedResponse();
@@ -64,6 +97,37 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (isE2ETestMode()) {
+      const { store, userId } = getE2ERequestState(request);
+      if (!userId) {
+        return unauthorizedResponse();
+      }
+
+      const body = (await request.json().catch(() => null)) as { action?: unknown; postIds?: unknown } | null;
+      if (!body || body.action !== 'post_interactions' || !Array.isArray(body.postIds)) {
+        return errorResponse('요청 데이터가 올바르지 않습니다.', 'INVALID_BODY');
+      }
+
+      const postIds = Array.from(
+        new Set(
+          body.postIds
+            .filter((value): value is string => typeof value === 'string')
+            .map((value) => value.trim())
+            .filter(Boolean)
+        )
+      ).slice(0, MAX_POST_IDS);
+
+      const likesSet = store.likesByUserId.get(userId) || new Set<string>();
+      const bookmarksSet = store.bookmarksByUserId.get(userId) || new Set<string>();
+
+      const likedPostIds = postIds.filter((postId) => likesSet.has(postId));
+      const bookmarkedPostIds = postIds.filter((postId) => bookmarksSet.has(postId));
+
+      const response = successResponse({ likedPostIds, bookmarkedPostIds });
+      setPrivateNoStore(response);
+      return response;
+    }
+
     const user = await getSession(request);
     if (!user) {
       return unauthorizedResponse();
@@ -114,6 +178,50 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    if (isE2ETestMode()) {
+      const { store, userId } = getE2ERequestState(request);
+      if (!userId) {
+        return unauthorizedResponse();
+      }
+      const currentUser = store.users.get(userId);
+      if (!currentUser) {
+        return unauthorizedResponse('사용자 정보를 찾을 수 없습니다.');
+      }
+
+      const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+      if (!body || typeof body !== 'object') {
+        return errorResponse('요청 데이터가 올바르지 않습니다.', 'INVALID_BODY');
+      }
+
+      const next = { ...currentUser };
+      if (typeof body.displayName === 'string') {
+        const normalized = normalizeDisplayName(body.displayName);
+        if (normalized.length < DISPLAY_NAME_MIN_LENGTH) {
+          return errorResponse('닉네임은 2자 이상이어야 합니다.', 'PROFILE_DISPLAY_NAME_TOO_SHORT');
+        }
+        next.displayName = normalized;
+        next.name = normalized;
+      }
+      if (typeof body.bio === 'string') next.bio = body.bio;
+      if (typeof body.image === 'string') next.image = body.image;
+      if (typeof body.status === 'string') next.status = body.status;
+      if (typeof body.userType === 'string') next.userType = body.userType;
+      if (typeof body.visaType === 'string') next.visaType = body.visaType;
+      if (Array.isArray(body.interests)) {
+        next.interests = body.interests.filter((value): value is string => typeof value === 'string');
+      }
+      if (typeof body.koreanLevel === 'string') next.koreanLevel = body.koreanLevel;
+      if (typeof body.onboardingCompleted === 'boolean') next.onboardingCompleted = body.onboardingCompleted;
+
+      next.updatedAt = new Date().toISOString();
+      next.isProfileComplete = true;
+      store.users.set(userId, next);
+
+      const response = successResponse(next, '프로필이 업데이트되었습니다.');
+      setPrivateNoStore(response);
+      return response;
+    }
+
     const user = await getSession(request);
     if (!user) {
       return unauthorizedResponse();

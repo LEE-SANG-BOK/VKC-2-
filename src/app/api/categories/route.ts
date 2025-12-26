@@ -4,6 +4,7 @@ import { categories } from '@/lib/db/schema';
 import { setNoStore, setPublicSWR } from '@/lib/api/response';
 import { eq, asc } from 'drizzle-orm';
 import { DEPRECATED_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 
 /**
  * GET /api/categories
@@ -11,6 +12,42 @@ import { DEPRECATED_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
  */
 export async function GET(request: NextRequest) {
   try {
+    if (isE2ETestMode()) {
+      const response = NextResponse.json({
+        success: true,
+        data: [
+          {
+            id: 'visa',
+            name: '비자·체류',
+            slug: 'visa',
+            order: 1,
+            children: [
+              { id: 'visa-change', name: '비자 변경', slug: 'visa-change', order: 1 },
+              { id: 'arc', name: '외국인등록', slug: 'arc', order: 2 },
+            ],
+          },
+          {
+            id: 'students',
+            name: '유학·학생',
+            slug: 'students',
+            order: 2,
+            children: [
+              { id: 'korean-learning', name: '한국어', slug: 'korean-learning', order: 1 },
+            ],
+          },
+          {
+            id: 'career',
+            name: '취업·경력',
+            slug: 'career',
+            order: 3,
+            children: [],
+          },
+        ],
+      });
+      setPublicSWR(response, 300, 600);
+      return response;
+    }
+
     // 모든 활성 카테고리 조회
     const allCategories = await db.query.categories.findMany({
       where: eq(categories.isActive, true),

@@ -74,7 +74,7 @@ export const getE2EUserId = (request: NextRequest) => {
 };
 
 const seedStore = (namespace: string, store: E2EStore) => {
-  const now = new Date();
+  const now = new Date('2025-01-01T00:00:00.000Z');
   const iso = (d: Date) => d.toISOString();
 
   const user1: E2EUser = {
@@ -185,4 +185,3 @@ export const getE2EStore = (namespace: string) => {
   globalState.stores.set(namespace, store);
   return store;
 };
-
