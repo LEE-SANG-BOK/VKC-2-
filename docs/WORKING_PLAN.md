@@ -3250,3 +3250,14 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-26) [P0-2] 피드백 API 오류코드(ko/vi) 번역 보강 (P0-2)
+
+- 목표: 피드백 제출 실패 시 ko/vi에서 코드 기반 번역 메시지가 항상 노출되도록 하여 하드코딩 메시지 노출을 제거한다.
+- 변경
+  - `messages/ko.json`, `messages/vi.json`: `errors.FEEDBACK_*` 누락 키 추가(`INVALID_BODY/INVALID_TYPE/EMAIL_INVALID/CONTENT_REQUIRED/CONTENT_TOO_LONG/CONTENT_INVALID`)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
