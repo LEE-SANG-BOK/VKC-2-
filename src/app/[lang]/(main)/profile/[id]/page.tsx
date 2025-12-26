@@ -9,8 +9,10 @@ import { fetchUserPosts, fetchUserAnswers, fetchUserComments } from '@/repo/user
 import { PaginatedResponse, UserPost, UserAnswer, UserComment } from '@/repo/users/types';
 import { queryKeys } from '@/repo/keys';
 import { normalizePostImageSrc } from '@/utils/normalizePostImageSrc';
+import { getUserTypeLabel } from '@/utils/userTypeLabel';
 import { API_BASE } from '@/lib/apiBase';
 import { SITE_URL } from '@/lib/siteUrl';
+import { buildPageMetadata } from '@/lib/seo/metadata';
 
 export const dynamicParams = true;
 export const revalidate = 60;
@@ -45,43 +47,20 @@ async function getProfileById(id: string, cookieHeader?: string): Promise<Profil
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, id } = await params;
   const dict = await getDictionary(lang);
+  const fallbackDict = lang === 'ko' ? dict : await getDictionary('ko');
   const t = (dict?.metadata?.profile || {}) as Record<string, string>;
-  const metaFallbacks = {
-    ko: {
-      notFoundTitle: '프로필을 찾을 수 없습니다',
-      notFoundDescription: '요청하신 프로필을 찾을 수 없습니다',
-      title: '{name} - 프로필 | viet kconnect',
-      description: '{name}님의 viet kconnect 커뮤니티 프로필. 게시글 {posts}개, 채택 {accepted}개, 댓글 {comments}개.',
-      siteName: 'viet kconnect',
-    },
-    en: {
-      notFoundTitle: 'Profile not found',
-      notFoundDescription: 'The requested profile could not be found',
-      title: '{name} - Profile | viet kconnect',
-      description: "{name}'s viet kconnect community profile. {posts} posts, {accepted} accepted answers, {comments} comments.",
-      siteName: 'viet kconnect',
-    },
-    vi: {
-      notFoundTitle: 'Không tìm thấy hồ sơ',
-      notFoundDescription: 'Không tìm thấy hồ sơ bạn yêu cầu',
-      title: '{name} - Hồ sơ | viet kconnect',
-      description: 'Hồ sơ cộng đồng viet kconnect của {name}. {posts} bài viết, {accepted} câu trả lời được chấp nhận, {comments} bình luận.',
-      siteName: 'viet kconnect',
-    },
-  };
-  const metaFallback = metaFallbacks[lang] ?? metaFallbacks.ko;
+  const tFallback = (fallbackDict?.metadata?.profile || {}) as Record<string, string>;
+  const tMerged = { ...tFallback, ...t } as Record<string, string>;
   const profile = await getProfileById(id);
 
   if (!profile) {
     return {
-      title: t.notFoundTitle || metaFallback.notFoundTitle,
-      description: t.notFoundDescription || metaFallback.notFoundDescription,
+      title: tMerged.notFoundTitle || dict?.metadata?.home?.title || '',
+      description: tMerged.notFoundDescription || dict?.metadata?.home?.description || '',
     };
   }
 
   const baseUrl = SITE_URL;
-  const currentUrl = `${baseUrl}/${lang}/profile/${id}`;
-
   const avatarSrc = normalizePostImageSrc(profile.avatar);
   const ogImage = avatarSrc
     ? avatarSrc.startsWith('/')
@@ -89,56 +68,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : avatarSrc
     : `${baseUrl}/brand-logo.png`;
 
-  const title = (t.title || metaFallback.title).replace('{name}', profile.displayName);
+  const titleTemplate = tMerged.title || profile.displayName;
+  const title = titleTemplate.replace('{name}', profile.displayName);
   const description =
     profile.bio ||
-    (t.description || metaFallback.description)
+    (tMerged.description || '')
       .replace('{name}', profile.displayName)
       .replace('{posts}', String(profile.stats.posts))
       .replace('{accepted}', String(profile.stats.accepted))
       .replace('{comments}', String(profile.stats.comments));
 
-  return {
+  return buildPageMetadata({
+    locale: lang,
+    path: `/profile/${id}`,
     title,
     description,
-
-    // Canonical URL
-    alternates: {
-      canonical: currentUrl,
-      languages: {
-        ko: `${baseUrl}/ko/profile/${id}`,
-        en: `${baseUrl}/en/profile/${id}`,
-        vi: `${baseUrl}/vi/profile/${id}`,
-      },
-    },
-
-    // Open Graph
-    openGraph: {
-      type: 'profile',
-      title,
-      description,
-      url: currentUrl,
-      siteName: t.siteName || metaFallback.siteName,
-      images: [
-        {
-          url: ogImage,
-          width: 400,
-          height: 400,
-          alt: profile.displayName,
-        },
-      ],
-      locale: lang,
-    },
-
-    // Twitter Card
-    twitter: {
-      card: 'summary',
-      title,
-      description,
-      images: ogImage ? [ogImage] : [],
-    },
-
-    // Robots
+    siteName: tMerged.siteName || dict?.metadata?.home?.siteName,
+    images: ogImage ? [ogImage] : [],
+    type: 'profile',
+    authors: profile.displayName ? [profile.displayName] : undefined,
     robots: {
       index: true,
       follow: true,
@@ -148,10 +96,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         'max-image-preview': 'large',
       },
     },
-
-    // Additional metadata
-    authors: [{ name: profile.displayName }],
-  };
+  });
 }
 
 // 서버 컴포넌트 - 데이터 페칭 및 렌더링
@@ -180,22 +125,12 @@ export default async function ProfilePage({ params }: PageProps) {
     (legacyStatus && legacyStatus !== 'banned' && legacyStatus !== 'suspended' ? legacyStatus : null);
 
   const userTypeLabel = effectiveUserType
-    ? (() => {
-        const normalized = String(effectiveUserType).toLowerCase();
-        if (normalized === 'student' || effectiveUserType === '학생') {
-          return tProfileEdit.statusStudent || String(effectiveUserType);
-        }
-        if (normalized === 'worker' || effectiveUserType === '직장인' || effectiveUserType === '근로자') {
-          return tProfileEdit.statusWorker || String(effectiveUserType);
-        }
-        if (normalized === 'resident' || effectiveUserType === '거주자') {
-          return tProfileEdit.statusResident || String(effectiveUserType);
-        }
-        if (normalized === 'other' || effectiveUserType === '기타') {
-          return tProfileEdit.statusOther || String(effectiveUserType);
-        }
-        return String(effectiveUserType);
-      })()
+    ? getUserTypeLabel(String(effectiveUserType), {
+        student: tProfileEdit.statusStudent || undefined,
+        worker: tProfileEdit.statusWorker || undefined,
+        resident: tProfileEdit.statusResident || undefined,
+        other: tProfileEdit.statusOther || undefined,
+      })
     : undefined;
 
   type PageParam = { page: number; cursor?: string | null };
@@ -266,19 +201,16 @@ export default async function ProfilePage({ params }: PageProps) {
           '@type': 'InteractionCounter',
           interactionType: 'https://schema.org/WriteAction',
           userInteractionCount: profile.stats.posts,
-          name: '작성한 게시글',
         },
         {
           '@type': 'InteractionCounter',
           interactionType: 'https://schema.org/CommentAction',
           userInteractionCount: profile.stats.comments,
-          name: '남긴 댓글',
         },
         {
           '@type': 'InteractionCounter',
           interactionType: 'https://schema.org/AgreeAction',
           userInteractionCount: profile.stats.accepted,
-          name: '채택된 답변',
         },
       ],
     },
@@ -303,7 +235,7 @@ export default async function ProfilePage({ params }: PageProps) {
 
       {/* SSR with Tanstack Query Hydration */}
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <ProfileClient initialProfile={profile} locale={lang} translations={await getDictionary(lang)} />
+        <ProfileClient initialProfile={profile} locale={lang} translations={dict} />
       </HydrationBoundary>
     </>
   );
