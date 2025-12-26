@@ -76,7 +76,7 @@ interface NewPostClientProps {
 function NewPostForm({ translations, lang }: NewPostClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
   const createPost = useCreatePost();
   const t = (translations?.newPost || {}) as Record<string, string>;
@@ -107,6 +107,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
   const [manualTagEdit, setManualTagEdit] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const openLoginPrompt = () => setIsLoginPromptOpen(true);
+  const isUnauthenticated = status === 'unauthenticated';
   const [isGuidelinesOpen, setIsGuidelinesOpen] = useState(false);
 
   useEffect(() => {
@@ -642,14 +643,14 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={MAX_TITLE}
-                  readOnly={!user}
+                  readOnly={isUnauthenticated}
                   onFocus={() => {
-                    if (!user) openLoginPrompt();
+                    if (isUnauthenticated) openLoginPrompt();
                   }}
                   onClick={() => {
-                    if (!user) openLoginPrompt();
+                    if (isUnauthenticated) openLoginPrompt();
                   }}
-                  className={`w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                  className={`w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${isUnauthenticated ? 'opacity-70 cursor-pointer' : ''}`}
                   placeholder={postType === 'question' ? titlePlaceholderQuestionLabel : titlePlaceholderShareLabel}
                   required
                 />
@@ -689,14 +690,14 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                         value={templateCondition}
                         onChange={(e) => setTemplateCondition(e.target.value)}
                         rows={2}
-                        readOnly={!user}
+                        readOnly={isUnauthenticated}
                         onFocus={() => {
-                          if (!user) openLoginPrompt();
+                          if (isUnauthenticated) openLoginPrompt();
                         }}
                         onClick={() => {
-                          if (!user) openLoginPrompt();
+                          if (isUnauthenticated) openLoginPrompt();
                         }}
-                        className={`w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                        className={`w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${isUnauthenticated ? 'opacity-70 cursor-pointer' : ''}`}
                         placeholder={templateConditionPlaceholder}
                       />
                     </div>
@@ -709,14 +710,14 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                         value={templateGoal}
                         onChange={(e) => setTemplateGoal(e.target.value)}
                         rows={2}
-                        readOnly={!user}
+                        readOnly={isUnauthenticated}
                         onFocus={() => {
-                          if (!user) openLoginPrompt();
+                          if (isUnauthenticated) openLoginPrompt();
                         }}
                         onClick={() => {
-                          if (!user) openLoginPrompt();
+                          if (isUnauthenticated) openLoginPrompt();
                         }}
-                        className={`w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                        className={`w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${isUnauthenticated ? 'opacity-70 cursor-pointer' : ''}`}
                         placeholder={templateGoalPlaceholder}
                       />
                     </div>
@@ -729,14 +730,14 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                         value={templateBackground}
                         onChange={(e) => setTemplateBackground(e.target.value)}
                         rows={2}
-                        readOnly={!user}
+                        readOnly={isUnauthenticated}
                         onFocus={() => {
-                          if (!user) openLoginPrompt();
+                          if (isUnauthenticated) openLoginPrompt();
                         }}
                         onClick={() => {
-                          if (!user) openLoginPrompt();
+                          if (isUnauthenticated) openLoginPrompt();
                         }}
-                        className={`w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${!user ? 'opacity-70 cursor-pointer' : ''}`}
+                        className={`w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${isUnauthenticated ? 'opacity-70 cursor-pointer' : ''}`}
                         placeholder={templateBackgroundPlaceholder}
                       />
                     </div>
@@ -762,7 +763,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                   {contentLabel} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  {!user && (
+                  {isUnauthenticated && (
                     <button
                       type="button"
                       onClick={openLoginPrompt}
@@ -770,7 +771,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
                       aria-label="login-required"
                     />
                   )}
-                  <div className={!user ? 'pointer-events-none opacity-60' : ''}>
+                  <div className={isUnauthenticated ? 'pointer-events-none opacity-60' : ''}>
                     <RichTextEditor
                       content={content}
                       onChange={setContent}

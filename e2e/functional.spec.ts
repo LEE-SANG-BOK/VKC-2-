@@ -135,6 +135,11 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
 
     await page.locator('#title').focus();
     await expect(bottomNav).toBeHidden();
+
+    const editor = page.locator('.ProseMirror').first();
+    await expect(editor).toBeVisible({ timeout: 30_000 });
+    await editor.click();
+    await expect(bottomNav).toBeHidden();
   });
 
   test('bottom navigation hides when focusing answer editor (mobile)', async ({ page, context }, testInfo) => {
@@ -155,6 +160,93 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
     await expect(editor).toBeVisible({ timeout: 30_000 });
     await editor.scrollIntoViewIfNeeded();
     await editor.click();
+
+    await expect(bottomNav).toBeHidden();
+  });
+
+  test('bottom navigation hides when focusing comment input (mobile)', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-chromium', 'bottom navigation is mobile-only');
+
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto(`/ko/posts/${namespace}-post-3`);
+
+    const bottomNav = page.getByTestId('bottom-navigation');
+    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+
+    const commentBox = page.locator('textarea').first();
+    await expect(commentBox).toBeVisible({ timeout: 30_000 });
+    await commentBox.scrollIntoViewIfNeeded();
+    await commentBox.click();
+
+    await expect(bottomNav).toBeHidden();
+  });
+
+  test('bottom navigation hides when focusing profile edit input (mobile)', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-chromium', 'bottom navigation is mobile-only');
+
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto('/ko/profile/edit');
+
+    const bottomNav = page.getByTestId('bottom-navigation');
+    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+
+    const nameInput = page.locator('#name');
+    await expect(nameInput).toBeVisible({ timeout: 30_000 });
+    await nameInput.click();
+
+    await expect(bottomNav).toBeHidden();
+  });
+
+  test('bottom navigation hides when focusing verification request input (mobile)', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-chromium', 'bottom navigation is mobile-only');
+
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto('/ko/verification/request');
+
+    const bottomNav = page.getByTestId('bottom-navigation');
+    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+
+    const visaTypeInput = page.locator('#visaType');
+    await expect(visaTypeInput).toBeVisible({ timeout: 30_000 });
+    await visaTypeInput.scrollIntoViewIfNeeded();
+    await visaTypeInput.click();
+
+    await expect(bottomNav).toBeHidden();
+  });
+
+  test('bottom navigation hides when focusing feedback textarea (mobile)', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-chromium', 'bottom navigation is mobile-only');
+
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto('/ko/feedback');
+
+    const bottomNav = page.getByTestId('bottom-navigation');
+    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+
+    const textarea = page.locator('textarea').first();
+    await expect(textarea).toBeVisible({ timeout: 30_000 });
+    await textarea.scrollIntoViewIfNeeded();
+    await textarea.click();
 
     await expect(bottomNav).toBeHidden();
   });
