@@ -3305,3 +3305,20 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P0-5] 모달 닫기(×) 버튼 a11y 라벨 보강 (P0-5)
+
+- 목표: 아이콘-only 닫기 버튼의 aria-label 누락을 제거하여 스크린리더/키보드 사용자 접근성을 최소 기준으로 맞춘다.
+- 변경
+  - `src/components/molecules/modals/SettingsModal.tsx`
+  - `src/components/molecules/modals/MyPostsModal.tsx`
+  - `src/components/molecules/modals/ProfileModal.tsx`
+  - `src/components/molecules/modals/FollowingModal.tsx`
+  - `src/components/molecules/modals/BookmarksModal.tsx`
+- PR
+  - https://github.com/LEE-SANG-BOK/VKC-2-/pull/112
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`

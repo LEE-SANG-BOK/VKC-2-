@@ -27,12 +27,14 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tUserMenu = (translations?.userMenu || {}) as Record<string, string>;
   const tProfile = (translations?.profile || {}) as Record<string, string>;
+  const tTooltip = (translations?.tooltips || {}) as Record<string, string>;
   const modalLabels = {
     myPosts: tUserMenu.myPostsTitle || tUserMenu.myPosts || '',
     noPosts: tUserMenu.noPostsTitle || tUserMenu.noPostsYet || '',
     loading: tProfile.loading || '',
   };
   const anonymousLabel = tCommon.anonymous || '';
+  const closeLabel = tTooltip.close || '';
 
   const { 
     data,
@@ -109,6 +111,7 @@ export default function MyPostsModal({ isOpen, onClose, translations = {} }: MyP
           </h2>
           <button
             onClick={onClose}
+            aria-label={closeLabel}
             className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />

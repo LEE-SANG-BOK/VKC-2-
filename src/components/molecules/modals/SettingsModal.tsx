@@ -28,6 +28,7 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
   const tCommon = (translations?.common || {}) as Record<string, string>;
   const tUserMenu = (translations?.userMenu || {}) as Record<string, string>;
   const tSubscription = (translations?.subscription || {}) as Record<string, string>;
+  const tTooltip = (translations?.tooltips || {}) as Record<string, string>;
   const router = useRouter();
   const params = useParams();
   const locale = params.lang as string || 'ko';
@@ -63,6 +64,7 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
     subscriptionSettingsDesc: tUserMenu.subscriptionSettingsDesc || tSubscription.description || '',
     manageSubscriptions: tUserMenu.manageSubscriptions || '',
   };
+  const closeLabel = tTooltip.close || '';
 
   const [webNotificationsEnabled, setWebNotificationsEnabled] = useState(true);
   const [notifications, setNotifications] = useState<NotificationSettings>({
@@ -188,6 +190,7 @@ export default function SettingsModal({ isOpen, onClose, translations = {} }: Se
         {/* Close Button */}
         <button
           onClick={onClose}
+          aria-label={closeLabel}
           className="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors z-10"
         >
           <X className="w-5 h-5" />

@@ -58,6 +58,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   const tUserMenu = (translations?.userMenu || {}) as Record<string, string>;
   const tTrust = (translations?.trustBadges || {}) as Record<string, string>;
   const tOnboarding = (translations?.onboarding || {}) as Record<string, string>;
+  const tTooltip = (translations?.tooltips || {}) as Record<string, string>;
   const modalLabels = {
     followers: tProfile.followers || '',
     posts: tProfile.posts || '',
@@ -113,6 +114,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
   const recommendLabel = modalLabels.recommend;
   const followingTabLabel = modalLabels.followingTab;
   const feedLabel = modalLabels.feed;
+  const closeLabel = tTooltip.close || '';
 
   const {
     data: recommendedData,
@@ -459,6 +461,7 @@ export default function FollowingModal({ isOpen, onClose, translations = {} }: F
           </h2>
           <button
             onClick={onClose}
+            aria-label={closeLabel}
             className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
