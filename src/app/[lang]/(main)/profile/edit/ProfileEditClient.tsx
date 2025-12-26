@@ -118,13 +118,6 @@ interface ProfileEditClientProps {
   translations: Record<string, any>;
 }
 
-const VISA_TYPES = ['D-2', 'D-10', 'E-7-1', 'E-7-2', 'E-7-3', 'F-2-7', 'F-6'];
-const KOREAN_LEVELS = [
-  { value: 'beginner', label: { ko: '기초', vi: 'Sơ cấp', en: 'Beginner' } },
-  { value: 'intermediate', label: { ko: '중급', vi: 'Trung cấp', en: 'Intermediate' } },
-  { value: 'advanced', label: { ko: '고급', vi: 'Cao cấp', en: 'Advanced' } },
-];
-
 export default function ProfileEditClient({ lang, translations }: ProfileEditClientProps) {
   const router = useRouter();
   const { data: session, status: authStatus, update: updateSession } = useSession();

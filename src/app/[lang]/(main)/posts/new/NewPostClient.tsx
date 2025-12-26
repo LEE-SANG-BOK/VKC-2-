@@ -924,6 +924,7 @@ function NewPostForm({ translations, lang }: NewPostClientProps) {
         onClose={closeGuidelines}
         title={rulesTitleLabel}
         items={[rulesRespectLabel, rulesAdsLabel, rulesDupLabel]}
+        closeLabel={(((translations as any)?.tooltips || {}) as Record<string, string>).close || ''}
         confirmLabel={(((translations as any)?.common || {}) as Record<string, string>).confirm || ''}
       />
       <Modal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)}>
