@@ -16,6 +16,10 @@ import { ACTIVE_GROUP_PARENT_SLUGS, DEPRECATED_GROUP_PARENT_SLUGS, getChildrenFo
 import { isExpertBadgeType } from '@/lib/constants/badges';
 import { getFollowingIdSet } from '@/lib/api/follow';
 import { postListSelect, serializePostPreview } from '@/lib/api/post-list';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { buildPostDetail, buildPostPreview } from '@/lib/e2e/posts';
+import { createPost as createE2EPost } from '@/lib/e2e/actions';
 
 const postRateLimitWindowMs = 60 * 60 * 1000;
 const postRateLimitMax = 8;
@@ -44,6 +48,49 @@ const resolveTrust = (author: any, createdAt: Date | string) => {
  */
 export async function GET(request: NextRequest) {
   try {
+    if (isE2ETestMode()) {
+      const { searchParams } = new URL(request.url);
+      const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+      const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
+      const sort = searchParams.get('sort') || 'latest';
+      const filter = searchParams.get('filter');
+      const category = searchParams.get('category');
+      const search = (searchParams.get('search') || '').trim().toLowerCase();
+
+      const { store, userId } = getE2ERequestState(request);
+
+      let items = Array.from(store.posts.values());
+
+      if (category && category !== 'all') {
+        items = items.filter((post) => post.category === category || post.subcategory === category);
+      }
+
+      if (search) {
+        items = items.filter((post) => post.title.toLowerCase().includes(search));
+      }
+
+      if (filter === 'following-users' && userId) {
+        const following = store.followsByUserId.get(userId) || new Set<string>();
+        items = items.filter((post) => following.has(post.authorId));
+      }
+
+      items.sort((a, b) => {
+        if (sort === 'popular') {
+          const diff = b.views - a.views;
+          if (diff !== 0) return diff;
+          const likeDiff = b.likes - a.likes;
+          if (likeDiff !== 0) return likeDiff;
+        }
+        return b.createdAt.localeCompare(a.createdAt);
+      });
+
+      const total = items.length;
+      const offset = (page - 1) * limit;
+      const data = items.slice(offset, offset + limit).map((post) => buildPostPreview(store, post, userId));
+
+      return paginatedResponse(data, page, limit, total, { isFallback: true });
+    }
+
     const { searchParams } = new URL(request.url);
     const parentCategory = searchParams.get('parentCategory');
     const category = searchParams.get('category');
@@ -610,6 +657,39 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    if (isE2ETestMode()) {
+      const { namespace, store, userId } = getE2ERequestState(request);
+      if (!userId) return unauthorizedResponse();
+
+      const body = await request.json().catch(() => null);
+      if (!body || typeof body !== 'object') {
+        return errorResponse('요청을 확인할 수 없습니다.', 'INVALID_BODY');
+      }
+
+      const type = body && typeof (body as any).type === 'string' ? (body as any).type : 'question';
+      const title = typeof (body as any).title === 'string' ? (body as any).title.trim() : '';
+      const content = typeof (body as any).content === 'string' ? (body as any).content : '';
+      const category = typeof (body as any).category === 'string' ? (body as any).category : 'all';
+      const subcategory =
+        typeof (body as any).subcategory === 'string' ? (body as any).subcategory : null;
+      const tags = Array.isArray((body as any).tags) ? ((body as any).tags as unknown[]).filter((v) => typeof v === 'string') as string[] : [];
+
+      if (!title) {
+        return errorResponse('제목을 입력해주세요.', 'TITLE_REQUIRED');
+      }
+
+      const post = createE2EPost(store, namespace, userId, {
+        type: type === 'share' ? 'share' : 'question',
+        title,
+        content,
+        category,
+        subcategory,
+        tags,
+      });
+
+      return successResponse(buildPostDetail(store, post, userId));
+    }
+
     const user = await getSession(request);
 
     if (!user) {

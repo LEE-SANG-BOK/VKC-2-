@@ -9,6 +9,9 @@ import dayjs from 'dayjs';
 import { isExpertBadgeType } from '@/lib/constants/badges';
 import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
 import { postListSelect, serializePostPreview } from '@/lib/api/post-list';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { buildPostPreview } from '@/lib/e2e/posts';
 
 const resolveTrust = (author: any, createdAt: Date | string) => {
   const months = dayjs().diff(createdAt, 'month', true);
@@ -33,6 +36,20 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(30, Math.max(1, parseInt(searchParams.get('limit') || '10', 10) || 10));
     const periodParam = searchParams.get('period');
     const period = periodParam === 'day' || periodParam === 'week' || periodParam === 'month' ? periodParam : 'week';
+
+    if (isE2ETestMode()) {
+      const { store, userId } = getE2ERequestState(request);
+      const items = Array.from(store.posts.values()).sort((a, b) => {
+        const scoreA = a.likes * 2 + a.views;
+        const scoreB = b.likes * 2 + b.views;
+        if (scoreA !== scoreB) return scoreB - scoreA;
+        return b.createdAt.localeCompare(a.createdAt);
+      });
+      const data = items.slice(0, limit).map((post) => buildPostPreview(store, post, userId));
+      const response = successResponse(data);
+      setPublicSWR(response, 300, 600);
+      return response;
+    }
 
     const currentUser = await getSession(request);
 

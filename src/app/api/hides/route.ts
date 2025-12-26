@@ -4,6 +4,7 @@ import { contentReports, posts, answers, comments } from '@/lib/db/schema';
 import { successResponse, unauthorizedResponse, errorResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { and, eq } from 'drizzle-orm';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 
 type TargetType = 'post' | 'answer' | 'comment';
 
@@ -20,6 +21,10 @@ export async function GET(request: NextRequest) {
     const user = await getSession(request);
     if (!user) {
       return unauthorizedResponse();
+    }
+
+    if (isE2ETestMode()) {
+      return successResponse({ ids: [] });
     }
 
     const typeParam = request.nextUrl.searchParams.get('type');
@@ -51,6 +56,10 @@ export async function POST(request: NextRequest) {
     const user = await getSession(request);
     if (!user) {
       return unauthorizedResponse();
+    }
+
+    if (isE2ETestMode()) {
+      return successResponse({ success: true });
     }
 
     const body = await request.json();
@@ -101,6 +110,10 @@ export async function DELETE(request: NextRequest) {
     const user = await getSession(request);
     if (!user) {
       return unauthorizedResponse();
+    }
+
+    if (isE2ETestMode()) {
+      return successResponse({ success: true });
     }
 
     const body = await request.json();

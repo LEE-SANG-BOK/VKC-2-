@@ -4,6 +4,8 @@ import { follows } from '@/lib/db/schema';
 import { setPrivateNoStore, successResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, and } from 'drizzle-orm';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -11,6 +13,15 @@ interface RouteContext {
 
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
+    if (isE2ETestMode()) {
+      const { id: targetUserId } = await context.params;
+      const { store, userId } = getE2ERequestState(request);
+      const isFollowing = userId ? store.followsByUserId.get(userId)?.has(targetUserId) === true : false;
+      const response = successResponse({ isFollowing });
+      setPrivateNoStore(response);
+      return response;
+    }
+
     const user = await getSession(request);
     if (!user) {
       const response = successResponse({ isFollowing: false });

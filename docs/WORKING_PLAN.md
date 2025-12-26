@@ -538,7 +538,8 @@ $gh-address-comments
 - 머지 게이트(필수): `npm run lint` → `npm run type-check` → `SKIP_SITEMAP_DB=true npm run build` → Playwright 스모크 통과 → (Lead) 수동 QA 체크리스트 OK
   - Playwright 운영 원칙(항상):
     - 모든 PR: `npm run test:e2e` 통과
-    - UI 영향(PRD/레이아웃/피드/카드/헤더 등): `npm run test:e2e:ui` 실행 → 생성된 `test-results/**/home-*.png`/`postcard-*.png`로 시각 확인(필요 시 PR에 스크린샷 첨부)
+    - UI 영향(PRD/레이아웃/피드/카드/헤더 등): `npm run test:e2e:ui` 실행 → 생성된 `test-results/**/home-*.png`로 시각 확인(필요 시 PR에 스크린샷 첨부)
+    - 기능 플로우 검증은 `E2E_TEST_MODE=1`(in-memory 스토어) 기준으로 추가/확장해 “DB/시드 의존” 없이 재현 가능하게 유지
     - 기능/버그 수정은 “변경 지점”을 1개 이상 Playwright로 재현/검증 가능한 형태로 남긴다(테스트 추가/확장 또는 최소 스모크/리퀘스트 검증 추가)
 
 ## 소유권(역할)
@@ -3181,3 +3182,16 @@ $gh-address-comments
 - 기록 방식
   - 리포트 테이블: 각 칸에 `OK` 또는 이슈 ID를 기입
   - 이슈 로그: `ID / Severity / Env / URL / Steps / Expected / Actual / Screenshot / Status`
+
+#### (2025-12-26) [TEST] Playwright 기능 플로우 + UI 스모크(스크린샷) 자동화 (P0-7)
+
+- 목적: “지금 수정한 기능/UI”를 매번 Playwright로 재현/검증 가능한 형태로 남기고, DB 의존 없이 CI에서 돌린다.
+- 변경
+  - `E2E_TEST_MODE=1`에서 NextAuth 세션을 테스트 쿠키(`vk-e2e-user`)로 시뮬레이션
+  - `E2E_TEST_MODE=1`에서 주요 API를 in-memory 스토어로 fallback(팔로우/좋아요/북마크/글 CRUD/추천유저/리더보드 등)
+  - UI 스모크: 홈 피드 desktop/mobile 스크린샷 + 모바일에서 하단탭 겹침(assert) (`npm run test:e2e:ui`)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`

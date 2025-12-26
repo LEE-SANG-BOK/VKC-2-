@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const port = Number(process.env.E2E_PORT || process.env.PORT || 3100);
+const defaultPort = process.env.CI ? 3000 : 3100;
+const port = Number(process.env.E2E_PORT || process.env.PORT || defaultPort);
 const baseURL = process.env.E2E_BASE_URL || `http://localhost:${port}`;
 const healthUrl = `${baseURL}/ko/about`;
 
@@ -43,6 +44,7 @@ export default defineConfig({
         env: {
           ...process.env,
           PORT: String(port),
+          E2E_TEST_MODE: process.env.E2E_TEST_MODE || '1',
           NEXTAUTH_URL: process.env.NEXTAUTH_URL || baseURL,
           AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST || 'true',
           NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'dummy-nextauth-secret',

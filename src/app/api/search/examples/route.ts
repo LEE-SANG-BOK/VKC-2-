@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { posts } from '@/lib/db/schema';
 import { setPublicSWR, successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 
 const PERIOD_DAYS = {
   day: 1,
@@ -17,6 +18,17 @@ const resolvePeriod = (raw: string | null) => {
 
 export async function GET(request: NextRequest) {
   try {
+    if (isE2ETestMode()) {
+      const response = successResponse({
+        examples: [
+          { id: 'e2e-example-1', title: 'E-7 비자 변경 서류' },
+          { id: 'e2e-example-2', title: 'TOPIK 6급 공부 팁' },
+        ],
+      });
+      setPublicSWR(response, 600, 3600);
+      return response;
+    }
+
     const { searchParams } = new URL(request.url);
     const limit = Math.min(10, Math.max(1, parseInt(searchParams.get('limit') || '8', 10) || 8));
     const period = resolvePeriod(searchParams.get('period'));

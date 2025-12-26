@@ -4,6 +4,9 @@ import { posts, postViews } from '@/lib/db/schema';
 import { successResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, and, gt, sql } from 'drizzle-orm';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { incrementPostView as incrementE2EPostView } from '@/lib/e2e/actions';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -16,6 +19,14 @@ interface RouteContext {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { id: postId } = await context.params;
+    if (isE2ETestMode()) {
+      const { store } = getE2ERequestState(request);
+      const result = incrementE2EPostView(store, postId);
+      if (!result) {
+        return notFoundResponse('게시글을 찾을 수 없습니다.');
+      }
+      return successResponse({ views: result.views });
+    }
 
     // 게시글 존재 여부 확인
     const post = await db.query.posts.findFirst({

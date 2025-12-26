@@ -12,6 +12,7 @@ import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 
 const commentRateLimitWindowMs = 60 * 60 * 1000;
 const commentRateLimitMax = 40;
@@ -28,6 +29,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
     const cursorParam = searchParams.get('cursor');
     const wantsPagination = searchParams.has('page') || searchParams.has('limit') || searchParams.has('cursor');
+
+    if (isE2ETestMode()) {
+      if (wantsPagination) {
+        return paginatedResponse([], page, limit, 0, { isFallback: true, nextCursor: null, hasMore: false });
+      }
+      return successResponse([]);
+    }
 
     const user = await getSession(request);
 

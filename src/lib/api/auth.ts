@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2EUserFromRequest } from '@/lib/e2e/auth';
 
 export interface SessionUser {
   id: string;
@@ -10,11 +12,22 @@ export interface SessionUser {
   isVerified?: boolean;
 }
 
-/**
- * 세션에서 사용자 정보 추출 (NextAuth 연동)
- */
 export async function getSession(request?: NextRequest): Promise<SessionUser | null> {
   try {
+    if (request && isE2ETestMode()) {
+      const e2eUser = getE2EUserFromRequest(request);
+      if (!e2eUser) return null;
+
+      return {
+        id: e2eUser.id,
+        email: e2eUser.email,
+        name: e2eUser.displayName || e2eUser.name || undefined,
+        image: e2eUser.image || undefined,
+        isExpert: e2eUser.isExpert,
+        isVerified: e2eUser.isVerified,
+      };
+    }
+
     const session = await auth();
 
     if (!session || !session.user || !session.user.id) {
@@ -35,9 +48,6 @@ export async function getSession(request?: NextRequest): Promise<SessionUser | n
   }
 }
 
-/**
- * 인증 필수 체크
- */
 export async function requireAuth(request?: NextRequest): Promise<SessionUser> {
   const user = await getSession(request);
 
@@ -48,9 +58,6 @@ export async function requireAuth(request?: NextRequest): Promise<SessionUser> {
   return user;
 }
 
-/**
- * 리소스 소유자 확인
- */
 export function isOwner(userId: string, resourceOwnerId: string): boolean {
   return userId === resourceOwnerId;
 }

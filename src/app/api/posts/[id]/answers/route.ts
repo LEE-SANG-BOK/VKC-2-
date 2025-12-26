@@ -13,6 +13,7 @@ import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
 import { isExpertBadgeType } from '@/lib/constants/badges';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 
 const answerRateLimitWindowMs = 60 * 60 * 1000;
 const answerRateLimitMax = 20;
@@ -33,6 +34,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '10', 10) || 10));
     const cursorParam = searchParams.get('cursor');
     const wantsPagination = searchParams.has('page') || searchParams.has('limit') || searchParams.has('cursor');
+
+    if (isE2ETestMode()) {
+      if (wantsPagination) {
+        return paginatedResponse([], page, limit, 0, { isFallback: true, nextCursor: null, hasMore: false });
+      }
+      return successResponse([]);
+    }
 
     const user = await getSession(request);
 

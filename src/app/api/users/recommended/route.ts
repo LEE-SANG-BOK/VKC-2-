@@ -4,9 +4,84 @@ import { db } from '@/lib/db';
 import { users, follows, posts, categories } from '@/lib/db/schema';
 import { eq, ne, notInArray, sql, desc, and, inArray } from 'drizzle-orm';
 import { setPrivateNoStore, errorResponse } from '@/lib/api/response';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { countFollowers } from '@/lib/e2e/posts';
 
 export async function GET(req: NextRequest) {
   try {
+    if (isE2ETestMode()) {
+      const { searchParams } = new URL(req.url);
+      const pageCandidate = Number.parseInt(searchParams.get('page') || '1', 10);
+      const page = Math.min(100, Math.max(1, Number.isNaN(pageCandidate) ? 1 : pageCandidate));
+      const limitCandidate = Number.parseInt(searchParams.get('limit') || '8', 10) || 8;
+      const limit = Math.min(12, Math.max(1, limitCandidate));
+      const offset = (page - 1) * limit;
+
+      const { store, userId: viewerId } = getE2ERequestState(req);
+      const followingIds = viewerId ? store.followsByUserId.get(viewerId) || new Set<string>() : new Set<string>();
+
+      const usersList = Array.from(store.users.values())
+        .filter((user) => (viewerId ? user.id !== viewerId : true))
+        .sort((a, b) => {
+          const scoreA = (a.isVerified ? 1 : 0) + (a.isExpert ? 1 : 0) + (a.badgeType ? 1 : 0);
+          const scoreB = (b.isVerified ? 1 : 0) + (b.isExpert ? 1 : 0) + (b.badgeType ? 1 : 0);
+          if (scoreA !== scoreB) return scoreB - scoreA;
+          return b.updatedAt.localeCompare(a.updatedAt);
+        });
+
+      const total = usersList.length;
+      const data = usersList.slice(offset, offset + limit).map((user) => {
+        const meta = [
+          { key: 'userType', value: user.userType || '' },
+          { key: 'visaType', value: user.visaType || '' },
+          { key: 'status', value: user.status || '' },
+        ]
+          .filter((item) => item.value)
+          .slice(0, 3);
+
+        const postsCount = Array.from(store.posts.values()).filter((post) => post.authorId === user.id).length;
+
+        return {
+          id: user.id,
+          name: user.name,
+          displayName: user.displayName,
+          avatar: user.image,
+          image: user.image,
+          bio: user.bio,
+          isVerified: user.isVerified,
+          isExpert: user.isExpert,
+          badgeType: user.badgeType,
+          badgeExpiresAt: null,
+          status: user.status,
+          userType: user.userType,
+          visaType: user.visaType,
+          koreanLevel: user.koreanLevel,
+          interests: user.interests,
+          isFollowing: viewerId ? followingIds.has(user.id) : false,
+          recommendationMeta: meta,
+          stats: {
+            followers: countFollowers(store, user.id),
+            following: store.followsByUserId.get(user.id)?.size || 0,
+            posts: postsCount,
+          },
+        };
+      });
+
+      const response = NextResponse.json({
+        success: true,
+        data,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+      setPrivateNoStore(response);
+      return response;
+    }
+
     const session = await auth();
     const viewerId = session?.user?.id || null;
 

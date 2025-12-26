@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { eventLogs } from '@/lib/db/schema';
 import { getSession } from '@/lib/api/auth';
 import { successResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 
 const allowedEventTypes = new Set(['view', 'search', 'post', 'like', 'answer', 'comment', 'bookmark', 'follow', 'report', 'share', 'guideline']);
 const allowedEntityTypes = new Set(['post', 'answer', 'comment', 'user', 'search']);
@@ -26,6 +27,10 @@ const hashIp = (ip: string) => {
 
 export async function POST(request: NextRequest) {
   try {
+    if (isE2ETestMode()) {
+      return successResponse({ id: null });
+    }
+
     const user = await getSession(request);
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== 'object') {
