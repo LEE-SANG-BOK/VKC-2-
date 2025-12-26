@@ -136,4 +136,26 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
     await page.locator('#title').focus();
     await expect(bottomNav).toBeHidden();
   });
+
+  test('bottom navigation hides when focusing answer editor (mobile)', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-chromium', 'bottom navigation is mobile-only');
+
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto(`/ko/posts/${namespace}-post-1`);
+
+    const bottomNav = page.getByTestId('bottom-navigation');
+    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+
+    const editor = page.locator('.ProseMirror').first();
+    await expect(editor).toBeVisible({ timeout: 30_000 });
+    await editor.scrollIntoViewIfNeeded();
+    await editor.click();
+
+    await expect(bottomNav).toBeHidden();
+  });
 });
