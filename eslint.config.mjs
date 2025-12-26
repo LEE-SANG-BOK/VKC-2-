@@ -16,6 +16,10 @@ const eslintConfig = defineConfig([
     "public/**",
     "agents/**",
     "scripts/**",
+    "playwright-report/**",
+    "test-results/**",
+    "reports/**",
+    "tmp_*.png",
   ]),
   {
     rules: {
