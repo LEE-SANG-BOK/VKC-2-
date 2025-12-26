@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { verificationRequests } from '@/lib/db/schema';
 import { paginatedResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 import { eq, desc, sql } from 'drizzle-orm';
 
 /**
@@ -25,6 +26,10 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const status = searchParams.get('status') as 'pending' | 'approved' | 'rejected' | null;
+
+    if (isE2ETestMode()) {
+      return paginatedResponse([], page, limit, 0);
+    }
 
     // 조건 설정
     const conditions = [eq(verificationRequests.userId, user.id)];
