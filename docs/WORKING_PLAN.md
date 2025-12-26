@@ -3209,3 +3209,18 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-26) [P0-3] 글쓰기 로그인 프롬프트 오탐 방지 + 댓글 입력 포커스 E2E 추가 (P0-3)
+
+- 목적: 로그인 상태에서도 세션 로딩 타이밍에 “로그인 필요” 프롬프트가 잘못 뜨는 케이스를 차단하고, 공유글 댓글 입력 포커스를 E2E로 고정한다.
+- 변경
+  - `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`: `useSession().status` 기준으로 로그인 프롬프트 게이팅(loading 중 오탐 방지)
+  - `src/lib/e2e/store.ts`: 공유글(`type=share`) seed 추가로 댓글 입력 플로우 테스트 가능하게 함
+  - `e2e/functional.spec.ts`: 모바일에서 공유글 댓글 입력 포커스 시 하단탭 숨김(assert) 추가
+- PR
+  - https://github.com/LEE-SANG-BOK/VKC-2-/pull/103
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
