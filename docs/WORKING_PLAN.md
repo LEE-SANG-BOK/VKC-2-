@@ -3292,3 +3292,16 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P0-3] E2E 모드 인증 이력(history) DB 호출 제거 (P0-3)
+
+- 목표: Playwright `E2E_TEST_MODE` 실행 중 `/api/verification/history`가 UUID 스키마를 요구하는 DB 쿼리로 500을 내지 않도록 하여 테스트 신뢰도/로그 노이즈를 줄인다.
+- 변경
+  - `src/app/api/verification/history/route.ts`: `E2E_TEST_MODE`에서는 빈 이력(paginated empty)으로 응답하여 DB 접근을 차단
+- PR
+  - https://github.com/LEE-SANG-BOK/VKC-2-/pull/111
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
