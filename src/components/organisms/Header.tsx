@@ -144,7 +144,7 @@ export default function Header({ isMobileMenuOpen, setIsMobileMenuOpen, showBack
         <div className="flex items-center space-x-1 sm:space-x-2 justify-self-end">
           {rightActions || (
             <>
-              <LanguageSwitcher />
+              <LanguageSwitcher translations={translations} />
 
               {user && (
                 <div className="relative">

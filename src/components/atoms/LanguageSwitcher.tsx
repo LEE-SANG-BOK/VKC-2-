@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { useParams, usePathname } from 'next/navigation';
 import { Globe } from 'lucide-react';
@@ -9,13 +9,11 @@ const locales = ['ko', 'en', 'vi'] as const;
 const visibleLocales = ['ko', 'vi'] as const;
 type Locale = (typeof locales)[number];
 
-const localeNames: Record<Locale, string> = {
-  ko: '한국어',
-  en: 'English',
-  vi: 'Tiếng Việt',
-};
+interface LanguageSwitcherProps {
+  translations?: any;
+}
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ translations }: LanguageSwitcherProps) {
   const params = useParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -23,6 +21,21 @@ export default function LanguageSwitcher() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const currentLocale = (params.lang as Locale) || 'ko';
+  const tTooltip = translations?.tooltips || {};
+
+  const displayNames = useMemo(() => {
+    try {
+      return new Intl.DisplayNames([currentLocale], { type: 'language' });
+    } catch {
+      return null;
+    }
+  }, [currentLocale]);
+
+  const getLocaleLabel = (locale: Locale) => {
+    const label = displayNames?.of(locale);
+    if (label) return label;
+    return locale.toUpperCase();
+  };
 
   const handleLocaleChange = (newLocale: Locale) => {
     setIsOpen(false);
@@ -51,12 +64,12 @@ export default function LanguageSwitcher() {
     <div className="relative" ref={dropdownRef} data-testid="language-switcher">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Language"
+        aria-label={tTooltip.changeLanguage}
         data-testid="language-switcher-toggle"
         className="inline-flex h-11 items-center gap-1 sm:gap-1.5 px-2.5 sm:h-9 sm:px-3 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-300"
       >
         <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-        <span className="hidden md:inline text-xs sm:text-sm">{localeNames[currentLocale]}</span>
+        <span className="hidden md:inline text-xs sm:text-sm">{getLocaleLabel(currentLocale)}</span>
       </button>
 
       {/* Dropdown */}
@@ -73,7 +86,7 @@ export default function LanguageSwitcher() {
               className={`w-full text-left px-3 sm:px-4 py-3 sm:py-2 text-xs sm:text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors first:rounded-t-lg last:rounded-b-lg ${currentLocale === locale ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-300'
                 }`}
             >
-              {localeNames[locale]}
+              {getLocaleLabel(locale)}
             </button>
           ))}
         </div>
