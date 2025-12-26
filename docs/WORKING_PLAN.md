@@ -3195,3 +3195,17 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-26) [P0] 모바일 포커스 입력 시 하단탭 숨김 + 기본 아바타 누락 경로 안전화 (P0-3)
+
+- 목표: iOS/Android에서 키보드 오픈 감지가 불안정한 케이스에서도 입력 폼이 하단탭에 가려지지 않도록 하고, 누락된 기본 아바타 경로로 인한 Next Image 경고를 제거한다.
+- 변경 내용
+  - `src/components/organisms/BottomNavigation.tsx`: visualViewport 기반 감지 + focusin/focusout 기반 fallback으로 키보드 상태 판단(하단탭 숨김)
+  - `src/components/atoms/Avatar.tsx`: `/default-avatar.*` sentinel은 이미지로 렌더하지 않고 fallback 처리 + verified 오버레이를 아이콘 기반으로 교체
+  - `src/app/default-avatar.jpg/route.ts`, `src/app/avatar-default.jpg/route.ts`: 누락된 기본 아바타 경로 요청 시 1x1 PNG 응답(Next Image 경고 방지)
+  - `e2e/functional.spec.ts`: 모바일에서 제목 입력 포커스 시 하단탭이 숨김 처리되는지 E2E로 고정
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
