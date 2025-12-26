@@ -156,8 +156,25 @@ const seedStore = (namespace: string, store: E2EStore) => {
     updatedAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2)),
   };
 
+  const post3: E2EPost = {
+    id: `${namespace}-post-3`,
+    authorId: user2.id,
+    type: 'share',
+    title: '비자 신청 준비 팁을 공유합니다',
+    content: '<p>최근 비자 신청을 준비하면서 정리한 팁을 공유합니다. 필요한 서류를 미리 체크해두세요.</p>',
+    category: 'visa',
+    subcategory: 'visa-change',
+    tags: ['비자', '체류'],
+    views: 10,
+    likes: 0,
+    isResolved: false,
+    createdAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 24 * 5)),
+    updatedAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 24 * 5)),
+  };
+
   store.posts.set(post1.id, post1);
   store.posts.set(post2.id, post2);
+  store.posts.set(post3.id, post3);
 
   store.followsByUserId.set(user1.id, new Set());
   store.followsByUserId.set(user2.id, new Set());
@@ -178,7 +195,7 @@ export const getE2EStore = (namespace: string) => {
     followsByUserId: new Map(),
     likesByUserId: new Map(),
     bookmarksByUserId: new Map(),
-    nextPostNumber: 3,
+    nextPostNumber: 4,
   };
 
   seedStore(namespace, store);
