@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import crypto from 'crypto';
 
-const port = Number(process.env.E2E_PORT || process.env.PORT || 3100);
+const defaultPort = process.env.CI ? 3000 : 3100;
+const port = Number(process.env.E2E_PORT || process.env.PORT || defaultPort);
 const baseURL = process.env.E2E_BASE_URL || `http://localhost:${port}`;
 
 const createNamespace = () => crypto.randomUUID();
