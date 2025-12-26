@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { User as UserIcon } from 'lucide-react';
+import { BadgeCheck, User as UserIcon } from 'lucide-react';
 import { DEFAULT_BLUR_DATA_URL } from '@/lib/constants/images';
 
 interface AvatarProps {
@@ -36,10 +36,17 @@ export default function Avatar({ name, size = 'md', imageUrl, showVerifiedOverla
 
   const displayName = name || '?';
 
-  const hasValidImage = imageUrl && imageUrl.trim() !== '' && !imgError;
+  const trimmedImageUrl = imageUrl?.trim() ?? '';
+  const hasValidImage =
+    trimmedImageUrl !== '' &&
+    trimmedImageUrl !== '/default-avatar.jpg' &&
+    trimmedImageUrl !== '/default-avatar.png' &&
+    trimmedImageUrl !== 'null' &&
+    trimmedImageUrl !== 'undefined' &&
+    !imgError;
   const normalizedImageUrl = (() => {
     if (!hasValidImage || !imageUrl) return '';
-    const trimmed = imageUrl.trim();
+    const trimmed = trimmedImageUrl;
     if (trimmed.startsWith('//')) return `https:${trimmed}`;
     if (!trimmed.startsWith('http') && trimmed.includes('ui-avatars.com')) {
       const cleaned = trimmed.replace(/^\/+/, '');
@@ -70,8 +77,8 @@ export default function Avatar({ name, size = 'md', imageUrl, showVerifiedOverla
   })();
 
   const overlay = showVerifiedOverlay ? (
-    <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center overflow-hidden">
-      <Image src="/icon-verified.png" alt="verified" width={16} height={16} sizes="16px" className="object-contain" />
+    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center shadow-sm ring-1 ring-emerald-200/70 dark:ring-emerald-900/60">
+      <BadgeCheck aria-hidden className="h-4 w-4 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
     </span>
   ) : null;
 
