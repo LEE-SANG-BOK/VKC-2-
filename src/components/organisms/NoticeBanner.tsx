@@ -13,26 +13,35 @@ interface NoticeBannerProps {
   limit?: number;
 }
 
-const isNoticeCategory = (value?: string | null) => {
-  const normalized = String(value || '').trim().toLowerCase();
-  return normalized === 'notice' || normalized === '공지';
+const normalizeCategoryValue = (value: unknown) => String(value || '').trim().toLowerCase();
+
+const isNoticeCategory = (value: unknown, aliases: string[]) => {
+  const normalized = normalizeCategoryValue(value);
+  if (!normalized) return false;
+  if (normalized === 'notice') return true;
+  return aliases.some((alias) => normalizeCategoryValue(alias) === normalized);
 };
 
 export default function NoticeBanner({ translations, lang, limit = 2 }: NoticeBannerProps) {
   const locale = lang || 'vi';
-  const t = (translations?.noticeBanner || {}) as Record<string, string>;
+  const t = (translations?.noticeBanner || {}) as Record<string, unknown>;
   const { data: newsItems, isLoading } = useNews(locale);
   const [selected, setSelected] = useState<NewsItem | null>(null);
 
+  const noticeCategoryAliases = useMemo(() => {
+    if (!Array.isArray(t.noticeCategoryAliases)) return [];
+    return (t.noticeCategoryAliases as unknown[]).map((value) => String(value));
+  }, [t.noticeCategoryAliases]);
+
   const items = useMemo(() => {
     return (newsItems || [])
-      .filter((item) => item.type === 'post' && isNoticeCategory(item.category))
+      .filter((item) => item.type === 'post' && isNoticeCategory(item.category, noticeCategoryAliases))
       .slice(0, limit);
-  }, [limit, newsItems]);
+  }, [limit, newsItems, noticeCategoryAliases]);
 
-  const badgeLabel = t.badge || '';
-  const openExternalLabel = t.openExternal || '';
-  const closeLabel = t.close || '';
+  const badgeLabel = String(t.badge || '');
+  const openExternalLabel = String(t.openExternal || '');
+  const closeLabel = String(t.close || '');
 
   if (isLoading) {
     return (

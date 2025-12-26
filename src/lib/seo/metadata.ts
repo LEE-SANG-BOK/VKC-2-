@@ -9,7 +9,7 @@ type MetadataInput = {
   description: string;
   siteName?: string;
   images?: string[];
-  type?: 'website' | 'article';
+  type?: 'website' | 'article' | 'profile';
   keywords?: string[];
   tags?: string[];
   authors?: string[];

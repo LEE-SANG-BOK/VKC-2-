@@ -172,6 +172,10 @@
       "title": "Huy hiệu tin cậy - viet kconnect",
       "description": "Tìm hiểu ý nghĩa của từng huy hiệu tin cậy và cách được gán."
     },
+    "visaRoadmap": {
+      "title": "Lộ trình visa - viet kconnect",
+      "description": "Checklist theo giai đoạn D2 → D10 → E7 → F2 và lối tắt đặt câu hỏi"
+    },
     "about": {
       "title": "Giới thiệu - viet kconnect",
       "description": "Tìm hiểu về viet kconnect và cách hoạt động."
@@ -295,6 +299,7 @@
   },
   "noticeBanner": {
     "badge": "Thông báo",
+    "noticeCategoryAliases": ["공지", "thông báo"],
     "openExternal": "Mở liên kết",
     "close": "Đóng"
   },
@@ -1078,6 +1083,25 @@
     "trustedAnswererTooltip": "Được cộng đồng đánh giá tin cậy dựa trên đóng góp",
     "outdatedLabel": "Hết hạn",
     "outdatedTooltip": "Thông tin hơn 12 tháng trước"
+  },
+  "visaRoadmap": {
+    "label": "Visa Roadmap",
+    "title": "Checklist theo giai đoạn D2 → D10 → E7 → F2",
+    "subtitle": "Quản lý việc chuẩn bị visa/việc làm trong một nơi với hướng dẫn bằng tiếng mẹ đẻ.",
+    "askQuestion": "Đăng câu hỏi",
+    "relatedQuestions": "Xem câu hỏi liên quan",
+    "quickLinksTitle": "Liên kết nhanh",
+    "quickLinks": {
+      "visaQa": "Xem Q&A visa",
+      "askQuestion": "Đăng câu hỏi",
+      "searchE7": "Tìm E-7"
+    },
+    "steps": [
+      { "badge": "1/4", "title": "D-2 Du học", "desc": "Kiểm tra những việc cần chuẩn bị khi đang học/trao đổi", "query": "D-2" },
+      { "badge": "2/4", "title": "D-10 Tìm việc", "desc": "Luồng báo cáo tìm việc/thực tập sau tốt nghiệp", "query": "D-10" },
+      { "badge": "3/4", "title": "E-7 Việc làm", "desc": "Kiểm tra ngành nghề/lương/hồ sơ yêu cầu", "query": "E-7" },
+      { "badge": "4/4", "title": "F-2 Hệ điểm", "desc": "Quản lý yếu tố cộng điểm & timeline", "query": "F-2" }
+    ]
   },
   "errors": {
     "UNAUTHORIZED": "Vui lòng đăng nhập.",

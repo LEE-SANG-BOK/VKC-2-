@@ -3224,3 +3224,18 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-26) [P0-2] 프로필/공지/비자 로드맵 i18n 하드코딩 제거 (P0-2)
+
+- 목표: ko/vi 기준 하드코딩 문자열·중복 메타 로직을 제거하고, 공용 메타 빌더/번역 리소스로 일원화한다.
+- 변경
+  - `src/app/[lang]/(main)/profile/[id]/page.tsx`: 프로필 메타를 `buildPageMetadata`로 통일 + userType 라벨 매핑을 `getUserTypeLabel`로 공용화
+  - `src/lib/seo/metadata.ts`: OpenGraph `type`에 `profile` 지원 추가
+  - `src/components/organisms/NoticeBanner.tsx`: 공지 카테고리 판별을 번역 리소스(`noticeCategoryAliases`) 기반으로 변경(코드 하드코딩 제거)
+  - `src/app/[lang]/guide/visa-roadmap/page.tsx`: 페이지/메타 전부 번역 리소스 기반으로 전환 + `buildPageMetadata` 적용
+  - `messages/ko.json`, `messages/vi.json`: `metadata.visaRoadmap`, `visaRoadmap`, `noticeBanner.noticeCategoryAliases` 추가
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
