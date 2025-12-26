@@ -118,4 +118,22 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
     await article.getByRole('button', { name: /삭제/ }).click();
     await page.waitForURL(/\/ko\/?$/, { timeout: 30_000 });
   });
+
+  test('bottom navigation hides when focusing editor inputs (mobile)', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-chromium', 'bottom navigation is mobile-only');
+
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto('/ko/posts/new?type=question');
+
+    const bottomNav = page.getByTestId('bottom-navigation');
+    await expect(bottomNav).toBeVisible();
+
+    await page.locator('#title').focus();
+    await expect(bottomNav).toBeHidden();
+  });
 });
