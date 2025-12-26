@@ -3239,3 +3239,14 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-26) [P0-2] 전역 홈 메타/키워드 하드코딩 제거 (P0-2)
+
+- 목표: locale 레이아웃(`src/app/[lang]/layout.tsx`)에서 하드코딩된 홈 메타/키워드를 제거하고, 번역 리소스 기반으로 일원화한다.
+- 변경
+  - `src/app/[lang]/layout.tsx`: `metadata.home`/`metadata.keywords` 기반으로 title/description/keywords 구성(필요 시 ko 딕셔너리로 fallback)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
