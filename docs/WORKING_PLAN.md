@@ -3275,3 +3275,20 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P0-2] 언어 스위처/모달 닫기 라벨 i18n 정리 (P0-2)
+
+- 목표: ko/vi 기준 “하드코딩 텍스트”와 a11y 라벨의 영어 하드코딩을 제거하여 P0-2(클립/하드코딩 0) 품질을 높인다.
+- 변경
+  - `src/components/atoms/LanguageSwitcher.tsx`: aria-label을 `tooltips.changeLanguage`로 통일 + locale 이름은 `Intl.DisplayNames`로 생성(하드코딩 제거)
+  - `src/components/organisms/Header.tsx`: LanguageSwitcher에 `translations` 주입
+  - `src/components/atoms/Modal.tsx`: `closeLabel` prop으로 닫기 버튼 aria-label을 번역 리소스로 주입 가능하게 변경
+  - `src/components/molecules/modals/GuidelinesModal.tsx`, `src/app/[lang]/(main)/posts/new/NewPostClient.tsx`: 닫기 라벨에 `tooltips.close` 사용
+  - `src/app/[lang]/(main)/profile/edit/ProfileEditClient.tsx`: 사용되지 않는 하드코딩 레이블(한국어 수준) 상수 제거
+- PR
+  - https://github.com/LEE-SANG-BOK/VKC-2-/pull/110
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
