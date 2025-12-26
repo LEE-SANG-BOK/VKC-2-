@@ -3261,3 +3261,17 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P0-2] API 오류코드(ko/vi) 누락분 보강 + CI Playwright 리포트 업로드 (P0-2)
+
+- 목표: API 응답 `code`가 UI에 노출될 때 ko/vi에서 번역 누락으로 코드 문자열이 그대로 보이지 않게 한다.
+- 변경
+  - `messages/ko.json`, `messages/vi.json`: `errors.*` 누락 키 추가(검색/이벤트/구독설정/인증/채택/UGC 링크 정책 등)
+  - `.github/workflows/ci.yml`: `playwright-report`를 CI 아티팩트로 업로드(시각 스모크 스크린샷/트레이스 확인 가능)
+- PR
+  - https://github.com/LEE-SANG-BOK/VKC-2-/pull/108
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
