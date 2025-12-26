@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
 import { posts } from '@/lib/db/schema';
 import { setPublicSWR, paginatedResponse, errorResponse, serverErrorResponse } from '@/lib/api/response';
 import { sql, eq, desc, and, inArray, SQL } from 'drizzle-orm';
 import { ACTIVE_GROUP_PARENT_SLUGS } from '@/lib/constants/category-groups';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 
 /**
  * GET /api/search/posts
@@ -25,6 +25,12 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20));
     const type = searchParams.get('type') as 'question' | 'share' | null;
     const category = searchParams.get('category');
+
+    if (isE2ETestMode()) {
+      const response = paginatedResponse([], page, limit, 0, { query });
+      setPublicSWR(response, 120, 600);
+      return response;
+    }
 
     if (!query) {
       return errorResponse('검색어를 입력해주세요.', 'SEARCH_QUERY_REQUIRED');
@@ -80,6 +86,8 @@ export async function GET(request: NextRequest) {
     }
 
     const whereClause = conditions.length > 1 ? (and(...conditions) as SQL) : conditions[0];
+
+    const { db } = await import('@/lib/db');
 
     const [countResult] = await db
       .select({ count: sql<number>`count(*)::int` })

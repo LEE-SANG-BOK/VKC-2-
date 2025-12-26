@@ -22,6 +22,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
   const lang = (params?.lang as string) || 'ko';
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const maxViewportHeightRef = useRef(0);
+  const isEditingFocusRef = useRef(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -30,29 +31,80 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
     root.style.setProperty('--vk-keyboard-offset', '0px');
 
     const viewport = window.visualViewport;
-    if (!viewport) {
-      return () => {
-        root.style.setProperty('--vk-bottom-safe-offset', `${baseOffset}px`);
-        root.style.setProperty('--vk-keyboard-offset', '0px');
-      };
-    }
 
     const updateKeyboardState = () => {
-      maxViewportHeightRef.current = Math.max(maxViewportHeightRef.current, viewport.height);
-      const heightDiff = Math.max(0, maxViewportHeightRef.current - viewport.height);
-      const keyboardOpen = heightDiff > 150;
+      const viewportHeight = viewport?.height ?? maxViewportHeightRef.current;
+      if (viewportHeight) {
+        maxViewportHeightRef.current = Math.max(maxViewportHeightRef.current, viewportHeight);
+      }
+
+      const heightDiff = viewportHeight ? Math.max(0, maxViewportHeightRef.current - viewportHeight) : 0;
+      const keyboardOpen = heightDiff > 150 || isEditingFocusRef.current;
       setIsKeyboardOpen(keyboardOpen);
       root.style.setProperty('--vk-keyboard-offset', keyboardOpen ? `${Math.round(heightDiff)}px` : '0px');
       root.style.setProperty('--vk-bottom-safe-offset', `${keyboardOpen ? 24 : baseOffset}px`);
     };
 
+    const isEditable = (element: HTMLElement | null) => {
+      if (!element) return false;
+      const candidate = element.closest('input,textarea,[contenteditable="true"],[contenteditable=""],[contenteditable="plaintext-only"]');
+      const target = (candidate ?? element) as HTMLElement | null;
+      if (!target) return false;
+      if (target instanceof HTMLTextAreaElement) return true;
+      if (target instanceof HTMLInputElement) {
+        const nonTextTypes = new Set([
+          'button',
+          'checkbox',
+          'color',
+          'date',
+          'datetime-local',
+          'file',
+          'hidden',
+          'image',
+          'month',
+          'radio',
+          'range',
+          'reset',
+          'submit',
+          'time',
+          'week',
+        ]);
+        return !nonTextTypes.has(target.type);
+      }
+      return target.isContentEditable;
+    };
+
+    const refreshFocusState = () => {
+      const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const shouldHide = isEditable(active);
+      if (shouldHide === isEditingFocusRef.current) return;
+      isEditingFocusRef.current = shouldHide;
+      updateKeyboardState();
+    };
+
+    const onFocusChange = () => {
+      queueMicrotask(refreshFocusState);
+    };
+
     updateKeyboardState();
-    viewport.addEventListener('resize', updateKeyboardState);
-    viewport.addEventListener('scroll', updateKeyboardState);
+    refreshFocusState();
+
+    document.addEventListener('focusin', onFocusChange);
+    document.addEventListener('focusout', onFocusChange);
+
+    if (viewport) {
+      viewport.addEventListener('resize', updateKeyboardState);
+      viewport.addEventListener('scroll', updateKeyboardState);
+    }
 
     return () => {
-      viewport.removeEventListener('resize', updateKeyboardState);
-      viewport.removeEventListener('scroll', updateKeyboardState);
+      document.removeEventListener('focusin', onFocusChange);
+      document.removeEventListener('focusout', onFocusChange);
+
+      if (viewport) {
+        viewport.removeEventListener('resize', updateKeyboardState);
+        viewport.removeEventListener('scroll', updateKeyboardState);
+      }
       root.style.setProperty('--vk-bottom-safe-offset', `${baseOffset}px`);
       root.style.setProperty('--vk-keyboard-offset', '0px');
     };

@@ -286,7 +286,10 @@ export async function toggleFollow(
   userId: string,
   options?: FetchOptions
 ): Promise<ApiResponse<{ isFollowing: boolean }>> {
-  const res = await fetch(`${API_BASE}/api/users/${userId}/follow`, {
+  const url = typeof window === 'undefined'
+    ? `${API_BASE}/api/users/${userId}/follow`
+    : `/api/users/${userId}/follow`;
+  const res = await fetch(url, {
     method: 'POST',
     credentials: 'include',
     signal: options?.signal,
@@ -304,7 +307,10 @@ export async function checkFollowStatus(
   userId: string,
   options?: FetchOptions
 ): Promise<{ isFollowing: boolean }> {
-  const res = await fetch(`${API_BASE}/api/users/${userId}/follow/status`, {
+  const url = typeof window === 'undefined'
+    ? `${API_BASE}/api/users/${userId}/follow/status`
+    : `/api/users/${userId}/follow/status`;
+  const res = await fetch(url, {
     cache: 'no-store',
     credentials: 'include',
     signal: options?.signal,
