@@ -40,28 +40,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const locale = lang as Locale;
   const dict = await getDictionary(locale);
+  const fallbackDict = locale === 'ko' ? dict : await getDictionary('ko');
   const meta = (dict?.metadata?.home || {}) as Record<string, string>;
-  const fallbackByLocale = {
-    ko: {
-      title: 'viet kconnect - 베트남 한인 커뮤니티',
-      description:
-        '베트남 거주 한인을 위한 Q&A 커뮤니티. 기술, 비즈니스, 라이프스타일, 교육 등 다양한 주제의 질문과 답변을 공유하세요.',
-    },
-    en: {
-      title: 'viet kconnect - Vietnamese community in Korea',
-      description:
-        'A Q&A community for Vietnamese residents in Korea. Share questions and answers on tech, business, lifestyle, education, and more.',
-    },
-    vi: {
-      title: 'viet kconnect - Cộng đồng người Việt tại Hàn Quốc',
-      description:
-        'Cộng đồng hỏi đáp dành cho người Việt tại Hàn Quốc. Chia sẻ câu hỏi và câu trả lời về công nghệ, kinh doanh, đời sống, giáo dục và nhiều hơn nữa.',
-    },
-  } as const;
-  const fallback = fallbackByLocale[locale] || fallbackByLocale.ko;
-  const title = meta.title || fallback.title;
-  const description = meta.description || fallback.description;
-  const siteName = meta.siteName || 'viet kconnect';
+  const metaFallback = (fallbackDict?.metadata?.home || {}) as Record<string, string>;
+  const metaMerged = { ...metaFallback, ...meta } as Record<string, string>;
+
+  const siteName = metaMerged.siteName || 'viet kconnect';
+  const title = metaMerged.title || siteName;
+  const description = metaMerged.description || '';
+
+  const keywordKeys = ['vietnam', 'korean', 'community', 'qa', 'question', 'answer'] as const;
+  const keywordValues = (dict?.metadata?.keywords || {}) as Record<string, string>;
+  const keywordFallbackValues = (fallbackDict?.metadata?.keywords || {}) as Record<string, string>;
+  const keywords = keywordKeys
+    .map((key) => keywordValues[key] || keywordFallbackValues[key] || '')
+    .filter(Boolean);
 
   return {
     metadataBase: new URL(siteUrl),
@@ -70,7 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       languages: Object.fromEntries(i18n.locales.map((l) => [l, `${siteUrl}/${l}`])),
     },
-    keywords: ['베트남', '한인', '커뮤니티', 'Q&A', '질문', '답변'],
+    keywords,
     authors: [{ name: 'viet kconnect Team' }],
     creator: 'viet kconnect',
     publisher: 'viet kconnect',
