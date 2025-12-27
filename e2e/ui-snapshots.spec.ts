@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import crypto from 'crypto';
 
-const shouldRun = process.env.CI === 'true' || process.env.E2E_UI_SNAPSHOTS === '1';
+const shouldRun = process.env.E2E_UI_SNAPSHOTS !== '0';
 
 const defaultPort = process.env.CI ? 3000 : 3100;
 const port = Number(process.env.E2E_PORT || process.env.PORT || defaultPort);

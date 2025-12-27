@@ -119,6 +119,45 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
     await page.waitForURL(/\/ko\/?$/, { timeout: 30_000 });
   });
 
+  test('verified user can create an answer (E2E store)', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'interactive editor flow is chromium-only');
+
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+    const answerText = `E2E 답변 ${namespace.slice(0, 8)}`;
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto(`/ko/posts/${namespace}-post-2`);
+
+    const editor = page.locator('.ProseMirror').first();
+    await expect(editor).toBeVisible({ timeout: 30_000 });
+    await editor.click();
+    await page.keyboard.type(answerText);
+
+    const form = editor.locator('xpath=ancestor::form[1]');
+    await form.locator('button[type="submit"]').first().click();
+
+    await expect(page.getByText(answerText)).toBeVisible({ timeout: 30_000 });
+  });
+
+  test('question author can adopt an answer (E2E store)', async ({ page, context }) => {
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto(`/ko/posts/${namespace}-post-1`);
+
+    const adoptButton = page.getByRole('button', { name: '채택하기' }).first();
+    await expect(adoptButton).toBeVisible({ timeout: 30_000 });
+    await adoptButton.click();
+
+    await expect(page.getByText('채택됨')).toBeVisible({ timeout: 30_000 });
+  });
+
   test('bottom navigation hides when focusing editor inputs (mobile)', async ({ page, context }, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile-chromium', 'bottom navigation is mobile-only');
 
