@@ -3365,3 +3365,12 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P1-1] Playwright 플레키 제거(채택/하단탭) (P1-1)
+
+- 목표: CI에서 간헐적으로 실패하던 “채택됨 텍스트 대기”와 “bottom-navigation strict mode”를 제거해 E2E를 게이트로 안정화한다.
+- 변경
+  - `e2e/functional.spec.ts`: 채택 시나리오를 “채택 API 응답 + /answers 상태 확인 + 채택 버튼 제거”로 검증(텍스트 의존 제거)
+  - `e2e/functional.spec.ts`: BottomNavigation 검증을 `data-testid="bottom-navigation":not(.hidden)` 기준으로 전환(중복 DOM에도 안정)
+- 검증
+  - [x] `npm run test:e2e`
