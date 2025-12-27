@@ -3407,3 +3407,11 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P1-1] CI/E2E 안정화: 리더보드 fetch 상대경로 통일 (P1-1)
+
+- 목표: CI에서 `NEXT_PUBLIC_APP_URL=https://example.com`이어도 Playwright가 로컬 서버(`/api/...`)를 정상 호출하도록 리더보드 fetch를 상대 경로로 통일한다.
+- 변경
+  - `src/repo/users/fetch.ts`: `fetchUserLeaderboard`가 브라우저 환경에서 절대 URL 대신 `/api/users/leaderboard` 사용
+- 검증
+  - [x] `NEXT_PUBLIC_APP_URL=https://example.com ... npm run test:e2e` (CI env 시뮬레이션)
