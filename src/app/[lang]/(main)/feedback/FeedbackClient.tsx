@@ -129,7 +129,10 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
             </div>
 
             {submitted ? (
-              <div className="rounded-2xl border border-emerald-200 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-900/30 p-6 text-center space-y-4">
+              <div
+                data-testid="feedback-submit-success"
+                className="rounded-2xl border border-emerald-200 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-900/30 p-6 text-center space-y-4"
+              >
                 <div className="flex justify-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/60">
                     <CheckCircle className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
@@ -161,7 +164,7 @@ export default function FeedbackClient({ translations, lang }: FeedbackClientPro
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5" data-testid="feedback-form">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                     {copy.typeLabel}

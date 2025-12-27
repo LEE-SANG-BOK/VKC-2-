@@ -174,6 +174,34 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
     await expect(page.getByRole('button', { name: '채택하기' })).toHaveCount(0, { timeout: 30_000 });
   });
 
+  test('authenticated user can submit feedback (E2E store)', async ({ page, context }) => {
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto('/ko/feedback');
+
+    const ratingButton = page.getByRole('button', { name: /^5\b/ }).first();
+    await expect(ratingButton).toBeVisible({ timeout: 30_000 });
+    await ratingButton.click();
+
+    const textarea = page.locator('textarea').first();
+    await expect(textarea).toBeVisible({ timeout: 30_000 });
+    await textarea.fill(`E2E feedback ${namespace.slice(0, 8)}`);
+
+    const submitResponsePromise = page.waitForResponse((response) => {
+      if (response.request().method() !== 'POST') return false;
+      return response.url().includes('/api/feedback') && response.ok();
+    });
+
+    await page.getByTestId('feedback-form').locator('button[type="submit"]').click();
+    await submitResponsePromise;
+
+    await expect(page.getByTestId('feedback-submit-success')).toBeVisible({ timeout: 30_000 });
+  });
+
   test('bottom navigation hides when focusing editor inputs (mobile)', async ({ page, context }, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile-chromium', 'bottom navigation is mobile-only');
 
