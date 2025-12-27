@@ -9,6 +9,10 @@ import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { deleteAnswer, updateAnswer } from '@/lib/e2e/actions';
+import { buildE2EAnswer } from '@/lib/e2e/serialize';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -30,6 +34,61 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     const { id } = await context.params;
+
+    if (isE2ETestMode()) {
+      const { store } = getE2ERequestState(request);
+      const answer = store.answers.get(id);
+      if (!answer) {
+        return notFoundResponse('답변을 찾을 수 없습니다.');
+      }
+
+      if (!isOwner(user.id, answer.authorId)) {
+        return forbiddenResponse('답변을 수정할 권한이 없습니다.');
+      }
+
+      if (answer.isAdopted) {
+        return errorResponse('채택된 답변은 수정할 수 없습니다.', 'ADOPTED_ANSWER');
+      }
+
+      const body = await request.json();
+      const { content } = body;
+
+      if (!content || typeof content !== 'string') {
+        return errorResponse('답변 내용을 입력해주세요.', 'ANSWER_REQUIRED');
+      }
+
+      const normalizedContent = sanitizeUgcHtml(content);
+      if (!normalizedContent) {
+        return errorResponse('답변 내용을 입력해주세요.', 'ANSWER_REQUIRED');
+      }
+
+      const validation = validateUgcText(normalizedContent, UGC_LIMITS.answerContent.min, UGC_LIMITS.answerContent.max);
+      if (!validation.ok) {
+        if (validation.code === 'UGC_TOO_SHORT') {
+          return errorResponse('답변이 너무 짧습니다.', 'ANSWER_TOO_SHORT');
+        }
+        if (validation.code === 'UGC_TOO_LONG') {
+          return errorResponse('답변이 너무 깁니다.', 'ANSWER_TOO_LONG');
+        }
+        return errorResponse('답변 내용이 올바르지 않습니다.', 'ANSWER_LOW_QUALITY');
+      }
+
+      if (hasProhibitedContent(normalizedContent)) {
+        return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
+      }
+
+      const linkValidation = validateUgcExternalLinks(normalizedContent);
+      if (!linkValidation.ok) {
+        return errorResponse('공식 출처 도메인만 사용할 수 있습니다.', 'UGC_EXTERNAL_LINK_BLOCKED');
+      }
+
+      const updated = updateAnswer(store, id, normalizedContent);
+      if (!updated) {
+        return notFoundResponse('답변을 찾을 수 없습니다.');
+      }
+
+      return successResponse(buildE2EAnswer(store, updated, { includeComments: true }), '답변이 수정되었습니다.');
+    }
 
     // 답변 존재 여부 확인
     const answer = await db.query.answers.findFirst({
@@ -129,6 +188,28 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     const { id } = await context.params;
+
+    if (isE2ETestMode()) {
+      const { store } = getE2ERequestState(request);
+      const answer = store.answers.get(id);
+      if (!answer) {
+        return notFoundResponse('답변을 찾을 수 없습니다.');
+      }
+
+      if (!isOwner(user.id, answer.authorId)) {
+        return forbiddenResponse('답변을 삭제할 권한이 없습니다.');
+      }
+
+      if (answer.isAdopted) {
+        return errorResponse('채택된 답변은 삭제할 수 없습니다.', 'ADOPTED_ANSWER');
+      }
+
+      const ok = deleteAnswer(store, id);
+      if (!ok) {
+        return errorResponse('채택된 답변은 삭제할 수 없습니다.', 'ADOPTED_ANSWER');
+      }
+      return successResponse(null, '답변이 삭제되었습니다.');
+    }
 
     // 답변 존재 여부 확인
     const answer = await db.query.answers.findFirst({

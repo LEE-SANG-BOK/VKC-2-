@@ -6,6 +6,10 @@ import { successResponse, errorResponse, notFoundResponse, forbiddenResponse, un
 import { getSession, isOwner } from '@/lib/api/auth';
 import { eq, and } from 'drizzle-orm';
 import { createAdoptionNotification } from '@/lib/notifications/create';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { adoptAnswer, cancelAdoptAnswer } from '@/lib/e2e/actions';
+import { buildE2EAnswer } from '@/lib/e2e/serialize';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -24,6 +28,21 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const { id: answerId } = await context.params;
+
+    if (isE2ETestMode()) {
+      const { store } = getE2ERequestState(request);
+      const result = adoptAnswer(store, user.id, answerId);
+      if (!result.ok) {
+        if (result.code === 'ANSWER_NOT_FOUND') return notFoundResponse('답변을 찾을 수 없습니다.');
+        if (result.code === 'POST_NOT_FOUND') return notFoundResponse('게시글을 찾을 수 없습니다.');
+        if (result.code === 'SELF_ADOPT') return forbiddenResponse('본인 답변은 채택할 수 없습니다.');
+        return forbiddenResponse('질문 작성자만 답변을 채택할 수 있습니다.');
+      }
+
+      const adopted = store.answers.get(answerId);
+      if (!adopted) return notFoundResponse('답변을 찾을 수 없습니다.');
+      return successResponse(buildE2EAnswer(store, adopted, { includeComments: true }), '답변이 채택되었습니다.');
+    }
 
     // 답변 존재 여부 및 게시글 정보 확인
     const answer = await db.query.answers.findFirst({
@@ -126,6 +145,19 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     const { id: answerId } = await context.params;
+
+    if (isE2ETestMode()) {
+      const { store } = getE2ERequestState(request);
+      const result = cancelAdoptAnswer(store, user.id, answerId);
+      if (!result.ok) {
+        if (result.code === 'ANSWER_NOT_FOUND') return notFoundResponse('답변을 찾을 수 없습니다.');
+        if (result.code === 'POST_NOT_FOUND') return notFoundResponse('게시글을 찾을 수 없습니다.');
+        if (result.code === 'NOT_ADOPTED') return errorResponse('채택되지 않은 답변입니다.', 'NOT_ADOPTED');
+        return forbiddenResponse('질문 작성자만 채택을 취소할 수 있습니다.');
+      }
+
+      return successResponse(null, '답변 채택이 취소되었습니다.');
+    }
 
     // 답변 존재 여부 및 게시글 정보 확인
     const answer = await db.query.answers.findFirst({

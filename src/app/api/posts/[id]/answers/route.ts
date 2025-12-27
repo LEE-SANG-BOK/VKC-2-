@@ -14,6 +14,9 @@ import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
 import { isExpertBadgeType } from '@/lib/constants/badges';
 import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { createAnswer } from '@/lib/e2e/actions';
+import { buildE2EAnswer } from '@/lib/e2e/serialize';
 
 const answerRateLimitWindowMs = 60 * 60 * 1000;
 const answerRateLimitMax = 20;
@@ -36,10 +39,30 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const wantsPagination = searchParams.has('page') || searchParams.has('limit') || searchParams.has('cursor');
 
     if (isE2ETestMode()) {
-      if (wantsPagination) {
-        return paginatedResponse([], page, limit, 0, { isFallback: true, nextCursor: null, hasMore: false });
+      const { store } = getE2ERequestState(request);
+      const answersForPost = Array.from(store.answers.values())
+        .filter((answer) => answer.postId === postId)
+        .sort((a, b) => {
+          if (a.isAdopted !== b.isAdopted) return a.isAdopted ? -1 : 1;
+          if (a.likes !== b.likes) return b.likes - a.likes;
+          const createdDiff = b.createdAt.localeCompare(a.createdAt);
+          if (createdDiff !== 0) return createdDiff;
+          return b.id.localeCompare(a.id);
+        })
+        .map((answer) => buildE2EAnswer(store, answer, { includeComments: true }));
+
+      if (!wantsPagination) {
+        return successResponse(answersForPost);
       }
-      return successResponse([]);
+
+      const total = answersForPost.length;
+      const offset = (page - 1) * limit;
+      const data = answersForPost.slice(offset, offset + limit);
+      return paginatedResponse(data, page, limit, total, {
+        isFallback: true,
+        nextCursor: null,
+        hasMore: offset + limit < total,
+      });
     }
 
     const user = await getSession(request);
@@ -273,6 +296,55 @@ export async function GET(request: NextRequest, context: RouteContext) {
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
+    if (isE2ETestMode()) {
+      const user = await getSession(request);
+      if (!user) {
+        return unauthorizedResponse();
+      }
+
+      const { namespace, store } = getE2ERequestState(request);
+      const { id: postId } = await context.params;
+
+      const post = store.posts.get(postId);
+      if (!post) {
+        return notFoundResponse('게시글을 찾을 수 없습니다.');
+      }
+      if (post.type !== 'question') {
+        return errorResponse('질문 게시글에만 답변을 작성할 수 있습니다.', 'INVALID_POST_TYPE');
+      }
+
+      const body = await request.json();
+      const { content } = body;
+
+      if (!content || typeof content !== 'string') {
+        return errorResponse('답변 내용을 입력해주세요.', 'ANSWER_REQUIRED');
+      }
+
+      const normalizedContent = sanitizeUgcHtml(content);
+      const validation = validateUgcText(normalizedContent, UGC_LIMITS.answerContent.min, UGC_LIMITS.answerContent.max);
+      if (!validation.ok) {
+        if (validation.code === 'UGC_TOO_SHORT') {
+          return errorResponse('답변이 너무 짧습니다.', 'ANSWER_TOO_SHORT');
+        }
+        if (validation.code === 'UGC_TOO_LONG') {
+          return errorResponse('답변이 너무 깁니다.', 'ANSWER_TOO_LONG');
+        }
+        return errorResponse('답변 내용이 올바르지 않습니다.', 'ANSWER_LOW_QUALITY');
+      }
+
+      if (hasProhibitedContent(normalizedContent)) {
+        return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
+      }
+
+      const linkValidation = validateUgcExternalLinks(normalizedContent);
+      if (!linkValidation.ok) {
+        return errorResponse('공식 출처 도메인만 사용할 수 있습니다.', 'UGC_EXTERNAL_LINK_BLOCKED');
+      }
+
+      const created = createAnswer(store, namespace, user.id, postId, normalizedContent);
+      return successResponse(buildE2EAnswer(store, created, { includeComments: true }), '답변이 작성되었습니다.');
+    }
+
     const user = await getSession(request);
 
     if (!user) {

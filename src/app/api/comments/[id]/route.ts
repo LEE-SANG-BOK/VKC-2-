@@ -9,6 +9,10 @@ import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { deleteComment, updateComment } from '@/lib/e2e/actions';
+import { buildE2EAuthor, formatE2EDate } from '@/lib/e2e/serialize';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -30,6 +34,70 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     const { id } = await context.params;
+
+    if (isE2ETestMode()) {
+      const { store } = getE2ERequestState(request);
+      const comment = store.comments.get(id);
+      if (!comment) {
+        return notFoundResponse('댓글을 찾을 수 없습니다.');
+      }
+
+      if (!isOwner(user.id, comment.authorId)) {
+        return forbiddenResponse('댓글을 수정할 권한이 없습니다.');
+      }
+
+      const body = await request.json();
+      const { content } = body;
+
+      if (!content || typeof content !== 'string') {
+        return errorResponse('댓글 내용을 입력해주세요.', 'COMMENT_REQUIRED');
+      }
+
+      const normalizedContent = sanitizeUgcHtml(content);
+      if (!normalizedContent) {
+        return errorResponse('댓글 내용을 입력해주세요.', 'COMMENT_REQUIRED');
+      }
+
+      const validation = validateUgcText(normalizedContent, UGC_LIMITS.commentContent.min, UGC_LIMITS.commentContent.max);
+      if (!validation.ok) {
+        if (validation.code === 'UGC_TOO_SHORT') {
+          return errorResponse('댓글이 너무 짧습니다.', 'COMMENT_TOO_SHORT');
+        }
+        if (validation.code === 'UGC_TOO_LONG') {
+          return errorResponse('댓글이 너무 깁니다.', 'COMMENT_TOO_LONG');
+        }
+        return errorResponse('댓글 내용이 올바르지 않습니다.', 'COMMENT_LOW_QUALITY');
+      }
+
+      if (hasProhibitedContent(normalizedContent)) {
+        return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
+      }
+
+      const linkValidation = validateUgcExternalLinks(normalizedContent);
+      if (!linkValidation.ok) {
+        return errorResponse('공식 출처 도메인만 사용할 수 있습니다.', 'UGC_EXTERNAL_LINK_BLOCKED');
+      }
+
+      const updated = updateComment(store, id, normalizedContent);
+      if (!updated) {
+        return notFoundResponse('댓글을 찾을 수 없습니다.');
+      }
+
+      const payload = {
+        id: updated.id,
+        postId: updated.postId || undefined,
+        answerId: updated.answerId || undefined,
+        parentId: updated.parentId || undefined,
+        authorId: updated.authorId,
+        content: updated.content,
+        likes: updated.likes,
+        createdAt: formatE2EDate(updated.createdAt),
+        updatedAt: formatE2EDate(updated.updatedAt),
+        author: buildE2EAuthor(store, updated.authorId),
+      };
+
+      return successResponse(payload, '댓글이 수정되었습니다.');
+    }
 
     // 댓글 존재 여부 확인
     const comment = await db.query.comments.findFirst({
@@ -117,6 +185,21 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     const { id } = await context.params;
+
+    if (isE2ETestMode()) {
+      const { store } = getE2ERequestState(request);
+      const comment = store.comments.get(id);
+      if (!comment) {
+        return notFoundResponse('댓글을 찾을 수 없습니다.');
+      }
+
+      if (!isOwner(user.id, comment.authorId)) {
+        return forbiddenResponse('댓글을 삭제할 권한이 없습니다.');
+      }
+
+      deleteComment(store, id);
+      return successResponse(null, '댓글이 삭제되었습니다.');
+    }
 
     // 댓글 존재 여부 확인
     const comment = await db.query.comments.findFirst({
