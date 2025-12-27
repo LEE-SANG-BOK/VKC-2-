@@ -75,6 +75,29 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
     await expect(bookmarkButton).toHaveAttribute('aria-pressed', 'true');
   });
 
+  test('rate limit triggers on repeated post likes (E2E)', async ({ page, context }) => {
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+    const postId = `${namespace}-post-1`;
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    const likeUrl = `/api/posts/${postId}/like`;
+
+    for (let i = 0; i < 5; i += 1) {
+      const likeRes = await page.request.post(likeUrl);
+      expect(likeRes.status()).toBe(200);
+
+      const unlikeRes = await page.request.post(likeUrl);
+      expect(unlikeRes.status()).toBe(200);
+    }
+
+    const limited = await page.request.post(likeUrl);
+    expect(limited.status()).toBe(429);
+    expect(limited.headers()['retry-after']).toBeTruthy();
+  });
+
   test('authenticated user can create, edit, and delete a post (UI)', async ({ page, context }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium', 'interactive editor flow is chromium-only');
 

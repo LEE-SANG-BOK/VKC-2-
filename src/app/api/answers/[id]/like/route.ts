@@ -1,16 +1,22 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { answers, likes } from '@/lib/db/schema';
-import { successResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
+import { successResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, and, sql } from 'drizzle-orm';
 import { isE2ETestMode } from '@/lib/e2e/mode';
 import { getE2ERequestState } from '@/lib/e2e/request';
 import { toggleAnswerLike } from '@/lib/e2e/actions';
+import { checkInMemoryRateLimit } from '@/lib/api/rateLimit';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
+
+const answerLikeRateLimitWindowMs = 60_000;
+const answerLikeRateLimitMax = 60;
+const answerLikeRateLimitE2EWindowMs = 10_000;
+const answerLikeRateLimitE2EMax = 5;
 
 /**
  * POST /api/answers/[id]/like
@@ -27,7 +33,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const { id: answerId } = await context.params;
 
     if (isE2ETestMode()) {
-      const { store } = getE2ERequestState(request);
+      const { store, namespace } = getE2ERequestState(request);
+      const alreadyLiked = store.answerLikesByUserId.get(user.id)?.has(answerId) === true;
+      if (!alreadyLiked) {
+        const rateLimit = checkInMemoryRateLimit({
+          key: `${namespace}:${user.id}:answer-like`,
+          windowMs: answerLikeRateLimitE2EWindowMs,
+          max: answerLikeRateLimitE2EMax,
+        });
+        if (!rateLimit.allowed) {
+          return rateLimitResponse(
+            '도움됨 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+            'ANSWER_LIKE_RATE_LIMITED',
+            rateLimit.retryAfterSeconds
+          );
+        }
+      }
       const result = toggleAnswerLike(store, user.id, answerId);
       if (!result) {
         return notFoundResponse('답변을 찾을 수 없습니다.');
@@ -67,6 +88,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
       return successResponse({ isLiked: false, isHelpful: false }, '도움됨을 취소했습니다.');
     } else {
+      const rateLimit = checkInMemoryRateLimit({
+        key: `${user.id}:answer-like`,
+        windowMs: answerLikeRateLimitWindowMs,
+        max: answerLikeRateLimitMax,
+      });
+      if (!rateLimit.allowed) {
+        return rateLimitResponse(
+          '도움됨 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+          'ANSWER_LIKE_RATE_LIMITED',
+          rateLimit.retryAfterSeconds
+        );
+      }
+
       // 좋아요 추가
       await db.insert(likes).values({
         userId: user.id,

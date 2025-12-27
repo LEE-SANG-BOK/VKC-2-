@@ -1,16 +1,22 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { posts, likes } from '@/lib/db/schema';
-import { successResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
+import { successResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, and, sql } from 'drizzle-orm';
 import { isE2ETestMode } from '@/lib/e2e/mode';
 import { getE2ERequestState } from '@/lib/e2e/request';
 import { togglePostLike as toggleE2EPostLike } from '@/lib/e2e/actions';
+import { checkInMemoryRateLimit } from '@/lib/api/rateLimit';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
+
+const postLikeRateLimitWindowMs = 60_000;
+const postLikeRateLimitMax = 60;
+const postLikeRateLimitE2EWindowMs = 10_000;
+const postLikeRateLimitE2EMax = 5;
 
 /**
  * POST /api/posts/[id]/like
@@ -20,8 +26,23 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     if (isE2ETestMode()) {
       const { id: postId } = await context.params;
-      const { store, userId } = getE2ERequestState(request);
+      const { store, namespace, userId } = getE2ERequestState(request);
       if (!userId) return unauthorizedResponse();
+      const alreadyLiked = store.likesByUserId.get(userId)?.has(postId) === true;
+      if (!alreadyLiked) {
+        const rateLimit = checkInMemoryRateLimit({
+          key: `${namespace}:${userId}:post-like`,
+          windowMs: postLikeRateLimitE2EWindowMs,
+          max: postLikeRateLimitE2EMax,
+        });
+        if (!rateLimit.allowed) {
+          return rateLimitResponse(
+            '좋아요 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+            'POST_LIKE_RATE_LIMITED',
+            rateLimit.retryAfterSeconds
+          );
+        }
+      }
       const result = toggleE2EPostLike(store, userId, postId);
       if (!result) {
         return notFoundResponse('게시글을 찾을 수 없습니다.');
@@ -66,6 +87,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
       return successResponse({ isLiked: false }, '좋아요를 취소했습니다.');
     } else {
+      const rateLimit = checkInMemoryRateLimit({
+        key: `${user.id}:post-like`,
+        windowMs: postLikeRateLimitWindowMs,
+        max: postLikeRateLimitMax,
+      });
+      if (!rateLimit.allowed) {
+        return rateLimitResponse(
+          '좋아요 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+          'POST_LIKE_RATE_LIMITED',
+          rateLimit.retryAfterSeconds
+        );
+      }
+
       // 좋아요 추가
       await db.insert(likes).values({
         userId: user.id,
