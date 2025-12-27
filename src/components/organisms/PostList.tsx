@@ -607,7 +607,7 @@ export default function PostList({ selectedCategory = 'all', isSearchMode = fals
       {/* End of posts message */}
       {allPosts.length > 0 && !hasNextPage && (
         <div className="py-8 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-gray-400" data-testid="feed-end-message">
             {allLoadedLabel}
           </p>
         </div>

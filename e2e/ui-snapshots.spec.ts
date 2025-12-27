@@ -75,6 +75,16 @@ test.describe('visual smoke (E2E_TEST_MODE)', () => {
       expect(footerBox.y + footerBox.height).toBeLessThanOrEqual(navBox.y + 1);
     }
 
+    const endMessage = page.getByTestId('feed-end-message');
+    if ((await endMessage.count()) > 0 && navBox) {
+      await endMessage.scrollIntoViewIfNeeded();
+      const endBox = await endMessage.boundingBox();
+      expect(endBox).not.toBeNull();
+      if (endBox) {
+        expect(endBox.y + endBox.height).toBeLessThanOrEqual(navBox.y + 1);
+      }
+    }
+
     const screenshotPath = testInfo.outputPath('home-mobile.png');
     await page.screenshot({ path: screenshotPath, fullPage: true });
     await testInfo.attach('home-mobile', { path: screenshotPath, contentType: 'image/png' });
