@@ -1,6 +1,5 @@
 import type { ApiResponse, SearchExamplesResponse, SearchKeywordsResponse } from './types';
-
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { apiUrl } from '@/repo/apiBase';
 
 export async function fetchSearchExamples(
   params: { limit?: number; period?: 'day' | 'week' | 'month' } = {},
@@ -10,7 +9,8 @@ export async function fetchSearchExamples(
   if (params.limit) searchParams.set('limit', String(params.limit));
   if (params.period) searchParams.set('period', params.period);
 
-  const res = await fetch(`${API_BASE}/api/search/examples?${searchParams.toString()}`, {
+  const query = searchParams.toString();
+  const res = await fetch(apiUrl(`/api/search/examples${query ? `?${query}` : ''}`), {
     cache: 'no-store',
     credentials: 'omit',
     signal: options?.signal,
@@ -32,7 +32,7 @@ export async function fetchSearchKeywords(
   if (params.limit) searchParams.set('limit', String(params.limit));
 
   const query = searchParams.toString();
-  const res = await fetch(`${API_BASE}/api/search/keywords${query ? `?${query}` : ''}`, {
+  const res = await fetch(apiUrl(`/api/search/keywords${query ? `?${query}` : ''}`), {
     cache: 'no-store',
     credentials: 'omit',
     signal: options?.signal,

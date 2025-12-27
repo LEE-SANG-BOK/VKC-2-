@@ -5,7 +5,7 @@ import type {
   ApiResponse,
   UnreadCountResponse,
 } from './types';
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { apiUrl } from '@/repo/apiBase';
 
 export async function fetchNotifications(
   filters: NotificationFilters = {}
@@ -16,7 +16,8 @@ export async function fetchNotifications(
   if (filters.unreadOnly) params.append('unreadOnly', 'true');
   if (filters.type) params.append('type', filters.type);
 
-  const res = await fetch(`${API_BASE}/api/notifications?${params.toString()}`, {
+  const query = params.toString();
+  const res = await fetch(apiUrl(`/api/notifications${query ? `?${query}` : ''}`), {
     cache: 'no-store',
     credentials: 'include',
   });
@@ -29,7 +30,7 @@ export async function fetchNotifications(
 }
 
 export async function fetchUnreadCount(): Promise<ApiResponse<UnreadCountResponse>> {
-  const res = await fetch(`${API_BASE}/api/notifications/unread-count`, {
+  const res = await fetch(apiUrl('/api/notifications/unread-count'), {
     cache: 'no-store',
     credentials: 'include',
   });
@@ -42,7 +43,7 @@ export async function fetchUnreadCount(): Promise<ApiResponse<UnreadCountRespons
 }
 
 export async function markAsRead(notificationId: string): Promise<ApiResponse<Notification>> {
-  const res = await fetch(`${API_BASE}/api/notifications/${notificationId}/read`, {
+  const res = await fetch(apiUrl(`/api/notifications/${notificationId}/read`), {
     method: 'PUT',
     credentials: 'include',
   });
@@ -55,7 +56,7 @@ export async function markAsRead(notificationId: string): Promise<ApiResponse<No
 }
 
 export async function markAllAsRead(): Promise<ApiResponse<{ updated: number }>> {
-  const res = await fetch(`${API_BASE}/api/notifications/read-all`, {
+  const res = await fetch(apiUrl('/api/notifications/read-all'), {
     method: 'PUT',
     credentials: 'include',
   });
@@ -68,7 +69,7 @@ export async function markAllAsRead(): Promise<ApiResponse<{ updated: number }>>
 }
 
 export async function deleteNotification(notificationId: string): Promise<ApiResponse<null>> {
-  const res = await fetch(`${API_BASE}/api/notifications/${notificationId}`, {
+  const res = await fetch(apiUrl(`/api/notifications/${notificationId}`), {
     method: 'DELETE',
     credentials: 'include',
   });

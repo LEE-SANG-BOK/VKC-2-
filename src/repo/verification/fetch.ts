@@ -6,7 +6,7 @@ import type {
   ApiResponse,
 } from './types';
 import { ApiError, getRetryAfterSeconds } from '@/lib/api/errors';
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { apiUrl } from '@/repo/apiBase';
 
 export async function fetchVerificationHistory(
   filters: VerificationFilters = {}
@@ -16,7 +16,8 @@ export async function fetchVerificationHistory(
   if (filters.limit) params.append('limit', filters.limit.toString());
   if (filters.status) params.append('status', filters.status);
 
-  const res = await fetch(`${API_BASE}/api/verification/history?${params.toString()}`, {
+  const query = params.toString();
+  const res = await fetch(apiUrl(`/api/verification/history${query ? `?${query}` : ''}`), {
     cache: 'no-store',
     credentials: 'include',
   });
@@ -31,7 +32,7 @@ export async function fetchVerificationHistory(
 export async function fetchVerificationDetail(
   id: string
 ): Promise<ApiResponse<VerificationRequest>> {
-  const res = await fetch(`${API_BASE}/api/verification/${id}`, {
+  const res = await fetch(apiUrl(`/api/verification/${id}`), {
     cache: 'no-store',
     credentials: 'include',
   });
@@ -46,7 +47,7 @@ export async function fetchVerificationDetail(
 export async function createVerificationRequest(
   data: CreateVerificationRequest
 ): Promise<ApiResponse<VerificationRequest>> {
-  const res = await fetch(`${API_BASE}/api/verification/request`, {
+  const res = await fetch(apiUrl('/api/verification/request'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

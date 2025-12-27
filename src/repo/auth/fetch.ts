@@ -4,13 +4,13 @@
  */
 
 import type { Session, ApiResponse } from './types';
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { apiUrl } from '@/repo/apiBase';
 
 /**
  * 현재 세션 조회
  */
 export async function fetchSession(): Promise<ApiResponse<Session>> {
-  const res = await fetch(`${API_BASE}/api/auth/session`, {
+  const res = await fetch(apiUrl('/api/auth/session'), {
     cache: 'no-store',
   });
 
@@ -25,7 +25,7 @@ export async function fetchSession(): Promise<ApiResponse<Session>> {
  * 로그아웃
  */
 export async function logout(): Promise<ApiResponse<null>> {
-  const res = await fetch(`${API_BASE}/api/auth/logout`, {
+  const res = await fetch(apiUrl('/api/auth/logout'), {
     method: 'POST',
   });
 

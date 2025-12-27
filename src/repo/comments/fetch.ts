@@ -1,9 +1,9 @@
 import type { Comment, ApiResponse, CreateCommentRequest, UpdateCommentRequest } from './types';
 import { ApiError, AccountRestrictedError, getRetryAfterSeconds } from '@/lib/api/errors';
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { apiUrl } from '@/repo/apiBase';
 
 export async function fetchPostComments(postId: string): Promise<ApiResponse<Comment[]>> {
-  const res = await fetch(`${API_BASE}/api/posts/${postId}/comments`, {
+  const res = await fetch(apiUrl(`/api/posts/${postId}/comments`), {
     cache: 'no-store',
   });
 
@@ -15,7 +15,7 @@ export async function fetchPostComments(postId: string): Promise<ApiResponse<Com
 }
 
 export async function createPostComment(postId: string, data: CreateCommentRequest): Promise<ApiResponse<Comment>> {
-  const res = await fetch(`${API_BASE}/api/posts/${postId}/comments`, {
+  const res = await fetch(apiUrl(`/api/posts/${postId}/comments`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -38,7 +38,7 @@ export async function createPostComment(postId: string, data: CreateCommentReque
 }
 
 export async function updateComment(id: string, data: UpdateCommentRequest): Promise<ApiResponse<Comment>> {
-  const res = await fetch(`${API_BASE}/api/comments/${id}`, {
+  const res = await fetch(apiUrl(`/api/comments/${id}`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -58,7 +58,7 @@ export async function updateComment(id: string, data: UpdateCommentRequest): Pro
 }
 
 export async function deleteComment(id: string): Promise<ApiResponse<null>> {
-  const res = await fetch(`${API_BASE}/api/comments/${id}`, {
+  const res = await fetch(apiUrl(`/api/comments/${id}`), {
     method: 'DELETE',
   });
 
@@ -76,7 +76,7 @@ export async function deleteComment(id: string): Promise<ApiResponse<null>> {
 }
 
 export async function toggleCommentLike(commentId: string): Promise<ApiResponse<{ isLiked: boolean; likesCount: number }>> {
-  const res = await fetch(`${API_BASE}/api/comments/${commentId}/like`, {
+  const res = await fetch(apiUrl(`/api/comments/${commentId}/like`), {
     method: 'POST',
   });
 

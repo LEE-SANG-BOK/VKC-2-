@@ -1,6 +1,5 @@
 import type { HiddenTargetsResponse, HideTargetPayload, HiddenTargetType } from './types';
-
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { apiUrl } from '@/repo/apiBase';
 
 const withCredentials = typeof window === 'undefined'
   ? { credentials: 'include' as const, headers: {} as Record<string, string> }
@@ -36,15 +35,13 @@ export async function fetchHiddenTargets(type?: HiddenTargetType): Promise<Hidde
   const params = new URLSearchParams();
   if (type) params.append('type', type);
   const query = params.toString();
-  const url = typeof window === 'undefined'
-    ? `${API_BASE}/api/hides${query ? `?${query}` : ''}`
-    : `/api/hides${query ? `?${query}` : ''}`;
+  const url = apiUrl(`/api/hides${query ? `?${query}` : ''}`);
   const result = await fetchWithAuth(url);
   return result.data;
 }
 
 export async function hideTarget(payload: HideTargetPayload): Promise<{ success: boolean }> {
-  const url = typeof window === 'undefined' ? `${API_BASE}/api/hides` : '/api/hides';
+  const url = apiUrl('/api/hides');
   const result = await fetchWithAuth(url, {
     method: 'POST',
     headers: {
@@ -56,7 +53,7 @@ export async function hideTarget(payload: HideTargetPayload): Promise<{ success:
 }
 
 export async function unhideTarget(payload: HideTargetPayload): Promise<{ success: boolean }> {
-  const url = typeof window === 'undefined' ? `${API_BASE}/api/hides` : '/api/hides';
+  const url = apiUrl('/api/hides');
   const result = await fetchWithAuth(url, {
     method: 'DELETE',
     headers: {

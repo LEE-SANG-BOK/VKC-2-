@@ -1,15 +1,9 @@
 import { NewsItem } from './types';
-const API_BASE =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+import { apiUrl } from '@/repo/apiBase';
 
 export async function fetchNews(lang?: string): Promise<NewsItem[]> {
   const locale = lang || 'vi';
-  const query = `?lang=${locale}`;
-  const url =
-    typeof window === 'undefined'
-      ? `${API_BASE || 'http://localhost:3000'}/api/news${query}`
-      : `/api/news${query}`;
+  const url = apiUrl(`/api/news?lang=${locale}`);
   
   const res = await fetch(url, {
     next: { revalidate: 300 },
