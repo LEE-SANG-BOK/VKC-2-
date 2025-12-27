@@ -3426,3 +3426,20 @@ $gh-address-comments
   - [x] `npm run lint`
   - [x] `npm run type-check`
   - [x] `NEXT_PUBLIC_APP_URL=https://example.com ... npm run test:e2e` (CI env 시뮬레이션)
+
+#### (2025-12-27) [P1/P2] repo fetch 공통화 확장 + notifications E2E 고정 (P1-1, P2)
+
+- 목표: repo fetch의 base URL/상대 경로 규칙을 전 도메인에 확장하고, E2E에서 notifications 화면까지 “항상” 검증 가능하게 한다.
+- 변경
+  - `src/repo/apiBase.ts`: `VERCEL_URL` fallback 포함(서버 환경에서 base URL 안정화)
+  - `src/repo/*/fetch.ts`: `API_BASE` 상수 제거 → `apiUrl('/api/...')`로 통일(브라우저는 상대 경로, 서버는 절대 경로)
+  - `src/app/api/notifications/route.ts`: E2E_TEST_MODE에서 빈 목록 반환(페이지 로드 안정화)
+  - `src/app/[lang]/(main)/notifications/NotificationsClient.tsx`: empty/list에 `data-testid` 추가
+  - `e2e/functional.spec.ts`: “notifications 페이지 로드” 기능 테스트 추가
+- PR
+  - https://github.com/LEE-SANG-BOK/VKC-2-/pull/120
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
