@@ -3335,3 +3335,16 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P0-3] 모바일 피드 하단 메시지/액션바 safe 영역 자동 검증 보강 (P0-3)
+
+- 목표: 모바일에서 피드 하단 요소(카드 액션바/“끝” 메시지)가 BottomNavigation에 가려지지 않도록 Playwright 시각 스모크에서 자동으로 회귀를 잡는다.
+- 변경
+  - `src/components/organisms/PostList.tsx`: 피드 종료 메시지에 `data-testid="feed-end-message"` 부여(테스트에서 안정적으로 선택)
+  - `e2e/ui-snapshots.spec.ts`: 모바일 스냅샷에서 카드 액션바뿐 아니라 종료 메시지도 BottomNavigation 상단에 유지되는지 bbox로 검증
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+  - [x] `npm run test:e2e:ui`
