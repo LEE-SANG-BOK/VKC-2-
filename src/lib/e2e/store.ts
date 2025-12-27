@@ -189,7 +189,7 @@ const seedStore = (namespace: string, store: E2EStore) => {
     type: 'question',
     title: 'E-7 비자 변경 시 필요한 서류가 무엇인가요? (1)',
     content:
-      '<p data-vk-template="1"><strong>회사에서 E-7 변경을 준비 중인데 필수 서류 체크리스트가 필요합니다.</strong></p><p>경험 있으신 분들 알려주세요.</p>',
+      '<p data-vk-template="1"><strong>회사에서 E-7 변경을 준비 중인데 필수 서류 체크리스트가 필요합니다.</strong></p><p>경험 있으신 분들 알려주세요.</p><p><img src="/brand-logo.png" alt="Viet K-Connect" /></p>',
     category: 'visa',
     subcategory: 'visa-change',
     tags: ['비자', '체류'],

@@ -3388,3 +3388,30 @@ $gh-address-comments
   - [x] `npm run lint`
   - [x] `npm run type-check`
   - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P1-1] UI 스냅샷 강화(모바일 추천콘텐츠/리더보드) + E2E 뉴스 시드 (P1-1)
+
+- 목표: “UI가 엉키는 순간”을 Playwright에서 자동으로 잡을 수 있도록, 모바일 핵심 섹션(추천콘텐츠/리더보드)의 레이아웃을 스냅샷 + 위치 규칙으로 검증한다.
+- 변경
+  - `src/app/api/news/route.ts`: E2E_TEST_MODE에서 추천콘텐츠(뉴스) 더미 3개 시드 반환(모바일/데스크톱 rail 렌더링 가능)
+  - `src/components/organisms/AdminPostRail.tsx`: 추천콘텐츠 rail/carousel/card에 `data-testid` 추가(가로 레이아웃 검증용)
+  - `src/lib/e2e/store.ts`: 카드 미디어 유무 케이스 커버를 위해 시드 게시글 1개에 이미지 포함
+  - `src/components/organisms/RecommendedUsersSection.tsx`: carousel/card에 `data-testid` 추가(향후 “팔로우 추천 유저” 레이아웃 검증 확장용)
+  - `src/app/[lang]/(main)/leaderboard/LeaderboardClient.tsx`: top carousel/card에 `data-testid` 추가(모바일 가로 캐러셀 검증용)
+  - `e2e/ui-snapshots.spec.ts`: 
+    - 모바일 홈: 추천콘텐츠 카드가 세로로 쌓이지 않고(가로) 렌더되는지 확인
+    - 카드 미디어 유무에 따른 숨김(×) 상대 위치 편차가 과도하지 않은지 확인
+    - 모바일 리더보드: top rankers가 세로로 늘어나지 않고(가로) 유지되는지 확인
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P1-1] CI/E2E 안정화: 리더보드 fetch 상대경로 통일 (P1-1)
+
+- 목표: CI에서 `NEXT_PUBLIC_APP_URL=https://example.com`이어도 Playwright가 로컬 서버(`/api/...`)를 정상 호출하도록 리더보드 fetch를 상대 경로로 통일한다.
+- 변경
+  - `src/repo/users/fetch.ts`: `fetchUserLeaderboard`가 브라우저 환경에서 절대 URL 대신 `/api/users/leaderboard` 사용
+- 검증
+  - [x] `NEXT_PUBLIC_APP_URL=https://example.com ... npm run test:e2e` (CI env 시뮬레이션)

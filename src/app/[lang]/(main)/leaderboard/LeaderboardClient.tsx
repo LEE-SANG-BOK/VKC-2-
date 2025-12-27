@@ -322,11 +322,13 @@ export default function LeaderboardClient({ translations, lang, initialPage, ini
             </div>
             <div
               ref={topCarouselRef}
+              data-testid="leaderboard-top-carousel"
               className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4 scroll-px-4"
             >
               {topRankers.map((entry, index) => (
                 <div
                   key={entry.id}
+                  data-testid="leaderboard-top-card"
                   className="min-w-[280px] max-w-[340px] snap-start"
                 >
                   {renderTopRankerCard(entry, index)}
