@@ -3375,3 +3375,16 @@ $gh-address-comments
   - `src/repo/answers/fetch.ts`: 클라이언트 fetch는 상대 경로(`/api/...`) 사용으로 통일(Playwright/CI에서 `NEXT_PUBLIC_APP_URL=https://example.com`이어도 로컬 서버 API를 호출하도록 보장)
 - 검증
   - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P1-1] 피드백 제출 E2E_TEST_MODE 지원 + Playwright 기능 테스트 추가 (P1-1)
+
+- 목표: DB 없이도(/CI 더미 env) 피드백 제출 플로우를 Playwright로 자동 검증한다.
+- 변경
+  - `src/lib/e2e/store.ts`, `src/lib/e2e/actions.ts`: feedbacks 저장소 추가
+  - `src/app/api/feedback/route.ts`: E2E_TEST_MODE에서 DB 대신 in-memory 저장 후 receipt 반환
+  - `src/app/[lang]/(main)/feedback/FeedbackClient.tsx`: 테스트 안정화를 위한 `data-testid` 추가
+  - `e2e/functional.spec.ts`: “피드백 제출 → 성공 화면” 기능 테스트 추가
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `npm run test:e2e`
