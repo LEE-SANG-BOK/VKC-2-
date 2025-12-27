@@ -8,7 +8,53 @@ import { isE2ETestMode } from '@/lib/e2e/mode';
 export async function GET(request: Request) {
   try {
     if (isE2ETestMode()) {
-      const response = successResponse([]);
+      const now = new Date('2025-01-01T00:00:00.000Z').toISOString();
+      const items = [
+        {
+          id: 'e2e-news-1',
+          title: 'E2E 추천 콘텐츠: 비자 신청 체크리스트',
+          category: '비자',
+          language: 'ko',
+          type: 'post',
+          content: '비자 신청 전에 준비해야 할 서류를 빠르게 확인해보세요.',
+          imageUrl: '/brand-logo.png',
+          linkUrl: null,
+          isActive: true,
+          order: 1,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: 'e2e-news-2',
+          title: 'E2E 추천 콘텐츠: 취업 서류 준비 팁',
+          category: '취업',
+          language: 'ko',
+          type: 'post',
+          content: '이력서/포트폴리오 준비에서 자주 빠지는 항목을 정리했습니다.',
+          imageUrl: '/brand-logo.png',
+          linkUrl: null,
+          isActive: true,
+          order: 2,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: 'e2e-news-3',
+          title: 'E2E 추천 콘텐츠: 한국 생활 필수 앱',
+          category: '생활',
+          language: 'ko',
+          type: 'post',
+          content: '정착 초기에 도움이 되는 앱/서비스를 모았습니다.',
+          imageUrl: '/brand-logo.png',
+          linkUrl: null,
+          isActive: true,
+          order: 3,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ];
+
+      const response = successResponse(items);
       setPublicSWR(response, 300, 600);
       return response;
     }

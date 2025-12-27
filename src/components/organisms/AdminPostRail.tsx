@@ -37,11 +37,11 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
 
   if (isLoading) {
     return (
-      <section className="rounded-xl bg-transparent p-2 lg:p-0">
+      <section data-testid="recommended-content-rail" className="rounded-xl bg-transparent p-2 lg:p-0">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
         </div>
-        <div className="lg:hidden flex gap-2 overflow-x-auto scrollbar-hide pb-1 pr-2">
+        <div data-testid="recommended-content-carousel" className="lg:hidden flex gap-2 overflow-x-auto scrollbar-hide pb-1 pr-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="min-w-[220px] h-16 rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse" />
           ))}
@@ -59,7 +59,7 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
 
   return (
     <>
-      <section className="rounded-xl bg-transparent p-2 lg:p-0">
+      <section data-testid="recommended-content-rail" className="rounded-xl bg-transparent p-2 lg:p-0">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
           <div className="lg:hidden flex items-center gap-1">
@@ -84,6 +84,7 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
 
         <div
           ref={carouselRef}
+          data-testid="recommended-content-carousel"
           className="lg:hidden flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 pr-2"
         >
           {items.map((item) => (
@@ -91,6 +92,7 @@ export default function AdminPostRail({ translations, lang, limit = 7 }: AdminPo
               key={item.id}
               type="button"
               onClick={() => setSelected(item)}
+              data-testid="recommended-content-card"
               className="min-w-[220px] max-w-[240px] snap-start text-left rounded-lg border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               <div className="flex gap-2 p-2">

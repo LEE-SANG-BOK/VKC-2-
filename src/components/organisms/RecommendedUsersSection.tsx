@@ -204,6 +204,7 @@ export default function RecommendedUsersSection({
         return (
           <div
             key={userId}
+            data-testid="recommended-user-card"
             className={`flex items-center ${cardGapClass} rounded-lg border border-gray-200/80 dark:border-gray-800/80 bg-white/80 dark:bg-gray-950/20 hover:bg-white dark:hover:bg-gray-950/30 transition-colors ${cardPaddingClass} w-full snap-start`}
           >
             <div className={`flex items-center ${cardGapClass} w-full`}>
@@ -283,7 +284,10 @@ export default function RecommendedUsersSection({
   if (!isLoading && !hasUsers) return null;
 
   return (
-    <div className={`rounded-xl border border-dashed border-blue-200/70 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 ${compact ? 'p-3' : 'p-4'}`}>
+    <div
+      data-testid="recommended-users-section"
+      className={`rounded-xl border border-dashed border-blue-200/70 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 ${compact ? 'p-3' : 'p-4'}`}
+    >
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           {title}
@@ -320,6 +324,7 @@ export default function RecommendedUsersSection({
       <div
         ref={carouselRef}
         onScroll={markInteracted}
+        data-testid="recommended-users-carousel"
         className={`grid grid-flow-col ${
           compact
             ? 'auto-cols-[minmax(260px,calc(100vw-2.75rem))] sm:auto-cols-[minmax(360px,1fr)]'
