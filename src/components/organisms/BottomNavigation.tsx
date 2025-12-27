@@ -23,16 +23,29 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const maxViewportHeightRef = useRef(0);
   const isEditingFocusRef = useRef(false);
+  const navRef = useRef<HTMLElement | null>(null);
+  const baseOffsetRef = useRef(84);
 
   useEffect(() => {
     const root = document.documentElement;
-    const baseOffset = 84;
-    root.style.setProperty('--vk-bottom-safe-offset', `${baseOffset}px`);
+    const navVisibleQuery = window.matchMedia('(max-width: 767px)');
+    root.style.setProperty('--vk-bottom-safe-offset', `${navVisibleQuery.matches ? baseOffsetRef.current : 0}px`);
     root.style.setProperty('--vk-keyboard-offset', '0px');
 
     const viewport = window.visualViewport;
+    let detachMediaListener: (() => void) | null = null;
+
+    const measureBaseOffset = () => {
+      const navEl = navRef.current;
+      if (!navEl || !navVisibleQuery.matches) return;
+      const rect = navEl.getBoundingClientRect();
+      if (!rect.height || rect.height < 40) return;
+      const measured = Math.round(rect.height) + 12;
+      baseOffsetRef.current = Math.min(180, Math.max(72, measured));
+    };
 
     const updateKeyboardState = () => {
+      measureBaseOffset();
       const viewportHeight = viewport?.height ?? maxViewportHeightRef.current;
       if (viewportHeight) {
         maxViewportHeightRef.current = Math.max(maxViewportHeightRef.current, viewportHeight);
@@ -42,7 +55,8 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
       const keyboardOpen = heightDiff > 150 || isEditingFocusRef.current;
       setIsKeyboardOpen(keyboardOpen);
       root.style.setProperty('--vk-keyboard-offset', keyboardOpen ? `${Math.round(heightDiff)}px` : '0px');
-      root.style.setProperty('--vk-bottom-safe-offset', `${keyboardOpen ? 24 : baseOffset}px`);
+      const safeOffset = navVisibleQuery.matches ? (keyboardOpen ? 24 : baseOffsetRef.current) : 0;
+      root.style.setProperty('--vk-bottom-safe-offset', `${safeOffset}px`);
     };
 
     const isEditable = (element: HTMLElement | null) => {
@@ -96,6 +110,13 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
       viewport.addEventListener('resize', updateKeyboardState);
       viewport.addEventListener('scroll', updateKeyboardState);
     }
+    if (typeof navVisibleQuery.addEventListener === 'function') {
+      navVisibleQuery.addEventListener('change', updateKeyboardState);
+      detachMediaListener = () => navVisibleQuery.removeEventListener('change', updateKeyboardState);
+    } else {
+      navVisibleQuery.addListener(updateKeyboardState);
+      detachMediaListener = () => navVisibleQuery.removeListener(updateKeyboardState);
+    }
 
     return () => {
       document.removeEventListener('focusin', onFocusChange);
@@ -105,7 +126,8 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
         viewport.removeEventListener('resize', updateKeyboardState);
         viewport.removeEventListener('scroll', updateKeyboardState);
       }
-      root.style.setProperty('--vk-bottom-safe-offset', `${baseOffset}px`);
+      detachMediaListener?.();
+      root.style.setProperty('--vk-bottom-safe-offset', '0px');
       root.style.setProperty('--vk-keyboard-offset', '0px');
     };
   }, []);
@@ -180,6 +202,7 @@ export default function BottomNavigation({ translations }: BottomNavigationProps
   return (
     <>
       <nav
+        ref={navRef}
         className={`md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 dark:border-gray-800/80 bg-white dark:bg-gray-900 shadow-lg ${
           isKeyboardOpen ? 'hidden' : ''
         }`}
