@@ -62,8 +62,9 @@ test('mobile sidebar opens and closes (ko leaderboard)', async ({ page }) => {
   test.skip(test.info().project.name !== 'mobile-chromium', 'mobile only');
 
   await page.goto('/ko/leaderboard');
+  await expect(page.getByTestId('bottom-navigation')).toBeVisible({ timeout: 30_000 });
   await page.getByTestId('mobile-sidebar-toggle').click();
-  await expect(page.getByTestId('mobile-sidebar-close')).toBeVisible();
+  await expect(page.getByTestId('mobile-sidebar-close')).toBeVisible({ timeout: 30_000 });
   await page.getByTestId('mobile-sidebar-close').click();
   await expect(page.getByTestId('mobile-sidebar-close')).toHaveCount(0);
 });

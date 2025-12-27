@@ -3460,3 +3460,20 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-28) [P0] Playwright UI 스냅샷을 게이트로 승격 + 모바일 하단탭 겹침 회귀 방지 (P0-3, P0-7)
+
+- 목표: “모바일에서 카드/피드 종료 메시지와 BottomNavigation이 겹치는 회귀”와 “추천 콘텐츠/리더보드가 세로로 깨지는 회귀”를 Playwright가 자동으로 잡는다.
+- 변경
+  - `src/components/organisms/BottomNavigation.tsx`: 실제 nav 높이 기반으로 `--vk-bottom-safe-offset` 산출(>=768px에서는 0), 키보드 오픈 시 24px 유지
+  - `playwright.config.ts`: Playwright 기본 포트 3000 고정
+  - `e2e/ui-snapshots.spec.ts`: `toHaveScreenshot` 기반 스냅샷(모바일 ko 홈 top/bottom, 모바일 vi 홈 top/bottom, 모바일 리더보드) 추가
+  - `e2e/functional.spec.ts`: “자기 답변 채택 금지(403)” 기능 테스트 추가(E2E_TEST_MODE)
+  - `e2e/smoke.spec.ts`: 리더보드 모바일 사이드바 토글 전 Hydration 기준점(`bottom-navigation`) 대기
+- 운영
+  - 스냅샷 갱신: `npm run test:e2e -- --update-snapshots` (변경된 `e2e/ui-snapshots.spec.ts-snapshots/**`는 반드시 커밋)
+  - 임시 비활성(디버깅용): `E2E_UI_SNAPSHOTS=0 npm run test:e2e`
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `npm run test:e2e`
