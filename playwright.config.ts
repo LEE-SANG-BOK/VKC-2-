@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const defaultPort = process.env.CI ? 3000 : 3100;
+const defaultPort = 3000;
 const port = Number(process.env.E2E_PORT || process.env.PORT || defaultPort);
 const baseURL = process.env.E2E_BASE_URL || `http://localhost:${port}`;
 const healthUrl = `${baseURL}/ko/about`;

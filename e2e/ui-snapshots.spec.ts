@@ -3,7 +3,7 @@ import crypto from 'crypto';
 
 const shouldRun = process.env.E2E_UI_SNAPSHOTS !== '0';
 
-const defaultPort = process.env.CI ? 3000 : 3100;
+const defaultPort = 3000;
 const port = Number(process.env.E2E_PORT || process.env.PORT || defaultPort);
 const baseURL = process.env.E2E_BASE_URL || `http://localhost:${port}`;
 
@@ -106,6 +106,7 @@ test.describe('visual smoke (E2E_TEST_MODE)', () => {
         expect(Math.abs(relWith - relWithout)).toBeLessThanOrEqual(12);
       }
     }
+    await expect(page).toHaveScreenshot('home-mobile-top.png', { animations: 'disabled' });
 
     const footer = firstCard.locator('.question-card-footer-fixed');
     await expect(footer).toBeVisible();
@@ -130,9 +131,48 @@ test.describe('visual smoke (E2E_TEST_MODE)', () => {
       }
     }
 
-    const screenshotPath = testInfo.outputPath('home-mobile.png');
-    await page.screenshot({ path: screenshotPath, fullPage: true });
-    await testInfo.attach('home-mobile', { path: screenshotPath, contentType: 'image/png' });
+    await expect(page).toHaveScreenshot('home-mobile-bottom.png', { animations: 'disabled' });
+  });
+
+  test('mobile vi home feed keeps layout and avoids clipping', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile snapshot is mobile-chromium only');
+
+    await setE2ECookies(context, { namespace: createNamespace(), userId: 'e2e-user-1' });
+
+    await page.goto('/vi?c=popular');
+
+    const main = page.getByRole('main');
+    const recommendedRail = main.getByTestId('recommended-content-rail').first();
+    await expect(recommendedRail).toBeVisible({ timeout: 30_000 });
+
+    const recommendedCarousel = recommendedRail.getByTestId('recommended-content-carousel');
+    await expect(recommendedCarousel).toBeVisible();
+    const recommendedCards = recommendedCarousel.getByTestId('recommended-content-card');
+    await expect(recommendedCards.first()).toBeVisible();
+    if ((await recommendedCards.count()) >= 2) {
+      const firstBox = await recommendedCards.nth(0).boundingBox();
+      const secondBox = await recommendedCards.nth(1).boundingBox();
+      expect(firstBox).not.toBeNull();
+      expect(secondBox).not.toBeNull();
+      if (firstBox && secondBox) {
+        expect(Math.abs(firstBox.y - secondBox.y)).toBeLessThanOrEqual(2);
+      }
+    }
+
+    const bottomNav = page.getByTestId('bottom-navigation');
+    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+
+    const firstCard = page.locator('.question-card').first();
+    await expect(firstCard).toBeVisible({ timeout: 30_000 });
+
+    await expect(page).toHaveScreenshot('home-mobile-vi-top.png', { animations: 'disabled' });
+
+    const endMessage = page.getByTestId('feed-end-message');
+    if ((await endMessage.count()) > 0) {
+      await endMessage.scrollIntoViewIfNeeded();
+    }
+
+    await expect(page).toHaveScreenshot('home-mobile-vi-bottom.png', { animations: 'disabled' });
   });
 
   test('mobile leaderboard top rankers stay horizontal', async ({ page, context }, testInfo) => {
@@ -157,8 +197,6 @@ test.describe('visual smoke (E2E_TEST_MODE)', () => {
       }
     }
 
-    const screenshotPath = testInfo.outputPath('leaderboard-mobile.png');
-    await page.screenshot({ path: screenshotPath, fullPage: true });
-    await testInfo.attach('leaderboard-mobile', { path: screenshotPath, contentType: 'image/png' });
+    await expect(page).toHaveScreenshot('leaderboard-mobile.png', { animations: 'disabled' });
   });
 });

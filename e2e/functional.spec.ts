@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import crypto from 'crypto';
 
-const defaultPort = process.env.CI ? 3000 : 3100;
+const defaultPort = 3000;
 const port = Number(process.env.E2E_PORT || process.env.PORT || defaultPort);
 const baseURL = process.env.E2E_BASE_URL || `http://localhost:${port}`;
 
@@ -195,6 +195,40 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
     expect(answers.some((answer: any) => answer?.isAdopted)).toBeTruthy();
 
     await expect(page.getByRole('button', { name: '채택하기' })).toHaveCount(0, { timeout: 30_000 });
+  });
+
+  test('question author cannot adopt their own answer (E2E store)', async ({ page, context }) => {
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    const postRes = await page.request.post('/api/posts', {
+      data: {
+        type: 'question',
+        title: `E2E self adopt ${namespace.slice(0, 8)}`,
+        content: '<p>Self adopt test</p>',
+        category: 'visa',
+        subcategory: 'visa-change',
+        tags: ['비자'],
+      },
+    });
+    expect(postRes.ok()).toBeTruthy();
+    const postPayload = await postRes.json();
+    const postId = postPayload?.data?.id;
+    expect(typeof postId).toBe('string');
+
+    const answerRes = await page.request.post(`/api/posts/${postId}/answers`, {
+      data: { content: '<p>My own answer</p>' },
+    });
+    expect(answerRes.ok()).toBeTruthy();
+    const answerPayload = await answerRes.json();
+    const answerId = answerPayload?.data?.id;
+    expect(typeof answerId).toBe('string');
+
+    const adoptRes = await page.request.post(`/api/answers/${answerId}/adopt`);
+    expect(adoptRes.status()).toBe(403);
   });
 
   test('authenticated user can submit feedback (E2E store)', async ({ page, context }) => {
