@@ -3322,3 +3322,16 @@ $gh-address-comments
   - [x] `npm run type-check`
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P0-2] TrustBadge locale fallback 단일화(ko) (P0-2)
+
+- 목표: TrustBadge 레이블/툴팁의 locale별 하드코딩 fallback을 제거해 중복/유지보수 비용을 줄이고, `en` 정책(ko fallback)과 일치시킨다.
+- 변경
+  - `src/lib/utils/trustBadges.ts`: locale별 fallback(`en/vi`) 제거 → `ko` fallback 1개로 통일(번역 리소스가 존재하는 정상 케이스에서는 기존대로 `translations`를 우선 사용)
+- PR
+  - https://github.com/LEE-SANG-BOK/VKC-2-/pull/113
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
