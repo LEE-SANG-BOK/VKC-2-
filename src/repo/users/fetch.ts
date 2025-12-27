@@ -379,7 +379,12 @@ export async function fetchUserLeaderboard(
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
 
-  const res = await fetch(`${API_BASE}/api/users/leaderboard?${params.toString()}`, {
+  const url =
+    typeof window === 'undefined'
+      ? `${API_BASE}/api/users/leaderboard?${params.toString()}`
+      : `/api/users/leaderboard?${params.toString()}`;
+
+  const res = await fetch(url, {
     cache: 'no-store',
     credentials: 'include',
     signal: options?.signal,
