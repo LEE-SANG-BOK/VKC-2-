@@ -14,18 +14,10 @@ import type {
   PostFilters,
 } from './types';
 import { ApiError, AccountRestrictedError, getRetryAfterSeconds } from '@/lib/api/errors';
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { apiUrl } from '@/repo/apiBase';
 
 type FetchOptions = {
   signal?: AbortSignal;
-};
-
-const resolveServerApiBase = () => {
-  if (process.env.E2E_TEST_MODE === '1' || process.env.E2E_TEST_MODE === 'true') {
-    const port = process.env.PORT || '3000';
-    return `http://localhost:${port}`;
-  }
-  return API_BASE;
 };
 
 /**
@@ -78,9 +70,8 @@ export async function fetchPosts(filters: PostFilters = {}, options?: FetchOptio
     }
   }
 
-  const url = isServer
-    ? `${resolveServerApiBase()}/api/posts?${params.toString()}`
-    : `/api/posts?${params.toString()}`;
+  const query = params.toString();
+  const url = apiUrl(`/api/posts${query ? `?${query}` : ''}`);
 
   const res = await fetch(url, fetchOptions);
 
@@ -114,7 +105,7 @@ export async function fetchPost(id: string, options?: FetchOptions): Promise<Api
     }
   }
 
-  const url = isServer ? `${resolveServerApiBase()}/api/posts/${id}` : `/api/posts/${id}`;
+  const url = apiUrl(`/api/posts/${id}`);
   const res = await fetch(url, fetchOptions);
 
   if (!res.ok) {
@@ -147,7 +138,7 @@ export async function fetchMyPostInteractions(postIds: string[], options?: Fetch
     };
   }
 
-  const url = typeof window === 'undefined' ? `${resolveServerApiBase()}/api/users/me` : '/api/users/me';
+  const url = apiUrl('/api/users/me');
 
   const fetchOptions: RequestInit = {
     method: 'POST',
@@ -223,9 +214,8 @@ export async function fetchTrendingPosts(
     }
   }
 
-  const url = isServer
-    ? `${resolveServerApiBase()}/api/posts/trending?${params.toString()}`
-    : `/api/posts/trending?${params.toString()}`;
+  const query = params.toString();
+  const url = apiUrl(`/api/posts/trending${query ? `?${query}` : ''}`);
 
   const res = await fetch(url, fetchOptions);
 
@@ -240,7 +230,7 @@ export async function fetchTrendingPosts(
  * 게시글 작성
  */
 export async function createPost(data: CreatePostRequest): Promise<ApiResponse<Post>> {
-  const url = typeof window === 'undefined' ? `${resolveServerApiBase()}/api/posts` : '/api/posts';
+  const url = apiUrl('/api/posts');
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -270,7 +260,7 @@ export async function createPost(data: CreatePostRequest): Promise<ApiResponse<P
  * 게시글 수정
  */
 export async function updatePost(id: string, data: UpdatePostRequest): Promise<ApiResponse<Post>> {
-  const url = typeof window === 'undefined' ? `${resolveServerApiBase()}/api/posts/${id}` : `/api/posts/${id}`;
+  const url = apiUrl(`/api/posts/${id}`);
   const res = await fetch(url, {
     method: 'PUT',
     headers: {
@@ -297,7 +287,7 @@ export async function updatePost(id: string, data: UpdatePostRequest): Promise<A
  * 게시글 삭제
  */
 export async function deletePost(id: string): Promise<ApiResponse<null>> {
-  const url = typeof window === 'undefined' ? `${resolveServerApiBase()}/api/posts/${id}` : `/api/posts/${id}`;
+  const url = apiUrl(`/api/posts/${id}`);
   const res = await fetch(url, {
     method: 'DELETE',
   });
@@ -319,9 +309,7 @@ export async function deletePost(id: string): Promise<ApiResponse<null>> {
  * 게시글 좋아요 토글
  */
 export async function togglePostLike(postId: string): Promise<ApiResponse<{ isLiked: boolean }>> {
-  const url = typeof window === 'undefined'
-    ? `${resolveServerApiBase()}/api/posts/${postId}/like`
-    : `/api/posts/${postId}/like`;
+  const url = apiUrl(`/api/posts/${postId}/like`);
   const res = await fetch(url, {
     method: 'POST',
   });
@@ -345,9 +333,7 @@ export async function togglePostLike(postId: string): Promise<ApiResponse<{ isLi
 export async function togglePostBookmark(
   postId: string
 ): Promise<ApiResponse<{ isBookmarked: boolean }>> {
-  const url = typeof window === 'undefined'
-    ? `${resolveServerApiBase()}/api/posts/${postId}/bookmark`
-    : `/api/posts/${postId}/bookmark`;
+  const url = apiUrl(`/api/posts/${postId}/bookmark`);
   const res = await fetch(url, {
     method: 'POST',
   });

@@ -333,4 +333,10 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
 
     await expect(bottomNavVisible).toHaveCount(0, { timeout: 30_000 });
   });
+
+  test('authenticated user can open notifications page', async ({ page, context }) => {
+    await setE2ECookies(context, { namespace: createNamespace(), userId: 'e2e-user-1' });
+    await page.goto('/ko/notifications');
+    await expect(page.getByTestId('notifications-empty')).toBeVisible({ timeout: 30_000 });
+  });
 });

@@ -217,7 +217,7 @@ export default function NotificationsClient({ locale, translations }: Notificati
                 <div className="h-8 w-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : filteredNotifications.length === 0 ? (
-              <div className="text-center py-16">
+              <div className="text-center py-16" data-testid="notifications-empty">
                 <Bell className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   {copy.noNotifications}
@@ -237,7 +237,7 @@ export default function NotificationsClient({ locale, translations }: Notificati
                 )}
               </div>
             ) : (
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="divide-y divide-gray-200 dark:divide-gray-700" data-testid="notifications-list">
                 {filteredNotifications.map((notification) => (
                   <div
                     key={notification.id}

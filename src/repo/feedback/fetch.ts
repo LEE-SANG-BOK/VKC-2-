@@ -1,7 +1,6 @@
 import type { FeedbackPayload, FeedbackReceipt, ApiResponse } from './types';
 import { ApiError, getRetryAfterSeconds } from '@/lib/api/errors';
-
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { apiUrl } from '@/repo/apiBase';
 
 type FetchOptions = {
   signal?: AbortSignal;
@@ -11,8 +10,7 @@ export async function submitFeedback(
   data: FeedbackPayload,
   options?: FetchOptions
 ): Promise<ApiResponse<FeedbackReceipt>> {
-  const isServer = typeof window === 'undefined';
-  const url = isServer ? `${API_BASE}/api/feedback` : '/api/feedback';
+  const url = apiUrl('/api/feedback');
 
   const res = await fetch(url, {
     method: 'POST',

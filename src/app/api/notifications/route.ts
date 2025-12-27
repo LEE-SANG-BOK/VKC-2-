@@ -5,6 +5,7 @@ import { notifications } from '@/lib/db/schema';
 import { paginatedResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, desc, sql, and } from 'drizzle-orm';
+import { isE2ETestMode } from '@/lib/e2e/mode';
 
 /**
  * GET /api/notifications
@@ -28,6 +29,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const unreadOnly = searchParams.get('unreadOnly') === 'true';
     const type = searchParams.get('type');
+
+    if (isE2ETestMode()) {
+      return paginatedResponse([], page, limit, 0);
+    }
 
     // 전체 개수 조회
     let countCondition = eq(notifications.userId, user.id);

@@ -11,7 +11,7 @@ import type {
   SubscriptionNotificationSetting,
   SubscriptionNotificationUpdate,
 } from './types';
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { apiUrl } from '@/repo/apiBase';
 
 const withCredentials = typeof window === 'undefined'
   ? { credentials: 'include' as const, headers: {} as Record<string, string> }
@@ -48,7 +48,7 @@ async function fetchWithAuth(url: string, init?: RequestInit) {
  * 카테고리 목록 조회 (2단계 구조) - Client-side
  */
 export async function fetchCategories(): Promise<Category[]> {
-  const url = typeof window === 'undefined' ? `${API_BASE}/api/categories` : '/api/categories';
+  const url = apiUrl('/api/categories');
   const res = await fetch(url, {
     next: { revalidate: 300 },
   });
@@ -64,7 +64,7 @@ export async function fetchCategories(): Promise<Category[]> {
  */
 export async function fetchMySubscriptions(): Promise<SubscribedCategory[]> {
   const result: ApiResponse<SubscribedCategory[]> = await fetchWithAuth(
-    `${API_BASE}/api/users/me/subscriptions`
+    apiUrl('/api/users/me/subscriptions')
   );
   return result.data;
 }
@@ -74,7 +74,7 @@ export async function fetchMySubscriptions(): Promise<SubscribedCategory[]> {
  */
 export async function toggleCategorySubscription(categoryId: string): Promise<SubscriptionResponse> {
   const result: ApiResponse<SubscriptionResponse> = await fetchWithAuth(
-    `${API_BASE}/api/categories/${categoryId}/subscribe`,
+    apiUrl(`/api/categories/${categoryId}/subscribe`),
     { method: 'POST' }
   );
   return result.data;
@@ -82,7 +82,7 @@ export async function toggleCategorySubscription(categoryId: string): Promise<Su
 
 export async function fetchSubscriptionSettings(): Promise<SubscriptionNotificationSetting[]> {
   const result: ApiResponse<SubscriptionNotificationSetting[]> = await fetchWithAuth(
-    `${API_BASE}/api/users/me/subscriptions/settings`
+    apiUrl('/api/users/me/subscriptions/settings')
   );
   return result.data;
 }
@@ -92,7 +92,7 @@ export async function updateSubscriptionSettings(
 ): Promise<SubscriptionNotificationSetting[]> {
   const payload = Array.isArray(updates) ? { updates } : updates;
   const result: ApiResponse<SubscriptionNotificationSetting[]> = await fetchWithAuth(
-    `${API_BASE}/api/users/me/subscriptions/settings`,
+    apiUrl('/api/users/me/subscriptions/settings'),
     {
       method: 'PUT',
       headers: {

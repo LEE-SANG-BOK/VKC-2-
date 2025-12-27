@@ -1,4 +1,6 @@
-const FALLBACK_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const FALLBACK_BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
 export const resolveServerApiBase = () => {
   if (process.env.E2E_TEST_MODE === '1' || process.env.E2E_TEST_MODE === 'true') {
@@ -15,4 +17,3 @@ export const apiUrl = (path: string) => {
   }
   return normalized;
 };
-
