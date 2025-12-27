@@ -1638,7 +1638,7 @@ $gh-address-comments
 #### (2025-12-20) [BE] P1-2 Rate limit 고도화 (P1)
 
 - 플랜(체크리스트)
-  - [ ] [BE] 엔드포인트별 정책 세분화
+  - [x] [BE] 엔드포인트별 정책 세분화
   - [ ] [BE] CAPTCHA 옵션 설계
 
 - 정책 세분화(엔드포인트별/유저별), 오탐 대응, CAPTCHA 옵션 검토
@@ -3438,6 +3438,23 @@ $gh-address-comments
   - `e2e/functional.spec.ts`: “notifications 페이지 로드” 기능 테스트 추가
 - PR
   - https://github.com/LEE-SANG-BOK/VKC-2-/pull/120
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+
+#### (2025-12-28) [P1-2] Rate limit 정책 세분화: 토글 엔드포인트 + Retry-After 정확화 (P1-2)
+
+- 목표: 토글(팔로우/좋아요/북마크) 계열까지 “엔드포인트별/유저별” rate limit을 적용하고, DB 기반 limiter는 Retry-After를 더 정확히 계산한다.
+- 변경
+  - `src/lib/api/rateLimit.ts`: DB 기반 `checkRateLimit`을 “최근 max개” 조회로 변경해 Retry-After를 정확화 + `checkInMemoryRateLimit` 추가
+  - `src/app/api/users/[id]/follow/route.ts`: 팔로우(add) 요청에 per-user limiter 적용(언팔로우는 제외)
+  - `src/app/api/posts/[id]/like/route.ts`: 좋아요(add) 요청에 per-user limiter 적용(취소는 제외)
+  - `src/app/api/posts/[id]/bookmark/route.ts`: 북마크(add) 요청에 per-user limiter 적용(취소는 제외)
+  - `src/app/api/answers/[id]/like/route.ts`: 도움됨(add) 요청에 per-user limiter 적용(취소는 제외)
+  - `src/app/api/comments/[id]/like/route.ts`: 댓글 좋아요(add) 요청에 per-user limiter 적용(취소는 제외)
+  - `e2e/functional.spec.ts`: 반복 좋아요 요청에서 429(Retry-After 포함) 검증 추가
 - 검증
   - [x] `npm run lint`
   - [x] `npm run type-check`

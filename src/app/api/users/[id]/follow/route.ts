@@ -1,17 +1,23 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { follows, users } from '@/lib/db/schema';
-import { successResponse, unauthorizedResponse, notFoundResponse, serverErrorResponse } from '@/lib/api/response';
+import { successResponse, unauthorizedResponse, notFoundResponse, serverErrorResponse, rateLimitResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, and } from 'drizzle-orm';
 import { createFollowNotification } from '@/lib/notifications/create';
 import { isE2ETestMode } from '@/lib/e2e/mode';
 import { getE2ERequestState } from '@/lib/e2e/request';
 import { toggleFollow as toggleE2EFollow } from '@/lib/e2e/actions';
+import { checkInMemoryRateLimit } from '@/lib/api/rateLimit';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
+
+const followRateLimitWindowMs = 60_000;
+const followRateLimitMax = 20;
+const followRateLimitE2EWindowMs = 10_000;
+const followRateLimitE2EMax = 5;
 
 /**
  * POST /api/users/[id]/follow
@@ -21,7 +27,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     if (isE2ETestMode()) {
       const { id: targetUserId } = await context.params;
-      const { store, userId } = getE2ERequestState(request);
+      const { store, namespace, userId } = getE2ERequestState(request);
       if (!userId) {
         return unauthorizedResponse();
       }
@@ -31,6 +37,23 @@ export async function POST(request: NextRequest, context: RouteContext) {
       if (!store.users.has(targetUserId)) {
         return notFoundResponse('사용자를 찾을 수 없습니다.');
       }
+
+      const alreadyFollowing = store.followsByUserId.get(userId)?.has(targetUserId) === true;
+      if (!alreadyFollowing) {
+        const rateLimit = checkInMemoryRateLimit({
+          key: `${namespace}:${userId}:follow`,
+          windowMs: followRateLimitE2EWindowMs,
+          max: followRateLimitE2EMax,
+        });
+        if (!rateLimit.allowed) {
+          return rateLimitResponse(
+            '팔로우 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+            'FOLLOW_RATE_LIMITED',
+            rateLimit.retryAfterSeconds
+          );
+        }
+      }
+
       const isFollowing = toggleE2EFollow(store, userId, targetUserId);
       return successResponse({ isFollowing });
     }
@@ -76,6 +99,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
         '팔로우를 취소했습니다.'
       );
     } else {
+      const rateLimit = checkInMemoryRateLimit({
+        key: `${user.id}:follow`,
+        windowMs: followRateLimitWindowMs,
+        max: followRateLimitMax,
+      });
+      if (!rateLimit.allowed) {
+        return rateLimitResponse(
+          '팔로우 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+          'FOLLOW_RATE_LIMITED',
+          rateLimit.retryAfterSeconds
+        );
+      }
+
       // 팔로우
       await db.insert(follows).values({
         followerId: user.id,
