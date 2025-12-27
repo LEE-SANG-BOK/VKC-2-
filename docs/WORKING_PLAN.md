@@ -3342,6 +3342,8 @@ $gh-address-comments
 - 변경
   - `src/components/organisms/PostList.tsx`: 피드 종료 메시지에 `data-testid="feed-end-message"` 부여(테스트에서 안정적으로 선택)
   - `e2e/ui-snapshots.spec.ts`: 모바일 스냅샷에서 카드 액션바뿐 아니라 종료 메시지도 BottomNavigation 상단에 유지되는지 bbox로 검증
+- PR
+  - https://github.com/LEE-SANG-BOK/VKC-2-/pull/114
 - 검증
   - [x] `npm run lint`
   - [x] `npm run type-check`
