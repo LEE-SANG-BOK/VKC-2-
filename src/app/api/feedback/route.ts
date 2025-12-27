@@ -5,6 +5,9 @@ import { successResponse, errorResponse, serverErrorResponse, rateLimitResponse 
 import { getSession } from '@/lib/api/auth';
 import { validateUgcText } from '@/lib/validation/ugc';
 import { and, eq, gte, sql } from 'drizzle-orm';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { createFeedback } from '@/lib/e2e/actions';
 
 const feedbackRateLimitWindowMs = 60 * 60 * 1000;
 const feedbackRateLimitMax = 3;
@@ -188,6 +191,18 @@ export async function POST(request: NextRequest) {
         return errorResponse('내용이 너무 깁니다.', 'FEEDBACK_CONTENT_TOO_LONG');
       }
       return errorResponse('내용이 올바르지 않습니다.', 'FEEDBACK_CONTENT_INVALID');
+    }
+
+    if (isE2ETestMode()) {
+      const { store, namespace } = getE2ERequestState(request);
+      const created = createFeedback(store, namespace, user?.id || null, {
+        type,
+        content,
+        pageUrl: pageUrl || null,
+        contactEmail: contactEmail || null,
+        userAgent,
+      });
+      return successResponse({ receivedAt: created.createdAt }, '피드백이 접수되었습니다.');
     }
 
     const ipAddress = resolveClientIp(request);

@@ -340,3 +340,34 @@ export const deleteComment = (store: E2EStore, commentId: string) => {
 
   return true;
 };
+
+export const createFeedback = (
+  store: E2EStore,
+  namespace: string,
+  userId: string | null,
+  payload: {
+    type: 'feedback' | 'bug';
+    content: string;
+    pageUrl: string | null;
+    contactEmail: string | null;
+    userAgent: string;
+  }
+) => {
+  const now = new Date().toISOString();
+  const id = `${namespace}-feedback-${store.nextFeedbackNumber}`;
+  store.nextFeedbackNumber += 1;
+
+  const feedback = {
+    id,
+    userId,
+    type: payload.type,
+    content: payload.content,
+    pageUrl: payload.pageUrl,
+    contactEmail: payload.contactEmail,
+    userAgent: payload.userAgent,
+    createdAt: now,
+  };
+
+  store.feedbacks.set(id, feedback);
+  return feedback;
+};

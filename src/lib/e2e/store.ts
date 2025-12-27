@@ -61,11 +61,23 @@ export type E2EComment = {
   updatedAt: string;
 };
 
+export type E2EFeedback = {
+  id: string;
+  userId: string | null;
+  type: 'feedback' | 'bug';
+  content: string;
+  pageUrl: string | null;
+  contactEmail: string | null;
+  userAgent: string;
+  createdAt: string;
+};
+
 export type E2EStore = {
   users: Map<string, E2EUser>;
   posts: Map<string, E2EPost>;
   answers: Map<string, E2EAnswer>;
   comments: Map<string, E2EComment>;
+  feedbacks: Map<string, E2EFeedback>;
   followsByUserId: Map<string, Set<string>>;
   likesByUserId: Map<string, Set<string>>;
   answerLikesByUserId: Map<string, Set<string>>;
@@ -74,6 +86,7 @@ export type E2EStore = {
   nextPostNumber: number;
   nextAnswerNumber: number;
   nextCommentNumber: number;
+  nextFeedbackNumber: number;
 };
 
 type E2EGlobal = {
@@ -256,6 +269,7 @@ export const getE2EStore = (namespace: string) => {
     posts: new Map(),
     answers: new Map(),
     comments: new Map(),
+    feedbacks: new Map(),
     followsByUserId: new Map(),
     likesByUserId: new Map(),
     answerLikesByUserId: new Map(),
@@ -264,6 +278,7 @@ export const getE2EStore = (namespace: string) => {
     nextPostNumber: 4,
     nextAnswerNumber: 3,
     nextCommentNumber: 1,
+    nextFeedbackNumber: 1,
   };
 
   seedStore(namespace, store);
