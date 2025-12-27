@@ -3372,5 +3372,6 @@ $gh-address-comments
 - 변경
   - `e2e/functional.spec.ts`: 채택 시나리오를 “채택 API 응답 + /answers 상태 확인 + 채택 버튼 제거”로 검증(텍스트 의존 제거)
   - `e2e/functional.spec.ts`: BottomNavigation 검증을 `data-testid="bottom-navigation":not(.hidden)` 기준으로 전환(중복 DOM에도 안정)
+  - `src/repo/answers/fetch.ts`: 클라이언트 fetch는 상대 경로(`/api/...`) 사용으로 통일(Playwright/CI에서 `NEXT_PUBLIC_APP_URL=https://example.com`이어도 로컬 서버 API를 호출하도록 보장)
 - 검증
   - [x] `npm run test:e2e`
