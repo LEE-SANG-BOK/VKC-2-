@@ -32,7 +32,31 @@ export type E2EPost = {
   tags: string[];
   views: number;
   likes: number;
+  adoptedAnswerId: string | null;
   isResolved: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type E2EAnswer = {
+  id: string;
+  postId: string;
+  authorId: string;
+  content: string;
+  likes: number;
+  isAdopted: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type E2EComment = {
+  id: string;
+  postId: string | null;
+  answerId: string | null;
+  parentId: string | null;
+  authorId: string;
+  content: string;
+  likes: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -40,10 +64,16 @@ export type E2EPost = {
 export type E2EStore = {
   users: Map<string, E2EUser>;
   posts: Map<string, E2EPost>;
+  answers: Map<string, E2EAnswer>;
+  comments: Map<string, E2EComment>;
   followsByUserId: Map<string, Set<string>>;
   likesByUserId: Map<string, Set<string>>;
+  answerLikesByUserId: Map<string, Set<string>>;
+  commentLikesByUserId: Map<string, Set<string>>;
   bookmarksByUserId: Map<string, Set<string>>;
   nextPostNumber: number;
+  nextAnswerNumber: number;
+  nextCommentNumber: number;
 };
 
 type E2EGlobal = {
@@ -134,6 +164,7 @@ const seedStore = (namespace: string, store: E2EStore) => {
     tags: ['유학·학생', '한국 취업·경력', '한국 아르바이트'],
     views: 120,
     likes: 1,
+    adoptedAnswerId: null,
     isResolved: false,
     createdAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 24)),
     updatedAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 24)),
@@ -151,6 +182,7 @@ const seedStore = (namespace: string, store: E2EStore) => {
     tags: ['비자', '체류'],
     views: 90,
     likes: 0,
+    adoptedAnswerId: null,
     isResolved: false,
     createdAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2)),
     updatedAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2)),
@@ -167,6 +199,7 @@ const seedStore = (namespace: string, store: E2EStore) => {
     tags: ['비자', '체류'],
     views: 10,
     likes: 0,
+    adoptedAnswerId: null,
     isResolved: false,
     createdAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 24 * 5)),
     updatedAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 24 * 5)),
@@ -176,10 +209,39 @@ const seedStore = (namespace: string, store: E2EStore) => {
   store.posts.set(post2.id, post2);
   store.posts.set(post3.id, post3);
 
+  const answer1: E2EAnswer = {
+    id: `${namespace}-answer-1`,
+    postId: post1.id,
+    authorId: user2.id,
+    content: '<p>저도 TOPIK 6급 준비 중인데, 매일 기출 문제 풀이와 첨삭을 병행하면 도움이 되었습니다.</p>',
+    likes: 0,
+    isAdopted: false,
+    createdAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 12)),
+    updatedAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 12)),
+  };
+
+  const answer2: E2EAnswer = {
+    id: `${namespace}-answer-2`,
+    postId: post2.id,
+    authorId: user1.id,
+    content: '<p>E-7 변경은 고용계약서, 학위/경력 증빙, 사업자등록 등 기본 서류를 먼저 체크하세요.</p>',
+    likes: 1,
+    isAdopted: false,
+    createdAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 8)),
+    updatedAt: iso(new Date(now.getTime() - 1000 * 60 * 60 * 8)),
+  };
+
+  store.answers.set(answer1.id, answer1);
+  store.answers.set(answer2.id, answer2);
+
   store.followsByUserId.set(user1.id, new Set());
   store.followsByUserId.set(user2.id, new Set());
   store.likesByUserId.set(user1.id, new Set());
   store.likesByUserId.set(user2.id, new Set());
+  store.answerLikesByUserId.set(user1.id, new Set());
+  store.answerLikesByUserId.set(user2.id, new Set());
+  store.commentLikesByUserId.set(user1.id, new Set());
+  store.commentLikesByUserId.set(user2.id, new Set());
   store.bookmarksByUserId.set(user1.id, new Set());
   store.bookmarksByUserId.set(user2.id, new Set());
 };
@@ -192,10 +254,16 @@ export const getE2EStore = (namespace: string) => {
   const store: E2EStore = {
     users: new Map(),
     posts: new Map(),
+    answers: new Map(),
+    comments: new Map(),
     followsByUserId: new Map(),
     likesByUserId: new Map(),
+    answerLikesByUserId: new Map(),
+    commentLikesByUserId: new Map(),
     bookmarksByUserId: new Map(),
     nextPostNumber: 4,
+    nextAnswerNumber: 3,
+    nextCommentNumber: 1,
   };
 
   seedStore(namespace, store);

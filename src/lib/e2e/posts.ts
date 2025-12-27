@@ -50,6 +50,33 @@ export const buildPostPreview = (store: E2EStore, post: E2EPost, viewerId: strin
   const trust = author ? resolvePostTrust(author, post.createdAt) : null;
   const excerptSource = stripTemplatePrelude(post.content || '');
 
+  const answersForPost = Array.from(store.answers.values()).filter((answer) => answer.postId === post.id);
+  const postCommentsForPost = Array.from(store.comments.values()).filter(
+    (comment) => comment.postId === post.id && !comment.answerId && !comment.parentId
+  );
+  const answersCount = answersForPost.length;
+  const postCommentsCount = postCommentsForPost.length;
+
+  const certifiedResponderIds = new Set<string>();
+  const otherResponderIds = new Set<string>();
+
+  const addResponder = (authorId: string) => {
+    if (certifiedResponderIds.has(authorId)) return;
+    const user = store.users.get(authorId);
+    const isCertified = Boolean(user?.isVerified || user?.isExpert || user?.badgeType);
+    if (isCertified) {
+      certifiedResponderIds.add(authorId);
+      otherResponderIds.delete(authorId);
+      return;
+    }
+    otherResponderIds.add(authorId);
+  };
+
+  answersForPost.forEach((answer) => addResponder(answer.authorId));
+  Array.from(store.comments.values())
+    .filter((comment) => comment.postId === post.id)
+    .forEach((comment) => addResponder(comment.authorId));
+
   return {
     id: post.id,
     authorId: post.authorId,
@@ -64,7 +91,7 @@ export const buildPostPreview = (store: E2EStore, post: E2EPost, viewerId: strin
     likes: post.likes,
     likesCount: post.likes,
     isResolved: post.isResolved,
-    adoptedAnswerId: null,
+    adoptedAnswerId: post.adoptedAnswerId,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     thumbnail,
@@ -72,8 +99,13 @@ export const buildPostPreview = (store: E2EStore, post: E2EPost, viewerId: strin
     imageCount,
     isLiked: liked,
     isBookmarked: bookmarked,
-    certifiedResponderCount: 1,
-    otherResponderCount: 0,
+    answersCount,
+    postCommentsCount,
+    commentsCount: answersCount + postCommentsCount,
+    certifiedResponderCount: certifiedResponderIds.size,
+    otherResponderCount: otherResponderIds.size,
+    officialAnswerCount: 0,
+    reviewedAnswerCount: 0,
     trustBadge: trust?.badge,
     trustWeight: trust?.weight,
     author: author
@@ -96,6 +128,15 @@ export const buildPostDetail = (store: E2EStore, post: E2EPost, viewerId: string
   const liked = viewerId ? store.likesByUserId.get(viewerId)?.has(post.id) === true : false;
   const bookmarked = viewerId ? store.bookmarksByUserId.get(viewerId)?.has(post.id) === true : false;
   const following = viewerId ? store.followsByUserId.get(viewerId)?.has(post.authorId) === true : false;
+
+  const answersForPost = Array.from(store.answers.values()).filter((answer) => answer.postId === post.id);
+  const postCommentsForPost = Array.from(store.comments.values()).filter(
+    (comment) => comment.postId === post.id && !comment.answerId && !comment.parentId
+  );
+
+  const answersCount = answersForPost.length;
+  const postCommentsCount = postCommentsForPost.length;
+  const commentsCount = answersCount + postCommentsCount;
 
   const resolvedAuthor = author
     ? {
@@ -134,7 +175,7 @@ export const buildPostDetail = (store: E2EStore, post: E2EPost, viewerId: string
     views: post.views,
     likes: post.likes,
     isResolved: post.isResolved,
-    adoptedAnswerId: null,
+    adoptedAnswerId: post.adoptedAnswerId,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     author: resolvedAuthor,
@@ -145,12 +186,12 @@ export const buildPostDetail = (store: E2EStore, post: E2EPost, viewerId: string
     imageCount,
     stats: {
       likes: post.likes,
-      comments: 0,
+      comments: commentsCount,
       shares: 0,
     },
-    answersCount: 0,
-    postCommentsCount: 0,
-    commentsCount: 0,
+    answersCount,
+    postCommentsCount,
+    commentsCount,
     publishedAt: formatPublishedAt(post.createdAt),
     isLiked: liked,
     isBookmarked: bookmarked,
