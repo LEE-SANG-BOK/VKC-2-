@@ -1630,8 +1630,8 @@ $gh-address-comments
 #### (2025-12-20) [WEB] P1-1 Playwright 커버리지 확장 (P1)
 
 - 플랜(체크리스트)
-  - [ ] [WEB] 로그인/작성/채택 시나리오 추가
-  - [ ] [LEAD] CI 게이트 확장 반영
+  - [x] [WEB] 로그인/작성/채택 시나리오 추가
+  - [x] [LEAD] CI 게이트 확장 반영
 
 - 로그인/작성/채택/구독/알림 핵심 플로우(필요 시 test-only auth 전략은 “프로덕션 비활성” 전제로)
 
@@ -3350,3 +3350,28 @@ $gh-address-comments
   - [x] `SKIP_SITEMAP_DB=true npm run build`
   - [x] `npm run test:e2e`
   - [x] `npm run test:e2e:ui`
+
+#### (2025-12-27) [P1-1] E2E_TEST_MODE 답변/댓글/채택 경로 확장 + Playwright 커버리지 확장 (P1-1)
+
+- 목표: DB/스테이징 의존 없이 Playwright로 “답변/댓글/채택”까지 실제 동작을 검증할 수 있게 E2E_TEST_MODE 데이터/경로를 확장한다.
+- 변경
+  - `src/lib/e2e/store.ts`, `src/lib/e2e/actions.ts`, `src/lib/e2e/posts.ts`, `src/lib/e2e/serialize.ts`: answers/comments + adoptedAnswerId 지원
+  - API: `/api/posts/[id]/answers`, `/api/posts/[id]/comments`, `/api/answers/[id]/*`, `/api/comments/[id]/*`에 E2E 분기 추가
+  - Playwright: `e2e/functional.spec.ts`에 답변 작성/채택 시나리오 추가, `e2e/ui-snapshots.spec.ts`는 기본 실행(비활성은 `E2E_UI_SNAPSHOTS=0`)
+- PR
+  - https://github.com/LEE-SANG-BOK/VKC-2-/pull/116
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `SKIP_SITEMAP_DB=true npm run build`
+  - [x] `npm run test:e2e`
+
+#### (2025-12-27) [P1-1] Playwright 플레키 제거(채택/하단탭) (P1-1)
+
+- 목표: CI에서 간헐적으로 실패하던 “채택됨 텍스트 대기”와 “bottom-navigation strict mode”를 제거해 E2E를 게이트로 안정화한다.
+- 변경
+  - `e2e/functional.spec.ts`: 채택 시나리오를 “채택 API 응답 + /answers 상태 확인 + 채택 버튼 제거”로 검증(텍스트 의존 제거)
+  - `e2e/functional.spec.ts`: BottomNavigation 검증을 `data-testid="bottom-navigation":not(.hidden)` 기준으로 전환(중복 DOM에도 안정)
+  - `src/repo/answers/fetch.ts`: 클라이언트 fetch는 상대 경로(`/api/...`) 사용으로 통일(Playwright/CI에서 `NEXT_PUBLIC_APP_URL=https://example.com`이어도 로컬 서버 API를 호출하도록 보장)
+- 검증
+  - [x] `npm run test:e2e`

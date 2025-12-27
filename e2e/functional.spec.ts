@@ -119,6 +119,61 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
     await page.waitForURL(/\/ko\/?$/, { timeout: 30_000 });
   });
 
+  test('verified user can create an answer (E2E store)', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'interactive editor flow is chromium-only');
+
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+    const answerText = `E2E 답변 ${namespace.slice(0, 8)}`;
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto(`/ko/posts/${namespace}-post-2`);
+
+    const editor = page.locator('.ProseMirror').first();
+    await expect(editor).toBeVisible({ timeout: 30_000 });
+    await editor.click();
+    await page.keyboard.type(answerText);
+
+    const form = editor.locator('xpath=ancestor::form[1]');
+    await form.locator('button[type="submit"]').first().click();
+
+    await expect(page.getByText(answerText)).toBeVisible({ timeout: 30_000 });
+  });
+
+  test('question author can adopt an answer (E2E store)', async ({ page, context }) => {
+    const namespace = createNamespace();
+    const userId = 'e2e-user-1';
+    const postId = `${namespace}-post-1`;
+
+    await setE2ECookies(context, { namespace, userId });
+    await setGuidelinesSeen(page, userId);
+
+    await page.goto(`/ko/posts/${postId}`);
+
+    const adoptButton = page.getByRole('button', { name: '채택하기' }).first();
+    await expect(adoptButton).toBeVisible({ timeout: 30_000 });
+
+    const adoptResponsePromise = page.waitForResponse((response) => {
+      if (response.request().method() !== 'POST') return false;
+      const url = response.url();
+      return url.includes('/api/answers/') && url.endsWith('/adopt');
+    });
+
+    await adoptButton.click();
+    const adoptResponse = await adoptResponsePromise;
+    expect(adoptResponse.ok()).toBeTruthy();
+
+    const answersResponse = await page.request.get(`/api/posts/${postId}/answers`);
+    expect(answersResponse.ok()).toBeTruthy();
+    const answersPayload = await answersResponse.json();
+    const answers = Array.isArray(answersPayload?.data) ? answersPayload.data : [];
+    expect(answers.some((answer: any) => answer?.isAdopted)).toBeTruthy();
+
+    await expect(page.getByRole('button', { name: '채택하기' })).toHaveCount(0, { timeout: 30_000 });
+  });
+
   test('bottom navigation hides when focusing editor inputs (mobile)', async ({ page, context }, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile-chromium', 'bottom navigation is mobile-only');
 
@@ -130,16 +185,16 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
 
     await page.goto('/ko/posts/new?type=question');
 
-    const bottomNav = page.getByTestId('bottom-navigation');
-    await expect(bottomNav).toBeVisible();
+    const bottomNavVisible = page.locator('[data-testid="bottom-navigation"]:not(.hidden)');
+    await expect(bottomNavVisible.first()).toBeVisible({ timeout: 30_000 });
 
     await page.locator('#title').focus();
-    await expect(bottomNav).toBeHidden();
+    await expect(bottomNavVisible).toHaveCount(0, { timeout: 30_000 });
 
     const editor = page.locator('.ProseMirror').first();
     await expect(editor).toBeVisible({ timeout: 30_000 });
     await editor.click();
-    await expect(bottomNav).toBeHidden();
+    await expect(bottomNavVisible).toHaveCount(0, { timeout: 30_000 });
   });
 
   test('bottom navigation hides when focusing answer editor (mobile)', async ({ page, context }, testInfo) => {
@@ -153,15 +208,15 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
 
     await page.goto(`/ko/posts/${namespace}-post-1`);
 
-    const bottomNav = page.getByTestId('bottom-navigation');
-    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+    const bottomNavVisible = page.locator('[data-testid="bottom-navigation"]:not(.hidden)');
+    await expect(bottomNavVisible.first()).toBeVisible({ timeout: 30_000 });
 
     const editor = page.locator('.ProseMirror').first();
     await expect(editor).toBeVisible({ timeout: 30_000 });
     await editor.scrollIntoViewIfNeeded();
     await editor.click();
 
-    await expect(bottomNav).toBeHidden();
+    await expect(bottomNavVisible).toHaveCount(0, { timeout: 30_000 });
   });
 
   test('bottom navigation hides when focusing comment input (mobile)', async ({ page, context }, testInfo) => {
@@ -175,15 +230,15 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
 
     await page.goto(`/ko/posts/${namespace}-post-3`);
 
-    const bottomNav = page.getByTestId('bottom-navigation');
-    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+    const bottomNavVisible = page.locator('[data-testid="bottom-navigation"]:not(.hidden)');
+    await expect(bottomNavVisible.first()).toBeVisible({ timeout: 30_000 });
 
     const commentBox = page.locator('textarea').first();
     await expect(commentBox).toBeVisible({ timeout: 30_000 });
     await commentBox.scrollIntoViewIfNeeded();
     await commentBox.click();
 
-    await expect(bottomNav).toBeHidden();
+    await expect(bottomNavVisible).toHaveCount(0, { timeout: 30_000 });
   });
 
   test('bottom navigation hides when focusing profile edit input (mobile)', async ({ page, context }, testInfo) => {
@@ -197,14 +252,14 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
 
     await page.goto('/ko/profile/edit');
 
-    const bottomNav = page.getByTestId('bottom-navigation');
-    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+    const bottomNavVisible = page.locator('[data-testid="bottom-navigation"]:not(.hidden)');
+    await expect(bottomNavVisible.first()).toBeVisible({ timeout: 30_000 });
 
     const nameInput = page.locator('#name');
     await expect(nameInput).toBeVisible({ timeout: 30_000 });
     await nameInput.click();
 
-    await expect(bottomNav).toBeHidden();
+    await expect(bottomNavVisible).toHaveCount(0, { timeout: 30_000 });
   });
 
   test('bottom navigation hides when focusing verification request input (mobile)', async ({ page, context }, testInfo) => {
@@ -218,15 +273,15 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
 
     await page.goto('/ko/verification/request');
 
-    const bottomNav = page.getByTestId('bottom-navigation');
-    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+    const bottomNavVisible = page.locator('[data-testid="bottom-navigation"]:not(.hidden)');
+    await expect(bottomNavVisible.first()).toBeVisible({ timeout: 30_000 });
 
     const visaTypeInput = page.locator('#visaType');
     await expect(visaTypeInput).toBeVisible({ timeout: 30_000 });
     await visaTypeInput.scrollIntoViewIfNeeded();
     await visaTypeInput.click();
 
-    await expect(bottomNav).toBeHidden();
+    await expect(bottomNavVisible).toHaveCount(0, { timeout: 30_000 });
   });
 
   test('bottom navigation hides when focusing feedback textarea (mobile)', async ({ page, context }, testInfo) => {
@@ -240,14 +295,14 @@ test.describe('functional flows (E2E_TEST_MODE)', () => {
 
     await page.goto('/ko/feedback');
 
-    const bottomNav = page.getByTestId('bottom-navigation');
-    await expect(bottomNav).toBeVisible({ timeout: 30_000 });
+    const bottomNavVisible = page.locator('[data-testid="bottom-navigation"]:not(.hidden)');
+    await expect(bottomNavVisible.first()).toBeVisible({ timeout: 30_000 });
 
     const textarea = page.locator('textarea').first();
     await expect(textarea).toBeVisible({ timeout: 30_000 });
     await textarea.scrollIntoViewIfNeeded();
     await textarea.click();
 
-    await expect(bottomNav).toBeHidden();
+    await expect(bottomNavVisible).toHaveCount(0, { timeout: 30_000 });
   });
 });

@@ -4,6 +4,9 @@ import { comments, likes } from '@/lib/db/schema';
 import { successResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, and, sql } from 'drizzle-orm';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { toggleCommentLike } from '@/lib/e2e/actions';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -22,6 +25,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const { id: commentId } = await context.params;
+
+    if (isE2ETestMode()) {
+      const { store } = getE2ERequestState(request);
+      const result = toggleCommentLike(store, user.id, commentId);
+      if (!result) {
+        return notFoundResponse('댓글을 찾을 수 없습니다.');
+      }
+
+      const payload = { isLiked: result.isLiked, likesCount: result.likes };
+      return successResponse(payload, result.isLiked ? '좋아요를 눌렀습니다.' : '좋아요를 취소했습니다.');
+    }
 
     // 댓글 존재 여부 확인
     const comment = await db.query.comments.findFirst({

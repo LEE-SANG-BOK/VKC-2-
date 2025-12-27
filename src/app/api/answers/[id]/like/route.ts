@@ -4,6 +4,9 @@ import { answers, likes } from '@/lib/db/schema';
 import { successResponse, notFoundResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api/response';
 import { getSession } from '@/lib/api/auth';
 import { eq, and, sql } from 'drizzle-orm';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { toggleAnswerLike } from '@/lib/e2e/actions';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -22,6 +25,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const { id: answerId } = await context.params;
+
+    if (isE2ETestMode()) {
+      const { store } = getE2ERequestState(request);
+      const result = toggleAnswerLike(store, user.id, answerId);
+      if (!result) {
+        return notFoundResponse('답변을 찾을 수 없습니다.');
+      }
+      if (result.isLiked) {
+        return successResponse({ isLiked: true, isHelpful: true }, '도움됨을 눌렀습니다.');
+      }
+      return successResponse({ isLiked: false, isHelpful: false }, '도움됨을 취소했습니다.');
+    }
 
     // 답변 존재 여부 확인
     const answer = await db.query.answers.findFirst({

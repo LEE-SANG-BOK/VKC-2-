@@ -11,6 +11,10 @@ import { hasProhibitedContent } from '@/lib/content-filter';
 import { UGC_LIMITS, validateUgcText } from '@/lib/validation/ugc';
 import { validateUgcExternalLinks } from '@/lib/validation/ugc-links';
 import { sanitizeUgcHtml } from '@/lib/validation/ugc-sanitize';
+import { isE2ETestMode } from '@/lib/e2e/mode';
+import { getE2ERequestState } from '@/lib/e2e/request';
+import { createComment } from '@/lib/e2e/actions';
+import { buildE2EAuthor, buildE2ECommentTree, formatE2EDate } from '@/lib/e2e/serialize';
 
 const commentRateLimitWindowMs = 60 * 60 * 1000;
 const commentRateLimitMax = 40;
@@ -22,6 +26,17 @@ interface RouteContext {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id: answerId } = await context.params;
+
+    if (isE2ETestMode()) {
+      const { store } = getE2ERequestState(request);
+      const answer = store.answers.get(answerId);
+      if (!answer) {
+        return notFoundResponse('답변을 찾을 수 없습니다.');
+      }
+
+      const items = Array.from(store.comments.values()).filter((comment) => comment.answerId === answerId);
+      return successResponse(buildE2ECommentTree(store, items));
+    }
 
     const answer = await db.query.answers.findFirst({
       where: eq(answers.id, answerId),
@@ -64,6 +79,78 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (!user) {
       return unauthorizedResponse();
+    }
+
+    if (isE2ETestMode()) {
+      const { namespace, store } = getE2ERequestState(request);
+      const { id: answerId } = await context.params;
+
+      const answer = store.answers.get(answerId);
+      if (!answer) {
+        return notFoundResponse('답변을 찾을 수 없습니다.');
+      }
+
+      const body = await request.json();
+      const { content, parentId } = body;
+
+      if (!content || typeof content !== 'string') {
+        return errorResponse('댓글 내용을 입력해주세요.', 'COMMENT_REQUIRED');
+      }
+
+      const normalizedContent = sanitizeUgcHtml(content);
+      const validation = validateUgcText(normalizedContent, UGC_LIMITS.commentContent.min, UGC_LIMITS.commentContent.max);
+      if (!validation.ok) {
+        if (validation.code === 'UGC_TOO_SHORT') {
+          return errorResponse('댓글이 너무 짧습니다.', 'COMMENT_TOO_SHORT');
+        }
+        if (validation.code === 'UGC_TOO_LONG') {
+          return errorResponse('댓글이 너무 깁니다.', 'COMMENT_TOO_LONG');
+        }
+        return errorResponse('댓글 내용이 올바르지 않습니다.', 'COMMENT_LOW_QUALITY');
+      }
+
+      if (hasProhibitedContent(normalizedContent)) {
+        return errorResponse('금칙어/광고/연락처가 포함되어 있습니다. 내용을 수정해주세요.', 'CONTENT_PROHIBITED');
+      }
+
+      const linkValidation = validateUgcExternalLinks(normalizedContent);
+      if (!linkValidation.ok) {
+        return errorResponse('공식 출처 도메인만 사용할 수 있습니다.', 'UGC_EXTERNAL_LINK_BLOCKED');
+      }
+
+      if (parentId) {
+        const parentComment = store.comments.get(String(parentId));
+        if (!parentComment) {
+          return errorResponse('부모 댓글을 찾을 수 없습니다.', 'COMMENT_PARENT_NOT_FOUND');
+        }
+        if (parentComment.answerId !== answerId) {
+          return errorResponse('잘못된 요청입니다.', 'COMMENT_PARENT_MISMATCH');
+        }
+      }
+
+      const created = createComment(
+        store,
+        namespace,
+        user.id,
+        { postId: answer.postId, answerId, parentId: parentId ? String(parentId) : null },
+        normalizedContent
+      );
+
+      const payload = {
+        id: created.id,
+        postId: created.postId || undefined,
+        answerId: created.answerId || undefined,
+        parentId: created.parentId || undefined,
+        authorId: created.authorId,
+        content: created.content,
+        likes: created.likes,
+        createdAt: formatE2EDate(created.createdAt),
+        updatedAt: formatE2EDate(created.updatedAt),
+        author: buildE2EAuthor(store, created.authorId),
+        replies: [],
+      };
+
+      return successResponse(payload, parentId ? '대댓글이 작성되었습니다.' : '댓글이 작성되었습니다.');
     }
 
     const userStatus = await checkUserStatus(user.id);
