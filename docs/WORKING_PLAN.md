@@ -3415,3 +3415,14 @@ $gh-address-comments
   - `src/repo/users/fetch.ts`: `fetchUserLeaderboard`가 브라우저 환경에서 절대 URL 대신 `/api/users/leaderboard` 사용
 - 검증
   - [x] `NEXT_PUBLIC_APP_URL=https://example.com ... npm run test:e2e` (CI env 시뮬레이션)
+
+#### (2025-12-27) [P2] repo fetch 공통화: `apiUrl` 도입 + users fetch 정리 (P2)
+
+- 목표: “클라이언트는 항상 상대 경로(`/api/...`)”, “서버는 절대 경로(+E2E localhost)”를 공통 규칙으로 고정해, 중복/환경 의존(`NEXT_PUBLIC_APP_URL`)으로 인한 회귀를 줄인다.
+- 변경
+  - `src/repo/apiBase.ts`: `apiUrl()` / `resolveServerApiBase()` 공용 헬퍼 추가
+  - `src/repo/users/fetch.ts`: users 도메인 fetch 전반을 `apiUrl('/api/...')`로 통일(브라우저에서는 상대 경로로만 호출)
+- 검증
+  - [x] `npm run lint`
+  - [x] `npm run type-check`
+  - [x] `NEXT_PUBLIC_APP_URL=https://example.com ... npm run test:e2e` (CI env 시뮬레이션)
