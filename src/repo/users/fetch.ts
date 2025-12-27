@@ -14,14 +14,14 @@ import type {
   UserScore,
   UserLeaderboardEntry,
 } from './types';
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { apiUrl } from '@/repo/apiBase';
 
 type FetchOptions = {
   signal?: AbortSignal;
 };
 
 export async function fetchMyProfile(options?: FetchOptions): Promise<ApiResponse<User>> {
-  const res = await fetch(`${API_BASE}/api/users/me`, {
+  const res = await fetch(apiUrl('/api/users/me'), {
     cache: 'no-store',
     credentials: 'include',
     signal: options?.signal,
@@ -35,7 +35,7 @@ export async function fetchMyProfile(options?: FetchOptions): Promise<ApiRespons
 }
 
 export async function fetchUserProfile(userId: string, options?: FetchOptions): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE}/api/users/${userId}`, {
+  const res = await fetch(apiUrl(`/api/users/${userId}`), {
     cache: 'no-store',
     credentials: 'include',
     signal: options?.signal,
@@ -76,7 +76,7 @@ export async function fetchUserPosts(
     }
   }
 
-  const res = await fetch(`${API_BASE}/api/users/${userId}/posts?${params.toString()}`, fetchOptions);
+  const res = await fetch(apiUrl(`/api/users/${userId}/posts?${params.toString()}`), fetchOptions);
 
   if (!res.ok) {
     throw new Error('Failed to fetch user posts');
@@ -113,7 +113,7 @@ export async function fetchUserAnswers(
     }
   }
 
-  const res = await fetch(`${API_BASE}/api/users/${userId}/answers?${params.toString()}`, fetchOptions);
+  const res = await fetch(apiUrl(`/api/users/${userId}/answers?${params.toString()}`), fetchOptions);
 
   if (!res.ok) {
     throw new Error('Failed to fetch user answers');
@@ -149,7 +149,7 @@ export async function fetchUserComments(
     }
   }
 
-  const res = await fetch(`${API_BASE}/api/users/${userId}/comments?${params.toString()}`, fetchOptions);
+  const res = await fetch(apiUrl(`/api/users/${userId}/comments?${params.toString()}`), fetchOptions);
 
   if (!res.ok) {
     throw new Error('Failed to fetch user comments');
@@ -185,7 +185,7 @@ export async function fetchUserBookmarks(
     }
   }
 
-  const res = await fetch(`${API_BASE}/api/users/${userId}/bookmarks?${params.toString()}`, fetchOptions);
+  const res = await fetch(apiUrl(`/api/users/${userId}/bookmarks?${params.toString()}`), fetchOptions);
 
   if (!res.ok) {
     throw new Error('Failed to fetch user bookmarks');
@@ -204,7 +204,7 @@ export async function fetchFollowers(
   if (filters.limit) params.append('limit', filters.limit.toString());
   if (filters.cursor) params.append('cursor', filters.cursor);
 
-  const res = await fetch(`${API_BASE}/api/users/${userId}/followers?${params.toString()}`, {
+  const res = await fetch(apiUrl(`/api/users/${userId}/followers?${params.toString()}`), {
     cache: 'no-store',
     signal: options?.signal,
   });
@@ -226,7 +226,7 @@ export async function fetchFollowing(
   if (filters.limit) params.append('limit', filters.limit.toString());
   if (filters.cursor) params.append('cursor', filters.cursor);
 
-  const res = await fetch(`${API_BASE}/api/users/${userId}/following?${params.toString()}`, {
+  const res = await fetch(apiUrl(`/api/users/${userId}/following?${params.toString()}`), {
     cache: 'no-store',
     signal: options?.signal,
   });
@@ -242,7 +242,7 @@ export async function updateMyProfile(
   data: UpdateProfileRequest,
   options?: FetchOptions
 ): Promise<ApiResponse<User>> {
-  const res = await fetch(`${API_BASE}/api/users/me`, {
+  const res = await fetch(apiUrl('/api/users/me'), {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -265,7 +265,7 @@ export async function updateProfile(
   data: UpdateProfileRequest,
   options?: FetchOptions
 ): Promise<ApiResponse<User>> {
-  const res = await fetch(`${API_BASE}/api/users/${userId}`, {
+  const res = await fetch(apiUrl(`/api/users/${userId}`), {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -286,9 +286,7 @@ export async function toggleFollow(
   userId: string,
   options?: FetchOptions
 ): Promise<ApiResponse<{ isFollowing: boolean }>> {
-  const url = typeof window === 'undefined'
-    ? `${API_BASE}/api/users/${userId}/follow`
-    : `/api/users/${userId}/follow`;
+  const url = apiUrl(`/api/users/${userId}/follow`);
   const res = await fetch(url, {
     method: 'POST',
     credentials: 'include',
@@ -307,9 +305,7 @@ export async function checkFollowStatus(
   userId: string,
   options?: FetchOptions
 ): Promise<{ isFollowing: boolean }> {
-  const url = typeof window === 'undefined'
-    ? `${API_BASE}/api/users/${userId}/follow/status`
-    : `/api/users/${userId}/follow/status`;
+  const url = apiUrl(`/api/users/${userId}/follow/status`);
   const res = await fetch(url, {
     cache: 'no-store',
     credentials: 'include',
@@ -332,7 +328,7 @@ export async function fetchRecommendedUsers(
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
 
-  const res = await fetch(`${API_BASE}/api/users/recommended?${params}`, {
+  const res = await fetch(apiUrl(`/api/users/recommended?${params.toString()}`), {
     cache: 'no-store',
     credentials: 'include',
     signal: options?.signal,
@@ -358,7 +354,7 @@ export async function fetchRecommendedUsers(
 }
 
 export async function fetchUserScore(userId: string, options?: FetchOptions): Promise<ApiResponse<UserScore>> {
-  const res = await fetch(`${API_BASE}/api/users/${userId}/score`, {
+  const res = await fetch(apiUrl(`/api/users/${userId}/score`), {
     cache: 'no-store',
     credentials: 'include',
     signal: options?.signal,
@@ -379,10 +375,7 @@ export async function fetchUserLeaderboard(
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
 
-  const url =
-    typeof window === 'undefined'
-      ? `${API_BASE}/api/users/leaderboard?${params.toString()}`
-      : `/api/users/leaderboard?${params.toString()}`;
+  const url = apiUrl(`/api/users/leaderboard?${params.toString()}`);
 
   const res = await fetch(url, {
     cache: 'no-store',
